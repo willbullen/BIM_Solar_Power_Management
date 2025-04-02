@@ -354,6 +354,8 @@ function forecastMetric(
   
   // Train a linear regression model
   const model = trainForecastModel(features, values);
+  // Also extract the mean value directly for use in the forecast calculation
+  const meanValue = ss.mean(values);
   
   // Generate future timestamps and features
   const forecast: ForecastResult[] = [];
@@ -376,13 +378,17 @@ function forecastMetric(
     
     // Calculate confidence intervals (simplified approach)
     const std = ss.standardDeviation(values);
-    const marginOfError = 1.96 * std / Math.sqrt(values.length);
+    // Ensure we don't get NaN in marginal cases
+    const marginOfError = isNaN(std) ? 0.5 : (1.96 * std / Math.sqrt(values.length));
+    
+    // Make sure predictedValue is not NaN
+    const validPredictedValue = isNaN(predictedValue) ? model.meanValue : predictedValue;
     
     forecast.push({
       timestamp: forecastTimestamp,
-      predictedValue: Math.max(0, predictedValue), // Ensure no negative predictions
-      lowerBound: Math.max(0, predictedValue - marginOfError),
-      upperBound: predictedValue + marginOfError
+      predictedValue: Math.max(0, validPredictedValue), // Ensure no negative predictions
+      lowerBound: Math.max(0, validPredictedValue - marginOfError),
+      upperBound: validPredictedValue + marginOfError
     });
   }
   
@@ -403,8 +409,15 @@ function trainForecastModel(features: number[][], values: number[]): any {
   // For each feature, calculate a simple correlation coefficient
   for (let featureIndex = 0; featureIndex < features[0].length; featureIndex++) {
     const featureValues = features.map(f => f[featureIndex]);
-    const correlation = ss.sampleCorrelation(featureValues, values);
-    coefficients.push(correlation);
+    try {
+      // If standard deviation is 0 or NaN, correlation will be NaN
+      // Handle this case by using a small default correlation
+      const correlation = ss.sampleCorrelation(featureValues, values);
+      coefficients.push(isNaN(correlation) ? 0.01 : correlation);
+    } catch (error) {
+      console.warn(`Error calculating correlation for feature ${featureIndex}:`, error);
+      coefficients.push(0.01); // Use small default value
+    }
   }
   
   // Return a simple model
@@ -423,7 +436,16 @@ function predictValue(model: any, features: number[]): number {
   
   // Apply each coefficient to the corresponding feature
   for (let i = 0; i < Math.min(features.length, model.coefficients.length); i++) {
-    prediction += features[i] * model.coefficients[i];
+    // Ensure no NaN values are propagated
+    const featureValue = isNaN(features[i]) ? 0 : features[i];
+    const coefficient = isNaN(model.coefficients[i]) ? 0.01 : model.coefficients[i];
+    prediction += featureValue * coefficient;
+  }
+  
+  // Final sanity check
+  if (isNaN(prediction)) {
+    console.warn("Predicted value is NaN, returning mean value instead");
+    return model.meanValue;
   }
   
   return prediction;
@@ -526,10 +548,14 @@ export function getEfficiencyRecommendations(
   if (refrigerationData.length > 10) {
     const temps = refrigerationData.map(d => d.temp as number);
     const loads = refrigerationData.map(d => d.load);
-    const correlation = ss.sampleCorrelation(temps, loads);
-    
-    if (correlation > 0.7) {
-      recommendations.push('Refrigeration load strongly correlates with temperature. Consider improving insulation to reduce energy costs.');
+    try {
+      const correlation = ss.sampleCorrelation(temps, loads);
+      
+      if (!isNaN(correlation) && correlation > 0.7) {
+        recommendations.push('Refrigeration load strongly correlates with temperature. Consider improving insulation to reduce energy costs.');
+      }
+    } catch (error) {
+      console.warn('Error calculating refrigeration correlation:', error);
     }
   }
   
