@@ -27,11 +27,13 @@ export interface IStorage {
   // Power data operations
   getPowerData(limit?: number): Promise<PowerData[]>;
   getLatestPowerData(): Promise<PowerData | undefined>;
+  getPowerDataByDateRange(startDate: Date, endDate: Date): Promise<PowerData[]>;
   createPowerData(data: InsertPowerData): Promise<PowerData>;
   
   // Environmental data operations
   getEnvironmentalData(limit?: number): Promise<EnvironmentalData[]>;
   getLatestEnvironmentalData(): Promise<EnvironmentalData | undefined>;
+  getEnvironmentalDataByDateRange(startDate: Date, endDate: Date): Promise<EnvironmentalData[]>;
   createEnvironmentalData(data: InsertEnvironmentalData): Promise<EnvironmentalData>;
   
   // Session store
@@ -115,6 +117,16 @@ export class DatabaseStorage implements IStorage {
     return latest;
   }
   
+  async getPowerDataByDateRange(startDate: Date, endDate: Date): Promise<PowerData[]> {
+    return db
+      .select()
+      .from(powerData)
+      .where(
+        sql`${powerData.timestamp} >= ${startDate} AND ${powerData.timestamp} <= ${endDate}`
+      )
+      .orderBy(desc(powerData.timestamp));
+  }
+  
   async createPowerData(data: InsertPowerData): Promise<PowerData> {
     const [entry] = await db
       .insert(powerData)
@@ -141,6 +153,16 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
       
     return latest;
+  }
+  
+  async getEnvironmentalDataByDateRange(startDate: Date, endDate: Date): Promise<EnvironmentalData[]> {
+    return db
+      .select()
+      .from(environmentalData)
+      .where(
+        sql`${environmentalData.timestamp} >= ${startDate} AND ${environmentalData.timestamp} <= ${endDate}`
+      )
+      .orderBy(desc(environmentalData.timestamp));
   }
   
   async createEnvironmentalData(data: InsertEnvironmentalData): Promise<EnvironmentalData> {

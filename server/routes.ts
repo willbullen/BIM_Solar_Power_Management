@@ -5,6 +5,7 @@ import { setupAuth } from "./auth";
 import { insertPowerDataSchema, insertEnvironmentalDataSchema, insertSettingsSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { generateSyntheticData } from "./data";
+import { format } from 'date-fns';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize the database
@@ -103,6 +104,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // GET /api/power-data/range - Get power data within date range
+  app.get('/api/power-data/range', async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: 'Start date and end date are required' });
+      }
+      
+      const data = await storage.getPowerDataByDateRange(
+        new Date(startDate as string), 
+        new Date(endDate as string)
+      );
+      
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch power data by date range' });
+    }
+  });
+  
   // GET /api/environmental-data - Get historical environmental data
   app.get('/api/environmental-data', async (req, res) => {
     try {
@@ -124,6 +145,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch latest environmental data' });
+    }
+  });
+  
+  // GET /api/environmental-data/range - Get environmental data within date range
+  app.get('/api/environmental-data/range', async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: 'Start date and end date are required' });
+      }
+      
+      const data = await storage.getEnvironmentalDataByDateRange(
+        new Date(startDate as string), 
+        new Date(endDate as string)
+      );
+      
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch environmental data by date range' });
+    }
+  });
+  
+  // GET /api/export - Export data as CSV or JSON
+  app.get('/api/export', async (req, res) => {
+    try {
+      const { startDate, endDate, dataType, format } = req.query;
+      
+      if (!startDate || !endDate || !dataType) {
+        return res.status(400).json({ 
+          message: 'Start date, end date, and data type are required' 
+        });
+      }
+      
+      let data;
+      const start = new Date(startDate as string);
+      const end = new Date(endDate as string);
+      
+      // Get data based on type
+      if (dataType === 'power') {
+        data = await storage.getPowerDataByDateRange(start, end);
+      } else if (dataType === 'environmental') {
+        data = await storage.getEnvironmentalDataByDateRange(start, end);
+      } else if (dataType === 'combined') {
+        const powerData = await storage.getPowerDataByDateRange(start, end);
+        const envData = await storage.getEnvironmentalDataByDateRange(start, end);
+        
+        // Combine the data sets by matching timestamps (or nearest)
+        data = powerData.map(power => {
+          const timestamp = new Date(power.timestamp);
+          // Find closest environmental reading
+          const env = envData.length ? envData.reduce<typeof envData[0]>((closest, current) => {
+            const currentTime = new Date(current.timestamp);
+            const closestTime = new Date(closest.timestamp);
+            
+            const currentDiff = Math.abs(currentTime.getTime() - timestamp.getTime());
+            const closestDiff = Math.abs(closestTime.getTime() - timestamp.getTime());
+            
+            return currentDiff < closestDiff ? current : closest;
+          }, envData[0]) : null;
+          
+          return {
+            timestamp: power.timestamp,
+            // Power metrics
+            mainGridPower: power.mainGridPower,
+            solarOutput: power.solarOutput,
+            refrigerationLoad: power.refrigerationLoad,
+            bigColdRoom: power.bigColdRoom,
+            bigFreezer: power.bigFreezer, 
+            smoker: power.smoker,
+            totalLoad: power.totalLoad,
+            unaccountedLoad: power.unaccountedLoad,
+            // Environmental metrics
+            weather: env?.weather || null,
+            temperature: env?.temperature || null,
+            sunIntensity: env?.sunIntensity || null
+          };
+        });
+      } else {
+        return res.status(400).json({ message: 'Invalid data type. Use "power", "environmental", or "combined"' });
+      }
+      
+      if (!data || data.length === 0) {
+        return res.status(404).json({ message: 'No data found for the specified date range' });
+      }
+      
+      const exportFormat = (format as string) || 'json';
+      
+      if (exportFormat === 'csv') {
+        // Generate CSV
+        const csvHeader = Object.keys(data[0]).join(',');
+        const csvRows = data.map(item => 
+          Object.values(item).map(value => 
+            value instanceof Date 
+              ? value.toISOString() 
+              : value === null 
+                ? '' 
+                : typeof value === 'string' 
+                  ? `"${value.replace(/"/g, '""')}"` 
+                  : String(value)
+          ).join(',')
+        );
+        
+        const csv = [csvHeader, ...csvRows].join('\n');
+        
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=dalys-${dataType}-data-${formatDateForFilename(start)}-to-${formatDateForFilename(end)}.csv`);
+        return res.send(csv);
+      } else {
+        // Return JSON format with a download header
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename=dalys-${dataType}-data-${formatDateForFilename(start)}-to-${formatDateForFilename(end)}.json`);
+        return res.json(data);
+      }
+      
+    } catch (error) {
+      console.error("Export error:", error);
+      res.status(500).json({ message: 'Failed to export data' });
     }
   });
   
@@ -164,6 +303,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   return httpServer;
+}
+
+// Helper function to format dates for filenames
+function formatDateForFilename(date: Date): string {
+  return format(date, 'yyyy-MM-dd');
 }
 
 

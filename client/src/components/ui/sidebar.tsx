@@ -9,7 +9,8 @@ import {
   Settings, 
   Sun, 
   Thermometer, 
-  CloudSun
+  CloudSun,
+  FileDown
 } from "lucide-react";
 
 type SidebarProps = {
@@ -58,6 +59,17 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               >
                 <BarChart3 className="sidebar-menu-item-icon" />
                 <span>Dashboard</span>
+              </Link>
+              
+              <Link 
+                href="/reports" 
+                className={cn(
+                  "sidebar-menu-item",
+                  location === "/reports" && "active"
+                )}
+              >
+                <FileDown className="sidebar-menu-item-icon" />
+                <span>Reports</span>
               </Link>
               
               {user?.role === "Admin" && (

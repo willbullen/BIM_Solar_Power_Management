@@ -7,6 +7,7 @@ import { ProtectedRoute, AdminRoute } from "@/lib/protected-route";
 import DashboardPage from "@/pages/dashboard-page";
 import AuthPage from "@/pages/auth-page";
 import SettingsPage from "@/pages/settings-page";
+import ReportsPage from "@/pages/reports-page";
 import NotFound from "@/pages/not-found";
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
         <Switch>
           <ProtectedRoute path="/" component={DashboardPage} />
           <ProtectedRoute path="/dashboard" component={DashboardPage} />
+          <ProtectedRoute path="/reports" component={ReportsPage} />
           <AdminRoute path="/settings" component={SettingsPage} />
           <Route path="/auth" component={AuthPage} />
           <Route component={NotFound} />
