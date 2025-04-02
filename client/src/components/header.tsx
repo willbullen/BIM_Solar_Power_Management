@@ -41,7 +41,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
         {/* App Logo */}
         <div className="flex items-center">
           <Zap className="h-6 w-6 text-accent mr-2" />
-          <span className="text-white font-semibold text-lg">Emporium Power Monitor</span>
+          <span className="text-white font-semibold text-lg">Dalys Monitoring System</span>
         </div>
       </div>
       

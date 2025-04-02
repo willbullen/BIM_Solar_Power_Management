@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PowerDataProvider, usePowerData } from "@/hooks/use-power-data";
 import { useToast } from "@/hooks/use-toast";
@@ -34,11 +34,11 @@ function SettingsContent() {
   });
   
   // Update local state when settings load from the server
-  useState(() => {
+  useEffect(() => {
     if (settings) {
       setFormValues(settings);
     }
-  });
+  }, [settings]);
   
   // Save settings mutation
   const saveSettingsMutation = useMutation({
@@ -63,7 +63,7 @@ function SettingsContent() {
   });
   
   // Handle form input changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
     
     if (type === 'number') {
@@ -96,7 +96,7 @@ function SettingsContent() {
   };
   
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     saveSettingsMutation.mutate(formValues);
   };
