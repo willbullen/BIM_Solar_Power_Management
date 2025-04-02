@@ -134,13 +134,18 @@ function EquipmentContent() {
 
   const selectedEquipment = equipmentList.find(item => item.id === selectedEquipmentId);
 
+  // Log efficiency data for debugging
+  useEffect(() => {
+    console.log("Efficiency data:", efficiencyData);
+  }, [efficiencyData]);
+
   // Prepare efficiency data for chart
   const efficiencyChartData = efficiencyData?.map(item => {
     const date = safeParseDate(item.timestamp);
     return {
       date: date ? format(date, 'MM/dd') : 'Unknown',
-      efficiency: Number((item.efficiencyRating * 100).toFixed(1)),
-      power: Number(item.powerUsage.toFixed(2)),
+      efficiency: typeof item.efficiencyRating === 'number' ? Number((item.efficiencyRating * 100).toFixed(1)) : 0,
+      power: typeof item.powerUsage === 'number' && item.powerUsage !== null ? Number(item.powerUsage.toFixed(2)) : 0,
       anomaly: item.anomalyDetected ? item.anomalyScore : 0
     };
   }) || [];
@@ -288,7 +293,7 @@ function EquipmentContent() {
                                     <span className="text-muted-foreground">{key.charAt(0).toUpperCase() + key.slice(1)}:</span>
                                     <span>{typeof value === 'number' ? value.toString() : String(value)}</span>
                                   </div>
-                                ));
+                                )) as JSX.Element[];
                               } catch (err) {
                                 return <div className="text-sm text-muted-foreground">Metadata format not supported</div>;
                               }
@@ -544,7 +549,7 @@ function EquipmentContent() {
                                 <div className="flex justify-between">
                                   <span className="text-sm">Operating Temperature</span>
                                   <span className="text-sm">
-                                    {efficiencyData[0]?.temperatureConditions !== undefined && efficiencyData[0]?.temperatureConditions !== null 
+                                    {efficiencyData && efficiencyData.length > 0 && efficiencyData[0]?.temperatureConditions !== undefined && efficiencyData[0]?.temperatureConditions !== null 
                                       ? Number(efficiencyData[0].temperatureConditions).toFixed(1) + '°C'
                                       : "N/A"}
                                   </span>
@@ -556,7 +561,7 @@ function EquipmentContent() {
                                 <div className="flex justify-between">
                                   <span className="text-sm">Production Volume</span>
                                   <span className="text-sm">
-                                    {efficiencyData[0]?.productionVolume !== undefined && efficiencyData[0]?.productionVolume !== null 
+                                    {efficiencyData && efficiencyData.length > 0 && efficiencyData[0]?.productionVolume !== undefined && efficiencyData[0]?.productionVolume !== null 
                                       ? efficiencyData[0].productionVolume + ' units'
                                       : "N/A"}
                                   </span>
@@ -568,7 +573,7 @@ function EquipmentContent() {
                                 <div className="flex justify-between">
                                   <span className="text-sm">Power Consumption</span>
                                   <span className="text-sm">
-                                    {efficiencyData[0]?.powerUsage !== undefined && efficiencyData[0]?.powerUsage !== null 
+                                    {efficiencyData && efficiencyData.length > 0 && efficiencyData[0]?.powerUsage !== undefined && efficiencyData[0]?.powerUsage !== null 
                                       ? Number(efficiencyData[0].powerUsage).toFixed(2) + ' kW'
                                       : "N/A"}
                                   </span>
