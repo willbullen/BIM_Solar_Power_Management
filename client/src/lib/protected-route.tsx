@@ -62,7 +62,7 @@ export function AdminRoute({
   if (user.role !== "Admin") {
     return (
       <Route path={path}>
-        <Redirect to="/dashboard" />
+        <Redirect to="/" />
       </Route>
     );
   }

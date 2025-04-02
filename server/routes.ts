@@ -5,7 +5,6 @@ import { setupAuth } from "./auth";
 import { insertPowerDataSchema, insertEnvironmentalDataSchema, insertSettingsSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { generateSyntheticData } from "./data";
-import { WebSocketServer } from "ws";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize the database
@@ -19,51 +18,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
   const httpServer = createServer(app);
   
-  // Initialize WebSocket server with minimal configuration for Replit compatibility
-  const wss = new WebSocketServer({ 
-    noServer: true
-  });
+  // Instead of using WebSockets, we'll generate new data periodically
+  // to be fetched via the REST API endpoints
   
-  // Handle upgrade manually
-  httpServer.on('upgrade', (request, socket, head) => {
-    console.log('Upgrade request for WebSocket');
-    
-    // Only handle WebSocket upgrades to /ws path
-    if (request.url === '/ws') {
-      wss.handleUpgrade(request, socket, head, (ws) => {
-        console.log('WebSocket upgrade successful');
-        wss.emit('connection', ws, request);
-      });
-    } else {
-      // Reject non-matching requests
-      socket.destroy();
-    }
-  });
-  
-  // Handle WebSocket connections
-  wss.on('connection', (ws) => {
-    console.log('Client connected to WebSocket');
-    
-    // Send current data immediately upon connection
-    sendInitialData(ws);
-    
-    // Handle errors
-    ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
-    });
-    
-    ws.on('close', () => {
-      console.log('Client disconnected from WebSocket');
-    });
-  });
-  
-  // Periodically broadcast power data updates to all connected clients
+  // Generate new data every 10 seconds
   setInterval(async () => {
-    if (wss.clients.size > 0) {
+    try {
       // Get settings to determine if we should use synthetic data
       const settings = await storage.getSettings();
       
-      // Generate or fetch data
+      // Generate or fetch data based on settings
       let powerData;
       let environmentalData;
       
@@ -72,6 +36,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const syntheticData = generateSyntheticData(settings.scenarioProfile);
         powerData = await storage.createPowerData(syntheticData.powerData);
         environmentalData = await storage.createEnvironmentalData(syntheticData.environmentalData);
+        console.log('Generated new synthetic data');
       } else {
         // In a real implementation, this would fetch from real sensors
         // For demo purposes, we'll generate slightly random data
@@ -100,25 +65,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             temperature: latestEnv.temperature * (0.99 + Math.random() * 0.02),
             sunIntensity: Math.min(100, Math.max(0, latestEnv.sunIntensity * (0.97 + Math.random() * 0.06)))
           });
+          console.log('Generated new live data');
         } else {
           // Fallback to synthetic data if no previous data exists
           const syntheticData = generateSyntheticData('sunny');
           powerData = await storage.createPowerData(syntheticData.powerData);
           environmentalData = await storage.createEnvironmentalData(syntheticData.environmentalData);
+          console.log('Generated initial synthetic data (fallback)');
         }
       }
-      
-      // Broadcast to all clients
-      wss.clients.forEach(client => {
-        if (client.readyState === 1) { // OPEN
-          client.send(JSON.stringify({
-            type: 'update',
-            powerData,
-            environmentalData,
-            timestamp: new Date()
-          }));
-        }
-      });
+    } catch (error) {
+      console.error('Error generating periodic data:', error);
     }
   }, 10000); // Update every 10 seconds
   
@@ -209,23 +166,4 @@ export async function registerRoutes(app: Express): Promise<Server> {
   return httpServer;
 }
 
-// Helper function to send initial data to newly connected WebSocket clients
-async function sendInitialData(ws: any) {
-  try {
-    const [latestPower, latestEnvironmental, settings] = await Promise.all([
-      storage.getLatestPowerData(),
-      storage.getLatestEnvironmentalData(),
-      storage.getSettings()
-    ]);
-    
-    ws.send(JSON.stringify({
-      type: 'initial',
-      powerData: latestPower,
-      environmentalData: latestEnvironmental,
-      settings,
-      timestamp: new Date()
-    }));
-  } catch (error) {
-    console.error('Error sending initial data:', error);
-  }
-}
+

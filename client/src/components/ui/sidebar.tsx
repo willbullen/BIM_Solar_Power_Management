@@ -4,7 +4,7 @@ import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { usePowerData } from "@/hooks/use-power-data";
 import { 
-  LightningBolt, 
+  Zap, 
   BarChart3, 
   Settings, 
   Sun, 

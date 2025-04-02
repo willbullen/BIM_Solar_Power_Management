@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, LightningBolt } from "lucide-react";
+import { AlertCircle, Zap } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -46,7 +46,7 @@ export default function AuthPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      navigate("/");
     }
   }, [user, navigate]);
   
@@ -86,7 +86,7 @@ export default function AuthPage() {
         {/* Hero Section */}
         <div className="hidden md:flex flex-col p-6">
           <div className="mb-6 flex items-center">
-            <LightningBolt className="h-10 w-10 text-accent mr-3" />
+            <Zap className="h-10 w-10 text-accent mr-3" />
             <h1 className="text-3xl font-bold text-white">Emporium Power</h1>
           </div>
           <h2 className="text-2xl font-medium text-white mb-4">

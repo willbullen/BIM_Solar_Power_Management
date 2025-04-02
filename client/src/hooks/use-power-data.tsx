@@ -53,29 +53,36 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/settings"],
   });
   
-  // Set up WebSocket connection
+  // Set up data fetching mechanism - use polling instead of WebSockets for better compatibility
   useEffect(() => {
-    // Use polling as an alternative to WebSockets for better Replit compatibility
     console.log('Starting power data polling...');
     
     // Initial data fetch
     const fetchLatestData = async () => {
       try {
         console.log('Fetching latest data...');
-        const [powerResponse, envResponse, settingsResponse] = await Promise.all([
-          fetch(`${window.location.origin}/api/power-data/latest`, { credentials: 'include' }),
-          fetch(`${window.location.origin}/api/environmental-data/latest`, { credentials: 'include' }),
-          fetch(`${window.location.origin}/api/settings`, { credentials: 'include' })
-        ]);
         
+        // Use the fetch API with error handling
+        const powerResponse = await fetch('/api/power-data/latest');
+        const envResponse = await fetch('/api/environmental-data/latest');
+        const settingsResponse = await fetch('/api/settings');
+        
+        // Check if any responses failed
         if (!powerResponse.ok || !envResponse.ok || !settingsResponse.ok) {
+          console.error('API response error:', {
+            power: powerResponse.status,
+            env: envResponse.status,
+            settings: settingsResponse.status
+          });
           throw new Error('Failed to fetch latest data');
         }
         
+        // Parse JSON responses
         const powerData = await powerResponse.json();
         const environmentalData = await envResponse.json();
         const settings = await settingsResponse.json();
         
+        // Update state with fetched data
         setPowerData(powerData);
         setEnvironmentalData(environmentalData);
         setSettings(settings);
@@ -97,16 +104,10 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     // Fetch data immediately
     fetchLatestData();
     
-    // Set up polling interval
-    const pollingInterval = setInterval(fetchLatestData, 10000); // Poll every 10 seconds
+    // Set up polling interval - get fresh data every 10 seconds
+    const pollingInterval = setInterval(fetchLatestData, 10000);
     
-    // For compatibility, let's keep a dummy WebSocket object
-    const dummyWs = {
-      readyState: 1,
-      close: () => {}
-    };
-    setSocket(dummyWs as any);
-    
+    // Clean up on unmount
     return () => {
       clearInterval(pollingInterval);
     };

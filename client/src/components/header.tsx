@@ -3,7 +3,7 @@ import { usePowerData } from "@/hooks/use-power-data";
 import { Button } from "@/components/ui/button";
 import { 
   Menu,
-  LightningBolt,
+  Zap,
   ChevronDown,
   User
 } from "lucide-react";
@@ -40,7 +40,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
         
         {/* App Logo */}
         <div className="flex items-center">
-          <LightningBolt className="h-6 w-6 text-accent mr-2" />
+          <Zap className="h-6 w-6 text-accent mr-2" />
           <span className="text-white font-semibold text-lg">Emporium Power Monitor</span>
         </div>
       </div>
