@@ -11,7 +11,8 @@ import {
   Thermometer, 
   CloudSun,
   FileDown,
-  TrendingUp
+  TrendingUp,
+  Wrench
 } from "lucide-react";
 
 type SidebarProps = {
@@ -82,6 +83,17 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               >
                 <TrendingUp className="sidebar-menu-item-icon" />
                 <span>Forecasting</span>
+              </Link>
+              
+              <Link 
+                href="/equipment" 
+                className={cn(
+                  "sidebar-menu-item",
+                  location === "/equipment" && "active"
+                )}
+              >
+                <Wrench className="sidebar-menu-item-icon" />
+                <span>Equipment</span>
               </Link>
               
               {user?.role === "Admin" && (
