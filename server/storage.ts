@@ -2,7 +2,10 @@ import {
   users, type User, type InsertUser, 
   settings, type Settings, type InsertSettings, 
   powerData, type PowerData, type InsertPowerData, 
-  environmentalData, type EnvironmentalData, type InsertEnvironmentalData 
+  environmentalData, type EnvironmentalData, type InsertEnvironmentalData,
+  equipment, type Equipment, type InsertEquipment,
+  equipmentEfficiency, type EquipmentEfficiency, type InsertEquipmentEfficiency,
+  maintenanceLog, type MaintenanceLog, type InsertMaintenanceLog
 } from "@shared/schema";
 import session from "express-session";
 import * as expressSession from "express-session";
@@ -35,6 +38,24 @@ export interface IStorage {
   getLatestEnvironmentalData(): Promise<EnvironmentalData | undefined>;
   getEnvironmentalDataByDateRange(startDate: Date, endDate: Date): Promise<EnvironmentalData[]>;
   createEnvironmentalData(data: InsertEnvironmentalData): Promise<EnvironmentalData>;
+  
+  // Equipment operations
+  getAllEquipment(): Promise<Equipment[]>;
+  getEquipmentById(id: number): Promise<Equipment | undefined>;
+  getEquipmentByType(type: string): Promise<Equipment[]>;
+  createEquipment(data: InsertEquipment): Promise<Equipment>;
+  updateEquipment(id: number, data: Partial<InsertEquipment>): Promise<Equipment>;
+  deleteEquipment(id: number): Promise<boolean>;
+  
+  // Equipment efficiency operations
+  getEquipmentEfficiencyData(equipmentId: number, limit?: number): Promise<EquipmentEfficiency[]>;
+  getEquipmentEfficiencyByDateRange(equipmentId: number, startDate: Date, endDate: Date): Promise<EquipmentEfficiency[]>;
+  createEquipmentEfficiencyRecord(data: InsertEquipmentEfficiency): Promise<EquipmentEfficiency>;
+  
+  // Maintenance operations
+  getMaintenanceHistory(equipmentId: number): Promise<MaintenanceLog[]>;
+  createMaintenanceRecord(data: InsertMaintenanceLog): Promise<MaintenanceLog>;
+  getUpcomingMaintenanceSchedule(): Promise<{ equipment: Equipment, nextMaintenance: Date }[]>;
   
   // Session store
   sessionStore: expressSession.Store;
@@ -174,6 +195,223 @@ export class DatabaseStorage implements IStorage {
     return entry;
   }
   
+  // Equipment methods
+  async getAllEquipment(): Promise<Equipment[]> {
+    return db
+      .select()
+      .from(equipment)
+      .orderBy(equipment.name);
+  }
+
+  async getEquipmentById(id: number): Promise<Equipment | undefined> {
+    const [equipmentItem] = await db
+      .select()
+      .from(equipment)
+      .where(eq(equipment.id, id));
+    return equipmentItem;
+  }
+
+  async getEquipmentByType(type: string): Promise<Equipment[]> {
+    return db
+      .select()
+      .from(equipment)
+      .where(eq(equipment.type, type))
+      .orderBy(equipment.name);
+  }
+
+  async createEquipment(data: InsertEquipment): Promise<Equipment> {
+    // If nextMaintenance is not provided, calculate it based on maintenanceInterval
+    let dataToInsert = { ...data };
+    
+    if (data.maintenanceInterval && data.lastMaintenance) {
+      const lastMaintenance = new Date(data.lastMaintenance);
+      const nextMaintenance = new Date(lastMaintenance);
+      nextMaintenance.setDate(nextMaintenance.getDate() + data.maintenanceInterval);
+      
+      // Add nextMaintenance to data
+      dataToInsert = {
+        ...dataToInsert,
+        nextMaintenance
+      };
+    }
+    
+    const [equipmentItem] = await db
+      .insert(equipment)
+      .values(dataToInsert)
+      .returning();
+    return equipmentItem;
+  }
+
+  async updateEquipment(id: number, data: Partial<InsertEquipment>): Promise<Equipment> {
+    // If lastMaintenance is updated and we have a maintenanceInterval, update nextMaintenance
+    let dataToUpdate = { ...data };
+    
+    if (data.lastMaintenance && data.maintenanceInterval) {
+      const lastMaintenance = new Date(data.lastMaintenance);
+      const nextMaintenance = new Date(lastMaintenance);
+      nextMaintenance.setDate(nextMaintenance.getDate() + data.maintenanceInterval);
+      
+      // Include nextMaintenance in the update
+      dataToUpdate = {
+        ...dataToUpdate,
+        nextMaintenance
+      };
+    } else if (data.lastMaintenance) {
+      // If only lastMaintenance is provided, get the current equipment to find its interval
+      const currentEquipment = await this.getEquipmentById(id);
+      if (currentEquipment && currentEquipment.maintenanceInterval) {
+        const lastMaintenance = new Date(data.lastMaintenance);
+        const nextMaintenance = new Date(lastMaintenance);
+        nextMaintenance.setDate(nextMaintenance.getDate() + currentEquipment.maintenanceInterval);
+        
+        // Include nextMaintenance in the update
+        dataToUpdate = {
+          ...dataToUpdate,
+          nextMaintenance
+        };
+      }
+    }
+    
+    const [updated] = await db
+      .update(equipment)
+      .set(dataToUpdate)
+      .where(eq(equipment.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteEquipment(id: number): Promise<boolean> {
+    try {
+      await db
+        .delete(equipment)
+        .where(eq(equipment.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting equipment:", error);
+      return false;
+    }
+  }
+
+  // Equipment efficiency methods
+  async getEquipmentEfficiencyData(equipmentId: number, limit: number = 100): Promise<EquipmentEfficiency[]> {
+    return db
+      .select()
+      .from(equipmentEfficiency)
+      .where(eq(equipmentEfficiency.equipmentId, equipmentId))
+      .orderBy(desc(equipmentEfficiency.timestamp))
+      .limit(limit);
+  }
+
+  async getEquipmentEfficiencyByDateRange(
+    equipmentId: number, 
+    startDate: Date, 
+    endDate: Date
+  ): Promise<EquipmentEfficiency[]> {
+    return db
+      .select()
+      .from(equipmentEfficiency)
+      .where(
+        sql`${equipmentEfficiency.equipmentId} = ${equipmentId} AND 
+            ${equipmentEfficiency.timestamp} >= ${startDate} AND 
+            ${equipmentEfficiency.timestamp} <= ${endDate}`
+      )
+      .orderBy(desc(equipmentEfficiency.timestamp));
+  }
+
+  async createEquipmentEfficiencyRecord(data: InsertEquipmentEfficiency): Promise<EquipmentEfficiency> {
+    // Get equipment details to calculate efficiency
+    const equipmentItem = await this.getEquipmentById(data.equipmentId);
+    if (!equipmentItem || !equipmentItem.nominalPower || !equipmentItem.nominalEfficiency) {
+      throw new Error("Cannot calculate efficiency: missing equipment baseline data");
+    }
+
+    // Calculate efficiency rating based on nominal values
+    // This is a simplified calculation - in real systems this would be more complex
+    const efficiencyRating = (equipmentItem.nominalPower / data.powerUsage) * equipmentItem.nominalEfficiency;
+    
+    // Detect anomalies - if efficiency is less than 80% of nominal
+    const anomalyDetected = efficiencyRating < (0.8 * equipmentItem.nominalEfficiency);
+    
+    // Calculate anomaly score if anomaly detected (0-100 scale)
+    const anomalyScore = anomalyDetected 
+      ? 100 - (efficiencyRating / equipmentItem.nominalEfficiency) * 100
+      : 0;
+
+    // Create record with calculated fields
+    const recordWithCalculations = {
+      ...data,
+      efficiencyRating,
+      anomalyDetected,
+      anomalyScore
+    };
+
+    const [record] = await db
+      .insert(equipmentEfficiency)
+      .values(recordWithCalculations)
+      .returning();
+      
+    // If efficiency is worse than current, update equipment status
+    if (anomalyDetected && (!equipmentItem.currentEfficiency || efficiencyRating < equipmentItem.currentEfficiency)) {
+      // Update equipment with new efficiency and possibly status
+      let status = equipmentItem.status;
+      if (anomalyScore > 30) {
+        status = 'warning';
+      } 
+      if (anomalyScore > 60) {
+        status = 'critical';
+      }
+      
+      await this.updateEquipment(equipmentItem.id, {
+        currentEfficiency: efficiencyRating,
+        status
+      });
+    }
+    
+    return record;
+  }
+
+  // Maintenance methods
+  async getMaintenanceHistory(equipmentId: number): Promise<MaintenanceLog[]> {
+    return db
+      .select()
+      .from(maintenanceLog)
+      .where(eq(maintenanceLog.equipmentId, equipmentId))
+      .orderBy(desc(maintenanceLog.timestamp));
+  }
+
+  async createMaintenanceRecord(data: InsertMaintenanceLog): Promise<MaintenanceLog> {
+    // Create the maintenance record
+    const [record] = await db
+      .insert(maintenanceLog)
+      .values(data)
+      .returning();
+      
+    // Update the equipment's lastMaintenance date
+    await this.updateEquipment(data.equipmentId, {
+      lastMaintenance: data.timestamp,
+      // If it was in warning/critical, set back to operational
+      status: 'operational'
+    });
+    
+    return record;
+  }
+
+  async getUpcomingMaintenanceSchedule(): Promise<{ equipment: Equipment, nextMaintenance: Date }[]> {
+    // Get all equipment that has a nextMaintenance date
+    const equipmentList = await db
+      .select()
+      .from(equipment)
+      .where(
+        sql`${equipment.nextMaintenance} IS NOT NULL`
+      )
+      .orderBy(equipment.nextMaintenance);
+      
+    return equipmentList.map(item => ({
+      equipment: item,
+      nextMaintenance: item.nextMaintenance!
+    }));
+  }
+  
   // Database initialization
   async initializeDatabase(): Promise<void> {
     console.log("Initializing database...");
@@ -186,6 +424,9 @@ export class DatabaseStorage implements IStorage {
     
     // Generate initial data if none exists
     await this.ensureInitialDataExists();
+    
+    // Generate equipment data if none exists
+    await this.ensureEquipmentDataExists();
     
     console.log("Database initialization complete");
   }
@@ -336,6 +577,142 @@ export class DatabaseStorage implements IStorage {
     
     // Insert all environmental data entries in a batch
     await db.insert(environmentalData).values(environmentalDataBatch);
+  }
+  
+  // Initialize equipment data
+  private async ensureEquipmentDataExists(): Promise<void> {
+    // Check if equipment data exists
+    const [existingEquipment] = await db.select().from(equipment).limit(1);
+    
+    if (!existingEquipment) {
+      await this.generateInitialEquipmentData();
+      console.log("Generated initial equipment data");
+    }
+  }
+  
+  private async generateInitialEquipmentData(): Promise<void> {
+    // Create initial equipment data based on the facility's systems
+    const equipmentItems: InsertEquipment[] = [
+      {
+        name: "Big Cold Room",
+        type: "Refrigeration",
+        model: "CR-9000",
+        manufacturer: "ColdTech Systems",
+        installedDate: new Date("2023-05-15"),
+        nominalPower: 9.5, // kW
+        nominalEfficiency: 0.95,
+        maintenanceInterval: 90, // days
+        lastMaintenance: new Date(new Date().setDate(new Date().getDate() - 45)),
+        status: "operational",
+        metadata: { temperature: 4, targetTemperature: 3, area: 120 }
+      },
+      {
+        name: "Big Freezer",
+        type: "Refrigeration",
+        model: "FZ-7000",
+        manufacturer: "ColdTech Systems",
+        installedDate: new Date("2023-05-15"),
+        nominalPower: 7.0, // kW
+        nominalEfficiency: 0.92,
+        maintenanceInterval: 90, // days
+        lastMaintenance: new Date(new Date().setDate(new Date().getDate() - 75)),
+        status: "operational",
+        metadata: { temperature: -18, targetTemperature: -20, area: 80 }
+      },
+      {
+        name: "Refrigeration Circuit",
+        type: "Refrigeration",
+        model: "RC-4000",
+        manufacturer: "ColdTech Systems",
+        installedDate: new Date("2023-05-15"),
+        nominalPower: 3.8, // kW
+        nominalEfficiency: 0.9,
+        maintenanceInterval: 60, // days
+        lastMaintenance: new Date(new Date().setDate(new Date().getDate() - 40)),
+        status: "operational",
+        metadata: { temperature: 2, targetTemperature: 2, area: 35 }
+      },
+      {
+        name: "Smoker",
+        type: "Processing",
+        model: "SM-100",
+        manufacturer: "FoodTech Equipment",
+        installedDate: new Date("2023-06-20"),
+        nominalPower: 0.1, // kW
+        nominalEfficiency: 0.85,
+        maintenanceInterval: 30, // days
+        lastMaintenance: new Date(new Date().setDate(new Date().getDate() - 20)),
+        status: "operational",
+        metadata: { temperature: 80, capacity: 50 }
+      },
+      {
+        name: "Solar PV System",
+        type: "Energy Generation",
+        model: "SolarMax 500",
+        manufacturer: "SunTech",
+        installedDate: new Date("2023-03-10"),
+        nominalPower: 2.5, // kW peak output
+        nominalEfficiency: 0.98,
+        maintenanceInterval: 180, // days
+        lastMaintenance: new Date(new Date().setDate(new Date().getDate() - 90)),
+        status: "operational",
+        metadata: { panels: 10, orientation: "South", tilt: 35 }
+      }
+    ];
+    
+    // Insert all equipment
+    for (const item of equipmentItems) {
+      // Calculate next maintenance date
+      const lastMaintenance = new Date(item.lastMaintenance!);
+      const nextMaintenance = new Date(lastMaintenance);
+      nextMaintenance.setDate(nextMaintenance.getDate() + item.maintenanceInterval!);
+      
+      // Insert with calculated nextMaintenance
+      await db.insert(equipment).values({
+        ...item,
+        nextMaintenance
+      });
+    }
+    
+    // Generate some historical efficiency data
+    const now = new Date();
+    for (const item of equipmentItems) {
+      // First get the inserted equipment to get its ID
+      const [insertedEquipment] = await db
+        .select()
+        .from(equipment)
+        .where(eq(equipment.name, item.name));
+        
+      if (insertedEquipment) {
+        // Generate efficiency records for the past 30 days
+        for (let i = 30; i >= 0; i--) {
+          const timestamp = new Date(now.getTime() - i * 86400000); // one day in ms
+          
+          // Gradually decrease efficiency to simulate wear and tear
+          // More significant decrease as we get closer to maintenance date
+          const daysSinceLastMaintenance = Math.floor((timestamp.getTime() - insertedEquipment.lastMaintenance!.getTime()) / 86400000);
+          const efficiencyDecay = 0.001 * daysSinceLastMaintenance;
+          
+          // Power usage increases as efficiency decreases
+          const powerUsageIncrease = 1 + (efficiencyDecay * 2);
+          const powerUsage = insertedEquipment.nominalPower! * powerUsageIncrease;
+          
+          // Add some random daily fluctuation
+          const dailyFluctuation = (Math.random() * 0.1) - 0.05; // ±5%
+          
+          // Create the efficiency record
+          const efficiencyRecord: InsertEquipmentEfficiency = {
+            equipmentId: insertedEquipment.id,
+            timestamp,
+            powerUsage: powerUsage * (1 + dailyFluctuation),
+            temperatureConditions: 22 + (Math.random() * 5) - 2.5, // 19.5 to 24.5 °C
+            productionVolume: Math.floor(80 + (Math.random() * 40)) // 80 to 120 units
+          };
+          
+          await this.createEquipmentEfficiencyRecord(efficiencyRecord);
+        }
+      }
+    }
   }
 }
 

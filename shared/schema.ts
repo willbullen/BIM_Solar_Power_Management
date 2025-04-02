@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, real, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, real, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -81,3 +81,76 @@ export const insertEnvironmentalDataSchema = createInsertSchema(environmentalDat
 
 export type InsertEnvironmentalData = z.infer<typeof insertEnvironmentalDataSchema>;
 export type EnvironmentalData = typeof environmentalData.$inferSelect;
+
+// Equipment schema
+export const equipment = pgTable("equipment", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  type: text("type").notNull(), // Refrigeration, Processing, HVAC, etc.
+  model: text("model"),
+  manufacturer: text("manufacturer"),
+  installedDate: timestamp("installed_date"),
+  nominalPower: real("nominal_power"), // in kW
+  nominalEfficiency: real("nominal_efficiency"), // baseline efficiency metric
+  currentEfficiency: real("current_efficiency"), // current calculated efficiency
+  maintenanceInterval: integer("maintenance_interval"), // in days
+  lastMaintenance: timestamp("last_maintenance"),
+  nextMaintenance: timestamp("next_maintenance"),
+  status: text("status").notNull().default("operational"), // operational, maintenance, warning, critical
+  metadata: jsonb("metadata"), // Additional equipment-specific data
+});
+
+export const insertEquipmentSchema = createInsertSchema(equipment).omit({
+  id: true,
+  currentEfficiency: true, // Will be calculated 
+  nextMaintenance: true,   // Will be calculated
+});
+
+export type InsertEquipment = z.infer<typeof insertEquipmentSchema>;
+export type Equipment = typeof equipment.$inferSelect;
+
+// Equipment efficiency data schema
+export const equipmentEfficiency = pgTable("equipment_efficiency", {
+  id: serial("id").primaryKey(),
+  equipmentId: integer("equipment_id").notNull(), // Foreign key to equipment
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  powerUsage: real("power_usage").notNull(), // in kW
+  efficiencyRating: real("efficiency_rating").notNull(), // calculated efficiency metric
+  temperatureConditions: real("temperature_conditions"), // in °C
+  productionVolume: real("production_volume"), // units produced during measurement
+  anomalyDetected: boolean("anomaly_detected").notNull().default(false),
+  anomalyScore: real("anomaly_score"), // if anomaly detected, how severe (0-100)
+  notes: text("notes"),
+});
+
+export const insertEquipmentEfficiencySchema = createInsertSchema(equipmentEfficiency).omit({
+  id: true,
+  efficiencyRating: true, // Will be calculated
+  anomalyDetected: true,  // Will be calculated
+  anomalyScore: true,     // Will be calculated
+});
+
+export type InsertEquipmentEfficiency = z.infer<typeof insertEquipmentEfficiencySchema>;
+export type EquipmentEfficiency = typeof equipmentEfficiency.$inferSelect;
+
+// Equipment maintenance schema
+export const maintenanceLog = pgTable("maintenance_log", {
+  id: serial("id").primaryKey(),
+  equipmentId: integer("equipment_id").notNull(), // Foreign key to equipment
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  maintenanceType: text("maintenance_type").notNull(), // routine, repair, upgrade
+  description: text("description").notNull(),
+  technician: text("technician"),
+  cost: real("cost"), // maintenance cost
+  partsReplaced: text("parts_replaced"),
+  efficiencyBefore: real("efficiency_before"),
+  efficiencyAfter: real("efficiency_after"),
+  nextScheduledDate: timestamp("next_scheduled_date"),
+});
+
+export const insertMaintenanceLogSchema = createInsertSchema(maintenanceLog).omit({
+  id: true,
+});
+
+export type InsertMaintenanceLog = z.infer<typeof insertMaintenanceLogSchema>;
+export type MaintenanceLog = typeof maintenanceLog.$inferSelect;

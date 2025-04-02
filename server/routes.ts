@@ -2,7 +2,14 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { insertPowerDataSchema, insertEnvironmentalDataSchema, insertSettingsSchema } from "@shared/schema";
+import { 
+  insertPowerDataSchema, 
+  insertEnvironmentalDataSchema, 
+  insertSettingsSchema,
+  insertEquipmentSchema, 
+  insertEquipmentEfficiencySchema,
+  insertMaintenanceLogSchema 
+} from "@shared/schema";
 import { ZodError } from "zod";
 import { generateSyntheticData } from "./data";
 import { format } from 'date-fns';
@@ -320,6 +327,238 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid settings data', errors: error.errors });
       }
       res.status(500).json({ message: 'Failed to update settings' });
+    }
+  });
+
+  // Equipment API routes
+  
+  // GET /api/equipment - Get all equipment
+  app.get('/api/equipment', async (req, res) => {
+    try {
+      const data = await storage.getAllEquipment();
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching equipment:', error);
+      res.status(500).json({ message: 'Failed to fetch equipment' });
+    }
+  });
+  
+  // GET /api/equipment/:id - Get equipment by ID
+  app.get('/api/equipment/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const equipment = await storage.getEquipmentById(id);
+      
+      if (!equipment) {
+        return res.status(404).json({ message: 'Equipment not found' });
+      }
+      
+      res.json(equipment);
+    } catch (error) {
+      console.error('Error fetching equipment by ID:', error);
+      res.status(500).json({ message: 'Failed to fetch equipment' });
+    }
+  });
+  
+  // GET /api/equipment/type/:type - Get equipment by type
+  app.get('/api/equipment/type/:type', async (req, res) => {
+    try {
+      const type = req.params.type;
+      const equipment = await storage.getEquipmentByType(type);
+      
+      res.json(equipment);
+    } catch (error) {
+      console.error('Error fetching equipment by type:', error);
+      res.status(500).json({ message: 'Failed to fetch equipment by type' });
+    }
+  });
+  
+  // POST /api/equipment - Create new equipment
+  app.post('/api/equipment', async (req, res) => {
+    try {
+      // Ensure user is authenticated and is an admin
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+      
+      if (req.user?.role !== 'Admin') {
+        return res.status(403).json({ message: 'Admin privileges required' });
+      }
+      
+      // Validate input
+      const validatedData = insertEquipmentSchema.parse(req.body);
+      
+      // Create equipment
+      const equipment = await storage.createEquipment(validatedData);
+      res.status(201).json(equipment);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: 'Invalid equipment data', errors: error.errors });
+      }
+      console.error('Error creating equipment:', error);
+      res.status(500).json({ message: 'Failed to create equipment' });
+    }
+  });
+  
+  // PUT /api/equipment/:id - Update equipment
+  app.put('/api/equipment/:id', async (req, res) => {
+    try {
+      // Ensure user is authenticated and is an admin
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+      
+      if (req.user?.role !== 'Admin') {
+        return res.status(403).json({ message: 'Admin privileges required' });
+      }
+      
+      const id = parseInt(req.params.id);
+      
+      // Validate input
+      const validatedData = insertEquipmentSchema.partial().parse(req.body);
+      
+      // Update equipment
+      const equipment = await storage.updateEquipment(id, validatedData);
+      
+      if (!equipment) {
+        return res.status(404).json({ message: 'Equipment not found' });
+      }
+      
+      res.json(equipment);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: 'Invalid equipment data', errors: error.errors });
+      }
+      console.error('Error updating equipment:', error);
+      res.status(500).json({ message: 'Failed to update equipment' });
+    }
+  });
+  
+  // DELETE /api/equipment/:id - Delete equipment
+  app.delete('/api/equipment/:id', async (req, res) => {
+    try {
+      // Ensure user is authenticated and is an admin
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+      
+      if (req.user?.role !== 'Admin') {
+        return res.status(403).json({ message: 'Admin privileges required' });
+      }
+      
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteEquipment(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: 'Equipment not found or could not be deleted' });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error('Error deleting equipment:', error);
+      res.status(500).json({ message: 'Failed to delete equipment' });
+    }
+  });
+  
+  // GET /api/equipment/:id/efficiency - Get efficiency data for equipment
+  app.get('/api/equipment/:id/efficiency', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
+      
+      const data = await storage.getEquipmentEfficiencyData(id, limit);
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching equipment efficiency data:', error);
+      res.status(500).json({ message: 'Failed to fetch equipment efficiency data' });
+    }
+  });
+  
+  // POST /api/equipment/:id/efficiency - Create efficiency record for equipment
+  app.post('/api/equipment/:id/efficiency', async (req, res) => {
+    try {
+      // Ensure user is authenticated and is an admin
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+      
+      if (req.user?.role !== 'Admin') {
+        return res.status(403).json({ message: 'Admin privileges required' });
+      }
+      
+      const equipmentId = parseInt(req.params.id);
+      
+      // Validate input
+      const validatedData = insertEquipmentEfficiencySchema.parse({
+        ...req.body,
+        equipmentId
+      });
+      
+      // Create efficiency record
+      const record = await storage.createEquipmentEfficiencyRecord(validatedData);
+      res.status(201).json(record);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: 'Invalid efficiency data', errors: error.errors });
+      }
+      console.error('Error creating efficiency record:', error);
+      res.status(500).json({ message: 'Failed to create efficiency record' });
+    }
+  });
+  
+  // GET /api/equipment/:id/maintenance - Get maintenance history for equipment
+  app.get('/api/equipment/:id/maintenance', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = await storage.getMaintenanceHistory(id);
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching maintenance history:', error);
+      res.status(500).json({ message: 'Failed to fetch maintenance history' });
+    }
+  });
+  
+  // POST /api/equipment/:id/maintenance - Create maintenance record for equipment
+  app.post('/api/equipment/:id/maintenance', async (req, res) => {
+    try {
+      // Ensure user is authenticated and is an admin
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+      
+      if (req.user?.role !== 'Admin') {
+        return res.status(403).json({ message: 'Admin privileges required' });
+      }
+      
+      const equipmentId = parseInt(req.params.id);
+      
+      // Validate input
+      const validatedData = insertMaintenanceLogSchema.parse({
+        ...req.body,
+        equipmentId,
+        timestamp: req.body.timestamp || new Date()
+      });
+      
+      // Create maintenance record
+      const record = await storage.createMaintenanceRecord(validatedData);
+      res.status(201).json(record);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: 'Invalid maintenance data', errors: error.errors });
+      }
+      console.error('Error creating maintenance record:', error);
+      res.status(500).json({ message: 'Failed to create maintenance record' });
+    }
+  });
+  
+  // GET /api/maintenance/upcoming - Get upcoming maintenance schedule
+  app.get('/api/maintenance/upcoming', async (req, res) => {
+    try {
+      const data = await storage.getUpcomingMaintenanceSchedule();
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching upcoming maintenance:', error);
+      res.status(500).json({ message: 'Failed to fetch upcoming maintenance schedule' });
     }
   });
 
