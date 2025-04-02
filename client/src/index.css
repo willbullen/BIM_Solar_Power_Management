@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 8%;
+    --foreground: 210 20% 98%;
+    
+    --card: 215 19% 24%;
+    --card-foreground: 210 20% 98%;
+    
+    --popover: 215 19% 24%;
+    --popover-foreground: 210 20% 98%;
+    
+    --primary: 211 100% 65%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 199 10% 45%;
+    --secondary-foreground: 210 20% 98%;
+    
+    --muted: 210 20% 25%;
+    --muted-foreground: 210 20% 80%;
+    
+    --accent: 175 55% 50%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 210 20% 30%;
+    --input: 210 20% 20%;
+    --ring: 210 100% 65%;
+    
+    --radius: 0.5rem;
+    
+    --chart-1: 211 100% 65%;
+    --chart-2: 175 55% 50%;
+    --chart-3: 32 100% 50%;
+    --chart-4: 0 85% 60%;
+    --chart-5: 270 60% 68%;
+    
+    --sidebar-background: 215 19% 15%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 211 100% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 175 55% 50%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 210 20% 22%;
+    --sidebar-ring: 211 100% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Chakra Petch', sans-serif;
+  }
+}
+
+/* Custom styles */
+.app-content {
+  @apply bg-background min-h-screen;
+}
+
+.app-sidebar {
+  @apply bg-sidebar w-64 fixed top-0 bottom-0 left-0 overflow-auto transition-transform duration-300 ease-in-out transform lg:translate-x-0 -translate-x-full lg:relative z-30 border-r border-sidebar-border pt-16;
+}
+
+.app-header {
+  @apply fixed top-0 left-0 right-0 bg-sidebar border-b border-sidebar-border px-4 py-3 flex items-center justify-between z-40;
+}
+
+.sidebar-menu-item {
+  @apply flex items-center text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/10 px-3 py-2 rounded transition-colors;
+}
+
+.sidebar-menu-item.active {
+  @apply bg-sidebar-accent/15 text-sidebar-foreground;
+}
+
+.sidebar-menu-item-icon {
+  @apply mr-3 text-lg;
+}
+
+.main-container {
+  @apply pt-16 lg:pl-64 transition-all duration-300;
+}
+
+.main-container.sidebar-collapsed {
+  @apply lg:pl-0;
+}
+
+.metric-card {
+  @apply bg-card rounded-lg p-4 shadow overflow-hidden;
+}
+
+.metric-value {
+  @apply text-2xl font-semibold;
+}
+
+.status-badge {
+  @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+}
+
+.status-badge.live {
+  @apply bg-accent text-accent-foreground;
+}
+
+.status-badge.synthetic {
+  @apply bg-secondary text-secondary-foreground;
+}
+
+.status-badge.import {
+  @apply bg-destructive text-destructive-foreground;
+}
+
+.status-badge.export {
+  @apply bg-accent text-accent-foreground;
+}
+
+.chart-container {
+  @apply bg-card rounded-lg shadow overflow-hidden;
+}
+
+.data-table {
+  @apply min-w-full divide-y divide-border;
+}
+
+.data-table thead th {
+  @apply px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider;
+}
+
+.data-table tbody tr {
+  @apply divide-y divide-border;
+}
+
+.data-table tbody td {
+  @apply px-4 py-3 text-sm;
+}
+
+.insights-card {
+  @apply bg-card/50 p-3 rounded border-l-4;
+}
+
+.insights-card.solar {
+  @apply border-accent;
+}
+
+.insights-card.refrigeration {
+  @apply bg-card/50 border-[#ff9f0c];
+}
+
+.insights-card.grid {
+  @apply bg-card/50 border-destructive;
+}
+
+.insights-card.general {
+  @apply bg-card/50 border-primary;
+}
