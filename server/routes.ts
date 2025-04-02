@@ -45,26 +45,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const latestEnv = await storage.getLatestEnvironmentalData();
         
         if (latestPower && latestEnv) {
-          // Create slightly varied new data based on latest readings
+          // Function to get random variation within range
+          const getVariation = (value: number, minPercent: number, maxPercent: number): number => {
+            return value * (minPercent + Math.random() * (maxPercent - minPercent));
+          };
+          
+          // Get current hour to determine appropriate scenario
+          const currentHour = new Date().getHours();
+          let scenario = 'cloudy'; // Default
+          
+          // Determine scenario based on time of day
+          if (currentHour >= 9 && currentHour < 16) {
+            scenario = Math.random() > 0.3 ? 'sunny' : 'cloudy'; // More likely sunny during day
+          } else if (currentHour >= 16 && currentHour < 20) {
+            scenario = Math.random() > 0.6 ? 'peak' : 'cloudy'; // Afternoon peak
+          } else {
+            scenario = 'night'; // Night time
+          }
+          
+          // Generate base values using our scenario-based generator
+          const baseData = generateSyntheticData(scenario);
+          
+          // Create new data that slightly varies from baseline but stays in realistic range
           powerData = await storage.createPowerData({
             timestamp: new Date(),
-            mainGridPower: latestPower.mainGridPower * (0.95 + Math.random() * 0.1),
-            solarOutput: latestEnv.sunIntensity > 50 
-              ? latestPower.solarOutput * (0.95 + Math.random() * 0.1)
-              : latestPower.solarOutput * (0.85 + Math.random() * 0.1),
-            refrigerationLoad: latestPower.refrigerationLoad * (0.97 + Math.random() * 0.06),
-            bigColdRoom: latestPower.bigColdRoom * (0.97 + Math.random() * 0.06),
-            bigFreezer: latestPower.bigFreezer * (0.97 + Math.random() * 0.06),
-            smoker: latestPower.smoker * (0.9 + Math.random() * 0.2),
-            totalLoad: latestPower.totalLoad * (0.97 + Math.random() * 0.06),
-            unaccountedLoad: latestPower.unaccountedLoad * (0.9 + Math.random() * 0.2)
+            mainGridPower: getVariation(baseData.powerData.mainGridPower, 0.95, 1.05),
+            solarOutput: latestEnv.sunIntensity > 20 
+              ? getVariation(baseData.powerData.solarOutput, 0.95, 1.05)
+              : getVariation(baseData.powerData.solarOutput, 0.90, 1.0),
+            refrigerationLoad: getVariation(baseData.powerData.refrigerationLoad, 0.97, 1.03),
+            bigColdRoom: getVariation(baseData.powerData.bigColdRoom, 0.97, 1.03),
+            bigFreezer: getVariation(baseData.powerData.bigFreezer, 0.97, 1.03),
+            smoker: getVariation(baseData.powerData.smoker, 0.95, 1.05),
+            totalLoad: getVariation(baseData.powerData.totalLoad, 0.97, 1.03),
+            unaccountedLoad: getVariation(baseData.powerData.unaccountedLoad, 0.95, 1.05)
           });
           
           environmentalData = await storage.createEnvironmentalData({
             timestamp: new Date(),
-            weather: latestEnv.weather,
-            temperature: latestEnv.temperature * (0.99 + Math.random() * 0.02),
-            sunIntensity: Math.min(100, Math.max(0, latestEnv.sunIntensity * (0.97 + Math.random() * 0.06)))
+            weather: baseData.environmentalData.weather,
+            temperature: getVariation(baseData.environmentalData.temperature, 0.99, 1.01),
+            sunIntensity: Math.min(100, Math.max(0, getVariation(baseData.environmentalData.sunIntensity, 0.97, 1.03)))
           });
           console.log('Generated new live data');
         } else {

@@ -1,6 +1,6 @@
 import { InsertPowerData, InsertEnvironmentalData } from "@shared/schema";
 
-// Generate synthetic data based on scenario profiles
+// Generate synthetic data based on scenario profiles and actual data ranges
 export function generateSyntheticData(
   scenario: string
 ): { powerData: InsertPowerData, environmentalData: InsertEnvironmentalData } {
@@ -8,98 +8,109 @@ export function generateSyntheticData(
   let powerData: InsertPowerData;
   let environmentalData: InsertEnvironmentalData;
   
+  // Helper function to get random value within a range
+  const getRandomInRange = (min: number, max: number): number => {
+    return min + (Math.random() * (max - min));
+  };
+  
   switch (scenario) {
     case 'sunny':
-      // Sunny day with high solar output
+      // Sunny day with high solar output - based on actual data ranges
       powerData = {
         timestamp: now,
-        mainGridPower: 1.8 + (Math.random() * 0.4),  // Low grid import due to high solar
-        solarOutput: 4.2 + (Math.random() * 0.6),    // High solar generation
-        refrigerationLoad: 3.8 + (Math.random() * 0.4), 
-        bigColdRoom: 9.6 + (Math.random() * 0.4),
-        bigFreezer: 7.0 + (Math.random() * 0.4),
-        smoker: 0.1 + (Math.random() * 0.05),
-        totalLoad: 5.5 + (Math.random() * 0.5),
-        unaccountedLoad: 0.5 + (Math.random() * 0.1)
+        mainGridPower: getRandomInRange(8, 10),  // Low grid import due to high solar
+        solarOutput: getRandomInRange(3.5, 4.5),  // High solar generation
+        refrigerationLoad: getRandomInRange(13, 15),
+        bigColdRoom: getRandomInRange(6, 8),
+        bigFreezer: getRandomInRange(6.5, 7.5),
+        smoker: getRandomInRange(0.1, 0.12),
+        totalLoad: getRandomInRange(18, 20),  // Calculated as sum of primary loads
+        unaccountedLoad: getRandomInRange(1.5, 2.5)
       };
       
       environmentalData = {
         timestamp: now,
         weather: 'Sunny',
-        temperature: 24 + (Math.random() * 3),
-        sunIntensity: 85 + (Math.random() * 15)
+        temperature: getRandomInRange(22, 26),
+        sunIntensity: getRandomInRange(80, 95)
       };
       break;
       
     case 'cloudy':
-      // Cloudy day with low solar output
+      // Cloudy day with low solar output - based on actual data ranges
       powerData = {
         timestamp: now,
-        mainGridPower: 4.5 + (Math.random() * 0.6),  // High grid import due to low solar
-        solarOutput: 1.2 + (Math.random() * 0.4),    // Low solar generation
-        refrigerationLoad: 3.7 + (Math.random() * 0.4),
-        bigColdRoom: 9.5 + (Math.random() * 0.4),
-        bigFreezer: 7.1 + (Math.random() * 0.4),
-        smoker: 0.1 + (Math.random() * 0.05),
-        totalLoad: 5.6 + (Math.random() * 0.5),
-        unaccountedLoad: 0.6 + (Math.random() * 0.1)
+        mainGridPower: getRandomInRange(12, 14),  // High grid import due to low solar
+        solarOutput: getRandomInRange(1.0, 2.0),  // Low solar generation
+        refrigerationLoad: getRandomInRange(13, 15),
+        bigColdRoom: getRandomInRange(5, 7),
+        bigFreezer: getRandomInRange(6, 7),
+        smoker: getRandomInRange(0.1, 0.12),
+        totalLoad: getRandomInRange(17, 19),
+        unaccountedLoad: getRandomInRange(1.8, 2.8)
       };
       
       environmentalData = {
         timestamp: now,
         weather: 'Cloudy',
-        temperature: 18 + (Math.random() * 2),
-        sunIntensity: 25 + (Math.random() * 15)
+        temperature: getRandomInRange(16, 20),
+        sunIntensity: getRandomInRange(20, 40)
       };
       break;
       
     case 'peak':
-      // Peak load scenario with all systems running
+      // Peak load scenario with all systems running - based on actual data ranges
       powerData = {
         timestamp: now,
-        mainGridPower: 6.2 + (Math.random() * 0.8),  // Very high grid import
-        solarOutput: 2.8 + (Math.random() * 0.4),    // Medium solar generation
-        refrigerationLoad: 5.1 + (Math.random() * 0.5),
-        bigColdRoom: 12.5 + (Math.random() * 0.5),
-        bigFreezer: 9.2 + (Math.random() * 0.4),
-        smoker: 1.5 + (Math.random() * 0.3),
-        totalLoad: 8.9 + (Math.random() * 0.7),
-        unaccountedLoad: 0.9 + (Math.random() * 0.2)
+        mainGridPower: getRandomInRange(15, 17),  // Very high grid import
+        solarOutput: getRandomInRange(2.5, 3.5),  // Medium solar generation
+        refrigerationLoad: getRandomInRange(24, 28),
+        bigColdRoom: getRandomInRange(8, 9.5),
+        bigFreezer: getRandomInRange(8, 9),
+        smoker: getRandomInRange(0.11, 0.14),
+        totalLoad: getRandomInRange(24, 28),
+        unaccountedLoad: getRandomInRange(2.5, 3.5)
       };
       
       environmentalData = {
         timestamp: now,
         weather: 'Partly Cloudy',
-        temperature: 22 + (Math.random() * 3),
-        sunIntensity: 60 + (Math.random() * 20)
+        temperature: getRandomInRange(20, 24),
+        sunIntensity: getRandomInRange(55, 75)
       };
       break;
       
     case 'night':
-      // Night operation with no solar
+      // Night operation with no solar - based on actual data ranges
       powerData = {
         timestamp: now,
-        mainGridPower: 3.9 + (Math.random() * 0.4),  // Medium grid import
-        solarOutput: 0,                              // No solar at night
-        refrigerationLoad: 3.5 + (Math.random() * 0.3),
-        bigColdRoom: 9.4 + (Math.random() * 0.3),
-        bigFreezer: 7.0 + (Math.random() * 0.3),
-        smoker: 0.01 + (Math.random() * 0.01),       // Almost no smoker activity at night
-        totalLoad: 3.9 + (Math.random() * 0.3),      // Lower total load at night
-        unaccountedLoad: 0.3 + (Math.random() * 0.1)
+        mainGridPower: getRandomInRange(10, 12),  // Medium grid import
+        solarOutput: 0,  // No solar at night
+        refrigerationLoad: getRandomInRange(12, 14),
+        bigColdRoom: getRandomInRange(4, 6),
+        bigFreezer: getRandomInRange(5.5, 6.5),
+        smoker: getRandomInRange(0.10, 0.11),  // Lower smoker activity at night
+        totalLoad: getRandomInRange(14, 16),  // Lower total load at night
+        unaccountedLoad: getRandomInRange(1.0, 2.0)
       };
       
       environmentalData = {
         timestamp: now,
         weather: 'Clear',
-        temperature: 15 + (Math.random() * 2),
-        sunIntensity: 0                             // No sun at night
+        temperature: getRandomInRange(13, 17),
+        sunIntensity: 0  // No sun at night
       };
       break;
       
     default:
       // Default to sunny scenario if unknown
       return generateSyntheticData('sunny');
+  }
+  
+  // Ensure totalLoad is at least the sum of the main components
+  const minTotal = powerData.mainGridPower + powerData.solarOutput;
+  if (powerData.totalLoad < minTotal) {
+    powerData.totalLoad = minTotal + getRandomInRange(0.5, 1.5);
   }
   
   return { powerData, environmentalData };
