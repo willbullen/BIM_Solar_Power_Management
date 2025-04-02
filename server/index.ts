@@ -5,12 +5,12 @@ import cors from 'cors';
 
 const app = express();
 
-// Enable CORS for all routes
+// Enable CORS for all routes with specific settings for Replit
 app.use(cors({
-  origin: true,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: true, // Allow any origin
+  credentials: true, // Allow cookies to be sent
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 app.use(express.json());
@@ -76,6 +76,14 @@ app.use((req, res, next) => {
   console.log(`REPL_ID: ${process.env.REPL_ID || 'not set'}`);
   console.log(`REPL_OWNER: ${process.env.REPL_OWNER || 'not set'}`);
   console.log(`REPLIT_DB_URL: ${process.env.REPLIT_DB_URL ? 'set' : 'not set'}`);
+  
+  // Log open connections to debug connectivity issues
+  server.on('connection', (socket) => {
+    console.log('New connection established');
+    socket.on('error', (error) => {
+      console.log('Socket error:', error);
+    });
+  });
   
   server.listen({
     port: Number(port),

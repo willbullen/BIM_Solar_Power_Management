@@ -55,52 +55,60 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
   
   // Set up WebSocket connection
   useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}`;
+    // Use polling as an alternative to WebSockets for better Replit compatibility
+    console.log('Starting power data polling...');
     
-    const ws = new WebSocket(wsUrl);
-    
-    ws.onopen = () => {
-      console.log('WebSocket connection established');
-    };
-    
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      
-      if (data.type === 'initial' || data.type === 'update') {
-        setPowerData(data.powerData);
-        setEnvironmentalData(data.environmentalData);
+    // Initial data fetch
+    const fetchLatestData = async () => {
+      try {
+        console.log('Fetching latest data...');
+        const [powerResponse, envResponse, settingsResponse] = await Promise.all([
+          fetch(`${window.location.origin}/api/power-data/latest`, { credentials: 'include' }),
+          fetch(`${window.location.origin}/api/environmental-data/latest`, { credentials: 'include' }),
+          fetch(`${window.location.origin}/api/settings`, { credentials: 'include' })
+        ]);
         
-        if (data.settings) {
-          setSettings(data.settings);
-          setDataStatus(data.settings.dataSource === 'synthetic' ? 'synthetic' : 'live');
-        } else if (settingsData) {
-          setDataStatus(settingsData.dataSource === 'synthetic' ? 'synthetic' : 'live');
+        if (!powerResponse.ok || !envResponse.ok || !settingsResponse.ok) {
+          throw new Error('Failed to fetch latest data');
         }
         
-        setLastUpdated(new Date(data.timestamp));
+        const powerData = await powerResponse.json();
+        const environmentalData = await envResponse.json();
+        const settings = await settingsResponse.json();
+        
+        setPowerData(powerData);
+        setEnvironmentalData(environmentalData);
+        setSettings(settings);
+        setDataStatus(settings.dataSource === 'synthetic' ? 'synthetic' : 'live');
+        setLastUpdated(new Date());
+        
+        console.log('Latest data fetched successfully');
+      } catch (error) {
+        console.error('Error fetching latest data:', error);
+        toast({
+          title: "Data Fetch Error",
+          description: "Failed to fetch latest power monitoring data.",
+          variant: "destructive",
+        });
+        setDataStatus('offline');
       }
     };
     
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      toast({
-        title: "Connection Error",
-        description: "Failed to connect to the server for real-time updates.",
-        variant: "destructive",
-      });
-      setDataStatus('offline');
-    };
+    // Fetch data immediately
+    fetchLatestData();
     
-    ws.onclose = () => {
-      console.log('WebSocket connection closed');
-      setDataStatus('offline');
-    };
+    // Set up polling interval
+    const pollingInterval = setInterval(fetchLatestData, 10000); // Poll every 10 seconds
     
-    setSocket(ws);
+    // For compatibility, let's keep a dummy WebSocket object
+    const dummyWs = {
+      readyState: 1,
+      close: () => {}
+    };
+    setSocket(dummyWs as any);
     
     return () => {
-      ws.close();
+      clearInterval(pollingInterval);
     };
   }, [toast]);
   

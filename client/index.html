@@ -1,14 +1,84 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>Emporium Power Monitoring Dashboard</title>
+    <title>Emporium Power Monitoring Dashboard - Static Test</title>
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+      body {
+        font-family: 'Chakra Petch', sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      h1 {
+        color: #0078D7;
+      }
+      .status-check {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #e8f4fd;
+        border-radius: 4px;
+      }
+      button {
+        background-color: #0078D7;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+      #apiStatus {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #f0f0f0;
+        border-radius: 4px;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div class="container">
+      <h1>Emporium Power Monitoring Dashboard</h1>
+      <p>This is a static test page to verify the server is working correctly.</p>
+      
+      <div class="status-check">
+        <h2>Server Status Check</h2>
+        <button onclick="checkAPI()">Check API Status</button>
+        <div id="apiStatus">Click the button above to check API status...</div>
+      </div>
+    </div>
+
+    <script>
+      function checkAPI() {
+        const statusDiv = document.getElementById('apiStatus');
+        statusDiv.innerHTML = 'Checking API status...';
+        
+        fetch('/api/settings')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            statusDiv.innerHTML = `<p style="color:green">✓ API is working! Settings data received:</p>
+                                  <pre>${JSON.stringify(data, null, 2)}</pre>`;
+          })
+          .catch(error => {
+            statusDiv.innerHTML = `<p style="color:red">✗ API error: ${error.message}</p>`;
+          });
+      }
+    </script>
   </body>
 </html>

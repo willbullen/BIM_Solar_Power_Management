@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { compare, hash } from "bcrypt";
 import { storage } from "./storage";
@@ -21,6 +21,8 @@ export function setupAuth(app: Express) {
     store: storage.sessionStore,
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: 'lax',
+      secure: false // Set to false for Replit development
     }
   };
 
@@ -98,11 +100,11 @@ export function setupAuth(app: Express) {
 
   // User login endpoint
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: Error | null, user: SelectUser | false, info: { message?: string } | undefined) => {
       if (err) return next(err);
       if (!user) return res.status(401).json({ message: info?.message || "Authentication failed" });
       
-      req.login(user, (err) => {
+      req.login(user, (err: Error | null) => {
         if (err) return next(err);
         
         // Return user without password

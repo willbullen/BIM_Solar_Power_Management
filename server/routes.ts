@@ -14,8 +14,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
   const httpServer = createServer(app);
   
-  // Initialize WebSocket server for real-time updates
-  const wss = new WebSocketServer({ server: httpServer });
+  // Initialize WebSocket server with minimal configuration for Replit compatibility
+  const wss = new WebSocketServer({ 
+    noServer: true
+  });
+  
+  // Handle upgrade manually
+  httpServer.on('upgrade', (request, socket, head) => {
+    console.log('Upgrade request for WebSocket');
+    
+    // Only handle WebSocket upgrades to /ws path
+    if (request.url === '/ws') {
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        console.log('WebSocket upgrade successful');
+        wss.emit('connection', ws, request);
+      });
+    } else {
+      // Reject non-matching requests
+      socket.destroy();
+    }
+  });
   
   // Handle WebSocket connections
   wss.on('connection', (ws) => {
@@ -23,6 +41,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Send current data immediately upon connection
     sendInitialData(ws);
+    
+    // Handle errors
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
     
     ws.on('close', () => {
       console.log('Client disconnected from WebSocket');
