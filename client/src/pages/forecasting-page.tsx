@@ -218,12 +218,14 @@ function ForecastingContent() {
   
   // Render the page
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Power Forecasting &amp; Analysis</h1>
-        <p className="text-muted-foreground">
-          Advanced analytics to predict power usage, detect anomalies, and optimize efficiency
-        </p>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
+        <div>
+          <h1 className="text-xl font-semibold text-white">Power Forecasting &amp; Analysis</h1>
+          <p className="text-muted-foreground">
+            Advanced analytics to predict power usage, detect anomalies, and optimize efficiency
+          </p>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
