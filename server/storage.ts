@@ -1,8 +1,18 @@
-import { users, type User, type InsertUser, type Settings, type InsertSettings, type PowerData, type InsertPowerData, type EnvironmentalData, type InsertEnvironmentalData } from "@shared/schema";
+import { 
+  users, type User, type InsertUser, 
+  settings, type Settings, type InsertSettings, 
+  powerData, type PowerData, type InsertPowerData, 
+  environmentalData, type EnvironmentalData, type InsertEnvironmentalData 
+} from "@shared/schema";
 import session from "express-session";
-import createMemoryStore from "memorystore";
+import * as expressSession from "express-session";
+import connectPg from "connect-pg-simple";
+import { db } from "./db";
+import { eq, desc, sql } from "drizzle-orm";
+import { hash } from "bcrypt";
 
-const MemoryStore = createMemoryStore(session);
+// Connect PG Simple setup for session store
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   // User operations
@@ -25,36 +35,142 @@ export interface IStorage {
   createEnvironmentalData(data: InsertEnvironmentalData): Promise<EnvironmentalData>;
   
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: expressSession.Store;
+  
+  // Initialize database
+  initializeDatabase(): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private settings: Settings;
-  private powerData: PowerData[];
-  private environmentalData: EnvironmentalData[];
-  sessionStore: session.SessionStore;
-  
-  currentUserId: number;
-  currentPowerDataId: number;
-  currentEnvironmentalDataId: number;
+export class DatabaseStorage implements IStorage {
+  sessionStore: expressSession.Store;
 
   constructor() {
-    this.users = new Map();
-    this.powerData = [];
-    this.environmentalData = [];
-    this.currentUserId = 1;
-    this.currentPowerDataId = 1;
-    this.currentEnvironmentalDataId = 1;
-    
-    // Initialize session store
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000 // 24 hours
+    // Initialize session store with PostgreSQL
+    this.sessionStore = new PostgresSessionStore({
+      conObject: {
+        connectionString: process.env.DATABASE_URL,
+      },
+      createTableIfMissing: true,
     });
+  }
+
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+  
+  // Settings methods
+  async getSettings(): Promise<Settings> {
+    const [setting] = await db.select().from(settings);
     
-    // Default settings
-    this.settings = {
-      id: 1,
+    if (!setting) {
+      // If no settings exist, create default settings
+      return this.createDefaultSettings();
+    }
+    
+    return setting;
+  }
+  
+  async updateSettings(updatedSettings: Partial<InsertSettings>): Promise<Settings> {
+    // First ensure settings exist
+    const existingSettings = await this.getSettings();
+    
+    // Update the settings
+    const [updated] = await db
+      .update(settings)
+      .set(updatedSettings)
+      .where(eq(settings.id, existingSettings.id))
+      .returning();
+      
+    return updated;
+  }
+  
+  // Power data methods
+  async getPowerData(limit: number = 100): Promise<PowerData[]> {
+    return db
+      .select()
+      .from(powerData)
+      .orderBy(desc(powerData.timestamp))
+      .limit(limit);
+  }
+  
+  async getLatestPowerData(): Promise<PowerData | undefined> {
+    const [latest] = await db
+      .select()
+      .from(powerData)
+      .orderBy(desc(powerData.timestamp))
+      .limit(1);
+      
+    return latest;
+  }
+  
+  async createPowerData(data: InsertPowerData): Promise<PowerData> {
+    const [entry] = await db
+      .insert(powerData)
+      .values(data)
+      .returning();
+      
+    return entry;
+  }
+  
+  // Environmental data methods
+  async getEnvironmentalData(limit: number = 100): Promise<EnvironmentalData[]> {
+    return db
+      .select()
+      .from(environmentalData)
+      .orderBy(desc(environmentalData.timestamp))
+      .limit(limit);
+  }
+  
+  async getLatestEnvironmentalData(): Promise<EnvironmentalData | undefined> {
+    const [latest] = await db
+      .select()
+      .from(environmentalData)
+      .orderBy(desc(environmentalData.timestamp))
+      .limit(1);
+      
+    return latest;
+  }
+  
+  async createEnvironmentalData(data: InsertEnvironmentalData): Promise<EnvironmentalData> {
+    const [entry] = await db
+      .insert(environmentalData)
+      .values(data)
+      .returning();
+      
+    return entry;
+  }
+  
+  // Database initialization
+  async initializeDatabase(): Promise<void> {
+    console.log("Initializing database...");
+    
+    // Create default settings if they don't exist
+    await this.ensureSettingsExist();
+    
+    // Create default users if they don't exist
+    await this.ensureDefaultUsersExist();
+    
+    // Generate initial data if none exists
+    await this.ensureInitialDataExists();
+    
+    console.log("Database initialization complete");
+  }
+  
+  // Helper methods
+  private async createDefaultSettings(): Promise<Settings> {
+    const defaultSettings: InsertSettings = {
       dataSource: "live",
       scenarioProfile: "sunny",
       gridImportThreshold: 5,
@@ -67,109 +183,74 @@ export class MemStorage implements IStorage {
       feedInTariff: 0.09
     };
     
-    // Seed default admin and viewer users
-    this.createUser({
-      username: "admin",
-      password: "$2a$10$Q7gYhQljOXNNMeSBJSOCU.gMZa1FSjZWHfGHnlrMN5kX/JwZXTX1G", // "password"
-      role: "Admin"
-    });
+    const [setting] = await db
+      .insert(settings)
+      .values(defaultSettings)
+      .returning();
+      
+    return setting;
+  }
+  
+  private async ensureSettingsExist(): Promise<void> {
+    const [existingSettings] = await db.select().from(settings);
     
-    this.createUser({
-      username: "viewer",
-      password: "$2a$10$Q7gYhQljOXNNMeSBJSOCU.gMZa1FSjZWHfGHnlrMN5kX/JwZXTX1G", // "password"
-      role: "Viewer"
-    });
+    if (!existingSettings) {
+      await this.createDefaultSettings();
+      console.log("Created default settings");
+    }
+  }
+  
+  private async ensureDefaultUsersExist(): Promise<void> {
+    // Check if admin user exists
+    const adminUser = await this.getUserByUsername("admin");
     
-    // Seed initial power data
-    this.createInitialPowerData();
-    this.createInitialEnvironmentalData();
-  }
-
-  // User methods
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
-  }
-  
-  // Settings methods
-  async getSettings(): Promise<Settings> {
-    return this.settings;
-  }
-  
-  async updateSettings(updatedSettings: Partial<InsertSettings>): Promise<Settings> {
-    this.settings = { ...this.settings, ...updatedSettings };
-    return this.settings;
-  }
-  
-  // Power data methods
-  async getPowerData(limit: number = 100): Promise<PowerData[]> {
-    return this.powerData
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, limit);
-  }
-  
-  async getLatestPowerData(): Promise<PowerData | undefined> {
-    if (this.powerData.length === 0) return undefined;
-    
-    return this.powerData
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
-  }
-  
-  async createPowerData(data: InsertPowerData): Promise<PowerData> {
-    const id = this.currentPowerDataId++;
-    const powerDataEntry: PowerData = { ...data, id };
-    this.powerData.push(powerDataEntry);
-    
-    // Limit the size of in-memory data
-    if (this.powerData.length > 1000) {
-      this.powerData.shift();
+    if (!adminUser) {
+      // Create admin user
+      const hashedPassword = await hash("password", 10);
+      await this.createUser({
+        username: "admin",
+        password: hashedPassword,
+        role: "Admin"
+      });
+      console.log("Created admin user");
     }
     
-    return powerDataEntry;
-  }
-  
-  // Environmental data methods
-  async getEnvironmentalData(limit: number = 100): Promise<EnvironmentalData[]> {
-    return this.environmentalData
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, limit);
-  }
-  
-  async getLatestEnvironmentalData(): Promise<EnvironmentalData | undefined> {
-    if (this.environmentalData.length === 0) return undefined;
+    // Check if viewer user exists
+    const viewerUser = await this.getUserByUsername("viewer");
     
-    return this.environmentalData
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+    if (!viewerUser) {
+      // Create viewer user
+      const hashedPassword = await hash("password", 10);
+      await this.createUser({
+        username: "viewer",
+        password: hashedPassword,
+        role: "Viewer"
+      });
+      console.log("Created viewer user");
+    }
   }
   
-  async createEnvironmentalData(data: InsertEnvironmentalData): Promise<EnvironmentalData> {
-    const id = this.currentEnvironmentalDataId++;
-    const environmentalDataEntry: EnvironmentalData = { ...data, id };
-    this.environmentalData.push(environmentalDataEntry);
+  private async ensureInitialDataExists(): Promise<void> {
+    // Check if power data exists
+    const [existingPowerData] = await db.select().from(powerData).limit(1);
     
-    // Limit the size of in-memory data
-    if (this.environmentalData.length > 1000) {
-      this.environmentalData.shift();
+    if (!existingPowerData) {
+      await this.generateInitialPowerData();
+      console.log("Generated initial power data");
     }
     
-    return environmentalDataEntry;
+    // Check if environmental data exists
+    const [existingEnvironmentalData] = await db.select().from(environmentalData).limit(1);
+    
+    if (!existingEnvironmentalData) {
+      await this.generateInitialEnvironmentalData();
+      console.log("Generated initial environmental data");
+    }
   }
   
-  // Seed initial data
-  private createInitialPowerData() {
+  private async generateInitialPowerData(): Promise<void> {
     const now = new Date();
+    const powerDataBatch = [];
     
     // Create historical data for the past hour
     for (let i = 60; i >= 0; i--) {
@@ -185,7 +266,7 @@ export class MemStorage implements IStorage {
       const totalLoad = 5.6 + (Math.random() * 0.6) - 0.3;
       const unaccountedLoad = 0.6 + (Math.random() * 0.1) - 0.05;
       
-      this.createPowerData({
+      powerDataBatch.push({
         timestamp,
         mainGridPower,
         solarOutput,
@@ -197,11 +278,15 @@ export class MemStorage implements IStorage {
         unaccountedLoad
       });
     }
+    
+    // Insert all power data entries in a batch
+    await db.insert(powerData).values(powerDataBatch);
   }
   
-  private createInitialEnvironmentalData() {
+  private async generateInitialEnvironmentalData(): Promise<void> {
     const now = new Date();
     const weatherOptions = ['Sunny', 'Partly Cloudy', 'Cloudy', 'Overcast'];
+    const environmentalDataBatch = [];
     
     // Create historical environmental data for the past hour
     for (let i = 60; i >= 0; i--) {
@@ -219,14 +304,18 @@ export class MemStorage implements IStorage {
         ? 30 + (Math.random() * 20) 
         : 10 + (Math.random() * 20);
       
-      this.createEnvironmentalData({
+      environmentalDataBatch.push({
         timestamp,
         weather,
         temperature,
         sunIntensity
       });
     }
+    
+    // Insert all environmental data entries in a batch
+    await db.insert(environmentalData).values(environmentalDataBatch);
   }
 }
 
-export const storage = new MemStorage();
+// Export a singleton instance of the database storage
+export const storage = new DatabaseStorage();

@@ -8,6 +8,11 @@ import { generateSyntheticData } from "./data";
 import { WebSocketServer } from "ws";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize the database
+  console.log("Initializing database tables and seed data...");
+  await storage.initializeDatabase();
+  console.log("Database initialization completed successfully");
+
   // Set up authentication routes (/api/register, /api/login, /api/logout, /api/user)
   setupAuth(app);
 
