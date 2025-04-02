@@ -24,6 +24,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { EnvironmentalChart, EnvironmentalStats, SolarInfluenceAnalysis } from '@/components/environmental-chart';
+import { WeatherCorrelationAnalysis } from '@/components/weather-correlation-analysis';
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/ui/sidebar";
 
@@ -506,6 +507,13 @@ function ForecastingContent() {
                     powerData={historicalData || historicalPowerData || []}
                   />
                 </div>
+                
+                {/* Advanced Weather Correlation Analysis */}
+                <WeatherCorrelationAnalysis
+                  powerData={historicalData || historicalPowerData || []}
+                  environmentalData={envData || historicalEnvironmentalData || []}
+                  isLoading={isLoadingEnvData || isLoadingHistorical}
+                />
               </>
             )}
           </div>
