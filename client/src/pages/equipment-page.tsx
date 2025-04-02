@@ -23,6 +23,37 @@ import {
 import { format, parseISO } from "date-fns";
 import { Equipment, EquipmentEfficiency, MaintenanceLog } from "@shared/schema";
 
+// Helper function to safely parse dates
+function safeParseDate(dateString: string | Date | null | undefined): Date | null {
+  if (!dateString) return null;
+  
+  try {
+    const date = dateString instanceof Date ? dateString : new Date(dateString);
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      console.error("Invalid date value:", dateString);
+      return null;
+    }
+    return date;
+  } catch (error) {
+    console.error("Error parsing date:", dateString, error);
+    return null;
+  }
+}
+
+// Helper function to safely format dates
+function safeFormatDate(date: Date | string | null | undefined, formatString: string = 'MMM d, yyyy'): string {
+  if (!date) return 'Unknown';
+  
+  try {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    return format(dateObj, formatString);
+  } catch (error) {
+    console.error("Error formatting date:", date, error);
+    return 'Invalid date';
+  }
+}
+
 function EquipmentContent() {
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<number | null>(null);
   
@@ -104,12 +135,15 @@ function EquipmentContent() {
   const selectedEquipment = equipmentList.find(item => item.id === selectedEquipmentId);
 
   // Prepare efficiency data for chart
-  const efficiencyChartData = efficiencyData?.map(item => ({
-    date: format(new Date(item.timestamp), 'MM/dd'),
-    efficiency: Number((item.efficiencyRating * 100).toFixed(1)),
-    power: Number(item.powerUsage.toFixed(2)),
-    anomaly: item.anomalyDetected ? item.anomalyScore : 0
-  })) || [];
+  const efficiencyChartData = efficiencyData?.map(item => {
+    const date = safeParseDate(item.timestamp);
+    return {
+      date: date ? format(date, 'MM/dd') : 'Unknown',
+      efficiency: Number((item.efficiencyRating * 100).toFixed(1)),
+      power: Number(item.powerUsage.toFixed(2)),
+      anomaly: item.anomalyDetected ? item.anomalyScore : 0
+    };
+  }) || [];
 
   // Get status color
   const getStatusColor = (status: string) => {
@@ -123,10 +157,20 @@ function EquipmentContent() {
   };
 
   // Format maintenance schedule
-  const maintenanceScheduleData = upcomingMaintenance?.map(item => ({
-    name: item.equipment.name,
-    days: Math.ceil((new Date(item.nextMaintenance).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-  })) || [];
+  const maintenanceScheduleData = upcomingMaintenance?.map(item => {
+    const nextDate = safeParseDate(item.nextMaintenance);
+    const now = new Date();
+    let days = 0;
+    
+    if (nextDate) {
+      days = Math.ceil((nextDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    }
+    
+    return {
+      name: item.equipment.name,
+      days: days
+    };
+  }) || [];
 
   // Sort by days to next maintenance
   maintenanceScheduleData.sort((a, b) => a.days - b.days);
@@ -207,7 +251,7 @@ function EquipmentContent() {
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Installed Date:</span>
-                          <span>{selectedEquipment.installedDate ? format(new Date(selectedEquipment.installedDate), 'MMM d, yyyy') : 'Unknown'}</span>
+                          <span>{safeFormatDate(selectedEquipment.installedDate)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Nominal Power:</span>
@@ -215,33 +259,40 @@ function EquipmentContent() {
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Nominal Efficiency:</span>
-                          <span>{selectedEquipment.nominalEfficiency ? (selectedEquipment.nominalEfficiency * 100).toFixed(1) + '%' : 'Not specified'}</span>
+                          <span>{selectedEquipment.nominalEfficiency != null ? (selectedEquipment.nominalEfficiency * 100).toFixed(1) + '%' : 'Not specified'}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Current Efficiency:</span>
                           <span className={
-                            selectedEquipment.currentEfficiency && selectedEquipment.nominalEfficiency && 
+                            selectedEquipment.currentEfficiency != null && selectedEquipment.nominalEfficiency != null && 
                             selectedEquipment.currentEfficiency < selectedEquipment.nominalEfficiency * 0.9
                               ? 'text-amber-500'
-                              : selectedEquipment.currentEfficiency && selectedEquipment.nominalEfficiency && 
+                              : selectedEquipment.currentEfficiency != null && selectedEquipment.nominalEfficiency != null && 
                                 selectedEquipment.currentEfficiency < selectedEquipment.nominalEfficiency * 0.8
                                 ? 'text-red-500'
                                 : ''
                           }>
-                            {selectedEquipment.currentEfficiency 
+                            {selectedEquipment.currentEfficiency != null
                               ? `${(selectedEquipment.currentEfficiency * 100).toFixed(1)}%` 
                               : 'Not measured'}
                           </span>
                         </div>
-                        {selectedEquipment.metadata && (
+                        {selectedEquipment.metadata && typeof selectedEquipment.metadata === 'object' && (
                           <div className="mt-4 pt-2 border-t border-border">
                             <p className="text-sm font-medium mb-1">Additional Details</p>
-                            {Object.entries(selectedEquipment.metadata as Record<string, string | number>).map(([key, value]) => (
-                              <div key={key} className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">{key.charAt(0).toUpperCase() + key.slice(1)}:</span>
-                                <span>{typeof value === 'number' ? value.toString() : String(value)}</span>
-                              </div>
-                            ))}
+                            {(() => {
+                              try {
+                                const metadata = selectedEquipment.metadata as Record<string, string | number>;
+                                return Object.entries(metadata).map(([key, value]) => (
+                                  <div key={key} className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">{key.charAt(0).toUpperCase() + key.slice(1)}:</span>
+                                    <span>{typeof value === 'number' ? value.toString() : String(value)}</span>
+                                  </div>
+                                ));
+                              } catch (err) {
+                                return <div className="text-sm text-muted-foreground">Metadata format not supported</div>;
+                              }
+                            })()}
                           </div>
                         )}
                       </div>
@@ -262,16 +313,18 @@ function EquipmentContent() {
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Last Maintenance:</span>
-                            <span>{selectedEquipment.lastMaintenance ? format(new Date(selectedEquipment.lastMaintenance), 'MMM d, yyyy') : 'Never'}</span>
+                            <span>{selectedEquipment.lastMaintenance ? safeFormatDate(selectedEquipment.lastMaintenance) : 'Never'}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Next Maintenance:</span>
                             <span className={
-                              selectedEquipment.nextMaintenance && new Date(selectedEquipment.nextMaintenance) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-                                ? 'text-red-500 font-medium'
+                              selectedEquipment.nextMaintenance ? 
+                                (safeParseDate(selectedEquipment.nextMaintenance) && safeParseDate(selectedEquipment.nextMaintenance)! < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                  ? 'text-red-500 font-medium'
+                                  : '')
                                 : ''
                             }>
-                              {selectedEquipment.nextMaintenance ? format(new Date(selectedEquipment.nextMaintenance), 'MMM d, yyyy') : 'Not scheduled'}
+                              {selectedEquipment.nextMaintenance ? safeFormatDate(selectedEquipment.nextMaintenance) : 'Not scheduled'}
                             </span>
                           </div>
                           <div className="flex justify-between text-sm">
@@ -280,19 +333,28 @@ function EquipmentContent() {
                           </div>
                         </div>
 
-                        {selectedEquipment.nextMaintenance && (
+                        {selectedEquipment.nextMaintenance && safeParseDate(selectedEquipment.nextMaintenance) && (
                           <div>
                             <div className="flex justify-between text-sm mb-1">
                               <span className="text-muted-foreground">Time until next maintenance:</span>
                               <span>
-                                {Math.max(0, Math.ceil((new Date(selectedEquipment.nextMaintenance).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))} days
+                                {(() => {
+                                  const nextDate = safeParseDate(selectedEquipment.nextMaintenance);
+                                  if (!nextDate) return "Unknown";
+                                  const now = new Date();
+                                  return Math.max(0, Math.ceil((nextDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) + " days";
+                                })()}
                               </span>
                             </div>
                             <Progress 
                               value={
-                                selectedEquipment.lastMaintenance 
-                                  ? 100 - (Math.min(100, 100 * (new Date().getTime() - new Date(selectedEquipment.lastMaintenance).getTime()) / 
-                                      (new Date(selectedEquipment.nextMaintenance).getTime() - new Date(selectedEquipment.lastMaintenance).getTime())))
+                                selectedEquipment.lastMaintenance && safeParseDate(selectedEquipment.lastMaintenance) && safeParseDate(selectedEquipment.nextMaintenance)
+                                  ? (() => {
+                                      const now = new Date().getTime();
+                                      const lastDate = safeParseDate(selectedEquipment.lastMaintenance)!.getTime();
+                                      const nextDate = safeParseDate(selectedEquipment.nextMaintenance)!.getTime();
+                                      return 100 - (Math.min(100, 100 * (now - lastDate) / (nextDate - lastDate)));
+                                    })()
                                   : 0
                               } 
                               className="h-2"
@@ -440,14 +502,14 @@ function EquipmentContent() {
                                       <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5" />
                                       <div className="flex-1">
                                         <p className="text-sm">
-                                          Anomaly detected on {format(new Date(item.timestamp), 'MMM d')}
+                                          Anomaly detected on {safeFormatDate(item.timestamp, 'MMM d')}
                                         </p>
                                         <div className="flex justify-between mt-1">
                                           <span className="text-xs text-muted-foreground">
-                                            Severity score: {item.anomalyScore ? item.anomalyScore.toFixed(1) : '0.0'}
+                                            Severity score: {typeof item.anomalyScore === 'number' ? item.anomalyScore.toFixed(1) : '0.0'}
                                           </span>
                                           <span className="text-xs text-muted-foreground">
-                                            Efficiency: {(item.efficiencyRating * 100).toFixed(1)}%
+                                            Efficiency: {typeof item.efficiencyRating === 'number' ? (item.efficiencyRating * 100).toFixed(1) : '0.0'}%
                                           </span>
                                         </div>
                                       </div>
@@ -482,7 +544,9 @@ function EquipmentContent() {
                                 <div className="flex justify-between">
                                   <span className="text-sm">Operating Temperature</span>
                                   <span className="text-sm">
-                                    {efficiencyData[0]?.temperatureConditions?.toFixed(1) || "N/A"}°C
+                                    {efficiencyData[0]?.temperatureConditions !== undefined && efficiencyData[0]?.temperatureConditions !== null 
+                                      ? Number(efficiencyData[0].temperatureConditions).toFixed(1) + '°C'
+                                      : "N/A"}
                                   </span>
                                 </div>
                                 <Progress value={75} className="h-1" />
@@ -492,7 +556,9 @@ function EquipmentContent() {
                                 <div className="flex justify-between">
                                   <span className="text-sm">Production Volume</span>
                                   <span className="text-sm">
-                                    {efficiencyData[0]?.productionVolume || "N/A"} units
+                                    {efficiencyData[0]?.productionVolume !== undefined && efficiencyData[0]?.productionVolume !== null 
+                                      ? efficiencyData[0].productionVolume + ' units'
+                                      : "N/A"}
                                   </span>
                                 </div>
                                 <Progress value={60} className="h-1" />
@@ -502,7 +568,9 @@ function EquipmentContent() {
                                 <div className="flex justify-between">
                                   <span className="text-sm">Power Consumption</span>
                                   <span className="text-sm">
-                                    {efficiencyData[0]?.powerUsage?.toFixed(2) || "N/A"} kW
+                                    {efficiencyData[0]?.powerUsage !== undefined && efficiencyData[0]?.powerUsage !== null 
+                                      ? Number(efficiencyData[0].powerUsage).toFixed(2) + ' kW'
+                                      : "N/A"}
                                   </span>
                                 </div>
                                 <Progress value={85} className="h-1" />
@@ -546,7 +614,7 @@ function EquipmentContent() {
                               <div className="flex justify-between">
                                 <h4 className="font-medium">{record.maintenanceType}</h4>
                                 <span className="text-sm text-muted-foreground">
-                                  {format(new Date(record.timestamp), 'MMM d, yyyy')}
+                                  {safeFormatDate(record.timestamp)}
                                 </span>
                               </div>
                               <p className="text-sm mt-1">{record.description}</p>
@@ -558,7 +626,7 @@ function EquipmentContent() {
                                 )}
                                 {record.cost && (
                                   <span className="text-xs text-muted-foreground">
-                                    Cost: ${record.cost.toFixed(2)}
+                                    Cost: ${typeof record.cost === 'number' ? record.cost.toFixed(2) : record.cost}
                                   </span>
                                 )}
                                 {record.partsReplaced && (
