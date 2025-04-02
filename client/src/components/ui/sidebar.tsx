@@ -49,25 +49,27 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             
             {/* Sidebar Menu */}
             <nav className="space-y-1">
-              <Link href="/dashboard">
-                <a className={cn(
+              <Link 
+                href="/dashboard" 
+                className={cn(
                   "sidebar-menu-item",
                   (location === "/" || location === "/dashboard") && "active"
-                )}>
-                  <BarChart3 className="sidebar-menu-item-icon" />
-                  <span>Dashboard</span>
-                </a>
+                )}
+              >
+                <BarChart3 className="sidebar-menu-item-icon" />
+                <span>Dashboard</span>
               </Link>
               
               {user?.role === "Admin" && (
-                <Link href="/settings">
-                  <a className={cn(
+                <Link 
+                  href="/settings" 
+                  className={cn(
                     "sidebar-menu-item",
                     location === "/settings" && "active"
-                  )}>
-                    <Settings className="sidebar-menu-item-icon" />
-                    <span>Settings</span>
-                  </a>
+                  )}
+                >
+                  <Settings className="sidebar-menu-item-icon" />
+                  <span>Settings</span>
                 </Link>
               )}
             </nav>
