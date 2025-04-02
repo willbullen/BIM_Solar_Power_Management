@@ -31,6 +31,10 @@ function SettingsContent() {
     historicalDataStorage: settings?.historicalDataStorage || 90,
     gridPowerCost: settings?.gridPowerCost || 0.28,
     feedInTariff: settings?.feedInTariff || 0.09,
+    // API Keys
+    weatherApiKey: settings?.weatherApiKey || '',
+    powerMonitoringApiKey: settings?.powerMonitoringApiKey || '',
+    notificationsApiKey: settings?.notificationsApiKey || '',
   });
   
   // Update local state when settings load from the server
@@ -359,6 +363,62 @@ function SettingsContent() {
                   value={formValues.feedInTariff}
                   onChange={handleChange}
                 />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* API Keys */}
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>API Keys</CardTitle>
+            <CardDescription>Configure external service integrations</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="weatherApiKey">Weather API Key</Label>
+                <Input 
+                  id="weatherApiKey"
+                  name="weatherApiKey"
+                  type="password"
+                  value={formValues.weatherApiKey || ''}
+                  onChange={handleChange}
+                  placeholder="Enter your weather service API key"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Used for retrieving real-time weather data for correlation analysis
+                </p>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="powerMonitoringApiKey">Power Monitoring API Key</Label>
+                <Input 
+                  id="powerMonitoringApiKey"
+                  name="powerMonitoringApiKey"
+                  type="password"
+                  value={formValues.powerMonitoringApiKey || ''}
+                  onChange={handleChange}
+                  placeholder="Enter your power monitoring system API key"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Used to connect to on-site power monitoring hardware for live data
+                </p>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="notificationsApiKey">Notifications API Key</Label>
+                <Input 
+                  id="notificationsApiKey"
+                  name="notificationsApiKey"
+                  type="password"
+                  value={formValues.notificationsApiKey || ''}
+                  onChange={handleChange}
+                  placeholder="Enter your notifications service API key"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Used for sending alerts and notifications via SMS or push services
+                </p>
               </div>
             </div>
           </CardContent>

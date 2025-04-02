@@ -53,6 +53,10 @@ export const settings = pgTable("settings", {
   historicalDataStorage: integer("historical_data_storage").notNull().default(90), // in days
   gridPowerCost: real("grid_power_cost").notNull().default(0.28), // in €/kWh
   feedInTariff: real("feed_in_tariff").notNull().default(0.09), // in €/kWh
+  // API Key settings
+  weatherApiKey: text("weather_api_key"),
+  powerMonitoringApiKey: text("power_monitoring_api_key"),
+  notificationsApiKey: text("notifications_api_key"),
 });
 
 export const insertSettingsSchema = createInsertSchema(settings).omit({
