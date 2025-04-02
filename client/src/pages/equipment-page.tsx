@@ -134,11 +134,6 @@ function EquipmentContent() {
 
   const selectedEquipment = equipmentList.find(item => item.id === selectedEquipmentId);
 
-  // Log efficiency data for debugging
-  useEffect(() => {
-    console.log("Efficiency data:", efficiencyData);
-  }, [efficiencyData]);
-
   // Prepare efficiency data for chart
   const efficiencyChartData = efficiencyData?.map(item => {
     const date = safeParseDate(item.timestamp);
