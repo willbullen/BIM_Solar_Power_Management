@@ -10,7 +10,8 @@ import {
   Sun, 
   Thermometer, 
   CloudSun,
-  FileDown
+  FileDown,
+  TrendingUp
 } from "lucide-react";
 
 type SidebarProps = {
@@ -70,6 +71,17 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               >
                 <FileDown className="sidebar-menu-item-icon" />
                 <span>Reports</span>
+              </Link>
+              
+              <Link 
+                href="/forecasting" 
+                className={cn(
+                  "sidebar-menu-item",
+                  location === "/forecasting" && "active"
+                )}
+              >
+                <TrendingUp className="sidebar-menu-item-icon" />
+                <span>Forecasting</span>
               </Link>
               
               {user?.role === "Admin" && (

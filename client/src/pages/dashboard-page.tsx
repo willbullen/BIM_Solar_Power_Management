@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { PowerDataProvider, usePowerData } from "@/hooks/use-power-data";
+import { usePowerData } from "@/hooks/use-power-data";
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/ui/sidebar";
 import { PowerChart } from "@/components/power-chart";
 import { SummaryCards } from "@/components/metrics-card";
 import { LoadDistribution } from "@/components/load-distribution";
 import { InsightsCard } from "@/components/insights-card";
-import { Loader2 } from "lucide-react";
+import { Loader2, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
+import { Link } from "wouter";
 
 function DashboardContent() {
   const { 
@@ -67,6 +68,16 @@ function DashboardContent() {
         {/* Load Distribution */}
         <div className="lg:col-span-2">
           <LoadDistribution powerData={powerData} />
+          
+          {/* Forecasting Link */}
+          <div className="mt-4 flex justify-end">
+            <Link href="/forecasting">
+              <button className="flex items-center gap-2 bg-primary/20 hover:bg-primary/30 text-primary-foreground px-4 py-2 rounded-md transition">
+                <TrendingUp className="w-4 h-4" />
+                <span>View Power Forecasting</span>
+              </button>
+            </Link>
+          </div>
         </div>
         
         {/* Insights Card */}
@@ -89,18 +100,16 @@ export default function DashboardPage() {
   };
   
   return (
-    <PowerDataProvider>
-      <div className="min-h-screen bg-background flex flex-col">
-        <Header onToggleSidebar={toggleSidebar} />
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header onToggleSidebar={toggleSidebar} />
+      
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
         
-        <div className="flex flex-1 overflow-hidden">
-          <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
-          
-          <main className={`flex-1 app-content p-4 ${sidebarCollapsed ? '' : 'lg:ml-64'}`}>
-            <DashboardContent />
-          </main>
-        </div>
+        <main className={`flex-1 app-content p-4 ${sidebarCollapsed ? '' : 'lg:ml-64'}`}>
+          <DashboardContent />
+        </main>
       </div>
-    </PowerDataProvider>
+    </div>
   );
 }
