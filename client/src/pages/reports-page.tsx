@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from "react";
-import { PowerDataProvider, usePowerData } from "@/hooks/use-power-data";
+import { usePowerData } from "@/hooks/use-power-data";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/ui/sidebar";
@@ -345,18 +345,16 @@ export default function ReportsPage() {
   };
   
   return (
-    <PowerDataProvider>
-      <div className="min-h-screen bg-background flex flex-col">
-        <Header onToggleSidebar={toggleSidebar} />
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header onToggleSidebar={toggleSidebar} />
+      
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
         
-        <div className="flex flex-1 overflow-hidden">
-          <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
-          
-          <main className={`flex-1 app-content p-4 ${sidebarCollapsed ? '' : 'lg:ml-64'}`}>
-            <ReportsContent />
-          </main>
-        </div>
+        <main className={`flex-1 app-content p-4 ${sidebarCollapsed ? '' : 'lg:ml-64'}`}>
+          <ReportsContent />
+        </main>
       </div>
-    </PowerDataProvider>
+    </div>
   );
 }

@@ -23,6 +23,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Header } from "@/components/header";
+import { Sidebar } from "@/components/ui/sidebar";
 
 // Helper function to format timestamps for charts
 const formatTimestamp = (timestamp: Date | string) => {
@@ -40,7 +42,8 @@ interface ChartDataPoint {
   [key: string]: any;
 }
 
-export default function ForecastingPage() {
+// Main content component
+function ForecastingContent() {
   const { powerData, historicalPowerData, environmentalData, historicalEnvironmentalData } = usePowerData();
   const { toast } = useToast();
   
@@ -722,6 +725,28 @@ export default function ForecastingPage() {
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+export default function ForecastingPage() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
+  
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header onToggleSidebar={toggleSidebar} />
+      
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
+        
+        <main className={`flex-1 app-content p-4 ${sidebarCollapsed ? '' : 'lg:ml-64'}`}>
+          <ForecastingContent />
+        </main>
+      </div>
     </div>
   );
 }
