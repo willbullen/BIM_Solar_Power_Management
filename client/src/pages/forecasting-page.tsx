@@ -23,6 +23,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { EnvironmentalChart, EnvironmentalStats, SolarInfluenceAnalysis } from '@/components/environmental-chart';
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/ui/sidebar";
 
@@ -278,6 +279,7 @@ function ForecastingContent() {
       <Tabs defaultValue="forecast" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="forecast">Forecasting</TabsTrigger>
+          <TabsTrigger value="environment">Environment</TabsTrigger>
           <TabsTrigger value="anomalies">Anomaly Detection</TabsTrigger>
           <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
         </TabsList>
@@ -476,6 +478,37 @@ function ForecastingContent() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="environment" className="space-y-4">
+          <div className="grid grid-cols-1 gap-4">
+            {isGenerating || isLoadingHistorical || isLoadingEnvData ? (
+              <div className="flex items-center justify-center h-80">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <span className="ml-2">Analyzing environmental data...</span>
+              </div>
+            ) : (
+              <>
+                {/* Environmental chart */}
+                <EnvironmentalChart 
+                  environmentalData={envData || historicalEnvironmentalData || []}
+                  isLoading={isLoadingEnvData}
+                />
+                
+                {/* Environmental statistics */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <EnvironmentalStats 
+                    environmentalData={envData || historicalEnvironmentalData || []}
+                  />
+                  
+                  <SolarInfluenceAnalysis 
+                    environmentalData={envData || historicalEnvironmentalData || []}
+                    powerData={historicalData || historicalPowerData || []}
+                  />
+                </div>
+              </>
+            )}
+          </div>
         </TabsContent>
         
         <TabsContent value="anomalies" className="space-y-4">
