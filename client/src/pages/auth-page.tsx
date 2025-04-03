@@ -87,7 +87,7 @@ export default function AuthPage() {
         <div className="hidden md:flex flex-col p-6">
           <div className="mb-6 flex items-center">
             <Zap className="h-10 w-10 text-accent mr-3" />
-            <h1 className="text-3xl font-bold text-white">Emporium Power</h1>
+            <h1 className="text-3xl font-bold text-white">BIM Power</h1>
           </div>
           <h2 className="text-2xl font-medium text-white mb-4">
             Comprehensive Power Monitoring System
@@ -123,7 +123,7 @@ export default function AuthPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-semibold text-white">Emporium Power Dashboard</h2>
+                <h2 className="text-2xl font-semibold text-white">BIM Power Dashboard</h2>
                 <p className="text-muted-foreground mt-1">Sign in to access the monitoring system</p>
               </div>
               
