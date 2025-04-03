@@ -57,6 +57,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return value * (minPercent + Math.random() * (maxPercent - minPercent));
           };
           
+          // Helper function to get random value within a range
+          const getRandomInRange = (min: number, max: number): number => {
+            return min + (Math.random() * (max - min));
+          };
+          
           // Get current hour to determine appropriate scenario
           const currentHour = new Date().getHours();
           let scenario = 'cloudy'; // Default
@@ -92,6 +97,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             timestamp: new Date(),
             weather: baseData.environmentalData.weather,
             temperature: getVariation(baseData.environmentalData.temperature, 0.99, 1.01),
+            humidity: baseData.environmentalData.humidity ? 
+                      Math.min(98, Math.max(60, getVariation(baseData.environmentalData.humidity, 0.98, 1.02))) : 
+                      getRandomInRange(75, 95), // Default Kerry humidity is high
+            windSpeed: baseData.environmentalData.windSpeed ? 
+                      Math.min(60, Math.max(3, getVariation(baseData.environmentalData.windSpeed, 0.9, 1.1))) :
+                      getRandomInRange(10, 25), // Default Kerry wind speed is substantial
             sunIntensity: Math.min(100, Math.max(0, getVariation(baseData.environmentalData.sunIntensity, 0.97, 1.03)))
           });
           console.log('Generated new live data');

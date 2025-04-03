@@ -14,32 +14,36 @@ export function generateSyntheticData(
     return min + (Math.random() * (max - min));
   };
   
-  // Calculate wind speed with typical Kerry coastal patterns
+  // Calculate wind speed with realistic Kerry coastal patterns
+  // Kerry has among the highest average wind speeds in Ireland
   const getKerryWindSpeed = (isStormy: boolean = false): number => {
-    // Kerry typically has higher wind speeds due to Atlantic coastal location
+    // Kerry's Atlantic coastal location experiences strong winds
     if (isStormy) {
-      return getRandomInRange(15, 30); // Storm conditions in km/h
+      return getRandomInRange(22, 40); // Storm conditions in km/h (common in Kerry)
     } else {
-      return getRandomInRange(5, 18); // Normal conditions in km/h
+      // Kerry averages 17-22 km/h wind speeds year-round
+      return getRandomInRange(12, 25); // Normal conditions in km/h
     }
   };
 
-  // Calculate humidity typical for Irish coastal climate
+  // Calculate humidity typical for Kerry coastal climate
+  // Kerry's microclimate is characterized by high humidity due to Atlantic proximity
   const getKerryHumidity = (weather: string): number => {
     switch(weather) {
       case 'Rain':
       case 'Heavy Rain':
+        return getRandomInRange(88, 98); // Kerry rain brings extremely high humidity
+      case 'Drizzle': // Very common in Kerry
         return getRandomInRange(85, 95);
-      case 'Drizzle':
-      case 'Cloudy':
-        return getRandomInRange(75, 90);
+      case 'Cloudy': // Most common weather pattern
+        return getRandomInRange(80, 92);
       case 'Partly Cloudy': 
-        return getRandomInRange(65, 85);
+        return getRandomInRange(75, 88);
       case 'Sunny':
-      case 'Clear':
-        return getRandomInRange(60, 80);
+      case 'Clear': // Rare but happens occasionally
+        return getRandomInRange(70, 85); // Even on sunny days, Kerry maintains high humidity
       default:
-        return getRandomInRange(70, 90);
+        return getRandomInRange(80, 95); // Default high humidity for Kerry
     }
   };
   
@@ -61,15 +65,15 @@ export function generateSyntheticData(
       environmentalData = {
         timestamp: now,
         weather: 'Sunny',
-        temperature: getRandomInRange(10, 14),  // Typical April sunny day in Kerry
+        temperature: getRandomInRange(8, 13),  // April sunny day in SW Kerry is mild
         humidity: getKerryHumidity('Sunny'),
         windSpeed: getKerryWindSpeed(),
-        sunIntensity: getRandomInRange(60, 75)  // Lower than summer but good for April
+        sunIntensity: getRandomInRange(55, 70)  // Even on sunny days, Kerry has lower solar intensity than mainland Europe
       };
       break;
       
     case 'cloudy':
-      // Cloudy day - common in Kerry
+      // Cloudy day - very common in Kerry (most frequent weather pattern)
       powerData = {
         timestamp: now,
         mainGridPower: getRandomInRange(12, 14),  // Higher grid import due to low solar
@@ -85,10 +89,10 @@ export function generateSyntheticData(
       environmentalData = {
         timestamp: now,
         weather: 'Cloudy',
-        temperature: getRandomInRange(8, 12),  // Typical April cloudy day in Kerry
+        temperature: getRandomInRange(6, 11),  // Typical April cloudy day in Kerry is cooler
         humidity: getKerryHumidity('Cloudy'),
-        windSpeed: getKerryWindSpeed(),
-        sunIntensity: getRandomInRange(15, 30)  // Low sun intensity due to cloud cover
+        windSpeed: getKerryWindSpeed(),  // Kerry's typical wind is strong
+        sunIntensity: getRandomInRange(10, 25)  // Low sun intensity due to thick cloud cover
       };
       break;
       
@@ -109,15 +113,15 @@ export function generateSyntheticData(
       environmentalData = {
         timestamp: now,
         weather: 'Partly Cloudy',
-        temperature: getRandomInRange(9, 13),  // Typical April mixed day in Kerry
+        temperature: getRandomInRange(7, 12),  // Kerry's temperature range is narrower due to coastal influence
         humidity: getKerryHumidity('Partly Cloudy'),
         windSpeed: getKerryWindSpeed(),
-        sunIntensity: getRandomInRange(35, 55)  // Moderate sun with frequent cloud passing
+        sunIntensity: getRandomInRange(30, 50)  // Moderate sun with fast-moving clouds (typical Kerry)
       };
       break;
       
     case 'night':
-      // Night operation - Kerry nights are cool year-round
+      // Night operation - Kerry nights are cool and often misty
       powerData = {
         timestamp: now,
         mainGridPower: getRandomInRange(10, 12),  // Medium grid import
@@ -132,16 +136,16 @@ export function generateSyntheticData(
       
       environmentalData = {
         timestamp: now,
-        weather: Math.random() > 0.6 ? 'Clear' : 'Cloudy',  // Mix of clear and cloudy nights
-        temperature: getRandomInRange(4, 8),  // Cold April nights in Kerry
-        humidity: getKerryHumidity('Clear'),
-        windSpeed: getRandomInRange(3, 12),  // Typically lower wind at night
+        weather: Math.random() > 0.3 ? 'Cloudy' : 'Clear',  // More cloudy nights than clear in Kerry
+        temperature: getRandomInRange(2, 7),  // Cold April nights in Kerry
+        humidity: getKerryHumidity(Math.random() > 0.3 ? 'Cloudy' : 'Clear'),
+        windSpeed: getRandomInRange(8, 15),  // Kerry's wind rarely completely stops
         sunIntensity: 0  // No sun at night
       };
       break;
       
     case 'rain':
-      // Rainy day - very common in Kerry!
+      // Rainy day - extremely common in Kerry (200+ rain days per year)
       powerData = {
         timestamp: now,
         mainGridPower: getRandomInRange(13, 15),  // High grid import due to minimal solar
@@ -154,21 +158,64 @@ export function generateSyntheticData(
         unaccountedLoad: getRandomInRange(1.8, 2.8)
       };
       
+      // Kerry experiences various rain types - heavy Atlantic squalls to persistent drizzle
+      const rainType = Math.random();
+      const isHeavyRain = rainType < 0.3;
+      const isDrizzle = rainType >= 0.7;
+      const isModerateRain = !isHeavyRain && !isDrizzle;
+      
       environmentalData = {
         timestamp: now,
-        weather: Math.random() > 0.5 ? 'Rain' : 'Drizzle',  // Mix of rain and drizzle
-        temperature: getRandomInRange(7, 11),  // Cool rainy day
-        humidity: getKerryHumidity('Rain'),
-        windSpeed: getKerryWindSpeed(Math.random() > 0.7),  // Sometimes stormy
-        sunIntensity: getRandomInRange(5, 15)  // Very low sun intensity in rain
+        weather: isHeavyRain ? 'Heavy Rain' : (isDrizzle ? 'Drizzle' : 'Rain'),
+        temperature: getRandomInRange(5, 10),  // Rain days are cooler in Kerry
+        humidity: isHeavyRain ? 
+                  getRandomInRange(92, 98) : // Heavy rain brings maximum humidity
+                  getKerryHumidity(isDrizzle ? 'Drizzle' : 'Rain'),
+        windSpeed: getKerryWindSpeed(isHeavyRain || Math.random() > 0.6),  // Often stormy with rain
+        sunIntensity: getRandomInRange(3, 12)  // Very low sun intensity in rain
+      };
+      break;
+      
+    case 'stormy':
+      // Atlantic storm - common in Kerry year-round but especially in winter/spring
+      powerData = {
+        timestamp: now,
+        mainGridPower: getRandomInRange(14, 16),  // High grid import, no solar
+        solarOutput: getRandomInRange(0.1, 0.5),  // Almost no solar generation
+        refrigerationLoad: getRandomInRange(12, 15),
+        bigColdRoom: getRandomInRange(5, 7),
+        bigFreezer: getRandomInRange(6, 7),
+        smoker: getRandomInRange(0.1, 0.12),
+        totalLoad: getRandomInRange(16, 19),
+        unaccountedLoad: getRandomInRange(1.8, 2.8)
+      };
+      
+      environmentalData = {
+        timestamp: now,
+        weather: Math.random() > 0.5 ? 'Heavy Rain' : 'Rain',
+        temperature: getRandomInRange(4, 9),  // Storms bring cooler temperatures
+        humidity: getRandomInRange(92, 98),  // Extremely high humidity
+        windSpeed: getRandomInRange(30, 50),  // Very high winds typical of Kerry Atlantic storms
+        sunIntensity: getRandomInRange(0, 8)  // Almost no sun during storms
       };
       break;
       
     default:
       // Default to a random realistic Kerry weather scenario
-      const kerryWeatherScenarios = ['cloudy', 'rain', 'rain', 'cloudy', 'partly_cloudy', 'sunny']; // Weighted for realism
+      // Weighted heavily toward cloudy/rainy to reflect reality
+      const kerryWeatherScenarios = [
+        'cloudy', 'cloudy', 'cloudy',  // 30% cloudy (most common)
+        'rain', 'rain', 'rain',        // 30% rain (frequent)
+        'drizzle', 'drizzle',          // 20% drizzle (common)
+        'stormy',                      // 10% stormy (regular occurrence)
+        'sunny'                        // 10% sunny (rarer)
+      ]; 
       const randomScenario = kerryWeatherScenarios[Math.floor(Math.random() * kerryWeatherScenarios.length)];
-      return generateSyntheticData(randomScenario === 'partly_cloudy' ? 'peak' : randomScenario);
+      return generateSyntheticData(
+        randomScenario === 'drizzle' ? 'rain' : 
+        randomScenario === 'partly_cloudy' ? 'peak' : 
+        randomScenario
+      );
   }
   
   // Ensure totalLoad is at least the sum of the main components
