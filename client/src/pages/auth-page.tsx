@@ -181,16 +181,6 @@ export default function AuthPage() {
                       >
                         {loginMutation.isPending ? "Signing in..." : "Sign In"}
                       </Button>
-                      
-                      <div className="text-sm text-muted-foreground text-center mt-4">
-                        <p>Demo Accounts:</p>
-                        <p className="mt-1">
-                          <span className="text-white">Admin:</span> admin / password
-                        </p>
-                        <p>
-                          <span className="text-white">Viewer:</span> viewer / password
-                        </p>
-                      </div>
                     </form>
                   </Form>
                 </TabsContent>
