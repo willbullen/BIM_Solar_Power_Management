@@ -65,10 +65,18 @@
 /* Custom styles */
 .app-content {
   @apply bg-background min-h-screen;
+  margin-left: 16.875rem !important; /* Set exact margin to match sidebar width */
+  width: calc(100% - 16.875rem) !important; /* Adjust width to account for sidebar */
+}
+
+.sidebar-collapsed .app-content {
+  margin-left: 0 !important;
+  width: 100% !important;
 }
 
 .app-sidebar {
-  @apply bg-sidebar w-64 fixed top-0 bottom-0 left-0 overflow-auto transition-transform duration-300 ease-in-out transform lg:translate-x-0 -translate-x-full lg:relative z-30 border-r border-sidebar-border pt-16;
+  @apply bg-sidebar w-[16.875rem] fixed top-0 bottom-0 left-0 overflow-auto transition-transform duration-300 ease-in-out transform lg:translate-x-0 -translate-x-full z-30 border-r border-sidebar-border pt-16;
+  position: fixed !important; /* Ensure sidebar stays fixed */
 }
 
 .app-header {
@@ -88,7 +96,8 @@
 }
 
 .main-container {
-  @apply pt-16 lg:pl-64 transition-all duration-300;
+  @apply pt-16 transition-all duration-300;
+  padding-left: 0; /* Remove default padding */
 }
 
 .main-container.sidebar-collapsed {

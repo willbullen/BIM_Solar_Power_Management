@@ -437,13 +437,13 @@ export default function SettingsPage() {
   
   return (
     <PowerDataProvider>
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className={`min-h-screen bg-background flex flex-col ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <Header onToggleSidebar={toggleSidebar} />
         
         <div className="flex flex-1 overflow-hidden">
           <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
           
-          <main className={`flex-1 app-content p-4 ${sidebarCollapsed ? '' : 'lg:ml-[16.875rem]'}`}>
+          <main className="flex-1 app-content p-4">
             <SettingsContent />
           </main>
         </div>
