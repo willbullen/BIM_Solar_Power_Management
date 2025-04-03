@@ -93,17 +93,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
             unaccountedLoad: getVariation(baseData.powerData.unaccountedLoad, 0.95, 1.05)
           });
           
+          // For temperature and sun intensity, calculate small variations (±0.2 max)
+          const getTinyVariation = (value: number, maxChange: number = 0.2): number => {
+            // Generate a random number between -maxChange and +maxChange
+            const change = (Math.random() * 2 * maxChange) - maxChange;
+            return value + change;
+          };
+          
           environmentalData = await storage.createEnvironmentalData({
             timestamp: new Date(),
-            weather: baseData.environmentalData.weather,
-            temperature: getVariation(baseData.environmentalData.temperature, 0.99, 1.01),
+            weather: baseData.environmentalData.weather, // Weather doesn't change frequently
+            // Very small temperature variations (max ±0.2°C between refreshes)
+            temperature: Math.round((getTinyVariation(baseData.environmentalData.temperature, 0.2)) * 10) / 10,
             humidity: baseData.environmentalData.humidity ? 
-                      Math.min(98, Math.max(60, getVariation(baseData.environmentalData.humidity, 0.98, 1.02))) : 
+                      Math.min(98, Math.max(60, getVariation(baseData.environmentalData.humidity, 0.995, 1.005))) : 
                       getRandomInRange(75, 95), // Default Kerry humidity is high
             windSpeed: baseData.environmentalData.windSpeed ? 
-                      Math.min(60, Math.max(3, getVariation(baseData.environmentalData.windSpeed, 0.9, 1.1))) :
+                      // Wind speed can vary a bit more but still reduced from before
+                      Math.min(60, Math.max(3, getVariation(baseData.environmentalData.windSpeed, 0.95, 1.05))) :
                       getRandomInRange(10, 25), // Default Kerry wind speed is substantial
-            sunIntensity: Math.min(100, Math.max(0, getVariation(baseData.environmentalData.sunIntensity, 0.97, 1.03)))
+            // Very small sun intensity variations (max ±0.2% between refreshes)
+            sunIntensity: Math.min(100, Math.max(0, getTinyVariation(baseData.environmentalData.sunIntensity, 0.2)))
           });
           console.log('Generated new live data');
         } else {
