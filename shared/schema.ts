@@ -70,9 +70,11 @@ export type Settings = typeof settings.$inferSelect;
 export const environmentalData = pgTable("environmental_data", {
   id: serial("id").primaryKey(),
   timestamp: timestamp("timestamp").notNull().defaultNow(),
-  weather: text("weather").notNull(), // Sunny, Partly Cloudy, etc.
+  weather: text("weather").notNull(), // Sunny, Partly Cloudy, Drizzle, Rain, etc.
   temperature: real("temperature").notNull(), // in °C
   sunIntensity: real("sun_intensity").notNull(), // in %
+  humidity: real("humidity"), // in %
+  windSpeed: real("wind_speed"), // in km/h
 });
 
 export const insertEnvironmentalDataSchema = createInsertSchema(environmentalData).omit({

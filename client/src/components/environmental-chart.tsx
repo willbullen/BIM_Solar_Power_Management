@@ -16,6 +16,8 @@ export function EnvironmentalChart({ environmentalData, className, isLoading = f
     timestamp: new Date(data.timestamp),
     temperature: data.temperature,
     sunIntensity: data.sunIntensity,
+    humidity: data.humidity || 0,
+    windSpeed: data.windSpeed || 0,
     weather: data.weather,
   }));
 
@@ -23,6 +25,8 @@ export function EnvironmentalChart({ environmentalData, className, isLoading = f
   const formatTooltip = (value: number, name: string) => {
     if (name === 'temperature') return `${value.toFixed(1)}°C`;
     if (name === 'sunIntensity') return `${value.toFixed(0)}%`;
+    if (name === 'humidity') return `${value.toFixed(0)}%`;
+    if (name === 'windSpeed') return `${value.toFixed(1)} km/h`;
     return value;
   };
   
@@ -67,7 +71,7 @@ export function EnvironmentalChart({ environmentalData, className, isLoading = f
       <CardHeader>
         <CardTitle>Environmental Conditions</CardTitle>
         <CardDescription>
-          Temperature and sun intensity over time
+          Kerry weather data (temperature, sun, humidity, and wind)
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -90,12 +94,12 @@ export function EnvironmentalChart({ environmentalData, className, isLoading = f
               />
               <YAxis 
                 yAxisId="temp" 
-                domain={[0, 30]} 
+                domain={[0, 25]} 
                 tickFormatter={(value) => `${value}°C`} 
                 tick={{ fontSize: 12 }} 
               />
               <YAxis 
-                yAxisId="sun" 
+                yAxisId="percent" 
                 orientation="right" 
                 domain={[0, 100]} 
                 tickFormatter={(value) => `${value}%`} 
@@ -122,7 +126,25 @@ export function EnvironmentalChart({ environmentalData, className, isLoading = f
                 stroke="#ffd60a" 
                 fill="#ffd60a" 
                 fillOpacity={0.3} 
-                yAxisId="sun" 
+                yAxisId="percent" 
+              />
+              <Area 
+                type="monotone" 
+                dataKey="humidity" 
+                name="Humidity" 
+                stroke="#3b82f6" 
+                fill="#3b82f6" 
+                fillOpacity={0.3} 
+                yAxisId="percent" 
+              />
+              <Area 
+                type="monotone" 
+                dataKey="windSpeed" 
+                name="Wind Speed" 
+                stroke="#10b981" 
+                fill="#10b981" 
+                fillOpacity={0.3} 
+                yAxisId="temp" 
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -155,6 +177,8 @@ export function EnvironmentalStats({ environmentalData, className }: Environment
   // Calculate statistics
   const temperatures = environmentalData.map(data => data.temperature);
   const sunIntensities = environmentalData.map(data => data.sunIntensity);
+  const humidities = environmentalData.map(data => data.humidity || 0);
+  const windSpeeds = environmentalData.map(data => data.windSpeed || 0);
   
   const avgTemp = temperatures.reduce((sum, val) => sum + val, 0) / temperatures.length;
   const minTemp = Math.min(...temperatures);
@@ -163,6 +187,14 @@ export function EnvironmentalStats({ environmentalData, className }: Environment
   const avgSun = sunIntensities.reduce((sum, val) => sum + val, 0) / sunIntensities.length;
   const minSun = Math.min(...sunIntensities);
   const maxSun = Math.max(...sunIntensities);
+  
+  const avgHumidity = humidities.reduce((sum, val) => sum + val, 0) / humidities.length;
+  const minHumidity = Math.min(...humidities);
+  const maxHumidity = Math.max(...humidities);
+  
+  const avgWind = windSpeeds.reduce((sum, val) => sum + val, 0) / windSpeeds.length;
+  const minWind = Math.min(...windSpeeds);
+  const maxWind = Math.max(...windSpeeds);
   
   // Count weather types
   const weatherCounts: Record<string, number> = {};
@@ -209,6 +241,24 @@ export function EnvironmentalStats({ environmentalData, className }: Environment
                 </div>
               </div>
             </div>
+            
+            <div>
+              <h4 className="font-medium text-white text-sm">Wind Speed</h4>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                <div className="bg-card/30 p-2 rounded">
+                  <p className="text-xs text-muted-foreground">Average</p>
+                  <p className="font-medium">{avgWind.toFixed(1)} km/h</p>
+                </div>
+                <div className="bg-card/30 p-2 rounded">
+                  <p className="text-xs text-muted-foreground">Minimum</p>
+                  <p className="font-medium">{minWind.toFixed(1)} km/h</p>
+                </div>
+                <div className="bg-card/30 p-2 rounded">
+                  <p className="text-xs text-muted-foreground">Maximum</p>
+                  <p className="font-medium">{maxWind.toFixed(1)} km/h</p>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div className="space-y-4">
@@ -226,6 +276,24 @@ export function EnvironmentalStats({ environmentalData, className }: Environment
                 <div className="bg-card/30 p-2 rounded">
                   <p className="text-xs text-muted-foreground">Maximum</p>
                   <p className="font-medium">{maxSun.toFixed(0)}%</p>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="font-medium text-white text-sm">Humidity</h4>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                <div className="bg-card/30 p-2 rounded">
+                  <p className="text-xs text-muted-foreground">Average</p>
+                  <p className="font-medium">{avgHumidity.toFixed(0)}%</p>
+                </div>
+                <div className="bg-card/30 p-2 rounded">
+                  <p className="text-xs text-muted-foreground">Minimum</p>
+                  <p className="font-medium">{minHumidity.toFixed(0)}%</p>
+                </div>
+                <div className="bg-card/30 p-2 rounded">
+                  <p className="text-xs text-muted-foreground">Maximum</p>
+                  <p className="font-medium">{maxHumidity.toFixed(0)}%</p>
                 </div>
               </div>
             </div>
@@ -268,45 +336,45 @@ export function SolarInfluenceAnalysis({ environmentalData, powerData, className
       <CardContent>
         <div className="space-y-4">
           <div className="p-4 border border-border rounded-lg">
-            <h4 className="font-medium text-white text-sm mb-2">Key Findings</h4>
+            <h4 className="font-medium text-white text-sm mb-2">Kerry Weather Impact</h4>
             <ul className="space-y-2 text-sm">
               <li className="flex items-start">
                 <span className="text-green-400 mr-2">•</span>
-                <span>High sun intensity {'>'}80% corresponds with maximum solar output efficiency</span>
+                <span>Spring in Kerry sees frequent rain showers reducing solar efficiency by 60-70%</span>
               </li>
               <li className="flex items-start">
                 <span className="text-yellow-400 mr-2">•</span>
-                <span>Partially cloudy conditions reduce efficiency by approximately 30-40%</span>
+                <span>Coastal high winds (over 15 km/h) help keep panels cool, increasing efficiency by ~3%</span>
               </li>
               <li className="flex items-start">
                 <span className="text-red-400 mr-2">•</span>
-                <span>Overcast conditions reduce system efficiency to below 40% of capacity</span>
+                <span>High humidity (over 85%) typical of Kerry coastal areas may cause condensation on panels</span>
               </li>
               <li className="flex items-start">
                 <span className="text-blue-400 mr-2">•</span>
-                <span>Temperature above 25°C reduces panel efficiency by approximately 5-10%</span>
+                <span>Kerry's mild temperatures (rarely above 18°C) are optimal for panel efficiency</span>
               </li>
             </ul>
           </div>
           
           <div className="p-4 border border-border rounded-lg">
-            <h4 className="font-medium text-white text-sm mb-2">Recommendations</h4>
+            <h4 className="font-medium text-white text-sm mb-2">Kerry-Specific Recommendations</h4>
             <ul className="space-y-2 text-sm">
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
-                <span>Schedule high-energy tasks during periods of high solar production</span>
+                <span>Install rain sensors to optimize panel cleaning schedule during frequent Kerry drizzle</span>
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
-                <span>Regular panel cleaning is recommended to maintain optimal efficiency</span>
+                <span>Use enhanced battery storage to compensate for Kerry's inconsistent sun patterns</span>
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
-                <span>Ensure panels are properly ventilated to reduce temperature effects</span>
+                <span>Apply anti-condensation coating suitable for high-humidity coastal environments</span>
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
-                <span>Consider battery storage to maximize utilization of solar production</span>
+                <span>Consider additional panels (15-20% more) to compensate for Kerry's reduced sun hours</span>
               </li>
             </ul>
           </div>
