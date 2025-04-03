@@ -93,8 +93,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             unaccountedLoad: getVariation(baseData.powerData.unaccountedLoad, 0.95, 1.05)
           });
           
-          // For temperature and sun intensity, calculate small variations (±0.2 max)
-          const getTinyVariation = (value: number, maxChange: number = 0.2): number => {
+          // Critical change: Do NOT generate new base data every time
+          // Instead, use latestEnv (the last record) as the baseline
+          // This provides continuity between data points
+          
+          // For temperature and sun intensity, calculate extremely small variations (±0.05 max)
+          const getTinyVariation = (value: number, maxChange: number = 0.05): number => {
             // Generate a random number between -maxChange and +maxChange
             const change = (Math.random() * 2 * maxChange) - maxChange;
             return value + change;
@@ -102,18 +106,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           environmentalData = await storage.createEnvironmentalData({
             timestamp: new Date(),
-            weather: baseData.environmentalData.weather, // Weather doesn't change frequently
-            // Very small temperature variations (max ±0.2°C between refreshes)
-            temperature: Math.round((getTinyVariation(baseData.environmentalData.temperature, 0.2)) * 10) / 10,
-            humidity: baseData.environmentalData.humidity ? 
-                      Math.min(98, Math.max(60, getVariation(baseData.environmentalData.humidity, 0.995, 1.005))) : 
-                      getRandomInRange(75, 95), // Default Kerry humidity is high
-            windSpeed: baseData.environmentalData.windSpeed ? 
-                      // Wind speed can vary a bit more but still reduced from before
-                      Math.min(60, Math.max(3, getVariation(baseData.environmentalData.windSpeed, 0.95, 1.05))) :
-                      getRandomInRange(10, 25), // Default Kerry wind speed is substantial
-            // Very small sun intensity variations (max ±0.2% between refreshes)
-            sunIntensity: Math.min(100, Math.max(0, getTinyVariation(baseData.environmentalData.sunIntensity, 0.2)))
+            // Keep the same weather for longer periods (only change 5% of the time)
+            weather: Math.random() < 0.05 ? baseData.environmentalData.weather : latestEnv.weather,
+            // Ultra-small temperature variations (max ±0.05°C between refreshes)
+            // Use the LATEST temp value, not the base scenario temp
+            temperature: Math.round((getTinyVariation(latestEnv.temperature, 0.05)) * 10) / 10,
+            // Use the LATEST humidity value, not the base scenario value
+            humidity: Math.min(98, Math.max(60, 
+                     getTinyVariation(latestEnv.humidity || 85, 0.1))), 
+            // Use the LATEST wind speed, not the base scenario value
+            windSpeed: Math.min(60, Math.max(3, 
+                     getTinyVariation(latestEnv.windSpeed || 15, 0.2))),
+            // Ultra-small sun intensity variations (max ±0.1% between refreshes)
+            // Use the LATEST value, not the base scenario value
+            sunIntensity: Math.min(100, Math.max(0, 
+                         getTinyVariation(latestEnv.sunIntensity, 0.1)))
           });
           console.log('Generated new live data');
         } else {
