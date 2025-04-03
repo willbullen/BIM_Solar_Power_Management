@@ -741,7 +741,7 @@ export default function EquipmentPage() {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
         
-        <main className={`flex-1 app-content p-4 ${sidebarCollapsed ? '' : 'lg:ml-64'}`}>
+        <main className={`flex-1 app-content p-4 ${sidebarCollapsed ? '' : 'lg:ml-[16.875rem]'}`}>
           <EquipmentContent />
         </main>
       </div>
