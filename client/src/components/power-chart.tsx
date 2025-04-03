@@ -2,7 +2,6 @@ import { PowerData } from "@shared/schema";
 import { useState, useEffect } from "react";
 import { 
   ResponsiveContainer, 
-  LineChart, 
   Line, 
   XAxis, 
   YAxis, 
@@ -16,8 +15,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { format, subHours, subDays } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
-import { getQueryFn } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
 
 type PowerChartProps = {
@@ -27,6 +24,7 @@ type PowerChartProps = {
 
 export function PowerChart({ powerData, className }: PowerChartProps) {
   const [timeRange, setTimeRange] = useState<string>("1h");
+  const [isFiltering, setIsFiltering] = useState(false);
   
   // Calculate date range based on selected timeRange
   const getDateRange = () => {
@@ -47,36 +45,26 @@ export function PowerChart({ powerData, className }: PowerChartProps) {
   
   const { startDate, endDate } = getDateRange();
   
-  // Fetch data for the selected time range using API
-  const {
-    data: rangeData,
-    isLoading,
-    isError,
-    refetch
-  } = useQuery<PowerData[], Error>({
-    queryKey: ['/api/power-data/range', timeRange],
-    queryFn: async () => {
-      const startDateStr = startDate.toISOString();
-      const endDateStr = endDate.toISOString();
-      const queryFn = getQueryFn({ on401: 'throw' });
-      return queryFn({ 
-        url: `/api/power-data/range?startDate=${startDateStr}&endDate=${endDateStr}`
-      });
-    },
-  });
-  
-  // Re-fetch data when timeRange changes
+  // Show loading indicator when changing time range
   useEffect(() => {
-    refetch();
-  }, [timeRange, refetch]);
+    setIsFiltering(true);
+    // Use a small timeout to simulate loading
+    const timer = setTimeout(() => {
+      setIsFiltering(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [timeRange]);
   
-  // Use the fetched data or fall back to passed powerData if not available
-  const effectiveData = rangeData || powerData;
+  // Filter data based on selected time range
+  const effectiveData = powerData.filter(item => {
+    const timestamp = new Date(item.timestamp);
+    return timestamp >= startDate && timestamp <= endDate;
+  });
   
   // Transform and sort data for charting
   const chartData = effectiveData
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-    .map(data => ({
+    .map((data) => ({
       timestamp: new Date(data.timestamp),
       mainGridPower: data.mainGridPower,
       solarOutput: data.solarOutput,
@@ -88,7 +76,7 @@ export function PowerChart({ powerData, className }: PowerChartProps) {
     }));
   
   // Calculate peak and average values for annotations
-  const totalValues = chartData.map(d => d.totalLoad);
+  const totalValues = chartData.map((d) => d.totalLoad);
   const peakPower = totalValues.length ? Math.max(...totalValues) : 0;
   const avgPower = totalValues.length 
     ? (totalValues.reduce((sum, val) => sum + val, 0) / totalValues.length) 
@@ -114,7 +102,7 @@ export function PowerChart({ powerData, className }: PowerChartProps) {
               variant={timeRange === "1h" ? "default" : "outline"}
               size="sm"
               onClick={() => setTimeRange("1h")}
-              disabled={isLoading}
+              disabled={isFiltering}
             >
               1H
             </Button>
@@ -122,7 +110,7 @@ export function PowerChart({ powerData, className }: PowerChartProps) {
               variant={timeRange === "6h" ? "default" : "outline"}
               size="sm"
               onClick={() => setTimeRange("6h")}
-              disabled={isLoading}
+              disabled={isFiltering}
             >
               6H
             </Button>
@@ -130,7 +118,7 @@ export function PowerChart({ powerData, className }: PowerChartProps) {
               variant={timeRange === "24h" ? "default" : "outline"}
               size="sm"
               onClick={() => setTimeRange("24h")}
-              disabled={isLoading}
+              disabled={isFiltering}
             >
               24H
             </Button>
@@ -138,7 +126,7 @@ export function PowerChart({ powerData, className }: PowerChartProps) {
               variant={timeRange === "7d" ? "default" : "outline"}
               size="sm"
               onClick={() => setTimeRange("7d")}
-              disabled={isLoading}
+              disabled={isFiltering}
             >
               7D
             </Button>
@@ -146,22 +134,10 @@ export function PowerChart({ powerData, className }: PowerChartProps) {
         </div>
       </div>
       <div className="p-4">
-        {isLoading ? (
+        {isFiltering ? (
           <div className="flex items-center justify-center h-[300px]">
             <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
             <span className="text-muted-foreground">Loading {timeRange} data...</span>
-          </div>
-        ) : isError ? (
-          <div className="flex flex-col items-center justify-center h-[300px] text-destructive">
-            <p>Failed to load power data for the selected time range.</p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="mt-2" 
-              onClick={() => refetch()}
-            >
-              Retry
-            </Button>
           </div>
         ) : chartData.length === 0 ? (
           <div className="flex items-center justify-center h-[300px] text-muted-foreground">
