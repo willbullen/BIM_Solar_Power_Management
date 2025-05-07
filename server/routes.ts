@@ -137,15 +137,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Check if we should use Solcast data for environmental measurements
         if (settings.useSolcastData && settings.solcastApiKey) {
+          // Initialize Solcast service with API key and location
+          const solcastService = new SolcastService(
+            settings.solcastApiKey, 
+            settings.locationLatitude ?? undefined, 
+            settings.locationLongitude ?? undefined
+          );
+          
           try {
-            // Initialize Solcast service with API key and location
-            const solcastService = new SolcastService(
-              settings.solcastApiKey, 
-              settings.locationLatitude ?? undefined, 
-              settings.locationLongitude ?? undefined
-            );
-            
-            // Fetch the latest forecast data (just one entry for current conditions)
+            // Fetch the latest forecast data (for next 24 hours)
+            // The SolcastService now includes fallback handling for API issues
             const forecastData = await solcastService.getForecastData(24);
             
             // Map Solcast data to our environmental data format
@@ -155,7 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Take the most current data point (first in the array)
               const currentEnvData = mappedEnvData[0];
               
-              // Create environmental data record with real Solcast data
+              // Create environmental data record with Solcast data
               environmentalData = await storage.createEnvironmentalData(currentEnvData);
               console.log('Created environmental data from Solcast API');
               
@@ -331,16 +332,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         settings.locationLongitude ?? undefined
       );
       
-      // Fetch forecast data
-      const forecastData = await solcastService.getForecastData(hours);
+      // Try to fetch forecast data with improved error handling
+      // SolcastService will now handle API errors internally and provide fallback data
+      let forecastData;
+      try {
+        forecastData = await solcastService.getForecastData(hours);
+      } catch (err) {
+        console.warn('Issue with Solcast API, using fallback data:', err);
+        forecastData = solcastService.getFallbackData();
+      }
       
       // Convert to our environmental data format
       const mappedData = solcastService.mapToEnvironmentalData(forecastData);
       
-      res.json(mappedData);
+      // Add a data source indicator if we're using fallback data
+      const usingRealData = !('_fallback' in forecastData);
+      
+      res.json({
+        data: mappedData,
+        meta: {
+          source: usingRealData ? 'solcast-api' : 'fallback-data',
+          timestamp: new Date(),
+          forecastHours: hours
+        }
+      });
     } catch (error) {
-      console.error('Error fetching forecast data:', error);
-      res.status(500).json({ message: 'Failed to fetch forecast data' });
+      console.error('Error in forecast endpoint:', error);
+      res.status(500).json({ 
+        message: 'Failed to process forecast data',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
   

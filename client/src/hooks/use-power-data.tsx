@@ -62,10 +62,24 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
       try {
         console.log('Fetching latest data...');
         
-        // Use the fetch API with error handling
-        const powerResponse = await fetch('/api/power-data/latest');
-        const envResponse = await fetch('/api/environmental-data/latest');
-        const settingsResponse = await fetch('/api/settings');
+        // Use the fetch API with error handling and timeout
+        const fetchWithTimeout = async (url: string, timeout = 5000) => {
+          const controller = new AbortController();
+          const id = setTimeout(() => controller.abort(), timeout);
+          try {
+            const response = await fetch(url, { signal: controller.signal });
+            clearTimeout(id);
+            return response;
+          } catch (error) {
+            clearTimeout(id);
+            throw error;
+          }
+        };
+        
+        // Fetch data with timeouts to prevent hanging requests
+        const powerResponse = await fetchWithTimeout('/api/power-data/latest');
+        const envResponse = await fetchWithTimeout('/api/environmental-data/latest');
+        const settingsResponse = await fetchWithTimeout('/api/settings');
         
         // Check if any responses failed
         if (!powerResponse.ok || !envResponse.ok || !settingsResponse.ok) {
@@ -92,12 +106,20 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
         console.log('Latest data fetched successfully');
       } catch (error) {
         console.error('Error fetching latest data:', error);
-        toast({
-          title: "Data Fetch Error",
-          description: "Failed to fetch latest power monitoring data.",
-          variant: "destructive",
-        });
-        setDataStatus('offline');
+        // Only show toast error every 30 seconds to avoid spamming
+        const now = new Date().getTime();
+        if (!lastUpdated || (now - lastUpdated.getTime() > 30000)) {
+          toast({
+            title: "Data Connection Issue",
+            description: "There may be a temporary issue with the data connection. The system will continue to try to reconnect.",
+            variant: "destructive",
+          });
+        }
+        
+        // Don't immediately go offline - stay in current status for continuity
+        if (!lastUpdated) {
+          setDataStatus('offline');
+        }
       }
     };
     
@@ -111,7 +133,7 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     return () => {
       clearInterval(pollingInterval);
     };
-  }, [toast]);
+  }, [toast, lastUpdated]);
   
   // Update settings when they change from the query
   useEffect(() => {
