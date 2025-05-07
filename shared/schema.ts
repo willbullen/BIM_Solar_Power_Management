@@ -57,6 +57,12 @@ export const settings = pgTable("settings", {
   weatherApiKey: text("weather_api_key"),
   powerMonitoringApiKey: text("power_monitoring_api_key"),
   notificationsApiKey: text("notifications_api_key"),
+  // Solcast API settings
+  solcastApiKey: text("solcast_api_key"),
+  // Location for solar forecasting (Kerry, Ireland by default)
+  locationLatitude: real("location_latitude").default(52.059937), // Kerry, Ireland default
+  locationLongitude: real("location_longitude").default(-9.507269), // Kerry, Ireland default
+  useSolcastData: boolean("use_solcast_data").default(false),
 });
 
 export const insertSettingsSchema = createInsertSchema(settings).omit({

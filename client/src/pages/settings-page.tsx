@@ -35,6 +35,11 @@ function SettingsContent() {
     weatherApiKey: settings?.weatherApiKey || '',
     powerMonitoringApiKey: settings?.powerMonitoringApiKey || '',
     notificationsApiKey: settings?.notificationsApiKey || '',
+    // Solcast API settings
+    solcastApiKey: settings?.solcastApiKey || '',
+    locationLatitude: settings?.locationLatitude || 52.059937,
+    locationLongitude: settings?.locationLongitude || -9.507269,
+    useSolcastData: settings?.useSolcastData || false,
   });
   
   // Update local state when settings load from the server
@@ -419,6 +424,69 @@ function SettingsContent() {
                 <p className="text-xs text-muted-foreground">
                   Used for sending alerts and notifications via SMS or push services
                 </p>
+              </div>
+              
+              <div className="border-t pt-4 mt-4">
+                <h3 className="font-medium text-white mb-4">Solcast Weather Integration</h3>
+                
+                <div className="flex items-center space-x-2 mb-4">
+                  <Switch 
+                    id="useSolcastData"
+                    checked={Boolean(formValues.useSolcastData)}
+                    onCheckedChange={(checked) => 
+                      handleSwitchChange(checked, "useSolcastData")
+                    }
+                  />
+                  <Label htmlFor="useSolcastData">Enable Solcast Integration</Label>
+                </div>
+                
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="solcastApiKey">Solcast API Key</Label>
+                    <Input 
+                      id="solcastApiKey"
+                      name="solcastApiKey"
+                      type="password"
+                      value={formValues.solcastApiKey || ''}
+                      onChange={handleChange}
+                      placeholder="Enter your Solcast API key"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Used to fetch accurate solar radiation and weather data
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="grid gap-2">
+                      <Label htmlFor="locationLatitude">Location Latitude</Label>
+                      <Input 
+                        id="locationLatitude"
+                        name="locationLatitude"
+                        type="number"
+                        step="0.000001"
+                        value={formValues.locationLatitude || 52.059937}
+                        onChange={handleChange}
+                        placeholder="52.059937"
+                      />
+                    </div>
+                    
+                    <div className="grid gap-2">
+                      <Label htmlFor="locationLongitude">Location Longitude</Label>
+                      <Input 
+                        id="locationLongitude"
+                        name="locationLongitude"
+                        type="number"
+                        step="0.000001"
+                        value={formValues.locationLongitude || -9.507269}
+                        onChange={handleChange}
+                        placeholder="-9.507269"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    GPS coordinates for Kerry, Ireland location (default: 52.059937, -9.507269)
+                  </p>
+                </div>
               </div>
             </div>
           </CardContent>

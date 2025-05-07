@@ -13,6 +13,7 @@ import {
 import { ZodError } from "zod";
 import { generateSyntheticData } from "./data";
 import { format } from 'date-fns';
+import { SolcastService } from './solcast-service';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize the database
@@ -25,6 +26,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create HTTP server
   const httpServer = createServer(app);
+  
+  // Helper function to generate live data based on previous readings (moved outside of interval)
+  async function generateLiveDataFromPrevious(latestPower: any, latestEnv: any): Promise<{powerData: any, environmentalData: any}> {
+    let powerData;
+    let environmentalData;
+    
+    if (latestPower && latestEnv) {
+      // Function to get random variation within range
+      const getVariation = (value: number, minPercent: number, maxPercent: number): number => {
+        return value * (minPercent + Math.random() * (maxPercent - minPercent));
+      };
+      
+      // Helper function to get random value within a range
+      const getRandomInRange = (min: number, max: number): number => {
+        return min + (Math.random() * (max - min));
+      };
+      
+      // Get current hour to determine appropriate scenario
+      const currentHour = new Date().getHours();
+      let scenario = 'cloudy'; // Default
+      
+      // Determine scenario based on time of day
+      if (currentHour >= 9 && currentHour < 16) {
+        scenario = Math.random() > 0.3 ? 'sunny' : 'cloudy'; // More likely sunny during day
+      } else if (currentHour >= 16 && currentHour < 20) {
+        scenario = Math.random() > 0.6 ? 'peak' : 'cloudy'; // Afternoon peak
+      } else {
+        scenario = 'night'; // Night time
+      }
+      
+      // Generate base values using our scenario-based generator
+      const baseData = generateSyntheticData(scenario);
+      
+      // Create new data that slightly varies from baseline but stays in realistic range
+      powerData = await storage.createPowerData({
+        timestamp: new Date(),
+        mainGridPower: getVariation(baseData.powerData.mainGridPower, 0.95, 1.05),
+        solarOutput: latestEnv.sunIntensity > 20 
+          ? getVariation(baseData.powerData.solarOutput, 0.95, 1.05)
+          : getVariation(baseData.powerData.solarOutput, 0.90, 1.0),
+        refrigerationLoad: getVariation(baseData.powerData.refrigerationLoad, 0.97, 1.03),
+        bigColdRoom: getVariation(baseData.powerData.bigColdRoom, 0.97, 1.03),
+        bigFreezer: getVariation(baseData.powerData.bigFreezer, 0.97, 1.03),
+        smoker: getVariation(baseData.powerData.smoker, 0.95, 1.05),
+        totalLoad: getVariation(baseData.powerData.totalLoad, 0.97, 1.03),
+        unaccountedLoad: getVariation(baseData.powerData.unaccountedLoad, 0.95, 1.05)
+      });
+      
+      // For temperature and sun intensity, calculate extremely small variations (±0.05 max)
+      const getTinyVariation = (value: number, maxChange: number = 0.05): number => {
+        // Generate a random number between -maxChange and +maxChange
+        const change = (Math.random() * 2 * maxChange) - maxChange;
+        return value + change;
+      };
+      
+      environmentalData = await storage.createEnvironmentalData({
+        timestamp: new Date(),
+        // Keep the same weather for longer periods (only change 5% of the time)
+        weather: Math.random() < 0.05 ? baseData.environmentalData.weather : latestEnv.weather,
+        // Ultra-small temperature variations (max ±0.05°C between refreshes)
+        // Use the LATEST temp value, not the base scenario temp
+        temperature: Math.round((getTinyVariation(latestEnv.temperature, 0.05)) * 10) / 10,
+        // Use the LATEST humidity value, not the base scenario value
+        humidity: Math.min(98, Math.max(60, 
+                 getTinyVariation(latestEnv.humidity || 85, 0.1))), 
+        // Use the LATEST wind speed, not the base scenario value
+        windSpeed: Math.min(60, Math.max(3, 
+                 getTinyVariation(latestEnv.windSpeed || 15, 0.2))),
+        // Ultra-small sun intensity variations (max ±0.1% between refreshes)
+        // Use the LATEST value, not the base scenario value
+        sunIntensity: Math.min(100, Math.max(0, 
+                     getTinyVariation(latestEnv.sunIntensity, 0.1)))
+      });
+      console.log('Generated new live data');
+    } else {
+      // Fallback to synthetic data if no previous data exists
+      const syntheticData = generateSyntheticData('sunny');
+      powerData = await storage.createPowerData(syntheticData.powerData);
+      environmentalData = await storage.createEnvironmentalData(syntheticData.environmentalData);
+      console.log('Generated initial synthetic data (fallback)');
+    }
+    
+    return { powerData, environmentalData };
+  }
   
   // Instead of using WebSockets, we'll generate new data periodically
   // to be fetched via the REST API endpoints
@@ -46,89 +131,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
         environmentalData = await storage.createEnvironmentalData(syntheticData.environmentalData);
         console.log('Generated new synthetic data');
       } else {
-        // In a real implementation, this would fetch from real sensors
-        // For demo purposes, we'll generate slightly random data
+        // For live data, we can use real API data or generate slightly random values
         const latestPower = await storage.getLatestPowerData();
         const latestEnv = await storage.getLatestEnvironmentalData();
         
-        if (latestPower && latestEnv) {
-          // Function to get random variation within range
-          const getVariation = (value: number, minPercent: number, maxPercent: number): number => {
-            return value * (minPercent + Math.random() * (maxPercent - minPercent));
-          };
-          
-          // Helper function to get random value within a range
-          const getRandomInRange = (min: number, max: number): number => {
-            return min + (Math.random() * (max - min));
-          };
-          
-          // Get current hour to determine appropriate scenario
-          const currentHour = new Date().getHours();
-          let scenario = 'cloudy'; // Default
-          
-          // Determine scenario based on time of day
-          if (currentHour >= 9 && currentHour < 16) {
-            scenario = Math.random() > 0.3 ? 'sunny' : 'cloudy'; // More likely sunny during day
-          } else if (currentHour >= 16 && currentHour < 20) {
-            scenario = Math.random() > 0.6 ? 'peak' : 'cloudy'; // Afternoon peak
-          } else {
-            scenario = 'night'; // Night time
+        // Check if we should use Solcast data for environmental measurements
+        if (settings.useSolcastData && settings.solcastApiKey) {
+          try {
+            // Initialize Solcast service with API key and location
+            const solcastService = new SolcastService(
+              settings.solcastApiKey, 
+              settings.locationLatitude ?? undefined, 
+              settings.locationLongitude ?? undefined
+            );
+            
+            // Fetch the latest forecast data (just one entry for current conditions)
+            const forecastData = await solcastService.getForecastData(24);
+            
+            // Map Solcast data to our environmental data format
+            const mappedEnvData = solcastService.mapToEnvironmentalData(forecastData);
+            
+            if (mappedEnvData.length > 0) {
+              // Take the most current data point (first in the array)
+              const currentEnvData = mappedEnvData[0];
+              
+              // Create environmental data record with real Solcast data
+              environmentalData = await storage.createEnvironmentalData(currentEnvData);
+              console.log('Created environmental data from Solcast API');
+              
+              // Create power data that correlates with the environmental conditions
+              // Function to get random variation within range
+              const getVariation = (value: number, minPercent: number, maxPercent: number): number => {
+                return value * (minPercent + Math.random() * (maxPercent - minPercent));
+              };
+              
+              // Adjust solar output based on sun intensity from real weather data
+              let solarEfficiency = 1.0;
+              
+              // Weather affects solar efficiency
+              if (currentEnvData.weather === 'Sunny') {
+                solarEfficiency = 1.0; // Maximum efficiency
+              } else if (currentEnvData.weather === 'Partly Cloudy') {
+                solarEfficiency = 0.75; // 75% efficiency
+              } else if (currentEnvData.weather === 'Mostly Cloudy') {
+                solarEfficiency = 0.5; // 50% efficiency
+              } else if (currentEnvData.weather === 'Cloudy') {
+                solarEfficiency = 0.3; // 30% efficiency
+              } else {
+                solarEfficiency = 0.2; // 20% efficiency for overcast
+              }
+              
+              // Calculate base solar output based on sun intensity and weather
+              const baseSolarOutput = (currentEnvData.sunIntensity / 100) * 2.5 * solarEfficiency;
+              
+              // Create corresponding power data
+              powerData = await storage.createPowerData({
+                timestamp: new Date(),
+                // Base solar output on real weather data
+                solarOutput: Math.max(0, baseSolarOutput),
+                // Other values vary slightly from previous readings
+                mainGridPower: latestPower ? getVariation(latestPower.mainGridPower, 0.95, 1.05) : 3.5,
+                refrigerationLoad: latestPower ? getVariation(latestPower.refrigerationLoad, 0.97, 1.03) : 3.9,
+                bigColdRoom: latestPower ? getVariation(latestPower.bigColdRoom, 0.97, 1.03) : 9.7,
+                bigFreezer: latestPower ? getVariation(latestPower.bigFreezer, 0.97, 1.03) : 7.1,
+                smoker: latestPower ? getVariation(latestPower.smoker, 0.95, 1.05) : 0.1,
+                totalLoad: latestPower ? getVariation(latestPower.totalLoad, 0.97, 1.03) : 5.6,
+                unaccountedLoad: latestPower ? getVariation(latestPower.unaccountedLoad, 0.95, 1.05) : 0.6
+              });
+              
+            } else {
+              throw new Error('No forecast data available from Solcast');
+            }
+          } catch (error) {
+            console.error('Error fetching Solcast data:', error);
+            // Fallback to normal data generation if API call fails
+            const result = await generateLiveDataFromPrevious(latestPower, latestEnv);
+            powerData = result.powerData;
+            environmentalData = result.environmentalData;
           }
-          
-          // Generate base values using our scenario-based generator
-          const baseData = generateSyntheticData(scenario);
-          
-          // Create new data that slightly varies from baseline but stays in realistic range
-          powerData = await storage.createPowerData({
-            timestamp: new Date(),
-            mainGridPower: getVariation(baseData.powerData.mainGridPower, 0.95, 1.05),
-            solarOutput: latestEnv.sunIntensity > 20 
-              ? getVariation(baseData.powerData.solarOutput, 0.95, 1.05)
-              : getVariation(baseData.powerData.solarOutput, 0.90, 1.0),
-            refrigerationLoad: getVariation(baseData.powerData.refrigerationLoad, 0.97, 1.03),
-            bigColdRoom: getVariation(baseData.powerData.bigColdRoom, 0.97, 1.03),
-            bigFreezer: getVariation(baseData.powerData.bigFreezer, 0.97, 1.03),
-            smoker: getVariation(baseData.powerData.smoker, 0.95, 1.05),
-            totalLoad: getVariation(baseData.powerData.totalLoad, 0.97, 1.03),
-            unaccountedLoad: getVariation(baseData.powerData.unaccountedLoad, 0.95, 1.05)
-          });
-          
-          // Critical change: Do NOT generate new base data every time
-          // Instead, use latestEnv (the last record) as the baseline
-          // This provides continuity between data points
-          
-          // For temperature and sun intensity, calculate extremely small variations (±0.05 max)
-          const getTinyVariation = (value: number, maxChange: number = 0.05): number => {
-            // Generate a random number between -maxChange and +maxChange
-            const change = (Math.random() * 2 * maxChange) - maxChange;
-            return value + change;
-          };
-          
-          environmentalData = await storage.createEnvironmentalData({
-            timestamp: new Date(),
-            // Keep the same weather for longer periods (only change 5% of the time)
-            weather: Math.random() < 0.05 ? baseData.environmentalData.weather : latestEnv.weather,
-            // Ultra-small temperature variations (max ±0.05°C between refreshes)
-            // Use the LATEST temp value, not the base scenario temp
-            temperature: Math.round((getTinyVariation(latestEnv.temperature, 0.05)) * 10) / 10,
-            // Use the LATEST humidity value, not the base scenario value
-            humidity: Math.min(98, Math.max(60, 
-                     getTinyVariation(latestEnv.humidity || 85, 0.1))), 
-            // Use the LATEST wind speed, not the base scenario value
-            windSpeed: Math.min(60, Math.max(3, 
-                     getTinyVariation(latestEnv.windSpeed || 15, 0.2))),
-            // Ultra-small sun intensity variations (max ±0.1% between refreshes)
-            // Use the LATEST value, not the base scenario value
-            sunIntensity: Math.min(100, Math.max(0, 
-                         getTinyVariation(latestEnv.sunIntensity, 0.1)))
-          });
-          console.log('Generated new live data');
         } else {
-          // Fallback to synthetic data if no previous data exists
-          const syntheticData = generateSyntheticData('sunny');
-          powerData = await storage.createPowerData(syntheticData.powerData);
-          environmentalData = await storage.createEnvironmentalData(syntheticData.environmentalData);
-          console.log('Generated initial synthetic data (fallback)');
+          // Use previous method if not using Solcast
+          const result = await generateLiveDataFromPrevious(latestPower, latestEnv);
+          powerData = result.powerData;
+          environmentalData = result.environmentalData;
         }
       }
     } catch (error) {
@@ -221,6 +306,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch environmental data by date range' });
+    }
+  });
+  
+  // GET /api/environmental-data/forecast - Get forecast data from Solcast
+  app.get('/api/environmental-data/forecast', async (req, res) => {
+    try {
+      // Get settings to check if Solcast is enabled
+      const settings = await storage.getSettings();
+      
+      if (!settings.useSolcastData || !settings.solcastApiKey) {
+        return res.status(400).json({ 
+          message: 'Solcast API is not configured or enabled. Update settings to enable forecast data.' 
+        });
+      }
+      
+      // Get hours parameter (default to 48 hours)
+      const hours = req.query.hours ? parseInt(req.query.hours as string) : 48;
+      
+      // Initialize Solcast service with API key and location
+      const solcastService = new SolcastService(
+        settings.solcastApiKey,
+        settings.locationLatitude ?? undefined,
+        settings.locationLongitude ?? undefined
+      );
+      
+      // Fetch forecast data
+      const forecastData = await solcastService.getForecastData(hours);
+      
+      // Convert to our environmental data format
+      const mappedData = solcastService.mapToEnvironmentalData(forecastData);
+      
+      res.json(mappedData);
+    } catch (error) {
+      console.error('Error fetching forecast data:', error);
+      res.status(500).json({ message: 'Failed to fetch forecast data' });
     }
   });
   

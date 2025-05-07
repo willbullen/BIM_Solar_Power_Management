@@ -64,6 +64,7 @@
     "memorystore": "^1.6.7",
     "ml-matrix": "^6.12.1",
     "ml-regression-multivariate-linear": "^2.0.4",
+    "node-fetch": "^3.3.2",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "react": "^18.3.1",
