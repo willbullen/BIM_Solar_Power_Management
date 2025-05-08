@@ -1,3 +1,4 @@
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 
 interface SolcastLiveRadiationData {
@@ -45,6 +46,7 @@ interface SolcastPvForecastData {
     pv_estimate10?: number;
     pv_estimate90?: number;
   }[];
+  _fallback?: boolean;
 }
 
 export function useSolcastLiveRadiation() {
