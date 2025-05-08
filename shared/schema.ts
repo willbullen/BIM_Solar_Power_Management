@@ -325,9 +325,7 @@ export const agentFunctions = pgTable("agent_functions", {
 });
 
 export const insertAgentFunctionSchema = createInsertSchema(agentFunctions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+  id: true
 });
 
 export type InsertAgentFunction = z.infer<typeof insertAgentFunctionSchema>;

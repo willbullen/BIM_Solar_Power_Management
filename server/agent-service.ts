@@ -269,10 +269,7 @@ export class AgentService {
     }
     
     const functions = await db.query.agentFunctions.findMany({
-      where: (fields, { eq, and, inArray }) => and(
-        eq(fields.enabled, true),
-        inArray(fields.accessLevel, accessLevels)
-      )
+      where: (fields, { inArray }) => inArray(fields.accessLevel, accessLevels)
     });
 
     return functions;
