@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { usePowerData } from "@/hooks/use-power-data";
+import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { format, addDays, addHours } from "date-fns";
-import { Layout } from "@/components/ui/layout";
+import { SharedLayout } from "@/components/ui/shared-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -162,6 +163,7 @@ const generateForecastData = (tasks: ScheduledTask[], hours: number = 48): Power
 
 export default function OperationalPlanningPage() {
   const { isLoading } = usePowerData();
+  const { user } = useAuth();
   const [selectedView, setSelectedView] = useState<'day' | 'week'>('day');
   const [optimizationEnabled, setOptimizationEnabled] = useState(true);
   const [tasks, setTasks] = useState<ScheduledTask[]>(mockTasks);
@@ -357,20 +359,24 @@ export default function OperationalPlanningPage() {
   
   if (isLoading) {
     return (
-      <Layout title="Operational Planning" description="Optimize facility operations based on power availability">
+      <SharedLayout user={user}>
         <div className="flex items-center justify-center h-[400px]">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
             <p className="text-muted-foreground">Loading data...</p>
           </div>
         </div>
-      </Layout>
+      </SharedLayout>
     );
   }
   
   return (
-    <Layout title="Operational Planning" description="Optimize facility operations based on power availability">
+    <SharedLayout user={user}>
       <div className="space-y-6">
+        <div>
+          <h1 className="text-xl font-semibold text-white">Operational Planning</h1>
+          <p className="text-muted-foreground">Optimize facility operations based on power availability</p>
+        </div>
         {/* Top Cards with Metrics */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <StatCard
@@ -721,6 +727,6 @@ export default function OperationalPlanningPage() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </SharedLayout>
   );
 }
