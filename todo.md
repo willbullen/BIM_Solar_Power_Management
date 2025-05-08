@@ -36,14 +36,15 @@ This document outlines the implementation strategy for enhancing the Emporium Po
   - [ ] Implement data caching for Solcast API calls
 
 ### Stage 4: Frontend Enhancements - Core Features
-- [ ] Enhance "Current Metrics" with Solcast live data
-  - Display live PV power estimates alongside actual readings
-  - Show delta/difference analysis
-- [ ] Enrich Environment section with detailed weather data
-  - Add visual indicators for solar conditions
-  - Display GHI/DNI values instead of simple sun intensity
-  - Add cloud opacity visualization
-  - Add wind data visualization
+- [x] Enhance "Current Metrics" with Solcast live data
+  - [x] Create SolcastLiveCard component to display live solar data
+  - [x] Add live PV power estimates
+  - [x] Display detailed solar radiation parameters
+- [x] Enrich Environment section with detailed weather data
+  - [x] Add visual indicators for solar conditions with appropriate icons
+  - [x] Display GHI/DNI values instead of simple sun intensity
+  - [x] Add improved environmental statistics component
+  - [x] Add wind data visualization with speed indicator
 
 ### Stage 5: Frontend Enhancements - Forecasting
 - [ ] Enhance Power Usage Forecast with Solcast data
@@ -71,5 +72,6 @@ We have completed:
 - Stage 1: Schema Enhancements ✓
 - Stage 2: SolcastService Enhancement ✓
 - Stage 3: Backend API Enhancements (Basic endpoints) ✓
+- Stage 4: Frontend Enhancements - Core Features ✓
 
-Moving on to Stage 4: Frontend Enhancements - Core Features
+Moving on to Stage 5: Frontend Enhancements - Forecasting
