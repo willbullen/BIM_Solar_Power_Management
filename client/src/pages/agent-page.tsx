@@ -913,7 +913,7 @@ function AgentSettingsInterface() {
                           <div>
                             <div className="flex items-center justify-between">
                               <label htmlFor={setting.name} className="font-medium">
-                                {setting.name.split('_').map(word => 
+                                {setting.name.split('_').map((word: string) => 
                                   word.charAt(0).toUpperCase() + word.slice(1)
                                 ).join(' ')}
                               </label>

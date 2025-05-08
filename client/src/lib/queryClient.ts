@@ -45,12 +45,19 @@ export async function apiRequest(
   // Add some logging to help debug the API calls
   console.log(`Making API request: ${method} ${fullUrl}`);
   
-  const res = await fetch(fullUrl, {
+  // Only include body for non-GET requests
+  const options: RequestInit = {
     method,
-    headers: requestData ? { "Content-Type": "application/json" } : {},
-    body: requestData ? JSON.stringify(requestData) : undefined,
+    headers: requestData && method !== 'GET' ? { "Content-Type": "application/json" } : {},
     credentials: "include",
-  });
+  };
+  
+  // Only add body for non-GET requests
+  if (requestData && method !== 'GET') {
+    options.body = JSON.stringify(requestData);
+  }
+  
+  const res = await fetch(fullUrl, options);
 
   console.log(`API response status: ${res.status} ${res.statusText}`);
   
