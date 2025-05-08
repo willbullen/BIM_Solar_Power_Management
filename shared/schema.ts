@@ -63,6 +63,16 @@ export const settings = pgTable("settings", {
   locationLatitude: real("location_latitude").default(52.059937), // Kerry, Ireland default
   locationLongitude: real("location_longitude").default(-9.507269), // Kerry, Ireland default
   useSolcastData: boolean("use_solcast_data").default(false),
+  // Enhanced Solcast configuration
+  solcastForecastHorizon: integer("solcast_forecast_horizon").default(168), // Default to 7 days (168 hours)
+  solcastRefreshRate: integer("solcast_refresh_rate").default(30), // Refresh rate in minutes
+  solcastPanelCapacity: real("solcast_panel_capacity").default(25), // System capacity in kW
+  solcastPanelTilt: real("solcast_panel_tilt").default(30), // Panel tilt in degrees
+  solcastPanelAzimuth: real("solcast_panel_azimuth").default(180), // Panel azimuth (180° = south)
+  solcastShowProbabilistic: boolean("solcast_show_probabilistic").default(true), // Show P10/P90 ranges
+  // Performance monitoring settings
+  enablePvPerformanceMonitoring: boolean("enable_pv_performance_monitoring").default(true),
+  pvPerformanceThreshold: real("pv_performance_threshold").default(15), // Alert if performance varies by % from expected
 });
 
 export const insertSettingsSchema = createInsertSchema(settings).omit({
@@ -80,8 +90,15 @@ export const environmentalData = pgTable("environmental_data", {
   air_temp: real("air_temp").notNull(), // in °C, directly from Solcast API
   ghi: real("ghi").notNull(), // Global Horizontal Irradiance, directly from Solcast API
   dni: real("dni").notNull(), // Direct Normal Irradiance, directly from Solcast API
+  dhi: real("dhi"), // Diffuse Horizontal Irradiance (if available)
   humidity: real("humidity"), // in %
   windSpeed: real("wind_speed"), // in km/h
+  windDirection: real("wind_direction"), // in degrees from North
+  cloudOpacity: real("cloud_opacity"), // cloud cover percentage (0-100)
+  forecast_p10: real("forecast_p10"), // P10 forecast value (lower confidence bound)
+  forecast_p90: real("forecast_p90"), // P90 forecast value (upper confidence bound)
+  dataSource: text("data_source"), // 'solcast_live', 'solcast_forecast', 'emporium', 'fallback'
+  forecastHorizon: integer("forecast_horizon"), // forecast time horizon in hours (0 for current)
 });
 
 export const insertEnvironmentalDataSchema = createInsertSchema(environmentalData).omit({
