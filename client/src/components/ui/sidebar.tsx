@@ -13,7 +13,8 @@ import {
   FileDown,
   TrendingUp,
   Wrench,
-  CalendarClock
+  CalendarClock,
+  MessageCircle
 } from "lucide-react";
 
 type SidebarProps = {
@@ -106,6 +107,17 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               >
                 <CalendarClock className="sidebar-menu-item-icon" />
                 <span>Operational Planning</span>
+              </Link>
+              
+              <Link 
+                href="/feedback" 
+                className={cn(
+                  "sidebar-menu-item",
+                  location === "/feedback" && "active"
+                )}
+              >
+                <MessageCircle className="sidebar-menu-item-icon" />
+                <span>Feedback & Issues</span>
               </Link>
               
               {user?.role === "Admin" && (
