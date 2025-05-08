@@ -65,16 +65,27 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
         // Use the fetch API with error handling and timeout
         const fetchWithTimeout = async (url: string, timeout = 5000) => {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => {
-            controller.abort();
+          let timeoutId: NodeJS.Timeout | null = setTimeout(() => {
+            if (controller.signal.aborted) return;
+            try {
+              controller.abort();
+            } catch (e) {
+              console.warn('AbortController error:', e);
+            }
           }, timeout);
           
           try {
             const response = await fetch(url, { signal: controller.signal });
-            clearTimeout(timeoutId);
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+              timeoutId = null;
+            }
             return response;
           } catch (error) {
-            clearTimeout(timeoutId);
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+              timeoutId = null;
+            }
             throw error;
           }
         };
