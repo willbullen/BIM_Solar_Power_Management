@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import SharedLayout from "@/components/ui/shared-layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,7 +11,22 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, Send, Bot, MessageSquare, ListChecks, Settings } from "lucide-react";
+import { 
+  Loader2, Send, Bot, MessageSquare, ListChecks, Settings, Plus, 
+  CheckCircle, Database, MessageSquarePlus, ArrowRight, BarChart,
+  Zap, CloudSun, Sun, CheckCheck, Calendar
+} from "lucide-react";
+import { 
+  Dialog, DialogContent, DialogDescription, 
+  DialogFooter, DialogHeader, DialogTitle, DialogTrigger 
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 // Message types
 interface Message {
@@ -76,6 +91,9 @@ function ChatInterface() {
   const [activeConversation, setActiveConversation] = useState<number | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [newConversationTitle, setNewConversationTitle] = useState("");
+  const [isCreatingNewConversation, setIsCreatingNewConversation] = useState(false);
 
   // Fetch conversations
   const { data: conversations, isLoading: loadingConversations, refetch: refetchConversations } = useQuery({
@@ -99,12 +117,14 @@ function ChatInterface() {
     onSuccess: (data) => {
       setActiveConversation(data.id);
       refetchConversations();
+      setIsCreatingNewConversation(false);
       toast({
         title: "Conversation created",
         description: "Your new conversation has been started."
       });
     },
     onError: () => {
+      setIsCreatingNewConversation(false);
       toast({
         variant: "destructive",
         title: "Error",
@@ -136,10 +156,16 @@ function ChatInterface() {
     }
   });
 
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
   const handleSend = () => {
     if (!input.trim()) return;
 
     if (!activeConversation) {
+      setIsCreatingNewConversation(true);
       createConversation.mutate(`Conversation ${new Date().toLocaleString()}`);
       // We'll send the message after the conversation is created and activeConversation is set
       return;
@@ -163,114 +189,336 @@ function ChatInterface() {
   };
 
   const startNewConversation = () => {
-    setActiveConversation(null);
-    setInput("");
-    createConversation.mutate(`Conversation ${new Date().toLocaleString()}`);
+    setIsCreatingNewConversation(true);
+  };
+
+  const handleCreateConversation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newConversationTitle.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter a title for the conversation."
+      });
+      return;
+    }
+    
+    createConversation.mutate(newConversationTitle);
+    setNewConversationTitle("");
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 h-full">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
       {/* Sidebar with conversation list */}
-      <Card className="md:col-span-1 h-full flex flex-col">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl flex justify-between items-center">
+      <Card className="md:col-span-1 h-[calc(80vh-7rem)] overflow-hidden border-slate-200 dark:border-slate-800">
+        <CardHeader className="pb-3 border-b">
+          <CardTitle className="text-md flex justify-between items-center">
             Conversations
-            <Button variant="outline" size="sm" onClick={startNewConversation}>
-              New
-            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>New Conversation</DialogTitle>
+                  <DialogDescription>
+                    Create a new conversation with the AI Agent Architect
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleCreateConversation}>
+                  <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Conversation Name</Label>
+                      <Input
+                        id="title"
+                        value={newConversationTitle}
+                        onChange={(e) => setNewConversationTitle(e.target.value)}
+                        placeholder="e.g., Energy Optimization Plan"
+                        className="col-span-3"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit" disabled={createConversation.isPending || !newConversationTitle.trim()}>
+                      {createConversation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        'Create Conversation'
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           </CardTitle>
         </CardHeader>
-        <ScrollArea className="flex-grow">
-          <ConversationsList 
-            onSelect={setActiveConversation} 
-            selectedId={activeConversation || undefined} 
-          />
+        <ScrollArea className="flex-1 h-full">
+          <div className="p-2">
+            {loadingConversations ? (
+              <div className="flex items-center justify-center p-6">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : conversations && conversations.length > 0 ? (
+              <div className="space-y-2">
+                {conversations.map((conversation: Conversation) => (
+                  <div
+                    key={conversation.id}
+                    className={`p-3 rounded-md cursor-pointer transition-colors ${
+                      activeConversation === conversation.id
+                        ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500'
+                        : 'hover:bg-muted'
+                    }`}
+                    onClick={() => setActiveConversation(conversation.id)}
+                  >
+                    <div className="font-medium">{conversation.title}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {new Date(conversation.updatedAt).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 px-2 text-center space-y-4">
+                <MessageSquarePlus className="h-10 w-10 text-muted-foreground/60" />
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">No conversations yet</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={startNewConversation}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Start a conversation
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </ScrollArea>
       </Card>
 
       {/* Chat area */}
-      <Card className="md:col-span-3 h-full flex flex-col">
-        <CardHeader className="pb-2">
-          <CardTitle>AI Agent Architect</CardTitle>
-          <CardDescription>
-            Ask questions about energy data, get recommendations, or request analysis.
-          </CardDescription>
+      <Card className="md:col-span-3 h-[calc(80vh-7rem)] flex flex-col overflow-hidden border-slate-200 dark:border-slate-800">
+        <CardHeader className="pb-4 border-b">
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>AI Agent Architect</CardTitle>
+              <CardDescription>
+                Ask questions about energy data, generate insights, or request analysis.
+              </CardDescription>
+            </div>
+            {activeConversation && (
+              <HoverCard>
+                <HoverCardTrigger asChild>
+                  <Button variant="outline" size="sm" className="ml-auto">
+                    <Database className="h-3.5 w-3.5 mr-2" />
+                    Data Access
+                  </Button>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-80">
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold">Agent Database Access</h4>
+                    <p className="text-sm text-muted-foreground">
+                      This AI agent has secure access to your energy and environmental data for providing insights and recommendations.
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 pt-2">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <CheckCircle className="h-3 w-3 text-green-500" />
+                        <span>Power Data</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <CheckCircle className="h-3 w-3 text-green-500" />
+                        <span>Environmental</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <CheckCircle className="h-3 w-3 text-green-500" />
+                        <span>Equipment</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <CheckCircle className="h-3 w-3 text-green-500" />
+                        <span>Forecasting</span>
+                      </div>
+                    </div>
+                  </div>
+                </HoverCardContent>
+              </HoverCard>
+            )}
+          </div>
         </CardHeader>
-        <CardContent className="flex-grow flex flex-col h-full p-0">
-          <ScrollArea className="flex-grow p-4">
+        <CardContent className="flex-1 overflow-y-auto p-0">
+          <ScrollArea className="h-full p-4">
             {activeConversation ? (
               loadingMessages ? (
                 <div className="flex items-center justify-center h-full">
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : messages && messages.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {messages.map((message: Message) => (
                     <div 
                       key={message.id} 
                       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
+                      {message.role !== 'user' && (
+                        <Avatar className="h-8 w-8 mr-2">
+                          <AvatarFallback className="bg-blue-100 text-blue-700">AI</AvatarFallback>
+                        </Avatar>
+                      )}
                       <div 
-                        className={`max-w-[80%] rounded-lg p-3 ${
+                        className={`max-w-[85%] px-4 py-3 rounded-lg ${
                           message.role === 'user' 
-                            ? 'bg-primary text-primary-foreground' 
-                            : 'bg-muted'
+                            ? 'bg-blue-600 text-white rounded-tr-none' 
+                            : 'bg-muted dark:bg-slate-800 rounded-tl-none'
                         }`}
                       >
-                        {message.content}
+                        <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                        <div className={`mt-1 text-xs ${message.role === 'user' ? 'text-blue-100' : 'text-muted-foreground'}`}>
+                          {new Date(message.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </div>
                       </div>
+                      {message.role === 'user' && (
+                        <Avatar className="h-8 w-8 ml-2">
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {message.role.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
                     </div>
                   ))}
                   {sendMessage.isPending && (
                     <div className="flex justify-start">
-                      <div className="max-w-[80%] rounded-lg p-3 bg-muted">
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                      <Avatar className="h-8 w-8 mr-2">
+                        <AvatarFallback className="bg-blue-100 text-blue-700">AI</AvatarFallback>
+                      </Avatar>
+                      <div className="max-w-[85%] px-4 py-3 rounded-lg bg-muted dark:bg-slate-800 rounded-tl-none">
+                        <div className="flex space-x-2">
+                          <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                          <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                          <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        </div>
                       </div>
                     </div>
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                  <Bot size={48} />
-                  <p className="mt-2">Ask me anything about your energy data!</p>
+                <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
+                  <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center dark:bg-blue-900/30">
+                    <Bot className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="space-y-2 max-w-md">
+                    <h3 className="text-lg font-semibold">Start a Conversation</h3>
+                    <p className="text-muted-foreground">
+                      Ask questions about energy usage patterns, request recommendations 
+                      for optimization, or generate reports based on your data.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-4 text-sm w-full max-w-lg">
+                    <div className="bg-muted p-2 rounded-lg">
+                      "Analyze our energy consumption trends"
+                    </div>
+                    <div className="bg-muted p-2 rounded-lg">
+                      "Suggest ways to optimize solar efficiency"
+                    </div>
+                    <div className="bg-muted p-2 rounded-lg">
+                      "Generate a report on refrigeration usage"
+                    </div>
+                    <div className="bg-muted p-2 rounded-lg">
+                      "Compare current to historical patterns"
+                    </div>
+                  </div>
                 </div>
               )
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                {createConversation.isPending ? (
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                ) : (
-                  <>
-                    <Bot size={48} />
-                    <p className="mt-2">Start a new conversation to chat with the AI agent</p>
-                  </>
-                )}
+              <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
+                <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center dark:bg-blue-900/30">
+                  <MessageSquarePlus className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="space-y-2 max-w-md">
+                  <h3 className="text-lg font-semibold">No Conversation Selected</h3>
+                  <p className="text-muted-foreground">
+                    Select an existing conversation from the sidebar or create a new one 
+                    to start interacting with the AI Agent Architect.
+                  </p>
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create New Conversation
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>New Conversation</DialogTitle>
+                      <DialogDescription>
+                        Create a new conversation with the AI Agent Architect
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateConversation}>
+                      <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="conversation-title">Conversation Name</Label>
+                          <Input
+                            id="conversation-title"
+                            value={newConversationTitle}
+                            onChange={(e) => setNewConversationTitle(e.target.value)}
+                            placeholder="e.g., Energy Optimization Plan"
+                            className="col-span-3"
+                            autoFocus
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit" disabled={createConversation.isPending}>
+                          {createConversation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Creating...
+                            </>
+                          ) : (
+                            'Create Conversation'
+                          )}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </div>
             )}
           </ScrollArea>
-          
-          <div className="p-4 border-t">
-            <div className="flex space-x-2">
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type your message..."
-                disabled={!activeConversation && !input.trim()}
-              />
-              <Button 
-                onClick={handleSend} 
-                disabled={(!activeConversation && !input.trim()) || sendMessage.isPending || createConversation.isPending}
-              >
-                {sendMessage.isPending || createConversation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
         </CardContent>
+        
+        <CardFooter className="border-t p-4">
+          <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex w-full space-x-2">
+            <Input 
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={activeConversation ? "Type your message..." : "Select a conversation to start chatting"}
+              disabled={!activeConversation || sendMessage.isPending || createConversation.isPending}
+              className="flex-1"
+            />
+            <Button 
+              type="submit" 
+              disabled={!activeConversation || !input.trim() || sendMessage.isPending || createConversation.isPending}
+              className={!activeConversation || !input.trim() || sendMessage.isPending || createConversation.isPending ? "" : "bg-blue-600 hover:bg-blue-700"}
+            >
+              {sendMessage.isPending || createConversation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </form>
+        </CardFooter>
       </Card>
     </div>
   );
@@ -582,35 +830,46 @@ export default function AgentPage() {
   return (
     <SharedLayout user={user}>
       <div className="container mx-auto py-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">AI Agent Architect</h1>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              AI Agent Architect
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Your intelligent assistant for energy monitoring and optimization
+            </p>
+          </div>
+          <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 px-4 py-2 rounded-lg">
+            <Bot className="h-5 w-5 text-blue-500" />
+            <span className="text-sm font-medium">Powered by OpenAI</span>
+          </div>
         </div>
         
         <Tabs defaultValue="chat" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="chat" className="flex items-center justify-center">
+          <TabsList className="grid w-full grid-cols-3 p-1 bg-muted/80 backdrop-blur-sm rounded-xl">
+            <TabsTrigger value="chat" className="flex items-center justify-center rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800">
               <MessageSquare className="h-4 w-4 mr-2" />
               Chat
             </TabsTrigger>
-            <TabsTrigger value="tasks" className="flex items-center justify-center">
+            <TabsTrigger value="tasks" className="flex items-center justify-center rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800">
               <ListChecks className="h-4 w-4 mr-2" />
               Tasks
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center justify-center">
+            <TabsTrigger value="settings" className="flex items-center justify-center rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800">
               <Settings className="h-4 w-4 mr-2" />
               Settings
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="chat" className="mt-6">
+          <TabsContent value="chat" className="mt-6 focus-visible:outline-none focus-visible:ring-0">
             <ChatInterface />
           </TabsContent>
           
-          <TabsContent value="tasks" className="mt-6">
+          <TabsContent value="tasks" className="mt-6 focus-visible:outline-none focus-visible:ring-0">
             <TasksInterface />
           </TabsContent>
           
-          <TabsContent value="settings" className="mt-6">
+          <TabsContent value="settings" className="mt-6 focus-visible:outline-none focus-visible:ring-0">
             <AgentSettingsInterface />
           </TabsContent>
         </Tabs>
