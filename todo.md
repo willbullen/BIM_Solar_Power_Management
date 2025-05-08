@@ -36,24 +36,24 @@ This document outlines the implementation strategy for enhancing the Emporium Po
   - [ ] Implement data caching for Solcast API calls
 
 ### Stage 4: Frontend Enhancements - Core Features
-- [ ] Enhance "Current Metrics" with Solcast live data
-  - Display live PV power estimates alongside actual readings
-  - Show delta/difference analysis
-- [ ] Enrich Environment section with detailed weather data
-  - Add visual indicators for solar conditions
-  - Display GHI/DNI values instead of simple sun intensity
-  - Add cloud opacity visualization
-  - Add wind data visualization
+- [x] Enhance "Current Metrics" with Solcast live data
+  - [x] Display live PV power estimates alongside actual readings
+  - [x] Show delta/difference analysis
+- [x] Enrich Environment section with detailed weather data
+  - [x] Add visual indicators for solar conditions
+  - [x] Display GHI/DNI values instead of simple sun intensity
+  - [x] Add cloud opacity visualization
+  - [x] Add wind data visualization
 
-### Stage 5: Frontend Enhancements - Forecasting
+### Stage 5: Frontend Enhancements - Forecasting (Current Focus)
 - [ ] Enhance Power Usage Forecast with Solcast data
-  - Show probabilistic forecasts (P10/P50/P90)
-  - Implement confidence bands visualization
-  - Add forecast horizon selection (24h, 48h, 72h, 7 days)
+  - [ ] Show probabilistic forecasts (P10/P50/P90)
+  - [ ] Implement confidence bands visualization
+  - [ ] Add forecast horizon selection (24h, 48h, 72h, 7 days)
 - [ ] Improve Environment tab with detailed weather forecasts
-  - Add comprehensive weather parameter visualization
-  - Add min/max value indicators
-  - Create visual timeline of expected conditions
+  - [ ] Add comprehensive weather parameter visualization
+  - [ ] Add min/max value indicators
+  - [ ] Create visual timeline of expected conditions
 
 ### Stage 6: Advanced Features (If Time Permits)
 - [ ] Implement Dynamic Operational Scheduling Advisor
@@ -71,5 +71,7 @@ We have completed:
 - Stage 1: Schema Enhancements ✓
 - Stage 2: SolcastService Enhancement ✓
 - Stage 3: Backend API Enhancements (Basic endpoints) ✓
+- Stage 4: Frontend Enhancements - Core Features ✓
 
-Moving on to Stage 4: Frontend Enhancements - Core Features
+Current Focus:
+- Stage 5: Frontend Enhancements - Forecasting
