@@ -242,7 +242,7 @@ export function SolcastForecastChart() {
 
         <div className="text-xs text-muted-foreground mt-2 flex items-center">
           <Info className="h-3 w-3 mr-1 inline" />
-          {data?._fallback ? 
+          {pvForecastData?._fallback ? 
             "Using fallback forecast data. API subscription may need renewal." : 
             "Showing Solcast API forecast data with confidence bands"
           }

@@ -55,8 +55,7 @@ export function SolcastWeatherForecast() {
   const { 
     data: forecastData,
     isLoading: isLoadingForecast,
-    isError: isErrorForecast,
-    isFallback
+    isError: isErrorForecast
   } = useSolcastForecast(forecastHorizon);
   
   // Process the forecast data
@@ -344,7 +343,7 @@ export function SolcastWeatherForecast() {
 
         <div className="text-xs text-muted-foreground mt-2 flex items-center">
           <Info className="h-3 w-3 mr-1 inline" />
-          {isFallback ? 
+          {forecastData?._fallback ? 
             "Using fallback forecast data. API subscription may need renewal." : 
             "Showing Solcast API weather forecast data"
           }
