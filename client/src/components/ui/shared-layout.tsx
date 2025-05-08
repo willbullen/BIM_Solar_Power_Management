@@ -21,7 +21,7 @@ import {
   CloudSun
 } from 'lucide-react';
 import { usePowerData } from '@/hooks/use-power-data';
-import { useRefreshRate } from '@/hooks/use-refresh-rate';
+import { useRefreshRate, REFRESH_RATES } from '@/hooks/use-refresh-rate';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -49,7 +49,8 @@ type LayoutProps = {
 export function SharedLayout({ children, user }: LayoutProps) {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { powerData, environmentalData } = usePowerData();
+  const { powerData, environmentalData, dataStatus } = usePowerData();
+  const { refreshInterval, setRefreshInterval, refreshRateLabel } = useRefreshRate();
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -196,8 +197,38 @@ export function SharedLayout({ children, user }: LayoutProps) {
                 <span className="sr-only">Notifications</span>
               </Button>
               <Separator orientation="vertical" className="h-8" />
-              <span className="text-sm text-muted-foreground">Live Data</span>
-              <span className="flex h-2 w-2 rounded-full bg-green-500"></span>
+              
+              {/* Refresh Rate Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="flex items-center gap-2 h-8 px-2">
+                    <span className="text-sm text-muted-foreground">
+                      {dataStatus === 'live' ? 'Live Data' : dataStatus === 'synthetic' ? 'Synthetic Data' : 'Offline'}
+                    </span>
+                    <span className={`flex h-2 w-2 rounded-full ${
+                      dataStatus === 'live' ? 'bg-green-500' : 
+                      dataStatus === 'synthetic' ? 'bg-yellow-500' : 
+                      'bg-red-500'
+                    }`}></span>
+                    <span className="text-xs text-muted-foreground font-mono">{refreshRateLabel}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[180px]">
+                  <DropdownMenuLabel>Refresh Rate</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup 
+                    value={String(refreshInterval)} 
+                    onValueChange={(value) => setRefreshInterval(Number(value))}
+                  >
+                    {/* Import available refresh rates from the hook */}
+                    {REFRESH_RATES.map((rate: { label: string; value: number }) => (
+                      <DropdownMenuRadioItem key={rate.value} value={String(rate.value)}>
+                        {rate.label}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
