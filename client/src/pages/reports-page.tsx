@@ -2,7 +2,8 @@ import { useState } from "react";
 import { usePowerData } from "@/hooks/use-power-data";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
-import { Layout } from "@/components/ui/layout";
+import { useAuth } from "@/hooks/use-auth";
+import { SharedLayout } from "@/components/ui/shared-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -146,7 +147,8 @@ export default function ReportsPage() {
   const getFilteredPowerData = () => {
     if (!historicalPowerData) return [];
     
-    let data = [...historicalPowerData];
+    // Ensure historicalPowerData is an array
+    let data = Array.isArray(historicalPowerData) ? [...historicalPowerData] : [];
     
     switch (dateRange) {
       case "day":
@@ -173,7 +175,8 @@ export default function ReportsPage() {
   const getFilteredEnvData = () => {
     if (!historicalEnvData) return [];
     
-    let data = [...historicalEnvData];
+    // Ensure historicalEnvData is an array
+    let data = Array.isArray(historicalEnvData) ? [...historicalEnvData] : [];
     
     switch (dateRange) {
       case "day":
@@ -242,8 +245,11 @@ export default function ReportsPage() {
   
   const isDataLoading = isLoading || isLoadingHistorical || isLoadingEnv;
   
+  const { user } = useAuth();
+
   return (
-    <Layout title="Reports & Analytics" description="Comprehensive insights and data reporting">
+    <SharedLayout user={user}>
+      <h1 className="text-2xl font-bold mb-6">Reports & Analytics</h1>
       <div className="space-y-6">
         {/* Controls */}
         <Card>
@@ -444,6 +450,6 @@ export default function ReportsPage() {
           </Tabs>
         )}
       </div>
-    </Layout>
+    </SharedLayout>
   );
 }
