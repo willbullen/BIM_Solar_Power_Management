@@ -2,6 +2,7 @@ import { createContext, ReactNode, useContext, useEffect, useState } from "react
 import { useQuery } from "@tanstack/react-query";
 import { PowerData, EnvironmentalData, Settings } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 type PowerDataContextType = {
   powerData: PowerData | null;
@@ -62,46 +63,12 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
       try {
         console.log('Fetching latest data...');
         
-        // Use the fetch API with error handling and timeout
-        // Simplified fetch with timeout that doesn't use AbortController
-        // to avoid browser-specific implementation issues
-        const fetchWithTimeout = async (url: string, timeout = 5000) => {
-          // Use Promise.race to implement timeout without AbortController
-          const fetchPromise = fetch(url);
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => {
-              reject(new Error('Request timed out'));
-            }, timeout);
-          });
-          
-          try {
-            // Race between the fetch and the timeout
-            const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
-            return response;
-          } catch (error) {
-            throw error;
-          }
-        };
-        
-        // Fetch data with timeouts to prevent hanging requests
-        const powerResponse = await fetchWithTimeout('/api/power-data/latest');
-        const envResponse = await fetchWithTimeout('/api/environmental-data/latest');
-        const settingsResponse = await fetchWithTimeout('/api/settings');
-        
-        // Check if any responses failed
-        if (!powerResponse.ok || !envResponse.ok || !settingsResponse.ok) {
-          console.error('API response error:', {
-            power: powerResponse.status,
-            env: envResponse.status,
-            settings: settingsResponse.status
-          });
-          throw new Error('Failed to fetch latest data');
-        }
-        
-        // Parse JSON responses
-        const powerData = await powerResponse.json();
-        const environmentalData = await envResponse.json();
-        const settings = await settingsResponse.json();
+        // Use the apiRequest function with Promise.all for concurrent requests
+        const [powerData, environmentalData, settings] = await Promise.all([
+          apiRequest('GET', '/api/power-data/latest'),
+          apiRequest('GET', '/api/environmental-data/latest'),
+          apiRequest('GET', '/api/settings')
+        ]);
         
         // Update state with fetched data
         setPowerData(powerData);

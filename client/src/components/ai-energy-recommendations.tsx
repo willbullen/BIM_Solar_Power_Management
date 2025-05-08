@@ -12,6 +12,7 @@ import {
 import { usePowerData } from '@/hooks/use-power-data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { apiRequest } from '@/lib/queryClient';
 
 type Recommendation = {
   title: string;
@@ -61,20 +62,8 @@ export function AIEnergyRecommendations() {
         }))
       };
       
-      // Call the backend for AI analysis
-      const response = await fetch('/api/ai/energy-recommendations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(analysisData),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to get AI recommendations');
-      }
-      
-      const data = await response.json();
+      // Call the backend for AI analysis using our standardized apiRequest function
+      const data = await apiRequest('POST', '/api/ai/energy-recommendations', analysisData);
       setRecommendations(data.recommendations);
     } catch (error) {
       console.error('Error generating recommendations:', error);
