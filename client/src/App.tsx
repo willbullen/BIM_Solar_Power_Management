@@ -9,7 +9,7 @@ import DashboardPage from "@/pages/dashboard-page";
 import AuthPage from "@/pages/auth-page";
 import SettingsPage from "@/pages/settings-page";
 import ReportsPage from "@/pages/reports-page";
-import ForecastingPage from "@/pages/forecasting-page";
+import ForecastingPage from "@/pages/forecasting-page-new";
 import EquipmentPage from "@/pages/equipment-page";
 import OperationalPlanningPage from "@/pages/operational-planning-page";
 import FeedbackPage from "@/pages/feedback-page";
