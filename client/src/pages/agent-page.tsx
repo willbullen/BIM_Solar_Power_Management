@@ -1235,13 +1235,13 @@ export default function AgentPage() {
           </div>
 
           {/* Tabs Section */}
-          <div className="bg-slate-900 rounded-xl p-1 shadow-sm mb-6">
+          <div className="bg-slate-900 rounded-xl p-1 shadow-sm mb-4">
             <Tabs 
               defaultValue="chat" 
               className="w-full"
               onValueChange={(value) => setActiveTab(value)}
             >
-              <div className="flex justify-between items-center px-4 py-4">
+              <div className="flex justify-between items-center px-4 py-2">
                 <TabsList className="grid w-full max-w-md grid-cols-3 p-1 bg-slate-800 rounded-lg shadow-sm">
                   <TabsTrigger 
                     value="chat" 
@@ -1303,7 +1303,7 @@ export default function AgentPage() {
                 </div>
               </div>
               
-              <div className="bg-slate-900 rounded-lg border border-slate-800 p-6 shadow-md">
+              <div className="bg-slate-900 rounded-lg border border-slate-800 p-4 shadow-md">
                 <TabsContent value="chat" className="mt-0 focus-visible:outline-none focus-visible:ring-0 space-y-4">
                   <ChatInterface />
                 </TabsContent>
