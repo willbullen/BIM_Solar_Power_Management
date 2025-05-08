@@ -6,6 +6,8 @@ import { PowerChart } from "@/components/power-chart";
 import { SummaryCards } from "@/components/metrics-card";
 import { LoadDistribution } from "@/components/load-distribution";
 import { InsightsCard } from "@/components/insights-card";
+import { SolcastLiveCard } from "@/components/solcast-live-card";
+import { EnvironmentalStats } from "@/components/environmental-chart";
 import { Loader2, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
@@ -63,30 +65,34 @@ function DashboardContent() {
       {/* Power Usage Timeline */}
       <PowerChart powerData={historicalPowerData} />
       
-      {/* Load Distribution & Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* Solcast Live Data & Load Distribution */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Solcast Live Data */}
+        <SolcastLiveCard />
+        
         {/* Load Distribution */}
-        <div className="lg:col-span-2">
-          <LoadDistribution powerData={powerData} />
-          
-          {/* Forecasting Link */}
-          <div className="mt-4 flex justify-end">
-            <Link href="/forecasting">
-              <button className="flex items-center gap-2 bg-primary/20 hover:bg-primary/30 text-primary-foreground px-4 py-2 rounded-md transition">
-                <TrendingUp className="w-4 h-4" />
-                <span>View Power Forecasting</span>
-              </button>
-            </Link>
-          </div>
-        </div>
+        <LoadDistribution powerData={powerData} />
+      </div>
+      
+      {/* Environmental Statistics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+        <EnvironmentalStats environmentalData={environmentalData} />
         
         {/* Insights Card */}
-        <div>
-          <InsightsCard 
-            powerData={powerData} 
-            environmentalData={environmentalData} 
-          />
-        </div>
+        <InsightsCard 
+          powerData={powerData} 
+          environmentalData={environmentalData} 
+        />
+      </div>
+      
+      {/* Forecasting Link */}
+      <div className="flex justify-end mt-4">
+        <Link href="/forecasting">
+          <button className="flex items-center gap-2 bg-primary/20 hover:bg-primary/30 text-primary-foreground px-4 py-2 rounded-md transition">
+            <TrendingUp className="w-4 h-4" />
+            <span>View Power Forecasting</span>
+          </button>
+        </Link>
       </div>
     </div>
   );

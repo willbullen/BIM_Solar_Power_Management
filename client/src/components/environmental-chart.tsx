@@ -2,7 +2,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EnvironmentalData } from '@shared/schema';
 import { cn } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sun, CloudRain, Wind, Thermometer } from 'lucide-react';
 
 type EnvironmentalChartProps = {
   environmentalData: EnvironmentalData[];
@@ -178,7 +178,8 @@ export function EnvironmentalStats({ environmentalData, className }: Environment
 
   // Calculate statistics
   const temperatures = environmentalData.map(data => data.air_temp);
-  const solarRadiations = environmentalData.map(data => data.ghi);
+  const ghiValues = environmentalData.map(data => data.ghi);
+  const dniValues = environmentalData.map(data => data.dni);
   const humidities = environmentalData.map(data => data.humidity || 0);
   const windSpeeds = environmentalData.map(data => data.windSpeed || 0);
   
@@ -186,9 +187,13 @@ export function EnvironmentalStats({ environmentalData, className }: Environment
   const minTemp = Math.min(...temperatures);
   const maxTemp = Math.max(...temperatures);
   
-  const avgSolar = solarRadiations.reduce((sum, val) => sum + val, 0) / solarRadiations.length;
-  const minSolar = Math.min(...solarRadiations);
-  const maxSolar = Math.max(...solarRadiations);
+  const avgGHI = ghiValues.reduce((sum, val) => sum + val, 0) / ghiValues.length;
+  const minGHI = Math.min(...ghiValues);
+  const maxGHI = Math.max(...ghiValues);
+  
+  const avgDNI = dniValues.reduce((sum, val) => sum + val, 0) / dniValues.length;
+  const minDNI = Math.min(...dniValues);
+  const maxDNI = Math.max(...dniValues);
   
   const avgHumidity = humidities.reduce((sum, val) => sum + val, 0) / humidities.length;
   const minHumidity = Math.min(...humidities);
@@ -215,101 +220,149 @@ export function EnvironmentalStats({ environmentalData, className }: Environment
     }
   });
 
+  // Helper function to determine the weather icon
+  const getWeatherIcon = (weather: string) => {
+    if (weather.includes('Sunny') || weather.includes('Clear')) {
+      return <Sun className="h-5 w-5 text-yellow-400" />;
+    } else if (weather.includes('Rain') || weather.includes('Drizzle')) {
+      return <CloudRain className="h-5 w-5 text-blue-400" />;
+    } else if (weather.includes('Cloud')) {
+      return <CloudRain className="h-5 w-5 text-gray-400" />;
+    } else {
+      return <Sun className="h-5 w-5 text-gray-400" />;
+    }
+  };
+
+  // Generate styling based on values
+  const tempStyle = maxTemp > 20 ? 'text-red-400' : maxTemp < 10 ? 'text-blue-400' : 'text-yellow-400';
+  const windStyle = maxWind > 15 ? 'text-red-400' : 'text-blue-400';
+  const solarStyle = maxGHI > 600 ? 'text-yellow-400' : 'text-blue-400';
+
   return (
     <Card className={cn("w-full", className)}>
       <CardHeader>
         <CardTitle>Environmental Statistics</CardTitle>
         <CardDescription>
-          Summary statistics for temperature and solar conditions
+          Detailed solar and weather conditions from Solcast
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-4">
-            <div>
-              <h4 className="font-medium text-white text-sm">Temperature</h4>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                <div className="bg-card/30 p-2 rounded">
-                  <p className="text-xs text-muted-foreground">Average</p>
-                  <p className="font-medium">{avgTemp.toFixed(1)}°C</p>
-                </div>
-                <div className="bg-card/30 p-2 rounded">
-                  <p className="text-xs text-muted-foreground">Minimum</p>
-                  <p className="font-medium">{minTemp.toFixed(1)}°C</p>
-                </div>
-                <div className="bg-card/30 p-2 rounded">
-                  <p className="text-xs text-muted-foreground">Maximum</p>
-                  <p className="font-medium">{maxTemp.toFixed(1)}°C</p>
+            <div className="flex items-center gap-3 bg-muted/30 p-3 rounded-lg">
+              <Thermometer className={`h-5 w-5 ${tempStyle}`} />
+              <div className="flex-1">
+                <h4 className="font-medium text-white text-sm">Temperature</h4>
+                <div className="flex justify-between mt-1">
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">{minTemp.toFixed(1)}°C</span> min
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">{avgTemp.toFixed(1)}°C</span> avg
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">{maxTemp.toFixed(1)}°C</span> max
+                  </p>
                 </div>
               </div>
             </div>
             
-            <div>
-              <h4 className="font-medium text-white text-sm">Wind Speed</h4>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                <div className="bg-card/30 p-2 rounded">
-                  <p className="text-xs text-muted-foreground">Average</p>
-                  <p className="font-medium">{avgWind.toFixed(1)} km/h</p>
+            <div className="flex items-center gap-3 bg-muted/30 p-3 rounded-lg">
+              <Sun className={`h-5 w-5 ${solarStyle}`} />
+              <div className="flex-1">
+                <h4 className="font-medium text-white text-sm">Global Horizontal Irradiance (GHI)</h4>
+                <div className="flex justify-between mt-1">
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">{minGHI.toFixed(0)}</span> min
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">{avgGHI.toFixed(0)}</span> avg
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">{maxGHI.toFixed(0)}</span> max
+                  </p>
                 </div>
-                <div className="bg-card/30 p-2 rounded">
-                  <p className="text-xs text-muted-foreground">Minimum</p>
-                  <p className="font-medium">{minWind.toFixed(1)} km/h</p>
+                <p className="text-xs text-muted-foreground mt-1">W/m² solar radiation on horizontal surface</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 bg-muted/30 p-3 rounded-lg">
+              <Sun className={`h-5 w-5 text-orange-400`} />
+              <div className="flex-1">
+                <h4 className="font-medium text-white text-sm">Direct Normal Irradiance (DNI)</h4>
+                <div className="flex justify-between mt-1">
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">{minDNI.toFixed(0)}</span> min
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">{avgDNI.toFixed(0)}</span> avg
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">{maxDNI.toFixed(0)}</span> max
+                  </p>
                 </div>
-                <div className="bg-card/30 p-2 rounded">
-                  <p className="text-xs text-muted-foreground">Maximum</p>
-                  <p className="font-medium">{maxWind.toFixed(1)} km/h</p>
-                </div>
+                <p className="text-xs text-muted-foreground mt-1">W/m² direct beam radiation</p>
               </div>
             </div>
           </div>
           
           <div className="space-y-4">
-            <div>
-              <h4 className="font-medium text-white text-sm">Solar Radiation</h4>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                <div className="bg-card/30 p-2 rounded">
-                  <p className="text-xs text-muted-foreground">Average</p>
-                  <p className="font-medium">{avgSolar.toFixed(0)} W/m²</p>
+            <div className="flex items-center gap-3 bg-muted/30 p-3 rounded-lg">
+              <Wind className={`h-5 w-5 ${windStyle}`} />
+              <div className="flex-1">
+                <h4 className="font-medium text-white text-sm">Wind Speed</h4>
+                <div className="flex justify-between mt-1">
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">{minWind.toFixed(1)}</span> min
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">{avgWind.toFixed(1)}</span> avg
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">{maxWind.toFixed(1)}</span> max
+                  </p>
                 </div>
-                <div className="bg-card/30 p-2 rounded">
-                  <p className="text-xs text-muted-foreground">Minimum</p>
-                  <p className="font-medium">{minSolar.toFixed(0)} W/m²</p>
-                </div>
-                <div className="bg-card/30 p-2 rounded">
-                  <p className="text-xs text-muted-foreground">Maximum</p>
-                  <p className="font-medium">{maxSolar.toFixed(0)} W/m²</p>
+                <p className="text-xs text-muted-foreground mt-1">km/h at 10m height</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 bg-muted/30 p-3 rounded-lg">
+              <CloudRain className="h-5 w-5 text-blue-400" />
+              <div className="flex-1">
+                <h4 className="font-medium text-white text-sm">Humidity</h4>
+                <div className="flex justify-between mt-1">
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">{minHumidity.toFixed(0)}%</span> min
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">{avgHumidity.toFixed(0)}%</span> avg
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">{maxHumidity.toFixed(0)}%</span> max
+                  </p>
                 </div>
               </div>
             </div>
             
-            <div>
-              <h4 className="font-medium text-white text-sm">Humidity</h4>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                <div className="bg-card/30 p-2 rounded">
-                  <p className="text-xs text-muted-foreground">Average</p>
-                  <p className="font-medium">{avgHumidity.toFixed(0)}%</p>
-                </div>
-                <div className="bg-card/30 p-2 rounded">
-                  <p className="text-xs text-muted-foreground">Minimum</p>
-                  <p className="font-medium">{minHumidity.toFixed(0)}%</p>
-                </div>
-                <div className="bg-card/30 p-2 rounded">
-                  <p className="text-xs text-muted-foreground">Maximum</p>
-                  <p className="font-medium">{maxHumidity.toFixed(0)}%</p>
+            <div className="flex items-center gap-3 bg-muted/30 p-3 rounded-lg">
+              {getWeatherIcon(predominantWeather)}
+              <div className="flex-1">
+                <h4 className="font-medium text-white text-sm">Predominant Weather</h4>
+                <div className="flex justify-between items-center mt-1">
+                  <p className="font-medium text-sm">{predominantWeather}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {((maxCount / environmentalData.length) * 100).toFixed(0)}% of time
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </div>
         
-        <div className="mt-4">
-          <h4 className="font-medium text-white text-sm">Predominant Weather</h4>
-          <div className="bg-card/30 p-3 rounded mt-2 flex items-center justify-between">
-            <p className="font-medium">{predominantWeather}</p>
-            <p className="text-xs text-muted-foreground">
-              {((maxCount / environmentalData.length) * 100).toFixed(0)}% of the time
-            </p>
-          </div>
+        <div className="mt-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
+          <p className="text-xs text-muted-foreground">
+            <span className="font-medium text-primary">Solar conditions:</span> GHI and DNI are key metrics for solar power generation. GHI (Global Horizontal Irradiance) measures total solar radiation on a horizontal surface, while DNI (Direct Normal Irradiance) is direct beam radiation, which is more relevant for concentrated solar applications.
+          </p>
         </div>
       </CardContent>
     </Card>
