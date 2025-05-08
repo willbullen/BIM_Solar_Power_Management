@@ -112,11 +112,11 @@ function ChatInterface() {
   }, []);
 
   // Fetch conversations - only enable if user is authenticated
-  const { data: conversations, isLoading: loadingConversations, refetch: refetchConversations, error: conversationsError } = useQuery({
+  const { data: conversations, isLoading: loadingConversations, refetch: refetchConversations, error: conversationsError } = useQuery<any[]>({
     queryKey: ['/api/agent/conversations'],
     retry: false,
     enabled: !!user, // Only run the query if user is authenticated
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error fetching conversations:', error);
       if (error.message.includes('401')) {
         // If we get a 401, try refreshing the user data
@@ -131,10 +131,22 @@ function ChatInterface() {
   });
 
   // Fetch messages for the active conversation
-  const { data: messages, isLoading: loadingMessages, refetch: refetchMessages } = useQuery({
+  const { data: messages, isLoading: loadingMessages, refetch: refetchMessages } = useQuery<any[]>({
     queryKey: ['/api/agent/conversations', activeConversation, 'messages'],
     enabled: !!activeConversation,
-    retry: false
+    retry: false,
+    onError: (error: Error) => {
+      console.error('Error fetching messages:', error);
+      if (error.message.includes('401')) {
+        // If we get a 401, try refreshing the user data
+        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Your session may have expired. Please refresh and log in again."
+        });
+      }
+    }
   });
 
   // Create a new conversation
