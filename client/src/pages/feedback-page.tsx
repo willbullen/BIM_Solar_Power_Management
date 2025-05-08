@@ -188,10 +188,7 @@ function IssueDetails({ issue, onBack }: { issue: Issue, onBack: () => void }) {
   // Create comment mutation
   const createCommentMutation = useMutation({
     mutationFn: (data: any) => 
-      apiRequest(`/api/issues/${issue.id}/comments`, {
-        method: 'POST',
-        body: JSON.stringify(data)
-      }),
+      apiRequest('POST', `/api/issues/${issue.id}/comments`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/issues/${issue.id}/comments`] });
       toast({
@@ -212,10 +209,7 @@ function IssueDetails({ issue, onBack }: { issue: Issue, onBack: () => void }) {
   // Close issue mutation
   const closeIssueMutation = useMutation({
     mutationFn: (data: any) => 
-      apiRequest(`/api/issues/${issue.id}/close`, {
-        method: 'POST',
-        body: JSON.stringify(data)
-      }),
+      apiRequest('POST', `/api/issues/${issue.id}/close`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
       queryClient.invalidateQueries({ queryKey: [`/api/issues/${issue.id}`] });
@@ -398,10 +392,7 @@ function IssuesList() {
   // Create issue mutation
   const createIssueMutation = useMutation({
     mutationFn: (data: any) => 
-      apiRequest('/api/issues', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      }),
+      apiRequest('POST', '/api/issues', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
       toast({
@@ -572,9 +563,7 @@ function TodoList() {
   // Complete todo mutation
   const completeTodoMutation = useMutation({
     mutationFn: (id: number) => 
-      apiRequest(`/api/todo-items/${id}/complete`, {
-        method: 'POST'
-      }),
+      apiRequest('POST', `/api/todo-items/${id}/complete`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/todo-items'] });
       toast({
