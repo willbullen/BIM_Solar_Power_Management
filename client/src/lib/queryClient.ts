@@ -13,11 +13,31 @@ function getBaseUrl() {
   return window.location.origin;
 }
 
+// Handle both 1-arg and 3-arg formats:
+// apiRequest(url) - for GET requests
+// apiRequest(method, url, data) - for other methods
 export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
+  methodOrUrl: string,
+  urlOrData?: string | unknown,
+  data?: unknown
+): Promise<any> {
+  let method: string;
+  let url: string;
+  let requestData: unknown | undefined;
+  
+  // Determine which form was used
+  if (arguments.length === 1 || (arguments.length > 1 && typeof urlOrData !== 'string')) {
+    // Called as apiRequest(url) or apiRequest(url, data)
+    method = 'GET';
+    url = methodOrUrl;
+    requestData = urlOrData;
+  } else {
+    // Called as apiRequest(method, url, data)
+    method = methodOrUrl;
+    url = urlOrData as string;
+    requestData = data;
+  }
+  
   // Ensure URL starts with a slash
   const apiUrl = url.startsWith('/') ? url : `/${url}`;
   const fullUrl = `${getBaseUrl()}${apiUrl}`;
@@ -27,15 +47,23 @@ export async function apiRequest(
   
   const res = await fetch(fullUrl, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
+    headers: requestData ? { "Content-Type": "application/json" } : {},
+    body: requestData ? JSON.stringify(requestData) : undefined,
     credentials: "include",
   });
 
   console.log(`API response status: ${res.status} ${res.statusText}`);
   
   await throwIfResNotOk(res);
-  return res;
+  
+  // Parse JSON response
+  try {
+    const json = await res.json();
+    return json;
+  } catch (e) {
+    // If no JSON content, return the response object
+    return res;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
