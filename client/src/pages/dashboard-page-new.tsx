@@ -5,6 +5,7 @@ import { PowerChart } from "@/components/power-chart";
 import { LoadDistribution } from "@/components/load-distribution";
 import { InsightsCard } from "@/components/insights-card";
 import { SolcastLiveCard } from "@/components/solcast-live-card";
+import { AIEnergyRecommendations } from "@/components/ai-energy-recommendations";
 import { EnvironmentalStats } from "@/components/environmental-chart";
 import { Loader2, TrendingUp, ArrowRight, BarChart3, Zap, Sun, CloudSun } from "lucide-react";
 import { format } from "date-fns";
@@ -49,8 +50,8 @@ function DashboardPage() {
   }
   
   // Get the latest data
-  const latestPower = powerData && powerData.length > 0 ? powerData[powerData.length - 1] : null;
-  const previousPower = powerData && powerData.length > 1 ? powerData[powerData.length - 2] : latestPower;
+  const latestPower = Array.isArray(powerData) && powerData.length > 0 ? powerData[powerData.length - 1] : null;
+  const previousPower = Array.isArray(powerData) && powerData.length > 1 ? powerData[powerData.length - 2] : latestPower;
   
   // Calculate trends
   const totalLoadTrend = latestPower && previousPower ? 
@@ -85,7 +86,8 @@ function DashboardPage() {
             )}
           </div>
           
-          <div className="mt-2 sm:mt-0">
+          <div className="mt-2 sm:mt-0 flex items-center gap-2">
+            <AIEnergyRecommendations />
             <Button variant="outline" size="sm" asChild>
               <Link href="/forecasting">
                 <TrendingUp className="mr-2 h-4 w-4" />
@@ -180,7 +182,7 @@ function DashboardPage() {
                   <CardDescription>Current environmental factors</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <EnvironmentalStats environmentalData={environmentalData || []} />
+                  <EnvironmentalStats environmentalData={environmentalData ? [environmentalData] : []} />
                 </CardContent>
                 <CardFooter className="flex justify-end">
                   <Button variant="ghost" size="sm" asChild>
@@ -289,7 +291,7 @@ function DashboardPage() {
               <CardContent>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div>
-                    <EnvironmentalStats environmentalData={environmentalData || []} />
+                    <EnvironmentalStats environmentalData={environmentalData ? [environmentalData] : []} />
                   </div>
                   <div>
                     <SolcastLiveCard />
