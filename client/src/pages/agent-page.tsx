@@ -14,7 +14,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { 
   Loader2, Send, Bot, MessageSquare, ListChecks, Settings, Plus, 
   CheckCircle, Database, MessageSquarePlus, ArrowRight, BarChart,
-  Zap, CloudSun, Sun, CheckCheck, Calendar
+  Zap, CloudSun, Sun, CheckCheck, Calendar, Cpu, Key, Thermometer,
+  BookOpen, FileText, Code2, BellRing, Settings2, PencilLine,
+  Sparkles, Info as InfoIcon, ExternalLink, Separator as SeparatorIcon
 } from "lucide-react";
 import { 
   Dialog, DialogContent, DialogDescription, 
@@ -27,6 +29,11 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Message types
 interface Message {
@@ -746,6 +753,8 @@ function TasksInterface() {
 
 function AgentSettingsInterface() {
   const { toast } = useToast();
+  const [editingSetting, setEditingSetting] = useState<string | null>(null);
+  const [settingValue, setSettingValue] = useState<string>("");
   
   // Fetch settings
   const { data: settings, isLoading, refetch: refetchSettings } = useQuery({
@@ -762,6 +771,7 @@ function AgentSettingsInterface() {
       }),
     onSuccess: () => {
       refetchSettings();
+      setEditingSetting(null);
       toast({
         title: "Setting updated",
         description: "The agent setting has been updated successfully."
@@ -776,103 +786,357 @@ function AgentSettingsInterface() {
     }
   });
   
-  const handleUpdateSetting = (name: string, value: string) => {
-    updateSetting.mutate({ name, value });
+  const handleUpdateSetting = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingSetting && settingValue.trim()) {
+      updateSetting.mutate({ name: editingSetting, value: settingValue });
+    }
+  };
+
+  const startEditing = (name: string, value: string) => {
+    setEditingSetting(name);
+    setSettingValue(value);
+  };
+  
+  // Get setting icon based on name
+  const getSettingIcon = (name: string) => {
+    if (name.includes('model')) return <Cpu className="h-5 w-5 text-purple-500" />;
+    if (name.includes('token')) return <Key className="h-5 w-5 text-amber-500" />;
+    if (name.includes('temperature')) return <Thermometer className="h-5 w-5 text-orange-500" />;
+    if (name.includes('context')) return <BookOpen className="h-5 w-5 text-blue-500" />;
+    if (name.includes('prompt')) return <FileText className="h-5 w-5 text-indigo-500" />;
+    if (name.includes('function')) return <Code2 className="h-5 w-5 text-emerald-500" />;
+    if (name.includes('notification')) return <BellRing className="h-5 w-5 text-rose-500" />;
+    return <Settings2 className="h-5 w-5 text-gray-500" />;
+  };
+
+  // Get setting category based on name prefix
+  const getSettingCategory = (name: string) => {
+    if (name.startsWith('model_')) return 'AI Model';
+    if (name.startsWith('api_')) return 'API Configuration';
+    if (name.includes('notification')) return 'Notifications';
+    if (name.includes('function')) return 'Functions & Capabilities';
+    return 'General Settings';
+  };
+
+  // Group settings by category
+  const groupSettingsByCategory = (settings: any[]) => {
+    const grouped: Record<string, any[]> = {};
+    
+    settings.forEach(setting => {
+      const category = getSettingCategory(setting.name);
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push(setting);
+    });
+    
+    return grouped;
   };
   
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Agent Settings</CardTitle>
-        <CardDescription>
-          Configure the AI agent's behavior and capabilities
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex items-center justify-center p-6">
-            <Loader2 className="h-8 w-8 animate-spin" />
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold">Agent Configuration</h2>
+          <p className="text-muted-foreground mt-1">
+            Customize the AI agent's behavior, model settings, and capabilities
+          </p>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center p-12 border rounded-lg bg-muted/10">
+          <div className="flex flex-col items-center text-center">
+            <Loader2 className="h-10 w-10 animate-spin text-blue-500 mb-4" />
+            <h3 className="text-lg font-medium">Loading settings...</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Retrieving AI agent configuration
+            </p>
           </div>
-        ) : settings && settings.length > 0 ? (
-          <div className="space-y-6">
-            {settings.map((setting: any) => (
-              <div key={setting.name} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label htmlFor={setting.name} className="text-sm font-medium">
-                    {setting.name.split('_').map(word => 
-                      word.charAt(0).toUpperCase() + word.slice(1)
-                    ).join(' ')}
-                  </label>
-                  {updateSetting.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+        </div>
+      ) : settings && settings.length > 0 ? (
+        <div className="space-y-8">
+          {Object.entries(groupSettingsByCategory(settings)).map(([category, categorySettings]) => (
+            <Card key={category} className="border-slate-200 dark:border-slate-800">
+              <CardHeader className="pb-3 border-b">
+                <CardTitle className="text-lg">{category}</CardTitle>
+                <CardDescription>
+                  {category === 'AI Model' && 'Configure the AI model parameters and behavior'}
+                  {category === 'API Configuration' && 'Settings for external API connections'}
+                  {category === 'Notifications' && 'Configure notification behaviors and thresholds'}
+                  {category === 'Functions & Capabilities' && 'Manage agent capabilities and allowed functions'}
+                  {category === 'General Settings' && 'General configuration options for the AI agent'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  {categorySettings.map((setting: any) => (
+                    <div key={setting.name} className="pb-5 border-b border-dashed border-slate-200 dark:border-slate-800 last:border-b-0 last:pb-0">
+                      <div className="flex items-start gap-3">
+                        <div className="h-9 w-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mt-0.5">
+                          {getSettingIcon(setting.name)}
+                        </div>
+                        
+                        <div className="flex-1 space-y-3">
+                          <div>
+                            <div className="flex items-center justify-between">
+                              <label htmlFor={setting.name} className="font-medium">
+                                {setting.name.split('_').map(word => 
+                                  word.charAt(0).toUpperCase() + word.slice(1)
+                                ).join(' ')}
+                              </label>
+                              {editingSetting === setting.name ? (
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => setEditingSetting(null)}
+                                  className="h-7 px-2 text-muted-foreground"
+                                >
+                                  Cancel
+                                </Button>
+                              ) : (
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => startEditing(setting.name, setting.value)}
+                                  className="h-7 px-2 text-blue-600 hover:text-blue-700 dark:text-blue-500"
+                                >
+                                  <PencilLine className="h-3.5 w-3.5 mr-1" />
+                                  Edit
+                                </Button>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{setting.description}</p>
+                          </div>
+                          
+                          {editingSetting === setting.name ? (
+                            <form onSubmit={handleUpdateSetting} className="flex gap-2">
+                              <Input
+                                id={setting.name}
+                                value={settingValue}
+                                onChange={(e) => setSettingValue(e.target.value)}
+                                className="flex-1"
+                              />
+                              <Button 
+                                type="submit" 
+                                size="sm"
+                                disabled={updateSetting.isPending}
+                                className="bg-blue-600 hover:bg-blue-700"
+                              >
+                                {updateSetting.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  "Save"
+                                )}
+                              </Button>
+                            </form>
+                          ) : (
+                            <div className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 border rounded-md p-3">
+                              <code className="text-sm font-mono break-all">
+                                {setting.value}
+                              </code>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <Input
-                  id={setting.name}
-                  defaultValue={setting.value}
-                  onBlur={(e) => handleUpdateSetting(setting.name, e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">{setting.description}</p>
-              </div>
-            ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center p-12 border rounded-lg bg-muted/10 text-center">
+          <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center dark:bg-blue-900/30 mb-4">
+            <Settings className="h-8 w-8 text-blue-600 dark:text-blue-400" />
           </div>
-        ) : (
-          <div className="text-center p-6 text-muted-foreground">
-            No settings found.
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          <h3 className="text-lg font-semibold">No settings available</h3>
+          <p className="text-muted-foreground max-w-md mt-1">
+            The AI agent settings are not configured yet. Please contact an administrator to set up the agent configuration.
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
 
 export default function AgentPage() {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState("chat");
   
   return (
     <SharedLayout user={user}>
-      <div className="container mx-auto py-6 space-y-6">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              AI Agent Architect
-            </h1>
-            <p className="text-muted-foreground mt-1">
+      <div className="container mx-auto py-8 space-y-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                <Bot className="h-6 w-6 text-white" />
+              </div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                AI Agent Architect
+              </h1>
+            </div>
+            <p className="text-muted-foreground pl-1">
               Your intelligent assistant for energy monitoring and optimization
             </p>
           </div>
-          <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 px-4 py-2 rounded-lg">
-            <Bot className="h-5 w-5 text-blue-500" />
-            <span className="text-sm font-medium">Powered by OpenAI</span>
+          <div className="hidden md:flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 px-4 py-2 rounded-lg">
+              <Sparkles className="h-5 w-5 text-amber-500" />
+              <span className="text-sm font-medium">Powered by AI</span>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Database className="h-4 w-4 text-blue-500" />
+                  <span>Database Access</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="w-80">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    This AI agent has secure access to your energy and environmental data for providing insights and recommendations.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <CheckCircle className="h-3 w-3 text-green-500" />
+                      <span>Power Monitoring</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <CheckCircle className="h-3 w-3 text-green-500" />
+                      <span>Environmental Data</span>
+                    </div>
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
         
-        <Tabs defaultValue="chat" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 p-1 bg-muted/80 backdrop-blur-sm rounded-xl">
-            <TabsTrigger value="chat" className="flex items-center justify-center rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Chat
-            </TabsTrigger>
-            <TabsTrigger value="tasks" className="flex items-center justify-center rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800">
-              <ListChecks className="h-4 w-4 mr-2" />
-              Tasks
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center justify-center rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800">
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </TabsTrigger>
-          </TabsList>
+        <div className="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/10 dark:to-indigo-950/10 rounded-xl p-1 shadow-sm">
+          <Tabs 
+            defaultValue="chat" 
+            className="w-full"
+            onValueChange={(value) => setActiveTab(value)}
+          >
+            <div className="flex justify-between items-center px-4 py-4">
+              <TabsList className="grid w-full max-w-md grid-cols-3 p-1 bg-white dark:bg-slate-900 rounded-lg shadow-sm">
+                <TabsTrigger 
+                  value="chat" 
+                  className="flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="hidden sm:inline">Chat</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="tasks" 
+                  className="flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white"
+                >
+                  <ListChecks className="h-4 w-4" />
+                  <span className="hidden sm:inline">Tasks</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="settings" 
+                  className="flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">Settings</span>
+                </TabsTrigger>
+              </TabsList>
+              
+              <div className="md:hidden flex items-center gap-2">
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <InfoIcon className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-80">
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-semibold">AI Agent Capabilities</h4>
+                      <p className="text-sm text-muted-foreground">
+                        This AI agent has advanced capabilities for energy data analysis, forecasting, and recommendation generation.
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 pt-2">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                          <span>Power Data Analysis</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                          <span>Environmental Insights</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                          <span>Equipment Monitoring</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                          <span>Forecasting</span>
+                        </div>
+                      </div>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
+              </div>
+            </div>
+            
+            <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm">
+              <TabsContent value="chat" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+                <ChatInterface />
+              </TabsContent>
+              
+              <TabsContent value="tasks" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+                <TasksInterface />
+              </TabsContent>
+              
+              <TabsContent value="settings" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+                <AgentSettingsInterface />
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-muted-foreground flex items-center gap-2">
+              {activeTab === "chat" && (
+                <>
+                  <MessageSquare className="h-4 w-4 text-blue-500" />
+                  <span>Chat with AI to ask questions about your energy data</span>
+                </>
+              )}
+              {activeTab === "tasks" && (
+                <>
+                  <ListChecks className="h-4 w-4 text-blue-500" />
+                  <span>Create and manage automated AI tasks for deeper analysis</span>
+                </>
+              )}
+              {activeTab === "settings" && (
+                <>
+                  <Settings className="h-4 w-4 text-blue-500" />
+                  <span>Configure AI model parameters and capabilities</span>
+                </>
+              )}
+            </div>
+          </div>
           
-          <TabsContent value="chat" className="mt-6 focus-visible:outline-none focus-visible:ring-0">
-            <ChatInterface />
-          </TabsContent>
-          
-          <TabsContent value="tasks" className="mt-6 focus-visible:outline-none focus-visible:ring-0">
-            <TasksInterface />
-          </TabsContent>
-          
-          <TabsContent value="settings" className="mt-6 focus-visible:outline-none focus-visible:ring-0">
-            <AgentSettingsInterface />
-          </TabsContent>
-        </Tabs>
+          <div className="flex items-center gap-3">
+            <Separator orientation="vertical" className="h-6" />
+            <a 
+              href="https://docs.openai.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-1"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              <span>Learn more</span>
+            </a>
+          </div>
+        </div>
       </div>
     </SharedLayout>
   );
