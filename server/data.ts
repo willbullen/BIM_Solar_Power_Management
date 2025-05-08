@@ -199,10 +199,11 @@ export function generateSyntheticData(
       environmentalData = {
         timestamp: now,
         weather: Math.random() > 0.5 ? 'Heavy Rain' : 'Rain',
-        temperature: getRandomInRange(4, 9),  // Storms bring cooler temperatures
+        air_temp: getRandomInRange(4, 9),  // Storms bring cooler temperatures
         humidity: getRandomInRange(92, 98),  // Extremely high humidity
         windSpeed: getRandomInRange(30, 50),  // Very high winds typical of Kerry Atlantic storms
-        sunIntensity: getRandomInRange(0, 8)  // Almost no sun during storms
+        ghi: getRandomInRange(0, 80),  // Almost no GHI during storms
+        dni: getRandomInRange(0, 30)   // Almost no DNI during storms
       };
       break;
       
