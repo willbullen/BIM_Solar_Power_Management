@@ -38,7 +38,7 @@ export async function apiRequest(
       ...(data && method !== 'GET' ? { "Content-Type": "application/json" } : {}),
       'Accept': 'application/json',
     },
-    credentials: "include",
+    credentials: "include", // Important for sending cookies with request
     mode: "cors",
   };
   
