@@ -15,6 +15,7 @@ import { generateSyntheticData } from "./data";
 import { format } from 'date-fns';
 import { SolcastService } from './solcast-service';
 import { AIService } from './ai-service';
+import { registerAgentRoutes } from './agent-routes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize the database
@@ -1119,6 +1120,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Register agent routes for the AI capabilities
+  registerAgentRoutes(app);
 
   return httpServer;
 }
