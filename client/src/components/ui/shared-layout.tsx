@@ -42,7 +42,8 @@ type LayoutProps = {
   user?: User | null;
 };
 
-export default function SharedLayout({ children, user }: LayoutProps) {
+// Export the component as both default and named export for flexibility
+export function SharedLayout({ children, user }: LayoutProps) {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { powerData, environmentalData } = usePowerData();
@@ -200,3 +201,6 @@ export default function SharedLayout({ children, user }: LayoutProps) {
     </div>
   );
 }
+
+// Also export as default for backward compatibility
+export default SharedLayout;

@@ -26,7 +26,7 @@ function App() {
             <ProtectedRoute path="/reports" component={ReportsPage} />
             <ProtectedRoute path="/forecasting" component={ForecastingPage} />
             <ProtectedRoute path="/equipment" component={EquipmentPage} />
-            <ProtectedRoute path="/operational-planning" component={OperationalPlanningPage} />
+            <ProtectedRoute path="/planning" component={OperationalPlanningPage} />
             <ProtectedRoute path="/feedback" component={FeedbackPage} />
             <AdminRoute path="/settings" component={SettingsPage} />
             <Route path="/auth" component={AuthPage} />
