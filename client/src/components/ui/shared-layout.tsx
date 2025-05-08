@@ -98,14 +98,14 @@ export default function SharedLayout({ children, user }: LayoutProps) {
                   >
                     <div
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 transition-colors",
+                        "flex items-center gap-2 rounded-lg px-2.5 py-1.5 transition-colors",
                         isActive 
                           ? "bg-accent text-accent-foreground" 
                           : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-accent/50"
                       )}
                     >
-                      <Icon className="h-5 w-5" />
-                      <span>{item.name}</span>
+                      <Icon className="h-4 w-4" />
+                      <span className="text-sm">{item.name}</span>
                     </div>
                   </Link>
                 );

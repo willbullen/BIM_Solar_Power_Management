@@ -53,57 +53,57 @@ export function SideNavMetrics() {
   return (
     <div className="space-y-4">
       <Card className="border-sidebar-border bg-sidebar">
-        <CardHeader className="pb-2 pt-3">
+        <CardHeader className="pb-2 pt-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium">Current Metrics</CardTitle>
-            <Badge variant={dataStatus === 'live' ? 'default' : 'outline'} className="text-xs">
+            <CardTitle className="text-xs font-medium">Current Metrics</CardTitle>
+            <Badge variant={dataStatus === 'live' ? 'default' : 'outline'} className="text-[10px] px-1.5 py-0">
               {dataStatus === 'live' ? 'Live' : 'Historical'}
             </Badge>
           </div>
           {lastUpdated && (
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-[10px] text-muted-foreground mt-0.5">
               {format(new Date(lastUpdated), 'HH:mm:ss')}
             </p>
           )}
         </CardHeader>
-        <CardContent className="pb-3">
-          <div className="space-y-2">
+        <CardContent className="pb-2 pt-1">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <Zap className="h-3.5 w-3.5 mr-2 text-yellow-500" />
-                <span className="text-xs">Total Load</span>
+                <Zap className="h-3 w-3 mr-1.5 text-yellow-500" />
+                <span className="text-[10px]">Total Load</span>
               </div>
-              <span className="text-xs font-medium">
+              <span className="text-[10px] font-medium">
                 {latestPower ? `${latestPower.totalLoad.toFixed(1)} kW` : '-- kW'}
               </span>
             </div>
             
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <Gauge className="h-3.5 w-3.5 mr-2 text-blue-500" />
-                <span className="text-xs">Grid Power</span>
+                <Gauge className="h-3 w-3 mr-1.5 text-blue-500" />
+                <span className="text-[10px]">Grid Power</span>
               </div>
-              <span className="text-xs font-medium">
+              <span className="text-[10px] font-medium">
                 {latestPower ? `${latestPower.mainGridPower.toFixed(1)} kW` : '-- kW'}
               </span>
             </div>
             
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <Sun className="h-3.5 w-3.5 mr-2 text-amber-500" />
-                <span className="text-xs">Solar Output</span>
+                <Sun className="h-3 w-3 mr-1.5 text-amber-500" />
+                <span className="text-[10px]">Solar Output</span>
               </div>
-              <span className="text-xs font-medium">
+              <span className="text-[10px] font-medium">
                 {latestPower ? `${latestPower.solarOutput.toFixed(1)} kW` : '-- kW'}
               </span>
             </div>
             
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <CloudSun className="h-3.5 w-3.5 mr-2 text-green-500" />
-                <span className="text-xs">Solar Efficiency</span>
+                <CloudSun className="h-3 w-3 mr-1.5 text-green-500" />
+                <span className="text-[10px]">Solar Efficiency</span>
               </div>
-              <span className="text-xs font-medium">
+              <span className="text-[10px] font-medium">
                 {latestPower ? `${solarEfficiency.toFixed(1)}%` : '--%'}
               </span>
             </div>
@@ -112,37 +112,37 @@ export function SideNavMetrics() {
       </Card>
       
       <Card className="border-sidebar-border bg-sidebar">
-        <CardHeader className="pb-2 pt-3">
-          <CardTitle className="text-sm font-medium">Environmental Data</CardTitle>
+        <CardHeader className="pb-2 pt-2">
+          <CardTitle className="text-xs font-medium">Environmental Data</CardTitle>
         </CardHeader>
-        <CardContent className="pb-3">
-          <div className="space-y-2">
+        <CardContent className="pb-2 pt-1">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <Thermometer className="h-3.5 w-3.5 mr-2 text-red-500" />
-                <span className="text-xs">Temperature</span>
+                <Thermometer className="h-3 w-3 mr-1.5 text-red-500" />
+                <span className="text-[10px]">Temperature</span>
               </div>
-              <span className="text-xs font-medium">
+              <span className="text-[10px] font-medium">
                 {environmentalData ? `${environmentalData.air_temp.toFixed(1)}°C` : '--°C'}
               </span>
             </div>
             
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <Sun className="h-3.5 w-3.5 mr-2 text-yellow-500" />
-                <span className="text-xs">Solar Radiation</span>
+                <Sun className="h-3 w-3 mr-1.5 text-yellow-500" />
+                <span className="text-[10px]">Solar Radiation</span>
               </div>
-              <span className="text-xs font-medium">
+              <span className="text-[10px] font-medium">
                 {environmentalData ? `${environmentalData.ghi.toFixed(0)} W/m²` : '-- W/m²'}
               </span>
             </div>
             
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <Wind className="h-3.5 w-3.5 mr-2 text-blue-400" />
-                <span className="text-xs">Wind Speed</span>
+                <Wind className="h-3 w-3 mr-1.5 text-blue-400" />
+                <span className="text-[10px]">Wind Speed</span>
               </div>
-              <span className="text-xs font-medium">
+              <span className="text-[10px] font-medium">
                 {environmentalData && environmentalData.windSpeed !== null ? 
                   `${environmentalData.windSpeed.toFixed(1)} km/h` : '-- km/h'}
               </span>
