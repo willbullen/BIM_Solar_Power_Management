@@ -124,6 +124,11 @@ export function useSchedulingAdvisor() {
       return [];
     }
     
+    // If no forecast data is available, return empty recommendations
+    if (!Array.isArray(forecastData) || forecastData.length === 0) {
+      return [];
+    }
+    
     // This is where our recommendation algorithm will run
     const recommendations: SchedulingRecommendation[] = [];
     

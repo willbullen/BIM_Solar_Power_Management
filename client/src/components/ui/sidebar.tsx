@@ -12,7 +12,8 @@ import {
   CloudSun,
   FileDown,
   TrendingUp,
-  Wrench
+  Wrench,
+  CalendarClock
 } from "lucide-react";
 
 type SidebarProps = {
@@ -94,6 +95,17 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               >
                 <Wrench className="sidebar-menu-item-icon" />
                 <span>Equipment</span>
+              </Link>
+              
+              <Link 
+                href="/operational-planning" 
+                className={cn(
+                  "sidebar-menu-item",
+                  location === "/operational-planning" && "active"
+                )}
+              >
+                <CalendarClock className="sidebar-menu-item-icon" />
+                <span>Operational Planning</span>
               </Link>
               
               {user?.role === "Admin" && (
