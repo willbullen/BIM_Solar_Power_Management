@@ -111,10 +111,11 @@ function ChatInterface() {
     }
   }, []);
 
-  // Fetch conversations
+  // Fetch conversations - only enable if user is authenticated
   const { data: conversations, isLoading: loadingConversations, refetch: refetchConversations } = useQuery({
     queryKey: ['/api/agent/conversations'],
-    retry: false
+    retry: false,
+    enabled: !!user // Only run the query if user is authenticated
   });
 
   // Fetch messages for the active conversation
