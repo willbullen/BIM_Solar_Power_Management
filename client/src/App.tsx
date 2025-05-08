@@ -7,12 +7,12 @@ import { PowerDataProvider } from "@/hooks/use-power-data";
 import { ProtectedRoute, AdminRoute } from "@/lib/protected-route";
 import DashboardPage from "@/pages/dashboard-page-new";
 import AuthPage from "@/pages/auth-page";
-import SettingsPage from "@/pages/settings-page";
+import SettingsPage from "@/pages/settings-page-new";
 import ReportsPage from "@/pages/reports-page-new";
 import ForecastingPage from "@/pages/forecasting-page-new";
-import EquipmentPage from "@/pages/equipment-page";
-import OperationalPlanningPage from "@/pages/operational-planning-page";
-import FeedbackPage from "@/pages/feedback-page";
+import EquipmentPage from "@/pages/equipment-page-new";
+import OperationalPlanningPage from "@/pages/operational-planning-page-new";
+import FeedbackPage from "@/pages/feedback-page-new";
 import NotFound from "@/pages/not-found";
 
 function App() {
