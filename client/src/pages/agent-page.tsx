@@ -102,6 +102,14 @@ function ChatInterface() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [newConversationTitle, setNewConversationTitle] = useState("");
   const [isCreatingNewConversation, setIsCreatingNewConversation] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Scroll to the bottom of the messages
+  const scrollToBottom = useCallback(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, []);
 
   // Fetch conversations
   const { data: conversations, isLoading: loadingConversations, refetch: refetchConversations } = useQuery({
@@ -118,21 +126,22 @@ function ChatInterface() {
 
   // Create a new conversation
   const createConversation = useMutation({
-    mutationFn: (title: string) => apiRequest('/api/agent/conversations', {
-      method: 'POST',
-      body: JSON.stringify({ title })
-    }),
+    mutationFn: (title: string) => 
+      apiRequest('/api/agent/conversations', {
+        method: 'POST',
+        body: JSON.stringify({ title })
+      }),
     onSuccess: (data) => {
-      setActiveConversation(data.id);
       refetchConversations();
+      setActiveConversation(data.id);
       setIsCreatingNewConversation(false);
+      setNewConversationTitle("");
       toast({
         title: "Conversation created",
-        description: "Your new conversation has been started."
+        description: "Your new conversation has been created."
       });
     },
     onError: () => {
-      setIsCreatingNewConversation(false);
       toast({
         variant: "destructive",
         title: "Error",
@@ -143,19 +152,23 @@ function ChatInterface() {
 
   // Send a message
   const sendMessage = useMutation({
-    mutationFn: (content: string) => apiRequest(`/api/agent/conversations/${activeConversation}/messages`, {
-      method: 'POST',
-      body: JSON.stringify({ content })
-    }),
+    mutationFn: (content: string) => 
+      apiRequest(`/api/agent/conversations/${activeConversation}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({ content })
+      }),
     onSuccess: () => {
       setInput("");
       refetchMessages();
+      setIsSubmitting(false);
       // Refetch after a short delay to get the AI response
       setTimeout(() => {
         refetchMessages();
-      }, 2000);
+        scrollToBottom();
+      }, 1000);
     },
     onError: () => {
+      setIsSubmitting(false);
       toast({
         variant: "destructive",
         title: "Error",
@@ -164,55 +177,51 @@ function ChatInterface() {
     }
   });
 
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const handleSend = () => {
-    if (!input.trim()) return;
-
-    if (!activeConversation) {
-      setIsCreatingNewConversation(true);
-      createConversation.mutate(`Conversation ${new Date().toLocaleString()}`);
-      // We'll send the message after the conversation is created and activeConversation is set
-      return;
-    }
-
+  // Handle sending a message
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || !activeConversation || isSubmitting) return;
+    
+    setIsSubmitting(true);
     sendMessage.mutate(input);
   };
 
-  // Wait until the conversation is created, then send the message
-  useEffect(() => {
-    if (activeConversation && input && !sendMessage.isPending && !createConversation.isPending) {
-      sendMessage.mutate(input);
-    }
-  }, [activeConversation]);
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+  // Handle creating a new conversation
+  const handleCreateConversation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newConversationTitle.trim()) return;
+    
+    createConversation.mutate(newConversationTitle);
   };
 
+  // Start a new conversation
   const startNewConversation = () => {
     setIsCreatingNewConversation(true);
   };
 
-  const handleCreateConversation = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newConversationTitle.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please enter a title for the conversation."
-      });
-      return;
+  // Effect to automatically send message after conversation is created
+  useEffect(() => {
+    if (activeConversation && input && !isSubmitting && !createConversation.isPending) {
+      setIsSubmitting(true);
+      sendMessage.mutate(input);
     }
-    
-    createConversation.mutate(newConversationTitle);
-    setNewConversationTitle("");
+  }, [activeConversation, input, isSubmitting, createConversation.isPending]);
+
+  // Effect to scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
+
+  // Function to handle Enter key press for message sending
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (activeConversation) {
+        handleSendMessage(e as any);
+      } else {
+        setIsCreatingNewConversation(true);
+      }
+    }
   };
 
   return (
@@ -505,7 +514,7 @@ function ChatInterface() {
         </CardContent>
         
         <CardFooter className="border-t p-4">
-          <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex w-full space-x-2">
+          <form onSubmit={handleSendMessage} className="flex w-full space-x-2">
             <Input 
               value={input}
               onChange={(e) => setInput(e.target.value)}
