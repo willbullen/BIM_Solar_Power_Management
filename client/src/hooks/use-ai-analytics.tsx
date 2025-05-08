@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { usePowerData } from "@/hooks/use-power-data";
+import { apiRequest } from "@/lib/queryClient";
 
 interface AIAnalyticsOptions {
   onSuccess?: (data: any) => void;
@@ -14,20 +15,7 @@ export function useAIAnalytics(options: AIAnalyticsOptions = {}) {
   // Get the mutation function for analytics API
   const analyticsQuery = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch('/api/ai/analytics', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to generate analytics');
-      }
-
-      return response.json();
+      return apiRequest('POST', '/api/ai/analytics', data);
     },
     onSuccess: (data) => {
       setIsGenerating(false);
@@ -46,20 +34,7 @@ export function useAIAnalytics(options: AIAnalyticsOptions = {}) {
   // Get the mutation function for report API
   const reportQuery = useMutation({
     mutationFn: async ({ data, reportType }: { data: any, reportType: string }) => {
-      const response = await fetch('/api/ai/report', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ data, reportType }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to generate report');
-      }
-
-      return response.json();
+      return apiRequest('POST', '/api/ai/report', { data, reportType });
     },
     onSuccess: (data) => {
       setIsGenerating(false);
@@ -78,20 +53,7 @@ export function useAIAnalytics(options: AIAnalyticsOptions = {}) {
   // Get the mutation function for predictions API
   const predictionsQuery = useMutation({
     mutationFn: async ({ data, forecastHorizon }: { data: any, forecastHorizon: string }) => {
-      const response = await fetch('/api/ai/predictions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ data, forecastHorizon }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to generate predictions');
-      }
-
-      return response.json();
+      return apiRequest('POST', '/api/ai/predictions', { data, forecastHorizon });
     },
     onSuccess: (data) => {
       setIsGenerating(false);
