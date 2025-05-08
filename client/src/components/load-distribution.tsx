@@ -1,10 +1,11 @@
 import { PowerData } from "@shared/schema";
 
 type LoadDistributionProps = {
-  powerData: PowerData | null;
+  data: PowerData | null;
+  className?: string;
 };
 
-export function LoadDistribution({ powerData }: LoadDistributionProps) {
+export function LoadDistribution({ data: powerData, className }: LoadDistributionProps) {
   if (!powerData) {
     return (
       <div className="bg-card rounded-lg shadow p-6 flex items-center justify-center h-full">

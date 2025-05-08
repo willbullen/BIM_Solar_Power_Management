@@ -155,7 +155,7 @@ function DashboardPage() {
                   <CardDescription>Current power allocation by source</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <LoadDistribution data={latestPower} className="h-[230px]" />
+                  <LoadDistribution data={latestPower || null} className="h-[230px]" />
                 </CardContent>
               </Card>
             </div>
