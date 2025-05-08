@@ -7,15 +7,18 @@ import {
   Zap, 
   BarChart3, 
   Settings, 
-  Sun, 
-  Thermometer, 
-  CloudSun,
   FileDown,
   TrendingUp,
   Wrench,
   CalendarClock,
-  MessageCircle
+  MessageCircle,
+  Cloud,
+  BatteryCharging,
+  Activity
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 
 type SidebarProps = {
   collapsed: boolean;
@@ -43,179 +46,235 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       
       {/* Sidebar */}
       <aside className={cn(
-        "app-sidebar",
+        "fixed inset-y-0 left-0 z-30 flex w-72 flex-col border-r bg-sidebar transition-transform duration-300",
+        "max-h-screen overflow-hidden pt-16 lg:translate-x-0",
         collapsed ? "-translate-x-full" : "translate-x-0"
       )}>
-        <div className="px-4 py-4">
-          <div className="mb-6">
-            <p className="text-xs uppercase text-muted-foreground font-semibold tracking-wider mb-2">
-              Navigation
-            </p>
-            
-            {/* Sidebar Menu */}
-            <nav className="space-y-1">
-              <Link 
-                href="/dashboard" 
+        <div className="flex flex-col h-full overflow-auto scrollbar-thin scrollbar-thumb-muted">
+          {/* Sidebar Menu */}
+          <div className="flex-1 p-4">
+            <nav className="grid gap-1">
+              <Link
+                href="/dashboard"
                 className={cn(
-                  "sidebar-menu-item",
-                  (location === "/" || location === "/dashboard") && "active"
+                  "group flex items-center rounded-md px-3 py-2 text-sm font-medium",
+                  "hover:bg-accent/50 hover:text-accent-foreground",
+                  (location === "/" || location === "/dashboard") 
+                    ? "bg-accent/70 text-accent-foreground" 
+                    : "transparent"
                 )}
               >
-                <BarChart3 className="sidebar-menu-item-icon" />
-                <span>Dashboard</span>
+                <BarChart3 className="mr-3 h-4 w-4" />
+                Dashboard
               </Link>
               
-              <Link 
-                href="/reports" 
+              <Link
+                href="/reports"
                 className={cn(
-                  "sidebar-menu-item",
-                  location === "/reports" && "active"
+                  "group flex items-center rounded-md px-3 py-2 text-sm font-medium",
+                  "hover:bg-accent/50 hover:text-accent-foreground",
+                  location === "/reports" 
+                    ? "bg-accent/70 text-accent-foreground" 
+                    : "transparent"
                 )}
               >
-                <FileDown className="sidebar-menu-item-icon" />
-                <span>Reports</span>
+                <FileDown className="mr-3 h-4 w-4" />
+                Reports
               </Link>
               
-              <Link 
-                href="/forecasting" 
+              <Link
+                href="/forecasting"
                 className={cn(
-                  "sidebar-menu-item",
-                  location === "/forecasting" && "active"
+                  "group flex items-center rounded-md px-3 py-2 text-sm font-medium",
+                  "hover:bg-accent/50 hover:text-accent-foreground",
+                  location === "/forecasting" 
+                    ? "bg-accent/70 text-accent-foreground" 
+                    : "transparent"
                 )}
               >
-                <TrendingUp className="sidebar-menu-item-icon" />
-                <span>Forecasting</span>
+                <TrendingUp className="mr-3 h-4 w-4" />
+                Forecasting
               </Link>
               
-              <Link 
-                href="/equipment" 
+              <Link
+                href="/equipment"
                 className={cn(
-                  "sidebar-menu-item",
-                  location === "/equipment" && "active"
+                  "group flex items-center rounded-md px-3 py-2 text-sm font-medium",
+                  "hover:bg-accent/50 hover:text-accent-foreground",
+                  location === "/equipment" 
+                    ? "bg-accent/70 text-accent-foreground" 
+                    : "transparent"
                 )}
               >
-                <Wrench className="sidebar-menu-item-icon" />
-                <span>Equipment</span>
+                <Wrench className="mr-3 h-4 w-4" />
+                Equipment
               </Link>
               
-              <Link 
-                href="/operational-planning" 
+              <Link
+                href="/operational-planning"
                 className={cn(
-                  "sidebar-menu-item",
-                  location === "/operational-planning" && "active"
+                  "group flex items-center rounded-md px-3 py-2 text-sm font-medium",
+                  "hover:bg-accent/50 hover:text-accent-foreground",
+                  location === "/operational-planning" 
+                    ? "bg-accent/70 text-accent-foreground" 
+                    : "transparent"
                 )}
               >
-                <CalendarClock className="sidebar-menu-item-icon" />
-                <span>Operational Planning</span>
+                <CalendarClock className="mr-3 h-4 w-4" />
+                Operational Planning
               </Link>
               
-              <Link 
-                href="/feedback" 
+              <Link
+                href="/feedback"
                 className={cn(
-                  "sidebar-menu-item",
-                  location === "/feedback" && "active"
+                  "group flex items-center rounded-md px-3 py-2 text-sm font-medium",
+                  "hover:bg-accent/50 hover:text-accent-foreground",
+                  location === "/feedback" 
+                    ? "bg-accent/70 text-accent-foreground" 
+                    : "transparent"
                 )}
               >
-                <MessageCircle className="sidebar-menu-item-icon" />
-                <span>Feedback & Issues</span>
+                <MessageCircle className="mr-3 h-4 w-4" />
+                Feedback & Issues
               </Link>
               
               {user?.role === "Admin" && (
-                <Link 
-                  href="/settings" 
+                <Link
+                  href="/settings"
                   className={cn(
-                    "sidebar-menu-item",
-                    location === "/settings" && "active"
+                    "group flex items-center rounded-md px-3 py-2 text-sm font-medium",
+                    "hover:bg-accent/50 hover:text-accent-foreground",
+                    location === "/settings" 
+                      ? "bg-accent/70 text-accent-foreground" 
+                      : "transparent"
                   )}
                 >
-                  <Settings className="sidebar-menu-item-icon" />
-                  <span>Settings</span>
+                  <Settings className="mr-3 h-4 w-4" />
+                  Settings
                 </Link>
               )}
             </nav>
+            
+            <Separator className="my-4 opacity-50" />
+            
+            {/* Live Metrics Section */}
+            <div className="space-y-4">
+              <div>
+                <h3 className="mb-2 text-xs font-medium uppercase text-muted-foreground tracking-wider">
+                  Current Metrics
+                </h3>
+                
+                <div className="space-y-3">
+                  {/* Grid Power Metric */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-3.5 w-3.5 text-primary" />
+                        <span className="text-xs font-medium">Grid Power</span>
+                      </div>
+                      <span className="text-xs font-medium">
+                        {powerData?.mainGridPower.toFixed(1) || "0.0"} kW
+                      </span>
+                    </div>
+                    <Progress 
+                      value={powerData ? Math.min(100, (powerData.mainGridPower / 10) * 100) : 0}
+                      className="h-1" 
+                    />
+                  </div>
+                  
+                  {/* Solar Output Metric */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <BatteryCharging className="h-3.5 w-3.5 text-accent" />
+                        <span className="text-xs font-medium">Solar Output</span>
+                      </div>
+                      <span className="text-xs font-medium text-accent">
+                        {powerData?.solarOutput ? powerData.solarOutput.toFixed(1) : "0.0"} kW
+                      </span>
+                    </div>
+                    <Progress 
+                      value={powerData ? Math.min(100, (powerData.solarOutput / 5) * 100) : 0}
+                      className="h-1 bg-muted [&>div]:bg-accent" 
+                    />
+                  </div>
+                  
+                  {/* Total Load Metric */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-3.5 w-3.5 text-[#ff9f0c]" />
+                        <span className="text-xs font-medium">Total Load</span>
+                      </div>
+                      <span className="text-xs font-medium text-[#ff9f0c]">
+                        {powerData?.totalLoad ? powerData.totalLoad.toFixed(1) : "0.0"} kW
+                      </span>
+                    </div>
+                    <Progress 
+                      value={powerData ? Math.min(100, (powerData.totalLoad / 10) * 100) : 0}
+                      className="h-1 bg-muted [&>div]:bg-[#ff9f0c]" 
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <Separator className="opacity-50" />
+              
+              {/* Environmental Data Section */}
+              <div>
+                <h3 className="mb-2 text-xs font-medium uppercase text-muted-foreground tracking-wider">
+                  Environmental Data
+                </h3>
+                
+                <div className="rounded-lg border bg-card/40 p-3 shadow-sm">
+                  <div className="grid gap-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Cloud className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-xs">Weather</span>
+                      </div>
+                      <span className="text-xs font-medium">
+                        {environmentalData?.weather || "Unknown"}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-3.5 w-3.5 flex items-center justify-center text-muted-foreground">
+                          °C
+                        </div>
+                        <span className="text-xs">Temperature</span>
+                      </div>
+                      <span className="text-xs font-medium">
+                        {environmentalData ? environmentalData.air_temp.toFixed(1) : "0"}°C
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-xs">Solar Radiation</span>
+                      </div>
+                      <span className="text-xs font-medium">
+                        {environmentalData ? Math.round(environmentalData.ghi) : "0"} W/m²
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           
-          {/* Current Metrics */}
-          <div className="mb-6">
-            <p className="text-xs uppercase text-muted-foreground font-semibold tracking-wider mb-2">
-              Current Metrics
-            </p>
-            
-            <div className="bg-card/50 rounded-md p-3 mb-3">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-muted-foreground text-sm">Grid Power</span>
-                <span className="text-white">{powerData?.mainGridPower.toFixed(1) || "0.0"} kW</span>
-              </div>
-              <div className="h-1 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-primary" 
-                  style={{ 
-                    width: powerData 
-                      ? `${Math.min(100, (powerData.mainGridPower / 10) * 100)}%` 
-                      : "0%" 
-                  }}
-                />
-              </div>
-            </div>
-            
-            <div className="bg-card/50 rounded-md p-3 mb-3">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-muted-foreground text-sm">Solar Output</span>
-                <span className="text-accent">{powerData?.solarOutput ? powerData.solarOutput.toFixed(1) : "0.0"} kW</span>
-              </div>
-              <div className="h-1 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-accent" 
-                  style={{ 
-                    width: powerData 
-                      ? `${Math.min(100, (powerData.solarOutput / 5) * 100)}%` 
-                      : "0%" 
-                  }}
-                />
-              </div>
-            </div>
-            
-            <div className="bg-card/50 rounded-md p-3">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-muted-foreground text-sm">Total Load</span>
-                <span className="text-[#ff9f0c]">{powerData?.totalLoad ? powerData.totalLoad.toFixed(1) : "0.0"} kW</span>
-              </div>
-              <div className="h-1 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-[#ff9f0c]" 
-                  style={{ 
-                    width: powerData 
-                      ? `${Math.min(100, (powerData.totalLoad / 10) * 100)}%` 
-                      : "0%" 
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-          
-          {/* Environmental Data */}
-          <div>
-            <p className="text-xs uppercase text-muted-foreground font-semibold tracking-wider mb-2">
-              Environment
-            </p>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground text-sm">Weather</span>
-                <span className="text-white">{environmentalData?.weather || "Unknown"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground text-sm">Temperature</span>
-                <span className="text-white">
-                  {environmentalData ? environmentalData.air_temp.toFixed(1) : "0"}°C
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground text-sm">Solar Radiation</span>
-                <span className="text-white">
-                  {environmentalData ? Math.round(environmentalData.ghi) : "0"} W/m²
-                </span>
-              </div>
-            </div>
+          {/* Collapse button for larger screens */}
+          <div className="border-t p-4 hidden lg:block">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full" 
+              onClick={onToggle}
+            >
+              Collapse
+            </Button>
           </div>
         </div>
       </aside>

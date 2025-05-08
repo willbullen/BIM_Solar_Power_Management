@@ -2,13 +2,15 @@ import React from 'react';
 
 interface PageProps {
   children: React.ReactNode;
+  className?: string;
 }
 
-export function Page({ children }: PageProps) {
-  // Using the existing layout structure without requiring sidebar/nav components
+export function Page({ children, className }: PageProps) {
   return (
-    <div className="container mx-auto p-4">
-      <main className="flex-1">{children}</main>
+    <div className={`flex flex-col min-h-screen pt-16 lg:pl-72 ${className || ''}`}>
+      <main className="flex-1 container mx-auto p-6">
+        {children}
+      </main>
     </div>
   );
 }

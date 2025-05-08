@@ -5,7 +5,9 @@ import {
   Menu,
   Zap,
   ChevronDown,
-  User
+  User,
+  Bell,
+  Settings
 } from "lucide-react";
 import { useState } from "react";
 import { 
@@ -13,8 +15,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 
 type HeaderProps = {
@@ -26,72 +30,89 @@ export function Header({ onToggleSidebar }: HeaderProps) {
   const { dataStatus, lastUpdated } = usePowerData();
   
   return (
-    <header className="app-header">
-      <div className="flex items-center">
-        {/* Mobile menu toggle */}
-        <Button 
-          variant="ghost"
-          size="icon"
-          className="lg:hidden mr-2"
-          onClick={onToggleSidebar}
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-        
-        {/* App Logo */}
-        <div className="flex items-center">
-          <Zap className="h-6 w-6 text-accent mr-2" />
-          <span className="text-white font-semibold text-lg">Dalys Monitoring System</span>
-        </div>
-      </div>
-      
-      {/* User dropdown */}
-      <div className="flex items-center space-x-4">
-        {/* Data status indicator */}
-        <div className="hidden sm:flex items-center">
-          <span className="text-sm text-muted-foreground mr-2">Data:</span>
-          <span className={`status-badge ${dataStatus}`}>
-            {dataStatus === 'live' ? 'Live' : dataStatus === 'synthetic' ? 'Synthetic' : 'Offline'}
-          </span>
-        </div>
-        
-        {/* Last update time */}
-        {lastUpdated && (
-          <div className="hidden md:flex items-center">
-            <span className="text-sm text-muted-foreground mr-2">Last Update:</span>
-            <span className="text-sm text-white">
-              {formatDistanceToNow(lastUpdated, { addSuffix: true })}
-            </span>
+    <header className="border-b bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60 z-40 fixed top-0 left-0 right-0">
+      <div className="container flex h-16 items-center justify-between px-4">
+        <div className="flex items-center gap-4 lg:gap-6">
+          {/* Mobile menu toggle */}
+          <Button 
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={onToggleSidebar}
+          >
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle menu</span>
+          </Button>
+          
+          {/* App Logo */}
+          <div className="flex items-center gap-2">
+            <Zap className="h-6 w-6 text-primary" />
+            <span className="font-semibold text-lg tracking-tight">Dalys Monitoring System</span>
           </div>
-        )}
+        </div>
         
-        {/* User menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center">
-              <span className="mr-2 text-sm">{user?.role}</span>
-              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white">
-                <User className="h-4 w-4" />
-              </div>
-              <ChevronDown className="ml-1 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-              <span className="font-medium">{user?.username}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <span className="text-muted-foreground">Role: {user?.role}</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              className="text-destructive focus:text-destructive"
-              onClick={() => logoutMutation.mutate()}
-            >
-              Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Right side menu items */}
+        <div className="flex items-center gap-4">
+          {/* Data status indicator */}
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Data:</span>
+            <Badge variant={dataStatus === 'live' ? "default" : dataStatus === 'synthetic' ? "secondary" : "outline"}>
+              {dataStatus === 'live' ? 'Live' : dataStatus === 'synthetic' ? 'Synthetic' : 'Offline'}
+            </Badge>
+          </div>
+          
+          {/* Last update time */}
+          {lastUpdated && (
+            <div className="hidden md:flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Last Update:</span>
+              <span className="text-sm font-medium">
+                {formatDistanceToNow(lastUpdated, { addSuffix: true })}
+              </span>
+            </div>
+          )}
+          
+          {/* Notifications */}
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            <span className="sr-only">Notifications</span>
+            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary"></span>
+          </Button>
+          
+          {/* User menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-2" size="sm">
+                <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                  <User className="h-4 w-4" />
+                </div>
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-medium">{user?.username}</p>
+                  <p className="text-xs text-muted-foreground">{user?.role}</p>
+                </div>
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                className="text-destructive focus:text-destructive"
+                onClick={() => logoutMutation.mutate()}
+              >
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </header>
   );
