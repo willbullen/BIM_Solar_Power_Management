@@ -182,13 +182,13 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <div className="flex justify-between">
                 <span className="text-muted-foreground text-sm">Temperature</span>
                 <span className="text-white">
-                  {environmentalData ? environmentalData.temperature.toFixed(1) : "0"}°C
+                  {environmentalData ? environmentalData.air_temp.toFixed(1) : "0"}°C
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground text-sm">Sun Intensity</span>
+                <span className="text-muted-foreground text-sm">Solar Radiation</span>
                 <span className="text-white">
-                  {environmentalData ? environmentalData.sunIntensity.toFixed(0) : "0"}%
+                  {environmentalData ? Math.round(environmentalData.ghi) : "0"} W/m²
                 </span>
               </div>
             </div>

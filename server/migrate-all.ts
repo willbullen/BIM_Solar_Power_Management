@@ -344,11 +344,22 @@ async function createHistoricalData() {
       });
       
       // Create environmental data record
+      // Convert sun intensity to GHI and DNI values
+      let ghi = 0;
+      let dni = 0;
+      
+      if (prevSunIntensity > 0) {
+        // Convert previous sunIntensity percentage to GHI and DNI values
+        ghi = prevSunIntensity * 10; // Approximate conversion
+        dni = prevSunIntensity * 12; // DNI is typically higher than GHI
+      }
+      
       environmentalDataBatch.push({
         timestamp,
         weather: prevWeather,
-        temperature: prevTemp,
-        sunIntensity: prevSunIntensity,
+        air_temp: prevTemp,
+        ghi: ghi,
+        dni: dni,
         humidity: prevHumidity,
         windSpeed: Math.random() * 15
       });

@@ -14,8 +14,9 @@ export function EnvironmentalChart({ environmentalData, className, isLoading = f
   // Format data for chart
   const chartData = environmentalData.map(data => ({
     timestamp: new Date(data.timestamp),
-    temperature: data.temperature,
-    sunIntensity: data.sunIntensity,
+    temperature: data.air_temp,
+    solarRadiation: data.ghi,
+    directRadiation: data.dni,
     humidity: data.humidity || 0,
     windSpeed: data.windSpeed || 0,
     weather: data.weather,
@@ -24,7 +25,8 @@ export function EnvironmentalChart({ environmentalData, className, isLoading = f
   // Custom tooltip formatter
   const formatTooltip = (value: number, name: string) => {
     if (name === 'temperature') return `${value.toFixed(1)}°C`;
-    if (name === 'sunIntensity') return `${value.toFixed(0)}%`;
+    if (name === 'solarRadiation') return `${value.toFixed(0)} W/m²`;
+    if (name === 'directRadiation') return `${value.toFixed(0)} W/m²`;
     if (name === 'humidity') return `${value.toFixed(0)}%`;
     if (name === 'windSpeed') return `${value.toFixed(1)} km/h`;
     return value;
@@ -121,8 +123,8 @@ export function EnvironmentalChart({ environmentalData, className, isLoading = f
               />
               <Area 
                 type="monotone" 
-                dataKey="sunIntensity" 
-                name="Sun Intensity" 
+                dataKey="solarRadiation" 
+                name="Solar Radiation" 
                 stroke="#ffd60a" 
                 fill="#ffd60a" 
                 fillOpacity={0.3} 
@@ -175,8 +177,8 @@ export function EnvironmentalStats({ environmentalData, className }: Environment
   }
 
   // Calculate statistics
-  const temperatures = environmentalData.map(data => data.temperature);
-  const sunIntensities = environmentalData.map(data => data.sunIntensity);
+  const temperatures = environmentalData.map(data => data.air_temp);
+  const solarRadiations = environmentalData.map(data => data.ghi);
   const humidities = environmentalData.map(data => data.humidity || 0);
   const windSpeeds = environmentalData.map(data => data.windSpeed || 0);
   
@@ -184,9 +186,9 @@ export function EnvironmentalStats({ environmentalData, className }: Environment
   const minTemp = Math.min(...temperatures);
   const maxTemp = Math.max(...temperatures);
   
-  const avgSun = sunIntensities.reduce((sum, val) => sum + val, 0) / sunIntensities.length;
-  const minSun = Math.min(...sunIntensities);
-  const maxSun = Math.max(...sunIntensities);
+  const avgSolar = solarRadiations.reduce((sum, val) => sum + val, 0) / solarRadiations.length;
+  const minSolar = Math.min(...solarRadiations);
+  const maxSolar = Math.max(...solarRadiations);
   
   const avgHumidity = humidities.reduce((sum, val) => sum + val, 0) / humidities.length;
   const minHumidity = Math.min(...humidities);
@@ -263,19 +265,19 @@ export function EnvironmentalStats({ environmentalData, className }: Environment
           
           <div className="space-y-4">
             <div>
-              <h4 className="font-medium text-white text-sm">Sun Intensity</h4>
+              <h4 className="font-medium text-white text-sm">Solar Radiation</h4>
               <div className="grid grid-cols-3 gap-2 mt-2">
                 <div className="bg-card/30 p-2 rounded">
                   <p className="text-xs text-muted-foreground">Average</p>
-                  <p className="font-medium">{avgSun.toFixed(0)}%</p>
+                  <p className="font-medium">{avgSolar.toFixed(0)} W/m²</p>
                 </div>
                 <div className="bg-card/30 p-2 rounded">
                   <p className="text-xs text-muted-foreground">Minimum</p>
-                  <p className="font-medium">{minSun.toFixed(0)}%</p>
+                  <p className="font-medium">{minSolar.toFixed(0)} W/m²</p>
                 </div>
                 <div className="bg-card/30 p-2 rounded">
                   <p className="text-xs text-muted-foreground">Maximum</p>
-                  <p className="font-medium">{maxSun.toFixed(0)}%</p>
+                  <p className="font-medium">{maxSolar.toFixed(0)} W/m²</p>
                 </div>
               </div>
             </div>
