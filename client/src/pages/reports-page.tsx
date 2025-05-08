@@ -1,348 +1,449 @@
-import { useState, useEffect, FormEvent } from "react";
+import { useState } from "react";
 import { usePowerData } from "@/hooks/use-power-data";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
-import { SharedLayout } from "@/components/ui/shared-layout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader2, FileDown, Calendar, ChevronDown, Table } from "lucide-react";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { 
-  Popover, 
-  PopoverContent, 
-  PopoverTrigger 
-} from "@/components/ui/popover";
-import { format } from "date-fns";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { useQuery } from "@tanstack/react-query";
+import { getQueryFn } from "@/lib/queryClient";
+import { Layout } from "@/components/ui/layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Loader2, Download, Calendar, Filter, PieChart, BarChart4, AreaChart, LineChart } from "lucide-react";
+import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { PowerChart } from "@/components/power-chart";
+import { DataTable } from "@/components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
-// Use the exact type from react-day-picker
-import { DateRange } from "react-day-picker";
+// Define type for power data reports
+type PowerDataRow = {
+  id: number;
+  timestamp: Date;
+  totalLoad: number;
+  mainGridPower: number;
+  solarOutput: number;
+  processLoad: number;
+  hvacLoad: number;
+  lightingLoad: number;
+  refrigerationLoad: number;
+  efficiency: number;
+};
 
-function ReportsContent() {
-  const { toast } = useToast();
-  const { powerData, environmentalData } = usePowerData();
-  const [isExporting, setIsExporting] = useState(false);
-  const [previewData, setPreviewData] = useState<any[] | null>(null);
-  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+// Define columns for power data table
+const powerColumns: ColumnDef<PowerDataRow>[] = [
+  {
+    accessorKey: "timestamp",
+    header: "Time",
+    cell: ({ row }) => format(new Date(row.getValue("timestamp")), "yyyy-MM-dd HH:mm"),
+  },
+  {
+    accessorKey: "totalLoad",
+    header: "Total Load (kW)",
+    cell: ({ row }) => (row.getValue("totalLoad") as number).toFixed(2),
+  },
+  {
+    accessorKey: "mainGridPower",
+    header: "Grid Power (kW)",
+    cell: ({ row }) => (row.getValue("mainGridPower") as number).toFixed(2),
+  },
+  {
+    accessorKey: "solarOutput",
+    header: "Solar Output (kW)",
+    cell: ({ row }) => (row.getValue("solarOutput") as number).toFixed(2),
+  },
+  {
+    accessorKey: "efficiency",
+    header: "Solar Efficiency (%)",
+    cell: ({ row }) => {
+      const efficiency = row.getValue("efficiency") as number;
+      return (
+        <div className="flex items-center">
+          <span>{efficiency.toFixed(1)}%</span>
+          <div 
+            className="ml-2 h-2 w-16 bg-secondary rounded-full overflow-hidden"
+          >
+            <div 
+              className="h-full bg-primary" 
+              style={{ width: `${Math.min(efficiency, 100)}%` }}
+            />
+          </div>
+        </div>
+      );
+    },
+  },
+];
+
+// Environmental data columns
+type EnvironmentalDataRow = {
+  id: number;
+  timestamp: Date;
+  weather: string;
+  temperature: number;
+  humidity: number | null;
+  ghi: number;
+  dni: number;
+};
+
+const environmentalColumns: ColumnDef<EnvironmentalDataRow>[] = [
+  {
+    accessorKey: "timestamp",
+    header: "Time",
+    cell: ({ row }) => format(new Date(row.getValue("timestamp")), "yyyy-MM-dd HH:mm"),
+  },
+  {
+    accessorKey: "weather",
+    header: "Weather",
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        <Badge variant="outline">{row.getValue("weather")}</Badge>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "temperature",
+    header: "Temp (°C)",
+    cell: ({ row }) => (row.getValue("temperature") as number).toFixed(1),
+  },
+  {
+    accessorKey: "humidity",
+    header: "Humidity (%)",
+    cell: ({ row }) => {
+      const humidity = row.getValue("humidity") as number | null;
+      return humidity ? humidity.toFixed(1) : "N/A";
+    },
+  },
+  {
+    accessorKey: "ghi",
+    header: "GHI (W/m²)",
+    cell: ({ row }) => (row.getValue("ghi") as number).toFixed(0),
+  },
+  {
+    accessorKey: "dni",
+    header: "DNI (W/m²)",
+    cell: ({ row }) => (row.getValue("dni") as number).toFixed(0),
+  },
+];
+
+export default function ReportsPage() {
+  const { powerData, environmentalData, isLoading } = usePowerData();
+  const [dateRange, setDateRange] = useState<string>("day");
+  const [reportType, setReportType] = useState<string>("hourly");
   
-  // Report parameters
-  const [dataType, setDataType] = useState<string>("power");
-  const [exportFormat, setExportFormat] = useState<string>("csv");
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: new Date(new Date().setDate(new Date().getDate() - 7)), // Last 7 days
-    to: new Date()
+  // Fetch historical power data
+  const { data: historicalPowerData, isLoading: isLoadingHistorical } = useQuery({
+    queryKey: ["/api/power-data", dateRange],
+    queryFn: getQueryFn({ on401: "throw" }),
   });
   
-  const exportTypes = [
-    { value: "power", label: "Power Data" },
-    { value: "environmental", label: "Environmental Data" },
-    { value: "combined", label: "Combined Data" }
-  ];
+  // Fetch historical environmental data
+  const { data: historicalEnvData, isLoading: isLoadingEnv } = useQuery({
+    queryKey: ["/api/environmental-data", dateRange],
+    queryFn: getQueryFn({ on401: "throw" }),
+  });
   
-  const exportFormats = [
-    { value: "csv", label: "CSV", icon: <FileDown className="mr-2 h-4 w-4" /> },
-    { value: "json", label: "JSON", icon: <Table className="mr-2 h-4 w-4" /> }
-  ];
-  
-  // Load preview data when date range or data type changes
-  useEffect(() => {
-    loadPreviewData();
-  }, [dataType, dateRange]);
-  
-  const loadPreviewData = async () => {
-    if (!dateRange.from || !dateRange.to) return;
+  // Filter data based on date range
+  const getFilteredPowerData = () => {
+    if (!historicalPowerData) return [];
     
-    setIsLoadingPreview(true);
-    try {
-      const fromDate = format(dateRange.from, "yyyy-MM-dd");
-      const toDate = format(dateRange.to, "yyyy-MM-dd");
-      let endpoint = '';
-      
-      if (dataType === 'power') {
-        endpoint = `/api/power-data/range?startDate=${fromDate}&endDate=${toDate}`;
-      } else if (dataType === 'environmental') {
-        endpoint = `/api/environmental-data/range?startDate=${fromDate}&endDate=${toDate}`;
-      } else if (dataType === 'combined') {
-        endpoint = `/api/export?startDate=${fromDate}&endDate=${toDate}&dataType=combined`;
-      }
-      
-      const response = await fetch(endpoint);
-      
-      if (!response.ok) {
-        throw new Error(`Error fetching preview data: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      
-      // Only show up to 10 items in preview
-      setPreviewData(data.slice(0, 10));
-    } catch (error) {
-      console.error("Error loading preview data:", error);
-      toast({
-        title: "Failed to load preview",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
-        variant: "destructive",
-      });
-      setPreviewData(null);
-    } finally {
-      setIsLoadingPreview(false);
+    let data = [...historicalPowerData];
+    
+    switch (dateRange) {
+      case "day":
+        data = data.filter(d => new Date(d.timestamp) >= subDays(new Date(), 1));
+        break;
+      case "week":
+        data = data.filter(d => new Date(d.timestamp) >= subDays(new Date(), 7));
+        break;
+      case "month":
+        data = data.filter(d => new Date(d.timestamp) >= subDays(new Date(), 30));
+        break;
+      default:
+        break;
     }
+    
+    // Calculate efficiency for each data point
+    return data.map(d => ({
+      ...d,
+      efficiency: d.totalLoad > 0 ? (d.solarOutput / d.totalLoad) * 100 : 0,
+    }));
   };
   
-  const exportData = async () => {
-    if (!dateRange.from || !dateRange.to) {
-      toast({
-        title: "Date range required",
-        description: "Please select both start and end dates for your report",
-        variant: "destructive",
-      });
-      return;
+  // Filter environmental data
+  const getFilteredEnvData = () => {
+    if (!historicalEnvData) return [];
+    
+    let data = [...historicalEnvData];
+    
+    switch (dateRange) {
+      case "day":
+        data = data.filter(d => new Date(d.timestamp) >= subDays(new Date(), 1));
+        break;
+      case "week":
+        data = data.filter(d => new Date(d.timestamp) >= subDays(new Date(), 7));
+        break;
+      case "month":
+        data = data.filter(d => new Date(d.timestamp) >= subDays(new Date(), 30));
+        break;
+      default:
+        break;
     }
     
-    setIsExporting(true);
-    
-    try {
-      const fromDate = format(dateRange.from, "yyyy-MM-dd");
-      const toDate = format(dateRange.to, "yyyy-MM-dd");
-      
-      // Create URL with query parameters
-      const exportUrl = `/api/export?startDate=${fromDate}&endDate=${toDate}&dataType=${dataType}&format=${exportFormat}`;
-      
-      // Open in new tab or download
-      window.open(exportUrl, "_blank");
-      
-      toast({
-        title: "Export successful",
-        description: `Your ${dataType} data has been exported as ${exportFormat.toUpperCase()}.`,
-      });
-    } catch (error) {
-      console.error("Export error:", error);
-      toast({
-        title: "Export failed",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsExporting(false);
-    }
+    return data.map(d => ({
+      ...d,
+      temperature: d.air_temp, // Map air_temp to temperature for clarity
+    }));
   };
+  
+  // Download report data as CSV
+  const downloadReport = () => {
+    const data = getFilteredPowerData();
+    const headers = [
+      "Timestamp",
+      "Total Load (kW)",
+      "Grid Power (kW)",
+      "Solar Output (kW)",
+      "Process Load (kW)",
+      "HVAC Load (kW)",
+      "Lighting Load (kW)",
+      "Refrigeration Load (kW)",
+      "Solar Efficiency (%)",
+    ];
+    
+    const csvRows = [
+      headers.join(","),
+      ...data.map(row => {
+        const timestamp = format(new Date(row.timestamp), "yyyy-MM-dd HH:mm:ss");
+        const efficiency = row.totalLoad > 0 ? (row.solarOutput / row.totalLoad) * 100 : 0;
+        return [
+          timestamp,
+          row.totalLoad.toFixed(2),
+          row.mainGridPower.toFixed(2),
+          row.solarOutput.toFixed(2),
+          row.processLoad.toFixed(2),
+          row.hvacLoad.toFixed(2),
+          row.lightingLoad.toFixed(2),
+          row.refrigerationLoad.toFixed(2),
+          efficiency.toFixed(1),
+        ].join(",");
+      }),
+    ];
+    
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `power-report-${dateRange}-${format(new Date(), "yyyy-MM-dd")}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  const isDataLoading = isLoading || isLoadingHistorical || isLoadingEnv;
   
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
-        <div>
-          <h1 className="text-xl font-semibold text-white">Reports & Data Export</h1>
-          <p className="text-muted-foreground">Download power monitoring data for analysis</p>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {/* Export Settings */}
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Export Configuration</CardTitle>
-            <CardDescription>Select data type and export format</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Data Type</Label>
-              <Select value={dataType} onValueChange={setDataType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select data type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {exportTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground mt-1">
-                {dataType === 'power' 
-                  ? 'Export power consumption metrics (grid, solar, loads)' 
-                  : dataType === 'environmental' 
-                  ? 'Export weather and environmental metrics' 
-                  : 'Combine power and environmental data into a single export'}
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Date Range</Label>
-              <div className="grid gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "justify-start text-left font-normal",
-                        !dateRange && "text-muted-foreground"
-                      )}
-                    >
+    <Layout title="Reports & Analytics" description="Comprehensive insights and data reporting">
+      <div className="space-y-6">
+        {/* Controls */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row justify-between gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex flex-col space-y-1.5">
+                  <label htmlFor="date-range" className="text-sm font-medium">Date Range</label>
+                  <Select value={dateRange} onValueChange={setDateRange}>
+                    <SelectTrigger id="date-range" className="w-[180px]">
                       <Calendar className="mr-2 h-4 w-4" />
-                      {dateRange.from ? (
-                        dateRange.to ? (
-                          <>
-                            {format(dateRange.from, "LLL dd, y")} -{" "}
-                            {format(dateRange.to, "LLL dd, y")}
-                          </>
-                        ) : (
-                          format(dateRange.from, "LLL dd, y")
-                        )
-                      ) : (
-                        <span>Pick a date range</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      initialFocus
-                      mode="range"
-                      defaultMonth={dateRange.from}
-                      selected={{
-                        from: dateRange.from,
-                        to: dateRange.to,
-                      }}
-                      onSelect={(range) => 
-                        setDateRange(range || { from: undefined, to: undefined })
-                      }
-                      numberOfMonths={2}
-                    />
-                  </PopoverContent>
-                </Popover>
+                      <SelectValue placeholder="Select date range" />
+                    </SelectTrigger>
+                    <SelectContent position="popper">
+                      <SelectItem value="day">Last 24 Hours</SelectItem>
+                      <SelectItem value="week">Last 7 Days</SelectItem>
+                      <SelectItem value="month">Last 30 Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex flex-col space-y-1.5">
+                  <label htmlFor="report-type" className="text-sm font-medium">Report Type</label>
+                  <Select value={reportType} onValueChange={setReportType}>
+                    <SelectTrigger id="report-type" className="w-[180px]">
+                      <Filter className="mr-2 h-4 w-4" />
+                      <SelectValue placeholder="Select report type" />
+                    </SelectTrigger>
+                    <SelectContent position="popper">
+                      <SelectItem value="hourly">Hourly Aggregation</SelectItem>
+                      <SelectItem value="daily">Daily Aggregation</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Select the time period for your data export
-              </p>
+              
+              <div className="flex items-end">
+                <Button onClick={downloadReport} disabled={isDataLoading}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Report
+                </Button>
+              </div>
             </div>
-            
-            <div className="space-y-2">
-              <Label>Export Format</Label>
-              <Select value={exportFormat} onValueChange={setExportFormat}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select export format" />
-                </SelectTrigger>
-                <SelectContent>
-                  {exportFormats.map((format) => (
-                    <SelectItem key={format.value} value={format.value}>
-                      <div className="flex items-center">
-                        {format.icon}
-                        {format.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground mt-1">
-                {exportFormat === 'csv' 
-                  ? 'Download as CSV for use in Excel or other spreadsheet software' 
-                  : 'Download as JSON for programmatic analysis or web applications'}
-              </p>
-            </div>
-            
-            <Button 
-              className="w-full mt-4" 
-              onClick={exportData}
-              disabled={isExporting || !dateRange.from || !dateRange.to}
-            >
-              {isExporting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Exporting...
-                </>
-              ) : (
-                <>
-                  <FileDown className="mr-2 h-4 w-4" />
-                  Download Data
-                </>
-              )}
-            </Button>
           </CardContent>
         </Card>
         
-        {/* Data Preview */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Data Preview</CardTitle>
-            <CardDescription>
-              {isLoadingPreview 
-                ? "Loading preview data..." 
-                : `Showing ${previewData?.length || 0} rows of data (limited to 10)`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoadingPreview ? (
-              <div className="flex items-center justify-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : previewData && previewData.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse table-auto text-sm">
-                  <thead>
-                    <tr className="border-b border-muted bg-muted/50">
-                      <th className="p-2 text-left font-medium">Timestamp</th>
-                      {Object.keys(previewData[0])
-                        .filter(key => key !== 'timestamp' && key !== 'id')
-                        .map(key => (
-                          <th key={key} className="p-2 text-left font-medium">
-                            {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
-                          </th>
-                        ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {previewData.map((row, i) => (
-                      <tr key={i} className="border-b border-muted">
-                        <td className="p-2 align-top">
-                          {format(new Date(row.timestamp), "MMM d, yyyy HH:mm")}
-                        </td>
-                        {Object.entries(row)
-                          .filter(([key]) => key !== 'timestamp' && key !== 'id')
-                          .map(([key, value]) => (
-                            <td key={key} className="p-2 align-top">
-                              {typeof value === 'number' 
-                                ? value.toFixed(2) 
-                                : value === null 
-                                  ? '-' 
-                                  : String(value)}
-                            </td>
-                          ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-64 text-center">
-                <p className="text-muted-foreground mb-4">No data available for the selected date range</p>
-                <Button variant="outline" onClick={loadPreviewData}>
-                  Refresh Data
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {isDataLoading ? (
+          <div className="flex items-center justify-center h-[400px] bg-card rounded-lg border">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+              <p className="text-muted-foreground">Loading report data...</p>
+            </div>
+          </div>
+        ) : (
+          <Tabs defaultValue="charts" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="charts">
+                <LineChart className="mr-2 h-4 w-4" />
+                Charts
+              </TabsTrigger>
+              <TabsTrigger value="power-data">
+                <BarChart4 className="mr-2 h-4 w-4" />
+                Power Data
+              </TabsTrigger>
+              <TabsTrigger value="environmental">
+                <AreaChart className="mr-2 h-4 w-4" />
+                Environmental
+              </TabsTrigger>
+              <TabsTrigger value="efficiency">
+                <PieChart className="mr-2 h-4 w-4" />
+                Efficiency
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="charts" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Power Consumption & Generation</CardTitle>
+                  <CardDescription>Analysis of power usage across different sources over time</CardDescription>
+                </CardHeader>
+                <CardContent className="h-96">
+                  <PowerChart 
+                    data={getFilteredPowerData()} 
+                    showProcessLoad={true}
+                    showLighting={true}
+                    showHvac={true}
+                    showRefrigeration={true}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="power-data" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Power Data Analysis</CardTitle>
+                  <CardDescription>Detailed breakdown of power consumption metrics</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DataTable 
+                    columns={powerColumns} 
+                    data={getFilteredPowerData()}
+                    searchColumn="timestamp"
+                    searchPlaceholder="Search by time..."
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="environmental" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Environmental Data</CardTitle>
+                  <CardDescription>Weather and environmental conditions affecting energy production</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DataTable 
+                    columns={environmentalColumns} 
+                    data={getFilteredEnvData()}
+                    searchColumn="timestamp"
+                    searchPlaceholder="Search by time..."
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="efficiency" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Solar Efficiency Analysis</CardTitle>
+                  <CardDescription>
+                    Performance metrics for solar energy production and utilization
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="h-96">
+                  <div className="h-full flex flex-col justify-center items-center">
+                    <div className="text-center mb-4">
+                      <div className="text-xl font-bold">
+                        Average Solar Efficiency:
+                        {getFilteredPowerData().length > 0 ? (
+                          <span className="text-primary ml-2">
+                            {(getFilteredPowerData().reduce((acc, item) => acc + item.efficiency, 0) / getFilteredPowerData().length).toFixed(1)}%
+                          </span>
+                        ) : (
+                          <span className="ml-2">N/A</span>
+                        )}
+                      </div>
+                      <p className="text-muted-foreground">
+                        Based on {getFilteredPowerData().length} data points from the selected period
+                      </p>
+                    </div>
+                    
+                    <div className="w-full max-w-md">
+                      <Separator className="my-4" />
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span>Peak Efficiency:</span>
+                          <span className="font-medium">
+                            {getFilteredPowerData().length > 0 ? 
+                              Math.max(...getFilteredPowerData().map(item => item.efficiency)).toFixed(1) + '%' : 
+                              'N/A'
+                            }
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Lowest Efficiency:</span>
+                          <span className="font-medium">
+                            {getFilteredPowerData().length > 0 ? 
+                              Math.min(...getFilteredPowerData().map(item => item.efficiency)).toFixed(1) + '%' : 
+                              'N/A'
+                            }
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Total Solar Production:</span>
+                          <span className="font-medium">
+                            {getFilteredPowerData().length > 0 ? 
+                              getFilteredPowerData().reduce((acc, item) => acc + item.solarOutput, 0).toFixed(2) + ' kWh' : 
+                              'N/A'
+                            }
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Total Grid Consumption:</span>
+                          <span className="font-medium">
+                            {getFilteredPowerData().length > 0 ? 
+                              getFilteredPowerData().reduce((acc, item) => acc + item.mainGridPower, 0).toFixed(2) + ' kWh' : 
+                              'N/A'
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
-    </div>
-  );
-}
-
-export default function ReportsPage() {
-  const { user } = useAuth();
-  
-  return (
-    <SharedLayout user={user}>
-      <ReportsContent />
-    </SharedLayout>
+    </Layout>
   );
 }

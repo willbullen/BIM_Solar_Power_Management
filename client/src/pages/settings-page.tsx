@@ -4,7 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
-import { Layout } from "@/components/ui/layout";
+import { useAuth } from "@/hooks/use-auth";
+import { SharedLayout } from "@/components/ui/shared-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -304,7 +305,8 @@ export default function SettingsPage() {
   };
   
   return (
-    <Layout title="Settings" description="Configure system settings and preferences">
+    <SharedLayout>
+      <h1 className="text-2xl font-bold mb-6">Settings</h1>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full md:w-fit">
           <TabsTrigger value="general">
@@ -966,6 +968,6 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </Layout>
+    </SharedLayout>
   );
 }

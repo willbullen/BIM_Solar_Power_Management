@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { usePowerData } from "@/hooks/use-power-data";
+import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
-import { Layout } from "@/components/ui/layout";
+import { SharedLayout } from "@/components/ui/shared-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -260,6 +261,7 @@ function generatePerformanceData(avgPower: number, avgEfficiency: number, avgTem
 
 export default function EquipmentPage() {
   const { isLoading } = usePowerData();
+  const { user } = useAuth();
   const [equipment, setEquipment] = useState<Equipment[]>(mockEquipment);
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -398,19 +400,23 @@ export default function EquipmentPage() {
   
   if (isLoading) {
     return (
-      <Layout title="Equipment Monitoring" description="Monitor and manage equipment status and performance">
-        <div className="flex items-center justify-center h-[400px]">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-            <p className="text-muted-foreground">Loading equipment data...</p>
+      <SharedLayout>
+        <div className="flex flex-col space-y-4">
+          <h1 className="text-2xl font-bold">Equipment Monitoring</h1>
+          <div className="flex items-center justify-center h-[400px]">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+              <p className="text-muted-foreground">Loading equipment data...</p>
+            </div>
           </div>
         </div>
-      </Layout>
+      </SharedLayout>
     );
   }
   
   return (
-    <Layout title="Equipment Monitoring" description="Monitor and manage equipment status and performance">
+    <SharedLayout>
+      <h1 className="text-2xl font-bold mb-6">Equipment Monitoring</h1>
       {/* Equipment Overview */}
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -1011,6 +1017,6 @@ export default function EquipmentPage() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </SharedLayout>
   );
 }

@@ -4,7 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
-import { Layout } from "@/components/ui/layout";
+import { useAuth } from "@/hooks/use-auth";
+import { SharedLayout } from "@/components/ui/shared-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -38,7 +39,6 @@ import {
 } from "lucide-react";
 import { format, compareDesc } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
 
 // Define types for issues and feedback
 type IssueStatus = 'open' | 'in_progress' | 'resolved' | 'wont_fix';
@@ -486,7 +486,8 @@ export default function FeedbackPage() {
   const stats = getIssueStats();
   
   return (
-    <Layout title="Feedback & Issues" description="Report issues and submit feedback for the system">
+    <SharedLayout>
+      <h1 className="text-2xl font-bold mb-6">Feedback & Issues</h1>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid grid-cols-2 md:grid-cols-2 w-full md:w-fit">
           <TabsTrigger value="issues">
@@ -1117,6 +1118,6 @@ export default function FeedbackPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </Layout>
+    </SharedLayout>
   );
 }
