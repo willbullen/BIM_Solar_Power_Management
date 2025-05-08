@@ -27,7 +27,7 @@ export class FunctionRegistry {
           .set({
             ...functionData
           })
-          .where(({ name }) => name.eq(functionData.name))
+          .where(eq(schema.agentFunctions.name, functionData.name))
           .returning();
         
         return updatedFunction;

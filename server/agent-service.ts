@@ -170,7 +170,7 @@ export class AgentService {
           // Save the function result
           await db.update(schema.agentMessages)
             .set({
-              functionResult: functionResult
+              functionResponse: functionResult
             })
             .where(eq(schema.agentMessages.id, functionCallMessage.id));
           
@@ -192,7 +192,7 @@ export class AgentService {
           // Update the message with the error
           await db.update(schema.agentMessages)
             .set({
-              functionResult: { error: String(funcError) }
+              functionResponse: { error: String(funcError) }
             })
             .where(eq(schema.agentMessages.id, functionCallMessage.id));
           
@@ -387,15 +387,15 @@ export class AgentService {
       type: 'scheduled_report',
       status: 'scheduled',
       priority: 'medium',
-      dueDate: new Date(), // This would be calculated based on the schedule
-      metadata: {
+      scheduledFor: new Date(), // This would be calculated based on the schedule
+      parameters: {
         reportType,
         recipient,
         schedule,
         parameters
       },
-      creatorId: null,
-      assigneeId: null
+      createdBy: null,
+      assignedTo: null
     });
     
     return task;
