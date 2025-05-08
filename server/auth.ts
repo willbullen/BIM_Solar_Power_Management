@@ -107,6 +107,10 @@ export function setupAuth(app: Express) {
       req.login(user, (err: Error | null) => {
         if (err) return next(err);
         
+        // Store user ID and role in session for authentication
+        req.session.userId = user.id;
+        req.session.userRole = user.role;
+
         // Return user without password
         const { password, ...userWithoutPassword } = user;
         return res.json(userWithoutPassword);

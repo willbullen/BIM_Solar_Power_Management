@@ -3,6 +3,15 @@ import { z } from 'zod';
 import { AgentService } from './agent-service';
 import * as schema from '@shared/schema';
 import { db } from './db';
+import session from 'express-session';
+
+// Extend Express.Session to include user properties
+declare module 'express-session' {
+  interface Session {
+    userId?: number;
+    userRole?: string;
+  }
+}
 
 // Create an instance of the agent service
 const agentService = new AgentService();
