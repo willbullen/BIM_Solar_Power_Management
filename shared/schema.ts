@@ -285,6 +285,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   submittedIssues: many(issues),
   assignedIssues: many(issues, { relationName: "assignee" }),
   comments: many(issueComments),
+  conversations: many(agentConversations),
+  createdTasks: many(agentTasks, { relationName: "creator" }),
+  assignedTasks: many(agentTasks, { relationName: "task_assignee" }),
+  updatedSettings: many(agentSettings),
 }));
 
 export const issuesRelations = relations(issues, ({ one, many }) => ({
@@ -304,3 +308,203 @@ export const issuesRelations = relations(issues, ({ one, many }) => ({
   }),
   comments: many(issueComments),
 }));
+
+// AI Agent Schemas
+
+// Agent Functions Registry schema
+export const agentFunctions = pgTable("agent_functions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description").notNull(),
+  module: text("module").notNull(), // Service module this function belongs to
+  parameters: jsonb("parameters").notNull(), // Parameters definition in JSON Schema format
+  returnType: text("return_type").notNull(), // Return type description
+  functionCode: text("function_code").notNull(), // Actual callable function or reference
+  enabled: boolean("enabled").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  accessLevel: text("access_level").notNull().default("restricted"), // 'public', 'admin', 'restricted'
+  tags: text("tags").array(), // For categorization and search
+});
+
+export const insertAgentFunctionSchema = createInsertSchema(agentFunctions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertAgentFunction = z.infer<typeof insertAgentFunctionSchema>;
+export type AgentFunction = typeof agentFunctions.$inferSelect;
+
+// Agent Conversations schema
+export const agentConversations = pgTable("agent_conversations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(), // Foreign key to users
+  title: text("title").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  context: jsonb("context"), // Conversation context/state
+  status: text("status").notNull().default("active"), // 'active', 'archived', 'deleted'
+});
+
+export const agentConversationsRelations = relations(agentConversations, ({ one, many }) => ({
+  user: one(users, {
+    fields: [agentConversations.userId],
+    references: [users.id],
+  }),
+  messages: many(agentMessages),
+}));
+
+export const insertAgentConversationSchema = createInsertSchema(agentConversations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertAgentConversation = z.infer<typeof insertAgentConversationSchema>;
+export type AgentConversation = typeof agentConversations.$inferSelect;
+
+// Agent Messages schema
+export const agentMessages = pgTable("agent_messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").notNull(), // Foreign key to agent_conversations
+  role: text("role").notNull(), // 'user', 'assistant', 'system'
+  content: text("content").notNull(),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  functionCall: jsonb("function_call"), // Optional function call details
+  functionResponse: jsonb("function_response"), // Optional function response
+  metadata: jsonb("metadata"), // Additional message metadata
+});
+
+export const agentMessagesRelations = relations(agentMessages, ({ one }) => ({
+  conversation: one(agentConversations, {
+    fields: [agentMessages.conversationId],
+    references: [agentConversations.id],
+  }),
+}));
+
+export const insertAgentMessageSchema = createInsertSchema(agentMessages).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type InsertAgentMessage = z.infer<typeof insertAgentMessageSchema>;
+export type AgentMessage = typeof agentMessages.$inferSelect;
+
+// Agent Tasks schema
+export const agentTasks = pgTable("agent_tasks", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  status: text("status").notNull().default("pending"), // 'pending', 'in-progress', 'completed', 'failed'
+  type: text("type").notNull(), // 'scheduled', 'user-requested', 'system', 'recurring'
+  priority: text("priority").notNull().default("medium"), // 'low', 'medium', 'high', 'critical'
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  scheduledFor: timestamp("scheduled_for"), // For scheduled tasks
+  completedAt: timestamp("completed_at"), 
+  createdBy: integer("created_by"), // User ID or null for system
+  assignedTo: integer("assigned_to"), // User ID or null
+  parameters: jsonb("parameters"), // Task parameters
+  result: jsonb("result"), // Task result or output
+});
+
+export const agentTasksRelations = relations(agentTasks, ({ one }) => ({
+  creator: one(users, {
+    fields: [agentTasks.createdBy],
+    references: [users.id],
+    relationName: "creator",
+  }),
+  assignee: one(users, {
+    fields: [agentTasks.assignedTo],
+    references: [users.id],
+    relationName: "task_assignee",
+  }),
+}));
+
+export const insertAgentTaskSchema = createInsertSchema(agentTasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  completedAt: true,
+});
+
+export type InsertAgentTask = z.infer<typeof insertAgentTaskSchema>;
+export type AgentTask = typeof agentTasks.$inferSelect;
+
+// Agent Settings schema
+export const agentSettings = pgTable("agent_settings", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  value: text("value"),
+  description: text("description").notNull(),
+  type: text("type").notNull().default("string"), // 'string', 'number', 'boolean', 'json'
+  category: text("category").notNull().default("general"), // For grouping settings
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  updatedBy: integer("updated_by"), // User ID who updated it last
+});
+
+export const agentSettingsRelations = relations(agentSettings, ({ one }) => ({
+  updater: one(users, {
+    fields: [agentSettings.updatedBy],
+    references: [users.id],
+  }),
+}));
+
+export const insertAgentSettingSchema = createInsertSchema(agentSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertAgentSetting = z.infer<typeof insertAgentSettingSchema>;
+export type AgentSetting = typeof agentSettings.$inferSelect;
+
+// MCP (Multi-Capability Planning) Tasks schema
+export const mcpTasks = pgTable("mcp_tasks", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  provider: text("provider").notNull(), // Service provider (e.g., 'openai', 'local', 'custom')
+  endpoint: text("endpoint").notNull(), // API endpoint or local function reference
+  parameters: jsonb("parameters").notNull(), // Task parameters in JSON format
+  capabilities: text("capabilities").array(), // Array of capabilities this task provides
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  enabled: boolean("enabled").notNull().default(true),
+  authType: text("auth_type").notNull().default("none"), // 'none', 'api_key', 'oauth', 'custom'
+  responseFormat: text("response_format"), // Expected response format
+});
+
+export const insertMcpTaskSchema = createInsertSchema(mcpTasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertMcpTask = z.infer<typeof insertMcpTaskSchema>;
+export type McpTask = typeof mcpTasks.$inferSelect;
+
+// Signal Notifications schema
+export const signalNotifications = pgTable("signal_notifications", {
+  id: serial("id").primaryKey(),
+  recipientNumber: text("recipient_number").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull().default("alert"), // 'alert', 'report', 'reminder', 'status'
+  status: text("status").notNull().default("pending"), // 'pending', 'sent', 'failed', 'delivered'
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  sentAt: timestamp("sent_at"),
+  scheduledFor: timestamp("scheduled_for"),
+  errorMessage: text("error_message"),
+  metadata: jsonb("metadata"),
+  triggeredBy: integer("triggered_by"), // Task or user ID that triggered this
+});
+
+export const insertSignalNotificationSchema = createInsertSchema(signalNotifications).omit({
+  id: true,
+  createdAt: true,
+  sentAt: true,
+});
+
+export type InsertSignalNotification = z.infer<typeof insertSignalNotificationSchema>;
+export type SignalNotification = typeof signalNotifications.$inferSelect;
+
+// Update user relations to include AI agent related entities

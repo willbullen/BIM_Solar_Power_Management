@@ -13,6 +13,7 @@
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
     "@jridgewell/trace-mapping": "^0.3.25",
+    "@langchain/openai": "^0.5.10",
     "@neondatabase/serverless": "^0.10.4",
     "@radix-ui/react-accordion": "^1.2.1",
     "@radix-ui/react-alert-dialog": "^1.1.2",
@@ -62,6 +63,7 @@
     "express-session": "^1.18.1",
     "framer-motion": "^11.13.1",
     "input-otp": "^1.2.4",
+    "langchain": "^0.3.24",
     "lucide-react": "^0.453.0",
     "memorystore": "^1.6.7",
     "ml-matrix": "^6.12.1",
@@ -79,6 +81,7 @@
     "react-resizable-panels": "^2.1.4",
     "recharts": "^2.13.0",
     "regression": "^2.0.1",
+    "signalr-client": "^0.0.20",
     "simple-statistics": "^7.8.8",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
