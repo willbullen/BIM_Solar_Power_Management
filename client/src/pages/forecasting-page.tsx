@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { usePowerData } from '@/hooks/use-power-data';
+import { useAuth } from '@/hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { getQueryFn } from '@/lib/queryClient';
@@ -18,9 +19,7 @@ import {
 } from 'recharts';
 import { format } from 'date-fns';
 import { Loader2, AlertTriangle, Info, TrendingUp, CircleCheck, BarChart3, FlameIcon, Droplets, ArrowRight } from 'lucide-react';
-import { Page } from '@/components/page';
-import { Header } from '@/components/header';
-import { Sidebar } from '@/components/ui/sidebar';
+import { SharedLayout } from '@/components/ui/shared-layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -642,19 +641,11 @@ function ForecastingContent() {
 }
 
 export default function ForecastingPage() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
+  const { user } = useAuth();
   
   return (
-    <>
-      <Header onToggleSidebar={toggleSidebar} />
-      <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
-      <Page>
-        <ForecastingContent />
-      </Page>
-    </>
+    <SharedLayout user={user}>
+      <ForecastingContent />
+    </SharedLayout>
   );
 }

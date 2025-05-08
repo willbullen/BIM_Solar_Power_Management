@@ -1,8 +1,8 @@
 import { useState, useEffect, FormEvent } from "react";
 import { usePowerData } from "@/hooks/use-power-data";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { Header } from "@/components/header";
-import { Sidebar } from "@/components/ui/sidebar";
+import { SharedLayout } from "@/components/ui/shared-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -338,23 +338,11 @@ function ReportsContent() {
 }
 
 export default function ReportsPage() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
+  const { user } = useAuth();
   
   return (
-    <div className={`min-h-screen bg-background flex flex-col ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-      <Header onToggleSidebar={toggleSidebar} />
-      
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
-        
-        <main className="flex-1 app-content p-4">
-          <ReportsContent />
-        </main>
-      </div>
-    </div>
+    <SharedLayout user={user}>
+      <ReportsContent />
+    </SharedLayout>
   );
 }
