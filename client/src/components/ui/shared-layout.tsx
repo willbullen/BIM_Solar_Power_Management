@@ -35,7 +35,7 @@ import logoImage from '@assets/icononly_transparent_nobuffer.png';
 
 type LayoutProps = {
   children: React.ReactNode;
-  user?: UserData | null;
+  user?: User | null;
 };
 
 export default function SharedLayout({ children, user }: LayoutProps) {
@@ -120,7 +120,8 @@ export default function SharedLayout({ children, user }: LayoutProps) {
                   {user?.username || 'Guest User'}
                 </span>
                 <span className="text-xs text-sidebar-foreground/70">
-                  {user?.email || 'guest@example.com'}
+                  {/* We don't have email in the user model, so we'll use a placeholder or role */}
+                  {user?.role ? `Role: ${user.role}` : 'guest@example.com'}
                 </span>
               </div>
               <DropdownMenu>

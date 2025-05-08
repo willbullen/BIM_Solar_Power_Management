@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { usePowerData } from "@/hooks/use-power-data";
+import { useAuth } from "@/hooks/use-auth";
 import { PowerChart } from "@/components/power-chart";
 import { LoadDistribution } from "@/components/load-distribution";
 import { InsightsCard } from "@/components/insights-card";
 import { SolcastLiveCard } from "@/components/solcast-live-card";
 import { EnvironmentalStats } from "@/components/environmental-chart";
-import { Loader2, TrendingUp, ArrowRight, BarChart3, ZapIcon, SunIcon, CloudSun } from "lucide-react";
+import { Loader2, TrendingUp, ArrowRight, BarChart3, Zap, Sun, CloudSun } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -32,16 +33,18 @@ function DashboardPage() {
     dataStatus 
   } = usePowerData();
   
+  const { user } = useAuth();
+  
   if (isLoading) {
     return (
-      <Layout title="Power Monitoring Dashboard" description="Dalys Seafood Facility - Real-time monitoring">
+      <SharedLayout user={user}>
         <div className="flex items-center justify-center h-[calc(100vh-16rem)]">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
             <p className="text-muted-foreground">Loading power data...</p>
           </div>
         </div>
-      </Layout>
+      </SharedLayout>
     );
   }
   
@@ -68,7 +71,7 @@ function DashboardPage() {
   };
   
   return (
-    <Layout title="Power Monitoring Dashboard" description="Dalys Seafood Facility - Real-time monitoring">
+    <SharedLayout user={user}>
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
@@ -99,7 +102,7 @@ function DashboardPage() {
             title="Total Load"
             value={latestPower ? `${latestPower.totalLoad.toFixed(2)} kW` : '0 kW'}
             description="Real-time power consumption"
-            icon={ZapIcon}
+            icon={Zap}
             trend={latestPower ? { value: totalLoadTrend, positive: totalLoadTrend > 0 } : undefined}
           />
           
@@ -115,7 +118,7 @@ function DashboardPage() {
             title="Solar Output"
             value={latestPower ? `${latestPower.solarOutput.toFixed(2)} kW` : '0 kW'}
             description="Current solar generation"
-            icon={SunIcon}
+            icon={Sun}
             trend={latestPower ? { value: solarOutputTrend, positive: solarOutputTrend > 0 } : undefined}
           />
           
@@ -297,7 +300,7 @@ function DashboardPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
+    </SharedLayout>
   );
 }
 
