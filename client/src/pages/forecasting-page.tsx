@@ -1,9 +1,9 @@
 import React from 'react';
-import { PowerForecastChart } from '@/components/power-forecast-chart';
-import { EnvironmentalForecastChart } from '@/components/environmental-forecast-chart';
-import { SolcastForecastChart } from '@/components/solcast-forecast-chart';
-import { SolcastWeatherForecast } from '@/components/solcast-weather-forecast';
-import { PageHeader } from '@/components/page-header';
+import { PowerForecastChart } from '../components/power-forecast-chart';
+import { EnvironmentalForecastChart } from '../components/environmental-forecast-chart';
+import { SolcastForecastChart } from '../components/solcast-forecast-chart';
+import { SolcastWeatherForecast } from '../components/solcast-weather-forecast';
+import { PageHeader } from '../components/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function ForecastingPage() {
