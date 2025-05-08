@@ -11,7 +11,7 @@ import SettingsPage from "@/pages/settings-page";
 import ReportsPage from "@/pages/reports-page";
 import ForecastingPage from "@/pages/forecasting-page";
 import EquipmentPage from "@/pages/equipment-page";
-import { OperationalPlanningPage } from "@/pages/operational-planning-page";
+import OperationalPlanningPage from "@/pages/operational-planning-page";
 import NotFound from "@/pages/not-found";
 
 function App() {

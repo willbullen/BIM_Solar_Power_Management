@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
+import { Header } from "@/components/header";
+import { Sidebar } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Calendar, 
@@ -22,15 +24,11 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SchedulingAdvisor } from '@/components/scheduling-advisor';
 
-export function OperationalPlanningPage() {
+function OperationalPlanningContent() {
   const [activeTab, setActiveTab] = useState('advisor');
   
   return (
-    <div className="container mx-auto p-4">
-      <Helmet>
-        <title>Operational Planning - Emporium</title>
-      </Helmet>
-      
+    <div className="space-y-6">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Operational Planning</h1>
@@ -203,6 +201,32 @@ export function OperationalPlanningPage() {
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+export default function OperationalPlanningPage() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
+  
+  return (
+    <div className={`min-h-screen bg-background flex flex-col ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+      <Helmet>
+        <title>Operational Planning - Emporium</title>
+      </Helmet>
+      
+      <Header onToggleSidebar={toggleSidebar} />
+      
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
+        
+        <main className="flex-1 app-content p-4">
+          <OperationalPlanningContent />
+        </main>
+      </div>
     </div>
   );
 }
