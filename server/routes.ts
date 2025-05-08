@@ -1017,6 +1017,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // AI advanced analytics route
+  app.post('/api/ai/analytics', async (req, res) => {
+    try {
+      // Initialize AI service
+      const aiService = new AIService();
+      
+      // Validate that we have the API key available
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ 
+          error: 'OpenAI API key not configured', 
+          message: 'The AI analytics service is not available at this time.'
+        });
+      }
+      
+      // Generate advanced analytics based on the data provided
+      const data = req.body;
+      const analytics = await aiService.generateDataAnalytics(data);
+      
+      res.json(analytics);
+    } catch (error) {
+      console.error('Error generating AI analytics:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate analytics',
+        message: 'An error occurred while generating advanced data analytics.'
+      });
+    }
+  });
+  
+  // AI executive report generation route
+  app.post('/api/ai/report', async (req, res) => {
+    try {
+      // Initialize AI service
+      const aiService = new AIService();
+      
+      // Validate that we have the API key available
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ 
+          error: 'OpenAI API key not configured', 
+          message: 'The AI report generation service is not available at this time.'
+        });
+      }
+      
+      // Extract data and report type
+      const { data, reportType } = req.body;
+      
+      if (!data || !reportType) {
+        return res.status(400).json({
+          error: 'Invalid request parameters',
+          message: 'Both data and reportType are required'
+        });
+      }
+      
+      // Generate executive report based on the data provided
+      const report = await aiService.generateExecutiveReport(data, reportType);
+      
+      res.json(report);
+    } catch (error) {
+      console.error('Error generating executive report:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate report',
+        message: 'An error occurred while generating the executive report.'
+      });
+    }
+  });
+  
+  // AI predictions route
+  app.post('/api/ai/predictions', async (req, res) => {
+    try {
+      // Initialize AI service
+      const aiService = new AIService();
+      
+      // Validate that we have the API key available
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ 
+          error: 'OpenAI API key not configured', 
+          message: 'The AI prediction service is not available at this time.'
+        });
+      }
+      
+      // Extract data and forecast horizon
+      const { data, forecastHorizon } = req.body;
+      
+      if (!data || !forecastHorizon) {
+        return res.status(400).json({
+          error: 'Invalid request parameters',
+          message: 'Both data and forecastHorizon are required'
+        });
+      }
+      
+      // Generate predictions based on the data provided
+      const predictions = await aiService.generatePredictions(data, forecastHorizon);
+      
+      res.json(predictions);
+    } catch (error) {
+      console.error('Error generating predictions:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate predictions',
+        message: 'An error occurred while generating future predictions.'
+      });
+    }
+  });
 
   return httpServer;
 }
