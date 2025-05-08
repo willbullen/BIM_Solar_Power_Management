@@ -388,7 +388,11 @@ function IssuesList() {
   // Fetch issues
   const { data: issues = [], isLoading } = useQuery({
     queryKey: ['/api/issues'],
-    queryFn: () => apiRequest('/api/issues'),
+    queryFn: async () => {
+      const response = await apiRequest('/api/issues');
+      console.log('Issues response:', response);
+      return response;
+    },
   });
   
   // Create issue mutation
@@ -558,7 +562,11 @@ function TodoList() {
   // Fetch todos
   const { data: todos = [], isLoading } = useQuery({
     queryKey: ['/api/todo-items'],
-    queryFn: () => apiRequest('/api/todo-items'),
+    queryFn: async () => {
+      const response = await apiRequest('/api/todo-items');
+      console.log('Todo items response:', response);
+      return response;
+    },
   });
   
   // Complete todo mutation
