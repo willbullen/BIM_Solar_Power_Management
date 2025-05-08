@@ -16,8 +16,11 @@ import {
   Settings,
   SunMedium,
   X,
-  Zap
+  Zap,
+  Sun,
+  CloudSun
 } from 'lucide-react';
+import { usePowerData } from '@/hooks/use-power-data';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -41,6 +44,7 @@ type LayoutProps = {
 export default function SharedLayout({ children, user }: LayoutProps) {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { powerData, environmentalData } = usePowerData();
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -153,6 +157,26 @@ export default function SharedLayout({ children, user }: LayoutProps) {
           </div>
           <div className="ml-auto flex items-center gap-2">
             <div className="hidden md:flex items-center gap-4">
+              {/* Power Widget */}
+              <div className="flex items-center gap-2 bg-muted/50 rounded-full px-3 py-1">
+                <Zap className="h-4 w-4 text-yellow-500" />
+                <span className="text-sm font-medium">
+                  {powerData ? `${powerData.totalLoad.toFixed(1)} kW` : '-- kW'}
+                </span>
+              </div>
+              
+              {/* Environmental Widget */}
+              <div className="flex items-center gap-2 bg-muted/50 rounded-full px-3 py-1">
+                <CloudSun className="h-4 w-4 text-blue-400" />
+                <span className="text-sm font-medium">
+                  {environmentalData ? `${environmentalData.air_temp.toFixed(1)}°C` : '--°C'}
+                </span>
+                <Sun className="h-4 w-4 text-yellow-400" />
+                <span className="text-sm font-medium">
+                  {environmentalData ? `${environmentalData.ghi.toFixed(0)} W/m²` : '-- W/m²'}
+                </span>
+              </div>
+              
               <Button variant="outline" size="icon" className="rounded-full">
                 <Bell className="h-4 w-4" />
                 <span className="sr-only">Notifications</span>
