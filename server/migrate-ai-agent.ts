@@ -21,6 +21,16 @@ export async function migrate() {
     await createDefaultAgentFunctions();
     console.log("Successfully created default agent functions");
     
+    // Register sample functions for demonstration (dynamic import to avoid circular dependencies)
+    try {
+      const { registerSampleFunctions } = await import('./utils/sample-functions');
+      console.log('Registering sample AI agent functions...');
+      await registerSampleFunctions();
+      console.log('Sample AI agent functions registered successfully');
+    } catch (error) {
+      console.error('Error registering sample functions:', error);
+    }
+    
     console.log("AI agent database migration completed successfully");
   } catch (error) {
     console.error("Error during AI agent database migration:", error);
