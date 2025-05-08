@@ -148,7 +148,7 @@ function DashboardPage() {
           
           <TabsContent value="overview" className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <Card className="md:col-span-2 bg-card rounded-lg border border-border">
+              <Card className="md:col-span-2 bg-card rounded-lg border border-border shadow-md overflow-hidden">
                 <CardHeader className="p-4 border-b border-border">
                   <div className="flex items-center space-x-1">
                     <BarChart3 className="h-5 w-5 text-primary" />
@@ -158,14 +158,17 @@ function DashboardPage() {
                     Real-time monitoring of power consumption and generation
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="p-4 min-h-[300px]">
-                  <div className="w-full h-[260px]">
-                    <PowerChart data={historicalPowerData && historicalPowerData.length > 0 ? historicalPowerData.slice(-48) : []} />
+                <CardContent className="p-0">
+                  <div className="w-full h-full">
+                    <PowerChart 
+                      data={historicalPowerData && historicalPowerData.length > 0 ? historicalPowerData.slice(-48) : []} 
+                      className="min-h-[340px]"
+                    />
                   </div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-card rounded-lg border border-border">
+              <Card className="bg-card rounded-lg border border-border shadow-md">
                 <CardHeader className="p-4 border-b border-border">
                   <div className="flex items-center space-x-1">
                     <Zap className="h-5 w-5 text-primary" />
@@ -174,13 +177,13 @@ function DashboardPage() {
                   <CardDescription className="text-xs">Current power allocation by source</CardDescription>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <LoadDistribution data={latestPower || null} className="h-[230px]" />
+                  <LoadDistribution data={latestPower || null} className="h-[280px]" />
                 </CardContent>
               </Card>
             </div>
             
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Card className="bg-card rounded-lg border border-border">
+              <Card className="bg-card rounded-lg border border-border shadow-md">
                 <CardHeader className="p-4 border-b border-border">
                   <div className="flex items-center space-x-1">
                     <TrendingUp className="h-5 w-5 text-primary" />
@@ -202,7 +205,7 @@ function DashboardPage() {
                 </CardContent>
               </Card>
               
-              <Card className="bg-card rounded-lg border border-border">
+              <Card className="bg-card rounded-lg border border-border shadow-md">
                 <CardHeader className="p-4 border-b border-border">
                   <div className="flex items-center space-x-1">
                     <CloudSun className="h-5 w-5 text-primary" />
@@ -236,7 +239,7 @@ function DashboardPage() {
           
           <TabsContent value="power" className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Card className="md:col-span-2 bg-card rounded-lg border border-border">
+              <Card className="md:col-span-2 bg-card rounded-lg border border-border shadow-md overflow-hidden">
                 <CardHeader className="p-4 border-b border-border">
                   <div className="flex items-center space-x-1">
                     <BarChart3 className="h-5 w-5 text-primary" />
@@ -246,14 +249,15 @@ function DashboardPage() {
                     Comprehensive view of power trends and patterns
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="p-4 min-h-[400px]">
-                  <div className="w-full h-[360px]">
+                <CardContent className="p-0">
+                  <div className="w-full h-full">
                     <PowerChart 
                       data={historicalPowerData && historicalPowerData.length > 0 ? historicalPowerData.slice(-96) : []} 
                       showProcessLoad={true}
                       showLighting={true}
                       showHvac={true}
                       showRefrigeration={true}
+                      className="min-h-[400px]"
                     />
                   </div>
                 </CardContent>
@@ -261,7 +265,7 @@ function DashboardPage() {
             </div>
             
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <Card className="bg-card rounded-lg border border-border">
+              <Card className="bg-card rounded-lg border border-border shadow-md">
                 <CardHeader className="p-4 border-b border-border">
                   <div className="flex items-center space-x-1">
                     <Zap className="h-5 w-5 text-primary" />
@@ -295,7 +299,7 @@ function DashboardPage() {
                 </CardContent>
               </Card>
               
-              <Card className="bg-card rounded-lg border border-border">
+              <Card className="bg-card rounded-lg border border-border shadow-md">
                 <CardHeader className="p-4 border-b border-border">
                   <div className="flex items-center space-x-1">
                     <Thermometer className="h-5 w-5 text-primary" />
@@ -329,7 +333,7 @@ function DashboardPage() {
                 </CardContent>
               </Card>
               
-              <Card className="bg-card rounded-lg border border-border">
+              <Card className="bg-card rounded-lg border border-border shadow-md">
                 <CardHeader className="p-4 border-b border-border">
                   <div className="flex items-center space-x-1">
                     <CloudSun className="h-5 w-5 text-primary" />
@@ -366,7 +370,7 @@ function DashboardPage() {
           </TabsContent>
           
           <TabsContent value="environment" className="space-y-4">
-            <Card className="bg-card rounded-lg border border-border">
+            <Card className="bg-card rounded-lg border border-border shadow-md">
               <CardHeader className="p-4 border-b border-border">
                 <div className="flex items-center space-x-1">
                   <Sun className="h-5 w-5 text-primary" />
