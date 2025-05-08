@@ -137,7 +137,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             <div className="bg-card/50 rounded-md p-3 mb-3">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-muted-foreground text-sm">Solar Output</span>
-                <span className="text-accent">{powerData?.solarOutput.toFixed(1) || "0.0"} kW</span>
+                <span className="text-accent">{powerData?.solarOutput ? powerData.solarOutput.toFixed(1) : "0.0"} kW</span>
               </div>
               <div className="h-1 bg-muted rounded-full overflow-hidden">
                 <div 
@@ -154,7 +154,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             <div className="bg-card/50 rounded-md p-3">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-muted-foreground text-sm">Total Load</span>
-                <span className="text-[#ff9f0c]">{powerData?.totalLoad.toFixed(1) || "0.0"} kW</span>
+                <span className="text-[#ff9f0c]">{powerData?.totalLoad ? powerData.totalLoad.toFixed(1) : "0.0"} kW</span>
               </div>
               <div className="h-1 bg-muted rounded-full overflow-hidden">
                 <div 
