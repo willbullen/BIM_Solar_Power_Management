@@ -576,10 +576,7 @@ function TasksInterface() {
   // Create a new task
   const createTask = useMutation({
     mutationFn: (taskData: { title: string; description: string }) => 
-      apiRequest('/api/agent/tasks', {
-        method: 'POST',
-        body: JSON.stringify(taskData)
-      }),
+      apiRequest('POST', '/api/agent/tasks', taskData),
     onSuccess: () => {
       setNewTaskTitle("");
       setNewTaskDescription("");
@@ -601,10 +598,7 @@ function TasksInterface() {
   // Update task status
   const updateTaskStatus = useMutation({
     mutationFn: ({ id, status }: { id: number; status: string }) => 
-      apiRequest(`/api/agent/tasks/${id}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status })
-      }),
+      apiRequest('PATCH', `/api/agent/tasks/${id}/status`, { status }),
     onSuccess: () => {
       refetchTasks();
       toast({
@@ -806,10 +800,7 @@ function AgentSettingsInterface() {
   // Update setting
   const updateSetting = useMutation({
     mutationFn: ({ name, value }: { name: string; value: string }) => 
-      apiRequest(`/api/agent/settings/${name}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ value })
-      }),
+      apiRequest('PATCH', `/api/agent/settings/${name}`, { value }),
     onSuccess: () => {
       refetchSettings();
       setEditingSetting(null);
