@@ -54,7 +54,7 @@ export function WeatherCorrelationAnalysis({
   isLoading = false
 }: WeatherCorrelationProps) {
   const [selectedMetric, setSelectedMetric] = useState<string>('solarOutput');
-  const [correlations, setCorrelations] = useState<{[key: string]: {temperature: number, sunIntensity: number}}>({});
+  const [correlations, setCorrelations] = useState<{[key: string]: {temperature: number, solarRadiation: number, directRadiation: number}}>({});
   const [scatterData, setScatterData] = useState<any[]>([]);
   const [weatherImpact, setWeatherImpact] = useState<any[]>([]);
   
@@ -68,16 +68,18 @@ export function WeatherCorrelationAnalysis({
     
     // Calculate correlations for each power metric
     const powerMetrics = ['solarOutput', 'refrigerationLoad', 'bigColdRoom', 'bigFreezer', 'totalLoad'];
-    const newCorrelations: {[key: string]: {temperature: number, sunIntensity: number}} = {};
+    const newCorrelations: {[key: string]: {temperature: number, solarRadiation: number, directRadiation: number}} = {};
     
     powerMetrics.forEach(metric => {
       const powerValues = alignedData.map(d => d.power[metric as keyof PowerData] as number);
-      const temperatureValues = alignedData.map(d => d.env.temperature);
-      const sunIntensityValues = alignedData.map(d => d.env.sunIntensity);
+      const temperatureValues = alignedData.map(d => d.env.air_temp);
+      const solarRadiationValues = alignedData.map(d => d.env.ghi);
+      const directRadiationValues = alignedData.map(d => d.env.dni);
       
       newCorrelations[metric] = {
         temperature: calculateCorrelation(temperatureValues, powerValues),
-        sunIntensity: calculateCorrelation(sunIntensityValues, powerValues)
+        solarRadiation: calculateCorrelation(solarRadiationValues, powerValues),
+        directRadiation: calculateCorrelation(directRadiationValues, powerValues)
       };
     });
     
@@ -85,8 +87,9 @@ export function WeatherCorrelationAnalysis({
     
     // Prepare scatter plot data for selected metric
     const newScatterData = alignedData.map(d => ({
-      temperature: d.env.temperature,
-      sunIntensity: d.env.sunIntensity,
+      temperature: d.env.air_temp,
+      solarRadiation: d.env.ghi,
+      directRadiation: d.env.dni,
       [selectedMetric]: d.power[selectedMetric as keyof PowerData] as number,
       timestamp: new Date(d.power.timestamp).toLocaleString(),
       weather: d.env.weather
@@ -291,14 +294,14 @@ export function WeatherCorrelationAnalysis({
                 </div>
                 
                 <div className="space-y-4">
-                  <h3 className="text-sm font-medium">Sun Intensity Correlation</h3>
+                  <h3 className="text-sm font-medium">Solar Radiation Correlation</h3>
                   <div className="h-[250px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={Object.entries(correlations).map(([metric, values]) => ({
                           name: formatMetricName(metric),
-                          value: values.sunIntensity,
-                          color: getCorrelationColor(values.sunIntensity)
+                          value: values.solarRadiation,
+                          color: getCorrelationColor(values.solarRadiation)
                         }))}
                         layout="vertical"
                         margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
@@ -313,9 +316,9 @@ export function WeatherCorrelationAnalysis({
                           ]}
                         />
                         <Legend />
-                        <Bar dataKey="value" name="Sun Intensity Correlation">
+                        <Bar dataKey="value" name="Solar Radiation Correlation">
                           {Object.entries(correlations).map(([metric, values], index) => (
-                            <Cell key={`cell-${index}`} fill={getCorrelationColor(values.sunIntensity)} />
+                            <Cell key={`cell-${index}`} fill={getCorrelationColor(values.solarRadiation)} />
                           ))}
                         </Bar>
                       </BarChart>
@@ -389,7 +392,7 @@ export function WeatherCorrelationAnalysis({
                 </div>
                 
                 <div className="space-y-2">
-                  <h3 className="text-sm font-medium">Sun Intensity vs {formatMetricName(selectedMetric)}</h3>
+                  <h3 className="text-sm font-medium">Solar Radiation vs {formatMetricName(selectedMetric)}</h3>
                   <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <ScatterChart
@@ -398,10 +401,10 @@ export function WeatherCorrelationAnalysis({
                         <CartesianGrid />
                         <XAxis 
                           type="number" 
-                          dataKey="sunIntensity" 
-                          name="Sun Intensity" 
-                          unit="%" 
-                          domain={[0, 100]}
+                          dataKey="solarRadiation" 
+                          name="Solar Radiation" 
+                          unit=" W/m²" 
+                          domain={[0, 'dataMax + 100']}
                         />
                         <YAxis 
                           type="number" 
@@ -413,7 +416,7 @@ export function WeatherCorrelationAnalysis({
                           cursor={{ strokeDasharray: '3 3' }}
                           formatter={(value: any, name: string) => {
                             if (name === selectedMetric) return [`${value.toFixed(2)} kW`, formatMetricName(selectedMetric)];
-                            return [`${value}%`, name];
+                            return [`${value} W/m²`, name];
                           }}
                         />
                         <Scatter 
@@ -510,16 +513,29 @@ export function WeatherCorrelationAnalysis({
     
     // Solar output insights
     if (correlations.solarOutput) {
-      const sunCorr = correlations.solarOutput.sunIntensity;
+      const solarRadCorr = correlations.solarOutput.solarRadiation;
+      const directRadCorr = correlations.solarOutput.directRadiation;
       const tempCorr = correlations.solarOutput.temperature;
       
-      if (Math.abs(sunCorr) > 0.5) {
+      if (Math.abs(solarRadCorr) > 0.5) {
         insights.push(
-          <li key="solar-sun" className="text-sm flex items-start">
-            <span className={sunCorr > 0 ? "text-green-400 mr-2" : "text-red-400 mr-2"}>•</span>
+          <li key="solar-radiation" className="text-sm flex items-start">
+            <span className={solarRadCorr > 0 ? "text-green-400 mr-2" : "text-red-400 mr-2"}>•</span>
             <span>
-              Solar output has a <strong>{formatCorrelationStrength(sunCorr)}</strong> {sunCorr > 0 ? 'positive' : 'negative'} correlation with sun intensity 
-              ({sunCorr.toFixed(2)}). {sunCorr > 0 ? 'Higher sun intensity increases solar generation.' : 'Unexpected negative correlation requires investigation.'}
+              Solar output has a <strong>{formatCorrelationStrength(solarRadCorr)}</strong> {solarRadCorr > 0 ? 'positive' : 'negative'} correlation with solar radiation 
+              ({solarRadCorr.toFixed(2)}). {solarRadCorr > 0 ? 'Higher solar radiation increases solar generation.' : 'Unexpected negative correlation requires investigation.'}
+            </span>
+          </li>
+        );
+      }
+      
+      if (Math.abs(directRadCorr) > 0.5) {
+        insights.push(
+          <li key="direct-radiation" className="text-sm flex items-start">
+            <span className={directRadCorr > 0 ? "text-green-400 mr-2" : "text-red-400 mr-2"}>•</span>
+            <span>
+              Solar output has a <strong>{formatCorrelationStrength(directRadCorr)}</strong> {directRadCorr > 0 ? 'positive' : 'negative'} correlation with direct radiation 
+              ({directRadCorr.toFixed(2)}). {directRadCorr > 0 ? 'Direct solar radiation is efficiently captured by the panels.' : 'Poor performance with direct radiation requires maintenance check.'}
             </span>
           </li>
         );
@@ -580,7 +596,7 @@ export function WeatherCorrelationAnalysis({
     // Total load insights
     if (correlations.totalLoad) {
       const tempCorr = correlations.totalLoad.temperature;
-      const sunCorr = correlations.totalLoad.sunIntensity;
+      const solarRadCorr = correlations.totalLoad.solarRadiation;
       
       if (Math.abs(tempCorr) > 0.4) {
         insights.push(
@@ -594,17 +610,17 @@ export function WeatherCorrelationAnalysis({
         );
       }
       
-      if (Math.abs(sunCorr) > 0.3) {
-        const offsetText = correlations.solarOutput && correlations.solarOutput.sunIntensity > 0.5
-          ? 'Solar generation is helping offset grid consumption during sunny periods.'
+      if (Math.abs(solarRadCorr) > 0.3) {
+        const offsetText = correlations.solarOutput && correlations.solarOutput.solarRadiation > 0.5
+          ? 'Solar generation is helping offset grid consumption during high radiation periods.'
           : 'Consider optimizing solar generation to better offset total consumption.';
         
         insights.push(
-          <li key="total-sun" className="text-sm flex items-start">
-            <span className={sunCorr < 0 ? "text-green-400 mr-2" : "text-amber-400 mr-2"}>•</span>
+          <li key="total-solar" className="text-sm flex items-start">
+            <span className={solarRadCorr < 0 ? "text-green-400 mr-2" : "text-amber-400 mr-2"}>•</span>
             <span>
-              Total power load has a <strong>{formatCorrelationStrength(sunCorr)}</strong> {sunCorr > 0 ? 'positive' : 'negative'} correlation with sun intensity 
-              ({sunCorr.toFixed(2)}). {offsetText}
+              Total power load has a <strong>{formatCorrelationStrength(solarRadCorr)}</strong> {solarRadCorr > 0 ? 'positive' : 'negative'} correlation with solar radiation 
+              ({solarRadCorr.toFixed(2)}). {offsetText}
             </span>
           </li>
         );
@@ -631,7 +647,8 @@ export function WeatherCorrelationAnalysis({
     }
     
     const tempCorr = correlations[selectedMetric].temperature;
-    const sunCorr = correlations[selectedMetric].sunIntensity;
+    const solarRadCorr = correlations[selectedMetric].solarRadiation;
+    const directRadCorr = correlations[selectedMetric].directRadiation;
     
     let insight = `${formatMetricName(selectedMetric)} shows `;
     
@@ -644,21 +661,31 @@ export function WeatherCorrelationAnalysis({
           : 'This unusual pattern requires investigation as cooling systems typically use more energy in warmer conditions.';
       } else if (selectedMetric === 'solarOutput') {
         insight += tempCorr > 0 
-          ? 'This may be due to sunnier days also being warmer, not necessarily panel efficiency.' 
+          ? 'This may be due to sunny days also being warmer, not necessarily panel efficiency.' 
           : 'This may indicate reduced panel efficiency at higher temperatures, which is a known issue with photovoltaic systems.';
       }
-    } else if (Math.abs(sunCorr) > 0.3) {
-      insight += `a ${formatCorrelationStrength(sunCorr).toLowerCase()} ${sunCorr > 0 ? 'positive' : 'negative'} correlation with sun intensity (${sunCorr.toFixed(2)}). `;
+    } else if (Math.abs(solarRadCorr) > 0.3) {
+      insight += `a ${formatCorrelationStrength(solarRadCorr).toLowerCase()} ${solarRadCorr > 0 ? 'positive' : 'negative'} correlation with solar radiation (${solarRadCorr.toFixed(2)}). `;
       
       if (selectedMetric === 'solarOutput') {
-        insight += sunCorr > 0 
-          ? 'This confirms your solar system is performing as expected, with higher generation during sunny periods.' 
-          : 'This unexpected pattern requires investigation as solar output should increase with sun intensity.';
+        insight += solarRadCorr > 0 
+          ? 'This confirms your solar system is performing as expected, with higher generation during periods of high solar radiation.' 
+          : 'This unexpected pattern requires investigation as solar output should increase with solar radiation.';
       } else {
-        insight += 'This may indicate an opportunity to better align energy-intensive operations with solar production.';
+        insight += 'This may indicate an opportunity to better align energy-intensive operations with periods of high solar production.';
+      }
+    } else if (Math.abs(directRadCorr) > 0.3) {
+      insight += `a ${formatCorrelationStrength(directRadCorr).toLowerCase()} ${directRadCorr > 0 ? 'positive' : 'negative'} correlation with direct solar radiation (${directRadCorr.toFixed(2)}). `;
+      
+      if (selectedMetric === 'solarOutput') {
+        insight += directRadCorr > 0 
+          ? 'Your solar panels are efficiently capturing direct solar radiation, which is optimal for maximum energy generation.' 
+          : 'The poor correlation with direct radiation might indicate panel shading or orientation issues.';
+      } else {
+        insight += 'Understanding this relationship could help optimize energy use during periods of direct sunlight.';
       }
     } else {
-      insight += 'weak correlations with both temperature and sun intensity, suggesting it may be largely independent of these environmental factors.';
+      insight += 'weak correlations with both temperature and solar radiation measurements, suggesting it may be largely independent of these environmental factors.';
     }
     
     return insight;
