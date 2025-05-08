@@ -142,49 +142,81 @@ function DashboardPage() {
           
           <TabsContent value="overview" className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle>Power Usage Overview</CardTitle>
-                  <CardDescription>
+              <Card className="md:col-span-2 bg-card rounded-lg border border-border">
+                <CardHeader className="p-4 border-b border-border">
+                  <div className="flex items-center space-x-1">
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base font-medium">Power Usage Overview</CardTitle>
+                  </div>
+                  <CardDescription className="text-xs">
                     Real-time monitoring of power consumption and generation
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="h-[300px]">
-                  <PowerChart data={historicalPowerData && historicalPowerData.length > 0 ? historicalPowerData.slice(-48) : []} />
+                <CardContent className="p-4 min-h-[300px]">
+                  <div className="w-full h-[260px]">
+                    <PowerChart data={historicalPowerData && historicalPowerData.length > 0 ? historicalPowerData.slice(-48) : []} />
+                  </div>
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle>Load Distribution</CardTitle>
-                  <CardDescription>Current power allocation by source</CardDescription>
+              <Card className="bg-card rounded-lg border border-border">
+                <CardHeader className="p-4 border-b border-border">
+                  <div className="flex items-center space-x-1">
+                    <Zap className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base font-medium">Load Distribution</CardTitle>
+                  </div>
+                  <CardDescription className="text-xs">Current power allocation by source</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4">
                   <LoadDistribution data={latestPower || null} className="h-[230px]" />
                 </CardContent>
               </Card>
             </div>
             
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Operational Insights</CardTitle>
-                  <CardDescription>Key recommendations based on current conditions</CardDescription>
+              <Card className="bg-card rounded-lg border border-border">
+                <CardHeader className="p-4 border-b border-border">
+                  <div className="flex items-center space-x-1">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base font-medium">Operational Insights</CardTitle>
+                  </div>
+                  <CardDescription className="text-xs">Key recommendations based on current conditions</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <InsightsCard powerData={latestPower} environmentalData={environmentalData} />
+                <CardContent className="p-4">
+                  {latestPower && environmentalData ? (
+                    <InsightsCard powerData={latestPower} environmentalData={environmentalData} />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-6 space-y-2">
+                      <div className="rounded-full p-3 bg-muted/10">
+                        <TrendingUp className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">No operational data available</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle>Weather Conditions</CardTitle>
-                  <CardDescription>Current environmental factors</CardDescription>
+              <Card className="bg-card rounded-lg border border-border">
+                <CardHeader className="p-4 border-b border-border">
+                  <div className="flex items-center space-x-1">
+                    <CloudSun className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base font-medium">Weather Conditions</CardTitle>
+                  </div>
+                  <CardDescription className="text-xs">Current environmental factors</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <EnvironmentalStats environmentalData={environmentalData ? [environmentalData] : []} />
+                <CardContent className="p-4">
+                  {environmentalData ? (
+                    <EnvironmentalStats environmentalData={environmentalData ? [environmentalData] : []} />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-6 space-y-2">
+                      <div className="rounded-full p-3 bg-muted/10">
+                        <CloudSun className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">No environmental data available</p>
+                    </div>
+                  )}
                 </CardContent>
-                <CardFooter className="flex justify-end">
+                <CardFooter className="flex justify-end p-4 pt-0">
                   <Button variant="ghost" size="sm" asChild>
                     <Link href="/reports">
                       View detailed reports
