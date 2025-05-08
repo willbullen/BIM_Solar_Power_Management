@@ -35,6 +35,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { User } from '@shared/schema';
 import logoImage from '@assets/icononly_transparent_nobuffer.png';
+import { SideNavMetrics } from '@/components/side-nav-metrics';
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -73,7 +74,7 @@ export default function SharedLayout({ children, user }: LayoutProps) {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-[280px] transform bg-sidebar border-r border-sidebar-border transition-transform duration-200 lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 w-[280px] transform bg-sidebar border-r border-sidebar-border transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -110,6 +111,11 @@ export default function SharedLayout({ children, user }: LayoutProps) {
                 );
               })}
             </nav>
+            
+            {/* Added metrics */}
+            <div className="mt-6 px-2">
+              <SideNavMetrics />
+            </div>
           </ScrollArea>
           <div className="mt-auto border-t border-sidebar-border p-4">
             <div className="flex items-center gap-4">
@@ -150,7 +156,7 @@ export default function SharedLayout({ children, user }: LayoutProps) {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col">
+      <div className="flex flex-col h-screen overflow-hidden">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
           <div className="hidden lg:block">
             <h1 className="text-lg font-semibold">Power Monitoring System</h1>
