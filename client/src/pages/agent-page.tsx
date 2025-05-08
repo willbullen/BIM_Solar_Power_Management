@@ -375,14 +375,14 @@ function ChatInterface() {
       </Card>
 
       {/* Chat area */}
-      <Card className="md:col-span-3 h-[calc(80vh-7rem)] flex flex-col overflow-hidden bg-card rounded-lg border border-border shadow-md">
-        <CardHeader className="pb-4 border-b border-border">
+      <Card className="md:col-span-3 h-[calc(80vh-7rem)] flex flex-col overflow-hidden bg-slate-900 border border-slate-800 shadow-md">
+        <CardHeader className="pb-3 border-b border-slate-800">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2">
-              <Bot className="h-5 w-5 text-primary" />
+              <Bot className="h-5 w-5 text-blue-400" />
               <div>
-                <CardTitle>AI Agent Architect</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-white">AI Agent Architect</CardTitle>
+                <CardDescription className="text-gray-400">
                   Ask questions about energy data, generate insights, or request analysis.
                 </CardDescription>
               </div>
@@ -390,27 +390,27 @@ function ChatInterface() {
             {activeConversation && (
               <HoverCard>
                 <HoverCardTrigger asChild>
-                  <Button variant="outline" size="sm" className="ml-auto">
-                    <Database className="h-3.5 w-3.5 mr-2" />
+                  <Button variant="ghost" size="sm" className="ml-auto bg-slate-800 hover:bg-slate-700 text-gray-200">
+                    <Database className="h-3.5 w-3.5 mr-2 text-blue-400" />
                     Data Access
                   </Button>
                 </HoverCardTrigger>
-                <HoverCardContent className="w-80">
+                <HoverCardContent className="w-80 bg-slate-800 border-slate-700">
                   <div className="space-y-2">
-                    <h4 className="text-sm font-semibold">Agent Database Access</h4>
-                    <p className="text-sm text-muted-foreground">
+                    <h4 className="text-sm font-semibold text-white">Agent Database Access</h4>
+                    <p className="text-sm text-gray-400">
                       This AI agent has secure access to your energy and environmental data for providing insights and recommendations.
                     </p>
                     <div className="grid grid-cols-2 gap-2 pt-2">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1 text-xs text-gray-300">
                         <CheckCircle className="h-3 w-3 text-green-500" />
                         <span>Power Data</span>
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1 text-xs text-gray-300">
                         <CheckCircle className="h-3 w-3 text-green-500" />
                         <span>Environmental</span>
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1 text-xs text-gray-300">
                         <CheckCircle className="h-3 w-3 text-green-500" />
                         <span>Equipment</span>
                       </div>
@@ -448,11 +448,11 @@ function ChatInterface() {
                         className={`max-w-[85%] px-4 py-3 rounded-lg ${
                           message.role === 'user' 
                             ? 'bg-blue-600 text-white rounded-tr-none' 
-                            : 'bg-muted dark:bg-slate-800 rounded-tl-none'
+                            : 'bg-slate-800 text-gray-100 rounded-tl-none'
                         }`}
                       >
                         <div className="whitespace-pre-wrap text-sm">{message.content}</div>
-                        <div className={`mt-1 text-xs ${message.role === 'user' ? 'text-blue-100' : 'text-muted-foreground'}`}>
+                        <div className={`mt-1 text-xs ${message.role === 'user' ? 'text-blue-100' : 'text-gray-400'}`}>
                           {new Date(message.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </div>
                       </div>
@@ -470,7 +470,7 @@ function ChatInterface() {
                       <Avatar className="h-8 w-8 mr-2">
                         <AvatarFallback className="bg-blue-100 text-blue-700">AI</AvatarFallback>
                       </Avatar>
-                      <div className="max-w-[85%] px-4 py-3 rounded-lg bg-muted dark:bg-slate-800 rounded-tl-none">
+                      <div className="max-w-[85%] px-4 py-3 rounded-lg bg-slate-800 text-gray-100 rounded-tl-none">
                         <div className="flex space-x-2">
                           <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                           <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -483,27 +483,27 @@ function ChatInterface() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-                  <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center dark:bg-blue-900/30">
-                    <Bot className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                  <div className="h-16 w-16 rounded-full bg-blue-900/30 flex items-center justify-center">
+                    <Bot className="h-8 w-8 text-blue-400" />
                   </div>
                   <div className="space-y-2 max-w-md">
-                    <h3 className="text-lg font-semibold">Start a Conversation</h3>
-                    <p className="text-muted-foreground">
+                    <h3 className="text-lg font-semibold text-white">Start a Conversation</h3>
+                    <p className="text-gray-400">
                       Ask questions about energy usage patterns, request recommendations 
                       for optimization, or generate reports based on your data.
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-2 mt-4 text-sm w-full max-w-lg">
-                    <div className="bg-muted p-2 rounded-lg">
+                    <div className="bg-slate-800 p-2 rounded-lg text-gray-300">
                       "Analyze our energy consumption trends"
                     </div>
-                    <div className="bg-muted p-2 rounded-lg">
+                    <div className="bg-slate-800 p-2 rounded-lg text-gray-300">
                       "Suggest ways to optimize solar efficiency"
                     </div>
-                    <div className="bg-muted p-2 rounded-lg">
+                    <div className="bg-slate-800 p-2 rounded-lg text-gray-300">
                       "Generate a report on refrigeration usage"
                     </div>
-                    <div className="bg-muted p-2 rounded-lg">
+                    <div className="bg-slate-800 p-2 rounded-lg text-gray-300">
                       "Compare current to historical patterns"
                     </div>
                   </div>
