@@ -7,18 +7,17 @@ import {
   Bell,
   Calendar,
   Cog,
-  Home,
   LayoutDashboard,
   MenuIcon,
   MessageSquare,
   Package2,
-  PanelLeft,
   Settings,
   SunMedium,
   X,
   Zap,
   Sun,
-  CloudSun
+  CloudSun,
+  Thermometer
 } from 'lucide-react';
 import { usePowerData } from '@/hooks/use-power-data';
 import { Button } from '@/components/ui/button';
@@ -33,6 +32,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { User } from '@shared/schema';
 import logoImage from '@assets/icononly_transparent_nobuffer.png';
 
@@ -73,19 +73,13 @@ export default function SharedLayout({ children, user }: LayoutProps) {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-[280px] transform bg-sidebar border-r border-sidebar-border transition-transform duration-200 lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 w-[280px] transform bg-[#0F1425] text-white transition-transform duration-200 lg:static lg:translate-x-0",
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex flex-col h-full">
-          <div className="flex h-14 items-center border-b px-6 border-sidebar-border">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
-              <img src={logoImage} alt="Emporium Logo" className="h-8 w-auto" />
-              <span className="text-lg font-bold ml-1 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">Emporium</span>
-            </Link>
-          </div>
           <ScrollArea className="flex-1 py-4">
-            <nav className="grid gap-1 px-2">
+            <nav className="grid gap-1 px-6">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = location === item.href;
@@ -97,10 +91,10 @@ export default function SharedLayout({ children, user }: LayoutProps) {
                   >
                     <div
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 transition-colors",
+                        "flex items-center gap-3 rounded-md px-3 py-2 transition-colors",
                         isActive 
-                          ? "bg-accent text-accent-foreground" 
-                          : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-accent/50"
+                          ? "bg-[#1E2A45] text-white" 
+                          : "text-white/80 hover:text-white hover:bg-[#1E2A45]/50"
                       )}
                     >
                       <Icon className="h-5 w-5" />
@@ -110,41 +104,109 @@ export default function SharedLayout({ children, user }: LayoutProps) {
                 );
               })}
             </nav>
-          </ScrollArea>
-          <div className="mt-auto border-t border-sidebar-border p-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-9 w-9">
-                <AvatarImage src="" alt="User Avatar" />
-                <AvatarFallback className="bg-accent/10 text-accent">
-                  {user?.username?.substring(0, 2)?.toUpperCase() || 'US'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-sidebar-foreground">
-                  {user?.username || 'Guest User'}
-                </span>
-                <span className="text-xs text-sidebar-foreground/70">
-                  {/* We don't have email in the user model, so we'll use a placeholder or role */}
-                  {user?.role ? `Role: ${user.role}` : 'guest@example.com'}
+            
+            {/* Current Metrics Section */}
+            <div className="mt-8 px-6">
+              <h3 className="text-xs uppercase tracking-wider text-white/50 mb-3">CURRENT METRICS</h3>
+              
+              {/* Grid Power */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-white" />
+                    <span className="text-sm">Grid Power</span>
+                  </div>
+                  <span className="text-sm font-medium">
+                    {powerData && powerData.mainGridPower ? `${powerData.mainGridPower.toFixed(1)} kW` : '0.0 kW'}
+                  </span>
+                </div>
+                <Progress 
+                  value={powerData && powerData.mainGridPower ? Math.min(100, (powerData.mainGridPower / 10) * 100) : 0} 
+                  className="h-1 bg-white/10" 
+                />
+              </div>
+              
+              {/* Solar Output */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <Sun className="h-4 w-4 text-yellow-400" />
+                    <span className="text-sm">Solar Output</span>
+                  </div>
+                  <span className="text-sm font-medium">
+                    {powerData && powerData.solarOutput ? `${powerData.solarOutput.toFixed(1)} kW` : '0.0 kW'}
+                  </span>
+                </div>
+                <Progress 
+                  value={powerData && powerData.solarOutput ? Math.min(100, (powerData.solarOutput / 10) * 100) : 0} 
+                  className="h-1 bg-white/10" 
+                />
+              </div>
+              
+              {/* Total Load */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-amber-500" />
+                    <span className="text-sm">Total Load</span>
+                  </div>
+                  <span className="text-sm font-medium">
+                    {powerData && powerData.totalLoad ? `${powerData.totalLoad.toFixed(1)} kW` : '0.0 kW'}
+                  </span>
+                </div>
+                <Progress 
+                  value={powerData && powerData.totalLoad ? Math.min(100, (powerData.totalLoad / 15) * 100) : 0} 
+                  className="h-1 bg-white/10" 
+                />
+              </div>
+              
+              {/* Environmental Data Section */}
+              <h3 className="text-xs uppercase tracking-wider text-white/50 mb-3">ENVIRONMENTAL DATA</h3>
+              
+              {/* Weather */}
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <CloudSun className="h-4 w-4 text-blue-400" />
+                  <span className="text-sm">Weather</span>
+                </div>
+                <span className="text-sm font-medium">
+                  {environmentalData ? environmentalData.weather : 'Unknown'}
                 </span>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="ml-auto text-sidebar-foreground/70">
-                    <Cog className="h-4 w-4" />
-                    <span className="sr-only">Toggle user menu</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>Profile</DropdownMenuItem>
-                  <DropdownMenuItem>Settings</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>Logout</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              
+              {/* Temperature */}
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Thermometer className="h-4 w-4 text-red-400" />
+                  <span className="text-sm">Temperature</span>
+                </div>
+                <span className="text-sm font-medium">
+                  {environmentalData ? `${environmentalData.air_temp.toFixed(1)}°C` : '0.0°C'}
+                </span>
+              </div>
+              
+              {/* Solar Radiation */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <Sun className="h-4 w-4 text-yellow-400" />
+                  <span className="text-sm">Solar Radiation</span>
+                </div>
+                <span className="text-sm font-medium">
+                  {environmentalData ? `${environmentalData.ghi.toFixed(0)} W/m²` : '0 W/m²'}
+                </span>
+              </div>
             </div>
+          </ScrollArea>
+          
+          {/* Collapse Button */}
+          <div className="p-4">
+            <Button 
+              variant="outline" 
+              className="w-full bg-[#1E2A45] hover:bg-[#2A3A5A] text-white border-none"
+              onClick={toggleMobileMenu}
+            >
+              Collapse
+            </Button>
           </div>
         </div>
       </div>
