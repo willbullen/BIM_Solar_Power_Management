@@ -1,4 +1,3 @@
-import React from "react";
 import { useQuery } from "@tanstack/react-query";
 
 interface SolcastLiveRadiationData {
@@ -46,7 +45,6 @@ interface SolcastPvForecastData {
     pv_estimate10?: number;
     pv_estimate90?: number;
   }[];
-  _fallback?: boolean;
 }
 
 export function useSolcastLiveRadiation() {
@@ -65,60 +63,18 @@ export function useSolcastLivePv() {
   });
 }
 
-export function useSolcastForecast(hours: number = 48) {
+export function useSolcastForecast() {
   return useQuery<SolcastForecastData>({
-    queryKey: ['/api/solcast/forecast', hours],
-    queryFn: async () => {
-      const response = await fetch(`/api/solcast/forecast?hours=${hours}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch forecast data');
-      }
-      return response.json();
-    },
+    queryKey: ['/api/solcast/forecast'],
     staleTime: 60 * 1000, // 1 minute
     refetchInterval: 30 * 60 * 1000, // 30 minutes
   });
 }
 
-export interface ProcessedPvForecast {
-  periodEnd: Date;
-  timestamp: Date;
-  p50: number; // Median estimate
-  p10: number; // Lower bound (10th percentile)
-  p90: number; // Upper bound (90th percentile)
-}
-
-export function useSolcastPvForecast(hours: number = 48) {
-  const { data, isLoading, isError } = useQuery<SolcastPvForecastData>({
-    queryKey: ['/api/solcast/pv-forecast', hours],
-    queryFn: async () => {
-      const response = await fetch(`/api/solcast/pv-forecast?hours=${hours}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch PV forecast data');
-      }
-      return response.json();
-    },
+export function useSolcastPvForecast() {
+  return useQuery<SolcastPvForecastData>({
+    queryKey: ['/api/solcast/pv-forecast'],
     staleTime: 60 * 1000, // 1 minute
     refetchInterval: 30 * 60 * 1000, // 30 minutes
   });
-  
-  // Process data to transform into a more chart-friendly format
-  const processedData = React.useMemo<ProcessedPvForecast[]>(() => {
-    if (!data?.forecasts) return [];
-    
-    return data.forecasts.map((forecast) => ({
-      periodEnd: new Date(forecast.period_end),
-      timestamp: new Date(forecast.period_end),
-      p50: forecast.pv_estimate, // Median estimate
-      p10: forecast.pv_estimate10 || forecast.pv_estimate * 0.7, // Lower bound (10th percentile)
-      p90: forecast.pv_estimate90 || forecast.pv_estimate * 1.3, // Upper bound (90th percentile)
-    }));
-  }, [data]);
-  
-  return {
-    data,
-    processedData,
-    isLoading,
-    isError,
-  };
 }
