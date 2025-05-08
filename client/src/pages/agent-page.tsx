@@ -16,7 +16,7 @@ import {
   CheckCircle, Database, MessageSquarePlus, ArrowRight, BarChart,
   Zap, CloudSun, Sun, CheckCheck, Calendar, Cpu, Key, Thermometer,
   BookOpen, FileText, Code2, BellRing, Settings2, PencilLine,
-  Sparkles, Info as InfoIcon, ExternalLink
+  Sparkles, Info as InfoIcon, ExternalLink, ClipboardList
 } from "lucide-react";
 import { 
   Dialog, DialogContent, DialogDescription, 
@@ -863,11 +863,16 @@ function AgentSettingsInterface() {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">Agent Configuration</h2>
-          <p className="text-muted-foreground mt-1">
-            Customize the AI agent's behavior, model settings, and capabilities
-          </p>
+        <div className="flex items-center space-x-2">
+          <div className="p-1.5 rounded-full bg-blue-50 dark:bg-blue-900/20">
+            <Settings2 className="h-6 w-6 text-blue-600 dark:text-blue-500" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-semibold">Agent Configuration</h2>
+            <p className="text-muted-foreground mt-1">
+              Customize the AI agent's behavior, model settings, and capabilities
+            </p>
+          </div>
         </div>
       </div>
 
