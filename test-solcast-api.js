@@ -5,7 +5,7 @@
  * to ensure proper configuration and data retrieval.
  */
 
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
 // To be replaced with actual API key from environment variable
 const SOLCAST_API_KEY = process.env.SOLCAST_API_KEY || 'demo-key';

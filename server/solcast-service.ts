@@ -133,8 +133,8 @@ export class SolcastService {
       
       if (!response.ok) {
         if (response.status === 402) {
-          console.warn('Solcast API payment required - subscription may need renewal');
-          throw new Error('Payment required for Solcast API');
+          console.warn('Solcast API payment required - subscription may need renewal for forecast data');
+          throw new Error('Payment required for Solcast API forecast data');
         }
         throw new Error(`Solcast API error: ${response.status} ${response.statusText}`);
       }
@@ -457,18 +457,18 @@ export class SolcastService {
         dni: item.dni,
         humidity: estimatedHumidity,
         windSpeed: windSpeed,
-        data_source: dataSource
+        dataSource: dataSource
       };
       
       // Add optional fields if they exist
       if (dhi !== undefined) envData.dhi = dhi;
-      if (windDirection !== undefined) envData.wind_direction = windDirection;
-      if (cloudOpacity !== undefined) envData.cloud_opacity = cloudOpacity;
-      if (forecastHorizon !== undefined) envData.forecast_horizon = forecastHorizon;
+      if (windDirection !== undefined) envData.windDirection = windDirection;
+      if (cloudOpacity !== undefined) envData.cloudOpacity = cloudOpacity;
+      if (forecastHorizon !== undefined) envData.forecastHorizon = forecastHorizon;
       
       // For forecasts with fallback indication
       if (isForecast && (solcastData as FallbackResponse)._fallback) {
-        envData.data_source = 'fallback';
+        envData.dataSource = 'fallback';
       }
       
       return envData;
@@ -506,16 +506,19 @@ export class SolcastService {
         // Add PV data to environmental data
         const enhanced = { ...envData };
         
-        // Save the primary PV estimate
-        enhanced.forecast_p50 = pvItem.pv_estimate;
-        
-        // Save probabilistic estimates if available
-        if (pvItem.pv_estimate10 !== undefined) {
-          enhanced.forecast_p10 = pvItem.pv_estimate10;
-        }
-        
-        if (pvItem.pv_estimate90 !== undefined) {
-          enhanced.forecast_p90 = pvItem.pv_estimate90;
+        // Ensure timestamp exists to avoid typescript error
+        if (enhanced.timestamp) {
+          // Save the primary PV estimate
+          (enhanced as any).forecast_p50 = pvItem.pv_estimate;
+          
+          // Save probabilistic estimates if available
+          if (pvItem.pv_estimate10 !== undefined) {
+            enhanced.forecast_p10 = pvItem.pv_estimate10;
+          }
+          
+          if (pvItem.pv_estimate90 !== undefined) {
+            enhanced.forecast_p90 = pvItem.pv_estimate90;
+          }
         }
         
         return enhanced;
