@@ -47,6 +47,14 @@ export function PowerChart({ data: powerData = [], className, showProcessLoad, s
     }
   };
   
+  // Safe number handling to prevent NaN values
+  const safeNumber = (value: any): number => {
+    if (value === undefined || value === null || isNaN(Number(value))) {
+      return 0;
+    }
+    return Number(value);
+  };
+  
   const { startDate, endDate } = getDateRange();
   
   // Show loading indicator when changing time range
@@ -70,13 +78,13 @@ export function PowerChart({ data: powerData = [], className, showProcessLoad, s
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
     .map((data) => ({
       timestamp: new Date(data.timestamp),
-      mainGridPower: data.mainGridPower,
-      solarOutput: data.solarOutput,
-      refrigerationLoad: data.refrigerationLoad,
-      totalLoad: data.totalLoad,
-      bigFreezer: data.bigFreezer,
-      bigColdRoom: data.bigColdRoom,
-      smoker: data.smoker
+      mainGridPower: safeNumber(data.mainGridPower),
+      solarOutput: safeNumber(data.solarOutput),
+      refrigerationLoad: safeNumber(data.refrigerationLoad),
+      totalLoad: safeNumber(data.totalLoad),
+      bigFreezer: safeNumber(data.bigFreezer),
+      bigColdRoom: safeNumber(data.bigColdRoom),
+      smoker: safeNumber(data.smoker)
     }));
   
   // Calculate peak and average values for annotations

@@ -41,32 +41,44 @@ const powerColumns: ColumnDef<PowerDataRow>[] = [
   {
     accessorKey: "totalLoad",
     header: "Total Load (kW)",
-    cell: ({ row }) => (row.getValue("totalLoad") as number).toFixed(2),
+    cell: ({ row }) => {
+      const value = row.getValue("totalLoad");
+      return value != null ? (value as number).toFixed(2) : 'N/A';
+    },
   },
   {
     accessorKey: "mainGridPower",
     header: "Grid Power (kW)",
-    cell: ({ row }) => (row.getValue("mainGridPower") as number).toFixed(2),
+    cell: ({ row }) => {
+      const value = row.getValue("mainGridPower");
+      return value != null ? (value as number).toFixed(2) : 'N/A';
+    },
   },
   {
     accessorKey: "solarOutput",
     header: "Solar Output (kW)",
-    cell: ({ row }) => (row.getValue("solarOutput") as number).toFixed(2),
+    cell: ({ row }) => {
+      const value = row.getValue("solarOutput");
+      return value != null ? (value as number).toFixed(2) : 'N/A';
+    },
   },
   {
     accessorKey: "efficiency",
     header: "Solar Efficiency (%)",
     cell: ({ row }) => {
-      const efficiency = row.getValue("efficiency") as number;
+      const efficiency = row.getValue("efficiency");
+      if (efficiency == null) return 'N/A';
+      
+      const effValue = efficiency as number;
       return (
         <div className="flex items-center">
-          <span>{efficiency.toFixed(1)}%</span>
+          <span>{effValue.toFixed(1)}%</span>
           <div 
             className="ml-2 h-2 w-16 bg-secondary rounded-full overflow-hidden"
           >
             <div 
               className="h-full bg-primary" 
-              style={{ width: `${Math.min(efficiency, 100)}%` }}
+              style={{ width: `${Math.min(effValue, 100)}%` }}
             />
           </div>
         </div>
@@ -104,25 +116,34 @@ const environmentalColumns: ColumnDef<EnvironmentalDataRow>[] = [
   {
     accessorKey: "temperature",
     header: "Temp (°C)",
-    cell: ({ row }) => (row.getValue("temperature") as number).toFixed(1),
+    cell: ({ row }) => {
+      const value = row.getValue("temperature");
+      return value != null ? (value as number).toFixed(1) : 'N/A';
+    },
   },
   {
     accessorKey: "humidity",
     header: "Humidity (%)",
     cell: ({ row }) => {
       const humidity = row.getValue("humidity") as number | null;
-      return humidity ? humidity.toFixed(1) : "N/A";
+      return humidity != null ? humidity.toFixed(1) : "N/A";
     },
   },
   {
     accessorKey: "ghi",
     header: "GHI (W/m²)",
-    cell: ({ row }) => (row.getValue("ghi") as number).toFixed(0),
+    cell: ({ row }) => {
+      const value = row.getValue("ghi");
+      return value != null ? (value as number).toFixed(0) : 'N/A';
+    },
   },
   {
     accessorKey: "dni",
     header: "DNI (W/m²)",
-    cell: ({ row }) => (row.getValue("dni") as number).toFixed(0),
+    cell: ({ row }) => {
+      const value = row.getValue("dni");
+      return value != null ? (value as number).toFixed(0) : 'N/A';
+    },
   },
 ];
 
@@ -218,16 +239,22 @@ export default function ReportsPage() {
       ...data.map(row => {
         const timestamp = format(new Date(row.timestamp), "yyyy-MM-dd HH:mm:ss");
         const efficiency = row.totalLoad > 0 ? (row.solarOutput / row.totalLoad) * 100 : 0;
+        
+        // Safe toFixed for null values
+        const safeToFixed = (value: any, precision: number) => {
+          return value != null ? Number(value).toFixed(precision) : "N/A";
+        };
+        
         return [
           timestamp,
-          row.totalLoad.toFixed(2),
-          row.mainGridPower.toFixed(2),
-          row.solarOutput.toFixed(2),
-          row.processLoad.toFixed(2),
-          row.hvacLoad.toFixed(2),
-          row.lightingLoad.toFixed(2),
-          row.refrigerationLoad.toFixed(2),
-          efficiency.toFixed(1),
+          safeToFixed(row.totalLoad, 2),
+          safeToFixed(row.mainGridPower, 2),
+          safeToFixed(row.solarOutput, 2),
+          safeToFixed(row.processLoad, 2),
+          safeToFixed(row.hvacLoad, 2),
+          safeToFixed(row.lightingLoad, 2),
+          safeToFixed(row.refrigerationLoad, 2),
+          safeToFixed(efficiency, 1),
         ].join(",");
       }),
     ];
