@@ -241,11 +241,17 @@ function ChatInterface() {
 
   // Effect to automatically send message after conversation is created
   useEffect(() => {
-    if (activeConversation && input && !isSubmitting && !createConversation.isPending) {
+    // Only trigger when activeConversation changes and we have input to send
+    // This prevents the effect from running on every keystroke
+    if (activeConversation && 
+        input && 
+        !isSubmitting && 
+        !createConversation.isPending && 
+        createConversation.isSuccess) {
       setIsSubmitting(true);
       sendMessage.mutate(input);
     }
-  }, [activeConversation, input, isSubmitting, createConversation.isPending]);
+  }, [activeConversation, isSubmitting, createConversation.isPending, createConversation.isSuccess]);
 
   // Effect to scroll to bottom when messages change
   useEffect(() => {
@@ -265,57 +271,61 @@ function ChatInterface() {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
       {/* Sidebar with conversation list */}
-      <Card className="md:col-span-1 h-[calc(80vh-7rem)] overflow-hidden bg-card rounded-lg border border-border shadow-md">
-        <CardHeader className="pb-3 border-b border-border">
-          <div className="flex items-center space-x-1">
-            <MessageSquare className="h-5 w-5 text-primary" />
-            <CardTitle className="text-md flex justify-between items-center w-full">
-              Conversations
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>New Conversation</DialogTitle>
-                    <DialogDescription>
-                      Create a new conversation with the AI Agent Architect
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleCreateConversation}>
-                    <div className="grid gap-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="title">Conversation Name</Label>
-                        <Input
-                          id="title"
-                          value={newConversationTitle}
-                          onChange={(e) => setNewConversationTitle(e.target.value)}
-                          placeholder="e.g., Energy Optimization Plan"
-                          className="col-span-3"
-                          autoFocus
-                        />
-                      </div>
+      <Card className="md:col-span-1 h-[calc(85vh-6rem)] overflow-hidden bg-slate-900 border-slate-800 shadow-md">
+        <CardHeader className="pb-2 border-b border-slate-800 px-3 py-2">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center space-x-1">
+              <MessageSquare className="h-4 w-4 text-blue-400" />
+              <CardTitle className="text-sm">Conversations</CardTitle>
+            </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-slate-800">
+                  <Plus className="h-4 w-4 text-blue-400" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[400px] bg-slate-900 border-slate-800">
+                <DialogHeader>
+                  <DialogTitle>New Conversation</DialogTitle>
+                  <DialogDescription>
+                    Create a new conversation with the AI Agent Architect
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleCreateConversation}>
+                  <div className="grid gap-4 py-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Conversation Name</Label>
+                      <Input
+                        id="title"
+                        value={newConversationTitle}
+                        onChange={(e) => setNewConversationTitle(e.target.value)}
+                        placeholder="e.g., Energy Optimization Plan"
+                        className="col-span-3 bg-slate-950 border-slate-800"
+                        autoFocus
+                      />
                     </div>
-                    <DialogFooter>
-                      <Button type="submit" disabled={createConversation.isPending || !newConversationTitle.trim()}>
-                        {createConversation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Creating...
-                          </>
-                        ) : (
-                          'Create Conversation'
-                        )}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </CardTitle>
+                  </div>
+                  <DialogFooter>
+                    <Button 
+                      type="submit" 
+                      disabled={createConversation.isPending || !newConversationTitle.trim()}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {createConversation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        'Create Conversation'
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
         <ScrollArea className="flex-1 h-full">

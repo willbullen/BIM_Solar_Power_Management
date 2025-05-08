@@ -105,11 +105,14 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     // Set up polling interval based on the selected refresh rate
     const pollingInterval = setInterval(fetchLatestData, refreshInterval);
     
-    // Clean up on unmount
+    // Clean up on unmount or when refreshInterval changes
     return () => {
+      console.log(`Clearing polling interval (${refreshInterval}ms) and setting up new one if needed`);
       clearInterval(pollingInterval);
     };
-  }, [toast, lastUpdated, refreshInterval]);
+    
+    // The refreshInterval dependency ensures this effect runs again when the rate changes
+  }, [toast, refreshInterval]);
   
   // Update settings when they change from the query
   useEffect(() => {

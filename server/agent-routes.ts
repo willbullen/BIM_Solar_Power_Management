@@ -164,6 +164,37 @@ export function registerAgentRoutes(app: Express) {
       res.status(500).json({ message: 'Failed to fetch conversation' });
     }
   });
+  
+  // Get messages for a specific conversation
+  app.get('/api/agent/conversations/:id/messages', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const conversationId = parseInt(req.params.id);
+      const userId = req.session!.userId;
+      
+      // Check if the conversation exists and belongs to the user
+      const conversation = await db.query.agentConversations.findFirst({
+        where: (fields, { eq, and }) => and(
+          eq(fields.id, conversationId),
+          eq(fields.userId, userId)
+        ),
+      });
+      
+      if (!conversation) {
+        return res.status(404).json({ message: 'Conversation not found' });
+      }
+      
+      // Get the messages
+      const messages = await db.query.agentMessages.findMany({
+        where: (fields, { eq }) => eq(fields.conversationId, conversationId),
+        orderBy: (fields, { asc }) => [asc(fields.timestamp)],
+      });
+      
+      res.json(messages);
+    } catch (error) {
+      console.error('Error fetching conversation messages:', error);
+      res.status(500).json({ message: 'Failed to fetch conversation messages' });
+    }
+  });
 
   // Add a message to a conversation and get a response
   app.post('/api/agent/conversations/:id/messages', requireAuth, async (req: Request, res: Response) => {

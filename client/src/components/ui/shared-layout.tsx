@@ -218,7 +218,10 @@ export function SharedLayout({ children, user }: LayoutProps) {
                   <DropdownMenuSeparator />
                   <DropdownMenuRadioGroup 
                     value={String(refreshInterval)} 
-                    onValueChange={(value) => setRefreshInterval(Number(value))}
+                    onValueChange={(value) => {
+                      console.log(`Dropdown selection: changing refresh rate to ${value}ms`);
+                      setRefreshInterval(Number(value));
+                    }}
                   >
                     {/* Import available refresh rates from the hook */}
                     {REFRESH_RATES.map((rate: { label: string; value: number }) => (

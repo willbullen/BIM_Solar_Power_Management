@@ -24,7 +24,15 @@ export const REFRESH_RATES: RefreshRateOption[] = [
 ];
 
 export function RefreshRateProvider({ children }: { children: ReactNode }) {
-  const [refreshInterval, setRefreshInterval] = useState<number>(10000); // Default: 10 seconds
+  // Default to 10s refresh interval
+  const defaultInterval = 10000;
+  const [refreshInterval, setRefreshInterval] = useState<number>(defaultInterval);
+  
+  // Handle refresh rate changes
+  const handleRefreshRateChange = (newInterval: number) => {
+    console.log(`Changing refresh rate from ${refreshInterval}ms to ${newInterval}ms`);
+    setRefreshInterval(newInterval);
+  };
   
   // Find the label for the current refresh interval
   const refreshRateLabel = REFRESH_RATES.find(rate => rate.value === refreshInterval)?.label || "10s";
