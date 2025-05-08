@@ -127,10 +127,7 @@ function ChatInterface() {
   // Create a new conversation
   const createConversation = useMutation({
     mutationFn: (title: string) => 
-      apiRequest('/api/agent/conversations', {
-        method: 'POST',
-        body: JSON.stringify({ title })
-      }),
+      apiRequest('POST', '/api/agent/conversations', { title }),
     onSuccess: (data) => {
       refetchConversations();
       setActiveConversation(data.id);
@@ -141,12 +138,23 @@ function ChatInterface() {
         description: "Your new conversation has been created."
       });
     },
-    onError: () => {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to create a new conversation."
-      });
+    onError: (error: Error) => {
+      console.error("Conversation creation error:", error);
+      
+      // Check if it's an authentication error
+      if (error.message.includes("401")) {
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "You need to be logged in to create a conversation. Please log in and try again."
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to create a new conversation: " + error.message
+        });
+      }
     }
   });
 
