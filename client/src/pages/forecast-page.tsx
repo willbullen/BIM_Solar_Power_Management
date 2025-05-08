@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Page } from '@/components/page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format, addDays } from 'date-fns';
@@ -31,7 +30,7 @@ export function ForecastPage() {
   const forecastEndDate = addDays(today, Math.ceil(selectedHorizon / 24));
   
   return (
-    <Page>
+    <div>
       <Helmet>
         <title>Weather & Solar Forecast | Emporium Power Monitoring</title>
       </Helmet>
@@ -150,6 +149,6 @@ export function ForecastPage() {
           </div>
         </div>
       </div>
-    </Page>
+    </div>
   );
 }
