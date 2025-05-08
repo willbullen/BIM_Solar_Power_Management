@@ -3,12 +3,15 @@ import { ChatOpenAI } from "@langchain/openai";
 import { db } from "./db";
 import * as schema from "@shared/schema";
 import { AIService } from "./ai-service";
+import { FunctionRegistry } from "./function-registry";
+import { DatabaseAccess } from "./database-access";
 
 // Define the core agent capabilities and functions
 export class AgentService {
   private openai: OpenAI;
   private model: ChatOpenAI;
   private aiService: AIService;
+  private functionRegistry: FunctionRegistry;
 
   constructor() {
     this.openai = new OpenAI({
@@ -22,6 +25,7 @@ export class AgentService {
     });
     
     this.aiService = new AIService(); // Leverage existing AI service for analytics
+    this.functionRegistry = new FunctionRegistry(this.aiService);
   }
 
   /**
@@ -145,27 +149,10 @@ export class AgentService {
   /**
    * Execute an agent function and store the result
    */
-  async executeFunction(name: string, parameters: any): Promise<any> {
+  async executeFunction(name: string, parameters: any, userRole: string = 'public'): Promise<any> {
     try {
-      // Get the function definition from the database
-      const functionDef = await db.query.agentFunctions.findFirst({
-        where: (fields, { eq, and }) => and(
-          eq(fields.name, name),
-          eq(fields.enabled, true)
-        )
-      });
-
-      if (!functionDef) {
-        throw new Error(`Function ${name} not found or not enabled`);
-      }
-
-      // Execute the function (this is a security risk in production - function code should be validated)
-      // In a real-world scenario, use a map of predefined functions instead of eval
-      const funcCode = functionDef.functionCode;
-      const func = new Function('params', 'db', 'schema', 'aiService', funcCode);
-      
-      // Pass the database and schema to the function for database operations
-      return await func(parameters, db, schema, this.aiService);
+      // Use the function registry to execute the function securely
+      return await this.functionRegistry.executeFunction(name, parameters, userRole);
     } catch (error) {
       console.error(`Error executing function ${name}:`, error);
       throw error;
@@ -176,17 +163,15 @@ export class AgentService {
    * Get a list of available agent functions
    */
   async getAvailableFunctions(accessLevel: string = 'public'): Promise<schema.AgentFunction[]> {
-    const functions = await db.query.agentFunctions.findMany({
-      where: (fields, { eq, and, or }) => and(
-        eq(fields.enabled, true),
-        or(
-          eq(fields.accessLevel, 'public'),
-          eq(fields.accessLevel, accessLevel)
-        )
-      )
-    });
-
-    return functions;
+    // Use the function registry to get available functions
+    return await this.functionRegistry.getAvailableFunctions(accessLevel);
+  }
+  
+  /**
+   * Create a database access object for the current user
+   */
+  createDatabaseAccess(userId?: number, userRole: string = 'public'): DatabaseAccess {
+    return new DatabaseAccess(userId, userRole);
   }
 
   /**
