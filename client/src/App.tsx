@@ -5,7 +5,7 @@ import { Route, Switch } from "wouter";
 import { AuthProvider } from "@/hooks/use-auth";
 import { PowerDataProvider } from "@/hooks/use-power-data";
 import { ProtectedRoute, AdminRoute } from "@/lib/protected-route";
-import DashboardPage from "@/pages/dashboard-page-new";
+import DashboardPage from "@/pages/dashboard-page";
 import AuthPage from "@/pages/auth-page";
 import SettingsPage from "@/pages/settings-page-new";
 import ReportsPage from "@/pages/reports-page-new";
