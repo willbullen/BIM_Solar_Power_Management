@@ -731,6 +731,194 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // === Feedback System Routes ===
+  
+  // Issues routes
+  app.get('/api/issues', async (req, res) => {
+    try {
+      const issues = await storage.getAllIssues();
+      res.json(issues);
+    } catch (error) {
+      console.error("Error fetching issues:", error);
+      res.status(500).json({ error: "Failed to fetch issues" });
+    }
+  });
+  
+  app.get('/api/issues/:id', async (req, res) => {
+    try {
+      const issue = await storage.getIssueById(parseInt(req.params.id));
+      if (!issue) {
+        return res.status(404).json({ error: "Issue not found" });
+      }
+      res.json(issue);
+    } catch (error) {
+      console.error(`Error fetching issue ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to fetch issue" });
+    }
+  });
+  
+  app.get('/api/issues/status/:status', async (req, res) => {
+    try {
+      const issues = await storage.getIssuesByStatus(req.params.status);
+      res.json(issues);
+    } catch (error) {
+      console.error(`Error fetching issues with status ${req.params.status}:`, error);
+      res.status(500).json({ error: "Failed to fetch issues by status" });
+    }
+  });
+  
+  app.get('/api/issues/type/:type', async (req, res) => {
+    try {
+      const issues = await storage.getIssuesByType(req.params.type);
+      res.json(issues);
+    } catch (error) {
+      console.error(`Error fetching issues with type ${req.params.type}:`, error);
+      res.status(500).json({ error: "Failed to fetch issues by type" });
+    }
+  });
+  
+  app.post('/api/issues', async (req, res) => {
+    try {
+      const issueData = req.body;
+      
+      // If authenticated, set the submitter ID
+      if (req.user) {
+        issueData.submitterId = req.user.id;
+      }
+      
+      const issue = await storage.createIssue(issueData);
+      res.status(201).json(issue);
+    } catch (error) {
+      console.error("Error creating issue:", error);
+      res.status(500).json({ error: "Failed to create issue" });
+    }
+  });
+  
+  app.put('/api/issues/:id', async (req, res) => {
+    try {
+      // Optional: Check if user has permissions to update the issue
+      const issue = await storage.updateIssue(parseInt(req.params.id), req.body);
+      res.json(issue);
+    } catch (error) {
+      console.error(`Error updating issue ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to update issue" });
+    }
+  });
+  
+  app.post('/api/issues/:id/close', async (req, res) => {
+    try {
+      // Optional: Check if user has permissions to close the issue
+      const issue = await storage.closeIssue(parseInt(req.params.id), req.body.resolution);
+      res.json(issue);
+    } catch (error) {
+      console.error(`Error closing issue ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to close issue" });
+    }
+  });
+  
+  // Issue comments routes
+  app.get('/api/issues/:id/comments', async (req, res) => {
+    try {
+      const comments = await storage.getIssueComments(parseInt(req.params.id));
+      res.json(comments);
+    } catch (error) {
+      console.error(`Error fetching comments for issue ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to fetch comments" });
+    }
+  });
+  
+  app.post('/api/issues/:id/comments', async (req, res) => {
+    try {
+      const commentData = {
+        issueId: parseInt(req.params.id),
+        content: req.body.content
+      };
+      
+      // If authenticated, set the user ID
+      if (req.user) {
+        commentData.userId = req.user.id;
+      }
+      
+      const comment = await storage.createIssueComment(commentData);
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error(`Error creating comment for issue ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to create comment" });
+    }
+  });
+  
+  app.put('/api/comments/:id', async (req, res) => {
+    try {
+      // Optional: Check if user owns the comment before updating
+      const comment = await storage.updateIssueComment(parseInt(req.params.id), req.body.content);
+      res.json(comment);
+    } catch (error) {
+      console.error(`Error updating comment ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to update comment" });
+    }
+  });
+  
+  // Todo items routes
+  app.get('/api/todo-items', async (req, res) => {
+    try {
+      const todoItems = await storage.getAllTodoItems();
+      res.json(todoItems);
+    } catch (error) {
+      console.error("Error fetching todo items:", error);
+      res.status(500).json({ error: "Failed to fetch todo items" });
+    }
+  });
+  
+  app.get('/api/todo-items/status/:status', async (req, res) => {
+    try {
+      const todoItems = await storage.getTodoItemsByStatus(req.params.status);
+      res.json(todoItems);
+    } catch (error) {
+      console.error(`Error fetching todo items with status ${req.params.status}:`, error);
+      res.status(500).json({ error: "Failed to fetch todo items by status" });
+    }
+  });
+  
+  app.get('/api/todo-items/stage/:stage', async (req, res) => {
+    try {
+      const todoItems = await storage.getTodoItemsByStage(parseInt(req.params.stage));
+      res.json(todoItems);
+    } catch (error) {
+      console.error(`Error fetching todo items for stage ${req.params.stage}:`, error);
+      res.status(500).json({ error: "Failed to fetch todo items by stage" });
+    }
+  });
+  
+  app.post('/api/todo-items', async (req, res) => {
+    try {
+      const todoItem = await storage.createTodoItem(req.body);
+      res.status(201).json(todoItem);
+    } catch (error) {
+      console.error("Error creating todo item:", error);
+      res.status(500).json({ error: "Failed to create todo item" });
+    }
+  });
+  
+  app.put('/api/todo-items/:id', async (req, res) => {
+    try {
+      const todoItem = await storage.updateTodoItem(parseInt(req.params.id), req.body);
+      res.json(todoItem);
+    } catch (error) {
+      console.error(`Error updating todo item ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to update todo item" });
+    }
+  });
+  
+  app.post('/api/todo-items/:id/complete', async (req, res) => {
+    try {
+      const todoItem = await storage.completeTodoItem(parseInt(req.params.id));
+      res.json(todoItem);
+    } catch (error) {
+      console.error(`Error completing todo item ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to complete todo item" });
+    }
+  });
+
   // === Solcast API Routes ===
   
   // Create a Solcast service instance
