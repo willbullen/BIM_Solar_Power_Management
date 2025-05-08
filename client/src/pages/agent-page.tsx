@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, UseQueryOptions } from "@tanstack/react-query";
 import SharedLayout from "@/components/ui/shared-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -112,10 +112,22 @@ function ChatInterface() {
   }, []);
 
   // Fetch conversations - only enable if user is authenticated
-  const { data: conversations, isLoading: loadingConversations, refetch: refetchConversations } = useQuery({
+  const { data: conversations, isLoading: loadingConversations, refetch: refetchConversations, error: conversationsError } = useQuery({
     queryKey: ['/api/agent/conversations'],
     retry: false,
-    enabled: !!user // Only run the query if user is authenticated
+    enabled: !!user, // Only run the query if user is authenticated
+    onError: (error) => {
+      console.error('Error fetching conversations:', error);
+      if (error.message.includes('401')) {
+        // If we get a 401, try refreshing the user data
+        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Your session may have expired. Please refresh and log in again."
+        });
+      }
+    }
   });
 
   // Fetch messages for the active conversation

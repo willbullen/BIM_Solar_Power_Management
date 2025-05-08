@@ -54,7 +54,22 @@ const notificationSchema = z.object({
  * Middleware to require authentication
  */
 function requireAuth(req: Request, res: Response, next: any) {
+  console.log('Auth check - Session:', req.session ? 'exists' : 'missing');
+  console.log('Auth check - UserId:', req.session?.userId ? req.session.userId : 'missing');
+  console.log('Auth check - IsAuthenticated:', req.isAuthenticated ? (req.isAuthenticated() ? 'yes' : 'no') : 'method missing');
+  
   if (!req.session || !req.session.userId) {
+    // For better debugging, check passport authentication as well
+    if (req.isAuthenticated && req.isAuthenticated()) {
+      // If passport says we're authenticated but session doesn't have userId, fix it
+      if (req.user && 'id' in req.user) {
+        console.log('Fixing session - user authenticated but userId missing from session');
+        req.session.userId = (req.user as any).id;
+        req.session.userRole = (req.user as any).role;
+        next();
+        return;
+      }
+    }
     return res.status(401).json({ message: 'Not authenticated' });
   }
   next();
