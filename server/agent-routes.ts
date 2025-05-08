@@ -164,10 +164,9 @@ export function registerAgentRoutes(app: Express) {
   app.post('/api/agent/functions/execute', requireAuth, async (req: Request, res: Response) => {
     try {
       const { name, parameters } = functionCallSchema.parse(req.body);
-      const userRole = req.session!.userRole || 'public';
       
-      // Execute the function with proper access control
-      const result = await agentService.executeFunction(name, parameters, userRole);
+      // Execute the function
+      const result = await agentService.executeFunction(name, parameters);
       
       res.status(200).json({ result });
     } catch (error) {
