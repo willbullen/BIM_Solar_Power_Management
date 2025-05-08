@@ -19,7 +19,7 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Layout } from "@/components/ui/layout";
+import SharedLayout from "@/components/ui/shared-layout";
 import { StatCard } from "@/components/ui/stat-card";
 
 function DashboardPage() {
