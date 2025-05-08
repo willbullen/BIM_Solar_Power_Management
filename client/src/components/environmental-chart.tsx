@@ -163,7 +163,7 @@ type EnvironmentalStatsProps = {
 };
 
 export function EnvironmentalStats({ environmentalData, className }: EnvironmentalStatsProps) {
-  if (!environmentalData.length) {
+  if (!environmentalData || !environmentalData.length) {
     return (
       <Card className={cn("w-full", className)}>
         <CardHeader>
@@ -377,6 +377,20 @@ type SolarInfluenceProps = {
 };
 
 export function SolarInfluenceAnalysis({ environmentalData, powerData, className }: SolarInfluenceProps) {
+  // Check for null or empty data
+  if (!environmentalData || !environmentalData.length || !powerData || !powerData.length) {
+    return (
+      <Card className={cn("w-full", className)}>
+        <CardHeader>
+          <CardTitle>Solar Efficiency Analysis</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center">
+          <p className="text-muted-foreground">Insufficient data available</p>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   // This component would analyze correlation between environmental conditions
   // and solar output, but we'll make a simplified version for now
   
