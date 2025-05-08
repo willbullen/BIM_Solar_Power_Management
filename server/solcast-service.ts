@@ -448,7 +448,8 @@ export class SolcastService {
       const dhi = item.dhi;
       
       // Create the environmental data record
-      const envData: InsertEnvironmentalData = {
+      // Use type assertion to handle schema discrepancies
+      const envData = {
         timestamp: new Date(item.period_end),
         weather: weather,
         temperature: item.air_temp, // Maintain backward compatibility
@@ -458,7 +459,7 @@ export class SolcastService {
         humidity: estimatedHumidity,
         windSpeed: windSpeed,
         dataSource: dataSource
-      };
+      } as InsertEnvironmentalData;
       
       // Add optional fields if they exist
       if (dhi !== undefined) envData.dhi = dhi;
@@ -499,6 +500,9 @@ export class SolcastService {
     
     // Enhance the environmental data with PV predictions
     return environmentalData.map(envData => {
+      // Skip if timestamp is undefined
+      if (!envData.timestamp) return envData;
+      
       const timestamp = envData.timestamp.toISOString();
       const pvItem = pvByTimestamp.get(timestamp);
       
@@ -508,8 +512,8 @@ export class SolcastService {
         
         // Ensure timestamp exists to avoid typescript error
         if (enhanced.timestamp) {
-          // Save the primary PV estimate
-          (enhanced as any).forecast_p50 = pvItem.pv_estimate;
+          // Save the primary PV estimate (p50 or median estimate)
+          enhanced.forecast_p50 = pvItem.pv_estimate;
           
           // Save probabilistic estimates if available
           if (pvItem.pv_estimate10 !== undefined) {

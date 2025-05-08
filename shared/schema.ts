@@ -96,6 +96,7 @@ export const environmentalData = pgTable("environmental_data", {
   windDirection: real("wind_direction"), // in degrees from North
   cloudOpacity: real("cloud_opacity"), // cloud cover percentage (0-100)
   forecast_p10: real("forecast_p10"), // P10 forecast value (lower confidence bound)
+  forecast_p50: real("forecast_p50"), // P50 forecast value (median estimate)
   forecast_p90: real("forecast_p90"), // P90 forecast value (upper confidence bound)
   dataSource: text("data_source"), // 'solcast_live', 'solcast_forecast', 'emporium', 'fallback'
   forecastHorizon: integer("forecast_horizon"), // forecast time horizon in hours (0 for current)
