@@ -54,6 +54,7 @@ export function SharedLayout({ children, user }: LayoutProps) {
     { name: 'Forecasting', href: '/forecasting', icon: BarChart },
     { name: 'Equipment', href: '/equipment', icon: Package2 },
     { name: 'Operational Planning', href: '/planning', icon: Calendar },
+    { name: 'AI Agent', href: '/agent', icon: MessageSquare },
     { name: 'Feedback & Issues', href: '/feedback', icon: MessageSquare },
     { name: 'Settings', href: '/settings', icon: Settings }
   ];

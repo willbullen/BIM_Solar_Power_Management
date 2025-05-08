@@ -13,6 +13,7 @@ import ForecastingPage from "@/pages/forecasting-page";
 import EquipmentPage from "@/pages/equipment-page";
 import OperationalPlanningPage from "@/pages/operational-planning-page";
 import FeedbackPage from "@/pages/feedback-page";
+import AgentPage from "@/pages/agent-page";
 import NotFound from "@/pages/not-found";
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
             <ProtectedRoute path="/equipment" component={EquipmentPage} />
             <ProtectedRoute path="/planning" component={OperationalPlanningPage} />
             <ProtectedRoute path="/feedback" component={FeedbackPage} />
+            <ProtectedRoute path="/agent" component={AgentPage} />
             <AdminRoute path="/settings" component={SettingsPage} />
             <Route path="/auth" component={AuthPage} />
             <Route component={NotFound} />
