@@ -45,15 +45,15 @@ This document outlines the implementation strategy for enhancing the Emporium Po
   - [x] Add cloud opacity visualization
   - [x] Add wind data visualization
 
-### Stage 5: Frontend Enhancements - Forecasting (Current Focus)
-- [ ] Enhance Power Usage Forecast with Solcast data
-  - [ ] Show probabilistic forecasts (P10/P50/P90)
-  - [ ] Implement confidence bands visualization
-  - [ ] Add forecast horizon selection (24h, 48h, 72h, 7 days)
-- [ ] Improve Environment tab with detailed weather forecasts
-  - [ ] Add comprehensive weather parameter visualization
-  - [ ] Add min/max value indicators
-  - [ ] Create visual timeline of expected conditions
+### Stage 5: Frontend Enhancements - Forecasting ✓
+- [x] Enhance Power Usage Forecast with Solcast data
+  - [x] Show probabilistic forecasts (P10/P50/P90)
+  - [x] Implement confidence bands visualization
+  - [x] Add forecast horizon selection (24h, 48h, 72h, 7 days)
+- [x] Improve Environment tab with detailed weather forecasts
+  - [x] Add comprehensive weather parameter visualization
+  - [x] Add min/max value indicators
+  - [x] Create visual timeline of expected conditions
 
 ### Stage 6: Advanced Features (If Time Permits)
 - [ ] Implement Dynamic Operational Scheduling Advisor
@@ -74,4 +74,4 @@ We have completed:
 - Stage 4: Frontend Enhancements - Core Features ✓
 
 Current Focus:
-- Stage 5: Frontend Enhancements - Forecasting
+- Stage 6: Advanced Features - Dynamic Operational Scheduling Advisor

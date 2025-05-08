@@ -11,6 +11,7 @@ import SettingsPage from "@/pages/settings-page";
 import ReportsPage from "@/pages/reports-page";
 import ForecastingPage from "@/pages/forecasting-page";
 import EquipmentPage from "@/pages/equipment-page";
+import { OperationalPlanningPage } from "@/pages/operational-planning-page";
 import NotFound from "@/pages/not-found";
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
             <ProtectedRoute path="/reports" component={ReportsPage} />
             <ProtectedRoute path="/forecasting" component={ForecastingPage} />
             <ProtectedRoute path="/equipment" component={EquipmentPage} />
+            <ProtectedRoute path="/operational-planning" component={OperationalPlanningPage} />
             <AdminRoute path="/settings" component={SettingsPage} />
             <Route path="/auth" component={AuthPage} />
             <Route component={NotFound} />
