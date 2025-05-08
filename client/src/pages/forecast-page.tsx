@@ -43,11 +43,11 @@ export function ForecastPage() {
           </p>
           
           {isFallback && (
-            <Alert variant="warning" className="mt-4">
+            <Alert className="mt-4">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Using Fallback Data</AlertTitle>
               <AlertDescription>
-                Unable to fetch real-time Solcast forecast data. Using fallback synthetic data for demonstration.
+                Unable to fetch real-time Solcast forecast data. Using fallback data for demonstration.
                 This may be due to API key limitations or connectivity issues.
               </AlertDescription>
             </Alert>
