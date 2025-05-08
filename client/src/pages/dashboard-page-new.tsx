@@ -46,8 +46,8 @@ function DashboardPage() {
   }
   
   // Get the latest data
-  const latestPower = powerData[powerData.length - 1];
-  const previousPower = powerData[powerData.length - 2] || latestPower;
+  const latestPower = powerData && powerData.length > 0 ? powerData[powerData.length - 1] : null;
+  const previousPower = powerData && powerData.length > 1 ? powerData[powerData.length - 2] : latestPower;
   
   // Calculate trends
   const totalLoadTrend = latestPower && previousPower ? 
@@ -145,7 +145,7 @@ function DashboardPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="h-[300px]">
-                  <PowerChart data={historicalPowerData.slice(-48)} />
+                  <PowerChart data={historicalPowerData && historicalPowerData.length > 0 ? historicalPowerData.slice(-48) : []} />
                 </CardContent>
               </Card>
               
@@ -177,7 +177,7 @@ function DashboardPage() {
                   <CardDescription>Current environmental factors</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <EnvironmentalStats environmentalData={environmentalData} />
+                  <EnvironmentalStats environmentalData={environmentalData || []} />
                 </CardContent>
                 <CardFooter className="flex justify-end">
                   <Button variant="ghost" size="sm" asChild>
@@ -202,7 +202,7 @@ function DashboardPage() {
                 </CardHeader>
                 <CardContent className="h-[400px]">
                   <PowerChart 
-                    data={historicalPowerData.slice(-96)} 
+                    data={historicalPowerData && historicalPowerData.length > 0 ? historicalPowerData.slice(-96) : []} 
                     showProcessLoad={true}
                     showLighting={true}
                     showHvac={true}
@@ -286,7 +286,7 @@ function DashboardPage() {
               <CardContent>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div>
-                    <EnvironmentalStats environmentalData={environmentalData} />
+                    <EnvironmentalStats environmentalData={environmentalData || []} />
                   </div>
                   <div>
                     <SolcastLiveCard />

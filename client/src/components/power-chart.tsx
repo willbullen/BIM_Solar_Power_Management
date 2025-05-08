@@ -18,11 +18,15 @@ import { format, subHours, subDays } from "date-fns";
 import { Loader2 } from "lucide-react";
 
 type PowerChartProps = {
-  powerData: PowerData[];
+  data: PowerData[];
   className?: string;
+  showProcessLoad?: boolean;
+  showLighting?: boolean;
+  showHvac?: boolean;
+  showRefrigeration?: boolean;
 };
 
-export function PowerChart({ powerData, className }: PowerChartProps) {
+export function PowerChart({ data: powerData = [], className, showProcessLoad, showLighting, showHvac, showRefrigeration }: PowerChartProps) {
   const [timeRange, setTimeRange] = useState<string>("1h");
   const [isFiltering, setIsFiltering] = useState(false);
   
