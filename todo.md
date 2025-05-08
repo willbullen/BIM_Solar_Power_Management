@@ -18,20 +18,22 @@ This document outlines the implementation strategy for enhancing the Emporium Po
   - Ensure proper support for probabilistic forecasting (P10, P50, P90 values)
 
 ### Stage 2: SolcastService Enhancement
-- [ ] Update SolcastService to fetch and process more data points:
-  - Implement live data endpoints 
-  - Expand forecast data to include P10/P90 values
-  - Add support for longer forecast horizons (up to 7 days)
-  - Enhance weather determination logic using more parameters
-  - Improve fallback data generation to match expanded schema
+- [x] Update SolcastService to fetch and process more data points:
+  - [x] Implement live data endpoints 
+  - [x] Expand forecast data to include P10/P50/P90 values
+  - [x] Add support for longer forecast horizons (up to 7 days)
+  - [x] Enhance weather determination logic using more parameters
+  - [x] Improve fallback data generation to match expanded schema
 
 ### Stage 3: Backend API Enhancements
-- [ ] Update routes.ts to support new data endpoints:
-  - Add endpoint for fetching extended forecast data
-  - Add endpoint for validating system performance (actual vs expected)
-  - Add endpoint for historical comparison data
-  - Add support for different forecast horizons
-  - Implement data caching for Solcast API calls
+- [x] Update routes.ts to support new data endpoints:
+  - [x] Add endpoint for fetching forecast data (/api/solcast/forecast)
+  - [x] Add endpoint for PV power forecast (/api/solcast/pv-forecast)
+  - [x] Add endpoint for live radiation data (/api/solcast/live-radiation)
+  - [x] Add endpoint for live PV power data (/api/solcast/live-pv)
+  - [ ] Add endpoint for validating system performance (actual vs expected)
+  - [ ] Add endpoint for historical comparison data
+  - [ ] Implement data caching for Solcast API calls
 
 ### Stage 4: Frontend Enhancements - Core Features
 - [ ] Enhance "Current Metrics" with Solcast live data
@@ -65,4 +67,9 @@ This document outlines the implementation strategy for enhancing the Emporium Po
 
 ## Current Progress
 
-Starting implementation with Stage 1: Schema Enhancements.
+We have completed:
+- Stage 1: Schema Enhancements ✓
+- Stage 2: SolcastService Enhancement ✓
+- Stage 3: Backend API Enhancements (Basic endpoints) ✓
+
+Moving on to Stage 4: Frontend Enhancements - Core Features
