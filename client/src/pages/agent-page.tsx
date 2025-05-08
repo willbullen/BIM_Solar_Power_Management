@@ -161,10 +161,7 @@ function ChatInterface() {
   // Send a message
   const sendMessage = useMutation({
     mutationFn: (content: string) => 
-      apiRequest(`/api/agent/conversations/${activeConversation}/messages`, {
-        method: 'POST',
-        body: JSON.stringify({ content })
-      }),
+      apiRequest('POST', `/api/agent/conversations/${activeConversation}/messages`, { content }),
     onSuccess: () => {
       setInput("");
       refetchMessages();
@@ -175,13 +172,23 @@ function ChatInterface() {
         scrollToBottom();
       }, 1000);
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("Send message error:", error);
       setIsSubmitting(false);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to send message."
-      });
+      
+      if (error.message.includes("401")) {
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Your session may have expired. Please log in and try again."
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to send message: " + error.message
+        });
+      }
     }
   });
 
@@ -1002,8 +1009,78 @@ function AgentSettingsInterface() {
 }
 
 export default function AgentPage() {
-  const { user } = useAuth();
+  const { user, loginMutation } = useAuth();
   const [activeTab, setActiveTab] = useState("chat");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!username || !password) return;
+    
+    loginMutation.mutate({ username, password });
+  };
+  
+  // If user is not authenticated, show login form
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Bot className="h-8 w-8 text-primary" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl">AI Agent Login</CardTitle>
+            <CardDescription>
+              Sign in to access the AI Agent Architect
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input 
+                  id="username" 
+                  placeholder="admin" 
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
+                {loginMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign in'
+                )}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex justify-center border-t pt-4">
+            <p className="text-sm text-muted-foreground">
+              Use username: <span className="font-medium">admin</span> and password: <span className="font-medium">password</span>
+            </p>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
   
   return (
     <SharedLayout user={user}>
