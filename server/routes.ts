@@ -14,6 +14,7 @@ import { ZodError } from "zod";
 import { generateSyntheticData } from "./data";
 import { format } from 'date-fns';
 import { SolcastService } from './solcast-service';
+import { AIService } from './ai-service';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize the database
@@ -985,6 +986,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         message: 'Failed to fetch Solcast live PV data',
         error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // AI energy recommendations route
+  app.post('/api/ai/energy-recommendations', async (req, res) => {
+    try {
+      // Initialize AI service
+      const aiService = new AIService();
+      
+      // Validate that we have the API key available
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ 
+          error: 'OpenAI API key not configured', 
+          message: 'The AI recommendation service is not available at this time.'
+        });
+      }
+      
+      // Generate recommendations based on the data provided
+      const data = req.body;
+      const recommendations = await aiService.generateEnergyRecommendations(data);
+      
+      res.json(recommendations);
+    } catch (error) {
+      console.error('Error generating AI energy recommendations:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate recommendations',
+        message: 'An error occurred while generating energy efficiency recommendations.'
       });
     }
   });
