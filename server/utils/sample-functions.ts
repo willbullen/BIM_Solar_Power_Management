@@ -113,9 +113,6 @@ export async function registerSampleFunctions() {
       return await analyzePowerData(params, dbUtils);
     `,
     accessLevel: 'public',
-    enabled: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
     tags: ['power', 'analytics', 'statistics']
   });
   
@@ -282,9 +279,6 @@ export async function registerSampleFunctions() {
       return await correlateEnvironmentalFactors(params, dbUtils);
     `,
     accessLevel: 'user',
-    enabled: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
     tags: ['environment', 'correlation', 'analytics']
   });
   
@@ -367,13 +361,11 @@ export async function registerSampleFunctions() {
               type: 'maintenance',
               priority: 'medium',
               scheduledFor: new Date(maintenanceDate),
-              metadata: {
+              parameters: {
                 equipmentId: item.id,
                 equipmentName: item.name,
                 equipmentType: item.type
-              },
-              createdAt: new Date(),
-              updatedAt: new Date()
+              }
             });
             
             return {
@@ -390,9 +382,6 @@ export async function registerSampleFunctions() {
       return await manageEquipment(params, dbUtils);
     `,
     accessLevel: 'manager',
-    enabled: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
     tags: ['equipment', 'maintenance', 'management']
   });
   
@@ -603,9 +592,6 @@ export async function registerSampleFunctions() {
       return await systemDiagnostics(params, dbUtils);
     `,
     accessLevel: 'admin',
-    enabled: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
     tags: ['admin', 'diagnostics', 'system']
   });
 }
