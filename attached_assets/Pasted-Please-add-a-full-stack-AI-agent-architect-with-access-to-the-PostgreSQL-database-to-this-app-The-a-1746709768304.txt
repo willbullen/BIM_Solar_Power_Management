@@ -1,0 +1,53 @@
+Please add a full-stack AI agent architect with access to the PostgreSQL database to this app. The agents task is to generate and integrate all necessary code, configuration, and documentation to enable an intelligent “assistant” agent with the following capabilities:
+
+1. **Codebase Awareness & Function Binding**  
+   - Parse and index the entire Node.js back end and React front end.  
+   - Expose each existing function or API endpoint to the agent via a callable interface: e.g.,  
+     - for back end: function signatures in `controllers/` and `services/`  
+     - for front end: utility hooks, actions, or library calls  
+   - Generate a “function registry” that maps agent intents to real code calls  
+
+2. **PostgreSQL Access**  
+   - Use the existing ORM or query layer (e.g. Prisma, Sequelize, or `pg`)  
+   - Ensure the agent can run SELECT, INSERT, UPDATE, DELETE via parameterized queries  
+   - Add proper RBAC so the agent only accesses permitted tables and fields  
+
+3. **MCP Integration**  
+   - Identify and install any required MCP packages or plugins  
+   - Wire up an abstraction layer so the agent can call `await mcp.runTask(taskName, params)`  
+   - Provide examples of using at least two MCPs (e.g., for sentiment analysis, summarization)  
+
+4. **Chat Widget in React**  
+   - Scaffold a chat UI component (`<AIChatWidget />`) using existing UI library or raw HTML/CSS  
+   - Connect widget to a WebSocket or REST endpoint (`/api/ai/chat`) on the Node.js server  
+   - Demonstrate streaming responses with a typing indicator  
+
+5. **Signal Notifications & Reporting**  
+   - Install and configure a Node.js Signal client library (e.g. `signal-cli` wrapper or HTTP API)  
+   - Add utility functions:  
+     ```js
+     async function sendSignalMessage(recipientNumber, messageText) { /* … */ }
+     async function sendSignalReport(recipientNumber, reportData) { /* … */ }
+     ```  
+   - Show agent-triggered flows:  
+     - On critical event: agent calls `sendSignalMessage('+123456789', 'Alert: ...')`  
+     - On daily summary: agent composes a report and calls `sendSignalReport(...)`  
+
+6. **Security & Configuration**  
+   - Store all secrets (database URL, Signal credentials, MCP API keys) in environment variables  
+   - Use a `.env.example` file to guide setup  
+   - Add any necessary IAM roles or firewall rules  
+
+7. **Developer Documentation**  
+   - Generate a detailed `AI_AGENT.md` that explains:  
+     - How the agent’s function registry works  
+     - How to extend with new MCPs or chat intents  
+     - How to configure and run Signal notifications  
+
+Please output:
+- A detailed file tree diff showing new files and changes  
+- Code snippets for each major piece (registry, DB access, chat widget, Signal integration)  
+- Installation commands (npm/yarn) and any Replit config changes  
+- A final “Getting Started” section so a developer can run this end-to-end on Replit  
+
+Begin by analyzing the existing project structure in `/home/runner/project/`, then propose a step-by-step plan before generating code.  
