@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, real, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, real, timestamp, jsonb, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // User schema
 export const users = pgTable("users", {
@@ -181,3 +182,125 @@ export const insertMaintenanceLogSchema = createInsertSchema(maintenanceLog).omi
 
 export type InsertMaintenanceLog = z.infer<typeof insertMaintenanceLogSchema>;
 export type MaintenanceLog = typeof maintenanceLog.$inferSelect;
+
+// Issue schema for feedback and feature requests
+export const issues = pgTable("issues", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  type: text("type").notNull(), // 'bug', 'enhancement', 'feature', 'question', 'feedback'
+  status: text("status").notNull().default("open"), // 'open', 'in-progress', 'completed', 'wont-fix', 'duplicate'
+  priority: text("priority").notNull().default("medium"), // 'low', 'medium', 'high', 'critical'
+  submitterId: integer("submitter_id").notNull(), // Foreign key to users
+  assigneeId: integer("assignee_id"), // Foreign key to users (optional)
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  closedAt: timestamp("closed_at"),
+  milestone: text("milestone"), // Which version/milestone it's targeted for
+  labels: text("labels").array(), // Array of labels like 'ui', 'backend', 'solcast', etc.
+  linkedTaskId: integer("linked_task_id"), // For linking to another issue
+});
+
+export const insertIssueSchema = createInsertSchema(issues).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  closedAt: true,
+});
+
+export type InsertIssue = z.infer<typeof insertIssueSchema>;
+export type Issue = typeof issues.$inferSelect;
+
+// Issue comments schema
+export const issueComments = pgTable("issue_comments", {
+  id: serial("id").primaryKey(),
+  issueId: integer("issue_id").notNull(), // Foreign key to issues
+  userId: integer("user_id").notNull(), // Foreign key to users
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  isEdited: boolean("is_edited").default(false),
+});
+
+export const issueCommentsRelations = relations(issueComments, ({ one }) => ({
+  issue: one(issues, {
+    fields: [issueComments.issueId],
+    references: [issues.id],
+  }),
+  user: one(users, {
+    fields: [issueComments.userId],
+    references: [users.id],
+  }),
+}));
+
+export const insertIssueCommentSchema = createInsertSchema(issueComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  isEdited: true,
+});
+
+export type InsertIssueComment = z.infer<typeof insertIssueCommentSchema>;
+export type IssueComment = typeof issueComments.$inferSelect;
+
+// Todo items schema for tracking completed tasks
+export const todoItems = pgTable("todo_items", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("pending"), // 'pending', 'in-progress', 'completed'
+  category: text("category").notNull().default("general"), // 'schema', 'api', 'frontend', 'backend', 'feature', etc.
+  stage: integer("stage").notNull().default(1), // Which implementation stage (1-6)
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  assigneeId: integer("assignee_id"), // Foreign key to users (optional)
+  priority: text("priority").notNull().default("medium"), // 'low', 'medium', 'high'
+  linkedIssueId: integer("linked_issue_id"), // Foreign key to issues (optional)
+});
+
+export const todoItemsRelations = relations(todoItems, ({ one }) => ({
+  assignee: one(users, {
+    fields: [todoItems.assigneeId],
+    references: [users.id],
+  }),
+  linkedIssue: one(issues, {
+    fields: [todoItems.linkedIssueId],
+    references: [issues.id],
+  }),
+}));
+
+export const insertTodoItemSchema = createInsertSchema(todoItems).omit({
+  id: true,
+  completedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertTodoItem = z.infer<typeof insertTodoItemSchema>;
+export type TodoItem = typeof todoItems.$inferSelect;
+
+// Now that all tables are defined, we can establish the relations
+export const usersRelations = relations(users, ({ many }) => ({
+  submittedIssues: many(issues),
+  assignedIssues: many(issues, { relationName: "assignee" }),
+  comments: many(issueComments),
+}));
+
+export const issuesRelations = relations(issues, ({ one, many }) => ({
+  submitter: one(users, {
+    fields: [issues.submitterId],
+    references: [users.id],
+  }),
+  assignee: one(users, {
+    fields: [issues.assigneeId],
+    references: [users.id],
+    relationName: "assignee",
+  }),
+  linkedTask: one(issues, {
+    fields: [issues.linkedTaskId],
+    references: [issues.id],
+    relationName: "linked_task",
+  }),
+  comments: many(issueComments),
+}));
