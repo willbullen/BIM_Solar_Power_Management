@@ -33,6 +33,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  TooltipProvider
 } from "@/components/ui/tooltip";
 
 // Message types
@@ -968,175 +969,182 @@ export default function AgentPage() {
   
   return (
     <SharedLayout user={user}>
-      <div className="container mx-auto py-8 space-y-8">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                <Bot className="h-6 w-6 text-white" />
-              </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                AI Agent Architect
-              </h1>
-            </div>
-            <p className="text-muted-foreground pl-1">
-              Your intelligent assistant for energy monitoring and optimization
-            </p>
-          </div>
-          <div className="hidden md:flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 px-4 py-2 rounded-lg">
-              <Sparkles className="h-5 w-5 text-amber-500" />
-              <span className="text-sm font-medium">Powered by AI</span>
-            </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Database className="h-4 w-4 text-blue-500" />
-                  <span>Database Access</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="w-80">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    This AI agent has secure access to your energy and environmental data for providing insights and recommendations.
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 pt-1">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <CheckCircle className="h-3 w-3 text-green-500" />
-                      <span>Power Monitoring</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <CheckCircle className="h-3 w-3 text-green-500" />
-                      <span>Environmental Data</span>
-                    </div>
-                  </div>
+      <div className="container mx-auto py-8 space-y-6">
+        <TooltipProvider>
+          {/* Header */}
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                  <Bot className="h-6 w-6 text-white" />
                 </div>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-        
-        <div className="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/10 dark:to-indigo-950/10 rounded-xl p-1 shadow-sm">
-          <Tabs 
-            defaultValue="chat" 
-            className="w-full"
-            onValueChange={(value) => setActiveTab(value)}
-          >
-            <div className="flex justify-between items-center px-4 py-4">
-              <TabsList className="grid w-full max-w-md grid-cols-3 p-1 bg-white dark:bg-slate-900 rounded-lg shadow-sm">
-                <TabsTrigger 
-                  value="chat" 
-                  className="flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  <span className="hidden sm:inline">Chat</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="tasks" 
-                  className="flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white"
-                >
-                  <ListChecks className="h-4 w-4" />
-                  <span className="hidden sm:inline">Tasks</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="settings" 
-                  className="flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white"
-                >
-                  <Settings className="h-4 w-4" />
-                  <span className="hidden sm:inline">Settings</span>
-                </TabsTrigger>
-              </TabsList>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  AI Agent Architect
+                </h1>
+              </div>
+              <p className="text-muted-foreground pl-1">
+                Your intelligent assistant for energy monitoring and optimization
+              </p>
+            </div>
+            
+            <div className="hidden md:flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 px-4 py-2 rounded-lg">
+                <Sparkles className="h-5 w-5 text-amber-500" />
+                <span className="text-sm font-medium">Powered by AI</span>
+              </div>
               
-              <div className="md:hidden flex items-center gap-2">
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <InfoIcon className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  </HoverCardTrigger>
-                  <HoverCardContent className="w-80">
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-semibold">AI Agent Capabilities</h4>
-                      <p className="text-sm text-muted-foreground">
-                        This AI agent has advanced capabilities for energy data analysis, forecasting, and recommendation generation.
-                      </p>
-                      <div className="grid grid-cols-2 gap-2 pt-2">
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                          <span>Power Data Analysis</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                          <span>Environmental Insights</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                          <span>Equipment Monitoring</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                          <span>Forecasting</span>
-                        </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Database className="h-4 w-4 text-blue-500" />
+                    <span>Database Access</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="w-80">
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      This AI agent has secure access to your energy and environmental data for providing insights and recommendations.
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <CheckCircle className="h-3 w-3 text-green-500" />
+                        <span>Power Monitoring</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <CheckCircle className="h-3 w-3 text-green-500" />
+                        <span>Environmental Data</span>
                       </div>
                     </div>
-                  </HoverCardContent>
-                </HoverCard>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+
+          {/* Tabs Section */}
+          <div className="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/10 dark:to-indigo-950/10 rounded-xl p-1 shadow-sm mb-6">
+            <Tabs 
+              defaultValue="chat" 
+              className="w-full"
+              onValueChange={(value) => setActiveTab(value)}
+            >
+              <div className="flex justify-between items-center px-4 py-4">
+                <TabsList className="grid w-full max-w-md grid-cols-3 p-1 bg-white dark:bg-slate-900 rounded-lg shadow-sm">
+                  <TabsTrigger 
+                    value="chat" 
+                    className="flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    <span className="hidden sm:inline">Chat</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="tasks" 
+                    className="flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white"
+                  >
+                    <ListChecks className="h-4 w-4" />
+                    <span className="hidden sm:inline">Tasks</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="settings" 
+                    className="flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden sm:inline">Settings</span>
+                  </TabsTrigger>
+                </TabsList>
+                
+                <div className="md:hidden flex items-center gap-2">
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <InfoIcon className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-80">
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold">AI Agent Capabilities</h4>
+                        <p className="text-sm text-muted-foreground">
+                          This AI agent has advanced capabilities for energy data analysis, forecasting, and recommendation generation.
+                        </p>
+                        <div className="grid grid-cols-2 gap-2 pt-2">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <CheckCircle className="h-3 w-3 text-green-500" />
+                            <span>Power Data Analysis</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <CheckCircle className="h-3 w-3 text-green-500" />
+                            <span>Environmental Insights</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <CheckCircle className="h-3 w-3 text-green-500" />
+                            <span>Equipment Monitoring</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <CheckCircle className="h-3 w-3 text-green-500" />
+                            <span>Forecasting</span>
+                          </div>
+                        </div>
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
+                </div>
+              </div>
+              
+              <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm">
+                <TabsContent value="chat" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+                  <ChatInterface />
+                </TabsContent>
+                
+                <TabsContent value="tasks" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+                  <TasksInterface />
+                </TabsContent>
+                
+                <TabsContent value="settings" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+                  <AgentSettingsInterface />
+                </TabsContent>
+              </div>
+            </Tabs>
+          </div>
+          
+          {/* Footer */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                {activeTab === "chat" && (
+                  <>
+                    <MessageSquare className="h-4 w-4 text-blue-500" />
+                    <span>Chat with AI to ask questions about your energy data</span>
+                  </>
+                )}
+                {activeTab === "tasks" && (
+                  <>
+                    <ListChecks className="h-4 w-4 text-blue-500" />
+                    <span>Create and manage automated AI tasks for deeper analysis</span>
+                  </>
+                )}
+                {activeTab === "settings" && (
+                  <>
+                    <Settings className="h-4 w-4 text-blue-500" />
+                    <span>Configure AI model parameters and capabilities</span>
+                  </>
+                )}
               </div>
             </div>
             
-            <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm">
-              <TabsContent value="chat" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <ChatInterface />
-              </TabsContent>
-              
-              <TabsContent value="tasks" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <TasksInterface />
-              </TabsContent>
-              
-              <TabsContent value="settings" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <AgentSettingsInterface />
-              </TabsContent>
-            </div>
-          </Tabs>
-        </div>
-        
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="text-sm text-muted-foreground flex items-center gap-2">
-              {activeTab === "chat" && (
-                <>
-                  <MessageSquare className="h-4 w-4 text-blue-500" />
-                  <span>Chat with AI to ask questions about your energy data</span>
-                </>
-              )}
-              {activeTab === "tasks" && (
-                <>
-                  <ListChecks className="h-4 w-4 text-blue-500" />
-                  <span>Create and manage automated AI tasks for deeper analysis</span>
-                </>
-              )}
-              {activeTab === "settings" && (
-                <>
-                  <Settings className="h-4 w-4 text-blue-500" />
-                  <span>Configure AI model parameters and capabilities</span>
-                </>
-              )}
+            <div className="flex items-center gap-3">
+              <Separator orientation="vertical" className="h-6" />
+              <a 
+                href="https://docs.openai.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-1"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                <span>Learn more</span>
+              </a>
             </div>
           </div>
-          
-          <div className="flex items-center gap-3">
-            <Separator orientation="vertical" className="h-6" />
-            <a 
-              href="https://docs.openai.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-1"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              <span>Learn more</span>
-            </a>
-          </div>
-        </div>
+        </TooltipProvider>
       </div>
     </SharedLayout>
   );
