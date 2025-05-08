@@ -84,7 +84,7 @@ export class AgentService {
   }
 
   /**
-   * Generate a response from the agent
+   * Generate a response from the agent with function calling capabilities
    */
   async generateResponse(conversationId: number, maxTokens: number = 1000): Promise<schema.AgentMessage> {
     // Get the conversation history
@@ -96,39 +96,133 @@ export class AgentService {
     // Get conversation context (e.g., current data being analyzed)
     const conversation = await db.query.agentConversations.findFirst({
       where: (fields, { eq }) => eq(fields.id, conversationId),
+      with: {
+        user: true
+      }
     });
 
     if (!conversation) {
       throw new Error(`Conversation with ID ${conversationId} not found`);
     }
 
+    // Get the user's role for function access control
+    const userRole = conversation.user?.role || 'public';
+    const accessLevel = userRole === 'Admin' ? 'admin' : 
+                     userRole === 'Operator' ? 'restricted' : 'public';
+    
+    // Get available functions for this user's access level
+    const availableFunctions = await this.functionRegistry.getAvailableFunctions(accessLevel);
+    
+    // Format functions for OpenAI function calling
+    const functionDefinitions = availableFunctions.map(func => ({
+      name: func.name,
+      description: func.description,
+      parameters: func.parameters
+    }));
+
     // Prepare the messages for the OpenAI API
     const openaiMessages = messages.map(msg => ({
       role: msg.role as any,
       content: msg.content,
+      // Include any function calls or results from previous messages
+      function_call: msg.functionCall ? { name: msg.functionCall.name, arguments: JSON.stringify(msg.functionCall.arguments) } : undefined,
     }));
 
     try {
-      // Call the OpenAI API
+      // Model settings from agent configuration
+      const modelSettings = await this.getModelSettings();
+      
+      // Call the OpenAI API with function calling enabled
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4",
+        model: modelSettings.model,
         messages: openaiMessages,
         max_tokens: maxTokens,
+        temperature: modelSettings.temperature,
+        functions: functionDefinitions.length > 0 ? functionDefinitions : undefined,
+        function_call: functionDefinitions.length > 0 ? 'auto' : undefined,
       });
 
-      const responseContent = response.choices[0]?.message?.content || "I apologize, but I couldn't generate a response at this time.";
+      const responseMessage = response.choices[0]?.message;
+      const functionCall = responseMessage?.function_call;
+      
+      // If the model wants to call a function
+      if (functionCall && functionCall.name) {
+        console.log(`AI attempting to call function: ${functionCall.name}`);
+        
+        try {
+          // Parse the function arguments from string to object
+          const functionArgs = JSON.parse(functionCall.arguments || '{}');
+          
+          // Execute the function
+          const functionResult = await this.executeFunction(
+            functionCall.name,
+            functionArgs,
+            userRole
+          );
+          
+          // Save both the function call and result to the database
+          const [assistantMessage] = await db.insert(schema.agentMessages)
+            .values({
+              conversationId,
+              role: "assistant",
+              content: responseMessage?.content || "",
+              functionCall: {
+                name: functionCall.name,
+                arguments: functionArgs
+              },
+              functionResponse: functionResult,
+              metadata: { 
+                completionId: response.id,
+                functionExecution: true
+              }
+            })
+            .returning();
+          
+          // Automatically generate a follow-up response that incorporates the function result
+          await this.generateFunctionFollowupResponse(conversationId, assistantMessage);
+          
+          return assistantMessage;
+        } catch (funcError) {
+          // Handle function execution error
+          console.error(`Error executing function ${functionCall.name}:`, funcError);
+          
+          // Save the function error to the database
+          const [errorMessage] = await db.insert(schema.agentMessages)
+            .values({
+              conversationId,
+              role: "assistant",
+              content: responseMessage?.content || "I tried to perform an operation but encountered an error.",
+              functionCall: {
+                name: functionCall.name,
+                arguments: JSON.parse(functionCall.arguments || '{}')
+              },
+              functionResponse: { error: String(funcError) },
+              metadata: { 
+                completionId: response.id,
+                functionExecutionError: true,
+                error: String(funcError)
+              }
+            })
+            .returning();
+          
+          return errorMessage;
+        }
+      } else {
+        // Normal message without function call
+        const responseContent = responseMessage?.content || "I apologize, but I couldn't generate a response at this time.";
 
-      // Save the response to the database
-      const [assistantMessage] = await db.insert(schema.agentMessages)
-        .values({
-          conversationId,
-          role: "assistant",
-          content: responseContent,
-          metadata: { completionId: response.id }
-        })
-        .returning();
+        // Save the response to the database
+        const [assistantMessage] = await db.insert(schema.agentMessages)
+          .values({
+            conversationId,
+            role: "assistant",
+            content: responseContent,
+            metadata: { completionId: response.id }
+          })
+          .returning();
 
-      return assistantMessage;
+        return assistantMessage;
+      }
     } catch (error) {
       console.error("Error generating agent response:", error);
       
@@ -144,6 +238,107 @@ export class AgentService {
 
       return errorMessage;
     }
+  }
+  
+  /**
+   * Generate a follow-up response after a function call
+   */
+  private async generateFunctionFollowupResponse(
+    conversationId: number, 
+    functionCallMessage: schema.AgentMessage
+  ): Promise<schema.AgentMessage | null> {
+    try {
+      // Get the updated conversation history including the function call and result
+      const messages = await db.query.agentMessages.findMany({
+        where: (fields, { eq }) => eq(fields.conversationId, conversationId),
+        orderBy: (fields, { asc }) => [asc(fields.timestamp)],
+      });
+      
+      // Format messages for OpenAI API
+      const openaiMessages = messages.map(msg => {
+        const baseMessage: any = {
+          role: msg.role as any,
+          content: msg.content,
+        };
+        
+        // Add function call information if present
+        if (msg.functionCall) {
+          baseMessage.function_call = {
+            name: msg.functionCall.name,
+            arguments: JSON.stringify(msg.functionCall.arguments)
+          };
+        }
+        
+        // For the assistant's message with a function call, add the function's result
+        if (msg.id === functionCallMessage.id && msg.functionResponse) {
+          return [
+            baseMessage,
+            {
+              role: "function",
+              name: msg.functionCall?.name,
+              content: JSON.stringify(msg.functionResponse)
+            }
+          ];
+        }
+        
+        return baseMessage;
+      });
+      
+      // Flatten the array (since function results create nested arrays)
+      const flattenedMessages = openaiMessages.flat();
+      
+      // Get model settings
+      const modelSettings = await this.getModelSettings();
+      
+      // Generate a follow-up response that incorporates the function result
+      const response = await this.openai.chat.completions.create({
+        model: modelSettings.model,
+        messages: flattenedMessages,
+        temperature: modelSettings.temperature,
+      });
+      
+      const responseContent = response.choices[0]?.message?.content || 
+        "I've processed the data but couldn't generate a meaningful interpretation.";
+      
+      // Save the follow-up response
+      const [followupMessage] = await db.insert(schema.agentMessages)
+        .values({
+          conversationId,
+          role: "assistant",
+          content: responseContent,
+          metadata: { 
+            completionId: response.id,
+            isFollowup: true,
+            functionResultProcessing: true
+          }
+        })
+        .returning();
+      
+      return followupMessage;
+    } catch (error) {
+      console.error("Error generating function follow-up response:", error);
+      return null;
+    }
+  }
+  
+  /**
+   * Get model settings from agent configuration
+   */
+  private async getModelSettings(): Promise<{ model: string, temperature: number }> {
+    // Get model settings from the database
+    const modelSetting = await db.query.agentSettings.findFirst({
+      where: (fields, { eq }) => eq(fields.name, "agent_model")
+    });
+    
+    const temperatureSetting = await db.query.agentSettings.findFirst({
+      where: (fields, { eq }) => eq(fields.name, "agent_temperature")
+    });
+    
+    // Default settings if not found in the database
+    return {
+      model: modelSetting?.value || "gpt-4",
+      temperature: temperatureSetting?.value ? parseFloat(temperatureSetting.value) : 0.7
+    };
   }
 
   /**
