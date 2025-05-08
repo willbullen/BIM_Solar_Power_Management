@@ -731,6 +731,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // === Solcast API Routes ===
+  
+  // Create a Solcast service instance
+  const solcastService = new SolcastService(
+    process.env.SOLCAST_API_KEY || 'demo-key',
+    settings => settings // Function to get settings when needed
+  );
+  
+  // GET /api/solcast/forecast - Get Solcast forecast data
+  app.get('/api/solcast/forecast', async (req, res) => {
+    try {
+      const hours = req.query.hours ? parseInt(req.query.hours as string) : 336;
+      const period = req.query.period as string || 'PT30M';
+      
+      const data = await solcastService.getForecastData(hours, period);
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching Solcast forecast data:', error);
+      res.status(500).json({ 
+        message: 'Failed to fetch Solcast forecast data',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+  
+  // GET /api/solcast/pv-forecast - Get Solcast PV power forecast data
+  app.get('/api/solcast/pv-forecast', async (req, res) => {
+    try {
+      const hours = req.query.hours ? parseInt(req.query.hours as string) : 336;
+      const period = req.query.period as string || 'PT30M';
+      
+      const data = await solcastService.getPvForecastData(hours, period);
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching Solcast PV forecast data:', error);
+      res.status(500).json({ 
+        message: 'Failed to fetch Solcast PV forecast data',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+  
+  // GET /api/solcast/live-radiation - Get Solcast live radiation and weather data
+  app.get('/api/solcast/live-radiation', async (req, res) => {
+    try {
+      const data = await solcastService.getLiveRadiationData();
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching Solcast live radiation data:', error);
+      res.status(500).json({ 
+        message: 'Failed to fetch Solcast live radiation data',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+  
+  // GET /api/solcast/live-pv - Get Solcast live PV power data
+  app.get('/api/solcast/live-pv', async (req, res) => {
+    try {
+      const data = await solcastService.getLivePvData();
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching Solcast live PV data:', error);
+      res.status(500).json({ 
+        message: 'Failed to fetch Solcast live PV data',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   return httpServer;
 }
 
