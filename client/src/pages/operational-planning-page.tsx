@@ -400,24 +400,18 @@ export default function OperationalPlanningPage() {
         
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <TabsList className="grid w-auto grid-cols-2">
-              <TabsTrigger 
-                value="day" 
-                onClick={() => setSelectedView('day')}
-                className={selectedView === 'day' ? "bg-primary text-primary-foreground" : ""}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                Today
-              </TabsTrigger>
-              <TabsTrigger 
-                value="week" 
-                onClick={() => setSelectedView('week')}
-                className={selectedView === 'week' ? "bg-primary text-primary-foreground" : ""}
-              >
-                <CalendarDays className="mr-2 h-4 w-4" />
-                Week
-              </TabsTrigger>
-            </TabsList>
+            <Tabs defaultValue={selectedView} onValueChange={(value) => setSelectedView(value as 'day' | 'week')}>
+              <TabsList className="grid w-auto grid-cols-2">
+                <TabsTrigger value="day">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  Today
+                </TabsTrigger>
+                <TabsTrigger value="week">
+                  <CalendarDays className="mr-2 h-4 w-4" />
+                  Week
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
             
             <div className="flex items-center space-x-2">
               <Switch
