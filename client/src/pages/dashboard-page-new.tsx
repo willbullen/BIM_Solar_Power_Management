@@ -7,7 +7,7 @@ import { InsightsCard } from "@/components/insights-card";
 import { SolcastLiveCard } from "@/components/solcast-live-card";
 import { AIEnergyRecommendations } from "@/components/ai-energy-recommendations";
 import { EnvironmentalStats } from "@/components/environmental-chart";
-import { Loader2, TrendingUp, ArrowRight, BarChart3, Zap, Sun, CloudSun } from "lucide-react";
+import { Loader2, TrendingUp, ArrowRight, BarChart3, Zap, Sun, CloudSun, Thermometer } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -230,105 +230,164 @@ function DashboardPage() {
           
           <TabsContent value="power" className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle>Detailed Power Analysis</CardTitle>
-                  <CardDescription>
+              <Card className="md:col-span-2 bg-card rounded-lg border border-border">
+                <CardHeader className="p-4 border-b border-border">
+                  <div className="flex items-center space-x-1">
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base font-medium">Detailed Power Analysis</CardTitle>
+                  </div>
+                  <CardDescription className="text-xs">
                     Comprehensive view of power trends and patterns
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="h-[400px]">
-                  <PowerChart 
-                    data={historicalPowerData && historicalPowerData.length > 0 ? historicalPowerData.slice(-96) : []} 
-                    showProcessLoad={true}
-                    showLighting={true}
-                    showHvac={true}
-                    showRefrigeration={true}
-                  />
+                <CardContent className="p-4 min-h-[400px]">
+                  <div className="w-full h-[360px]">
+                    <PowerChart 
+                      data={historicalPowerData && historicalPowerData.length > 0 ? historicalPowerData.slice(-96) : []} 
+                      showProcessLoad={true}
+                      showLighting={true}
+                      showHvac={true}
+                      showRefrigeration={true}
+                    />
+                  </div>
                 </CardContent>
               </Card>
             </div>
             
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Process Load</CardTitle>
-                  <CardDescription>Manufacturing operations</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {latestPower ? `${latestPower.processLoad.toFixed(2)} kW` : '0 kW'}
+              <Card className="bg-card rounded-lg border border-border">
+                <CardHeader className="p-4 border-b border-border">
+                  <div className="flex items-center space-x-1">
+                    <Zap className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base font-medium">Process Load</CardTitle>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {latestPower && previousPower ? (
-                      <>
-                        {latestPower.processLoad > previousPower.processLoad ? 'Increased' : 'Decreased'} by{' '}
-                        {Math.abs(latestPower.processLoad - previousPower.processLoad).toFixed(2)} kW
-                      </>
-                    ) : 'No trend data available'}
-                  </p>
+                  <CardDescription className="text-xs">Manufacturing operations</CardDescription>
+                </CardHeader>
+                <CardContent className="p-4">
+                  {latestPower ? (
+                    <>
+                      <div className="text-2xl font-bold mb-1">
+                        {latestPower.processLoad.toFixed(2)} kW
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {latestPower && previousPower ? (
+                          <>
+                            {latestPower.processLoad > previousPower.processLoad ? 'Increased' : 'Decreased'} by{' '}
+                            {Math.abs(latestPower.processLoad - previousPower.processLoad).toFixed(2)} kW
+                          </>
+                        ) : 'No trend data available'}
+                      </p>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-6 space-y-2">
+                      <div className="rounded-full p-3 bg-muted/10">
+                        <Zap className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">No process load data available</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle>HVAC Systems</CardTitle>
-                  <CardDescription>Heating and cooling</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {latestPower ? `${latestPower.hvacLoad.toFixed(2)} kW` : '0 kW'}
+              <Card className="bg-card rounded-lg border border-border">
+                <CardHeader className="p-4 border-b border-border">
+                  <div className="flex items-center space-x-1">
+                    <Thermometer className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base font-medium">HVAC Systems</CardTitle>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {latestPower && previousPower ? (
-                      <>
-                        {latestPower.hvacLoad > previousPower.hvacLoad ? 'Increased' : 'Decreased'} by{' '}
-                        {Math.abs(latestPower.hvacLoad - previousPower.hvacLoad).toFixed(2)} kW
-                      </>
-                    ) : 'No trend data available'}
-                  </p>
+                  <CardDescription className="text-xs">Heating and cooling</CardDescription>
+                </CardHeader>
+                <CardContent className="p-4">
+                  {latestPower ? (
+                    <>
+                      <div className="text-2xl font-bold mb-1">
+                        {latestPower.hvacLoad.toFixed(2)} kW
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {latestPower && previousPower ? (
+                          <>
+                            {latestPower.hvacLoad > previousPower.hvacLoad ? 'Increased' : 'Decreased'} by{' '}
+                            {Math.abs(latestPower.hvacLoad - previousPower.hvacLoad).toFixed(2)} kW
+                          </>
+                        ) : 'No trend data available'}
+                      </p>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-6 space-y-2">
+                      <div className="rounded-full p-3 bg-muted/10">
+                        <Thermometer className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">No HVAC data available</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle>Refrigeration</CardTitle>
-                  <CardDescription>Cold storage systems</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {latestPower ? `${latestPower.refrigerationLoad.toFixed(2)} kW` : '0 kW'}
+              <Card className="bg-card rounded-lg border border-border">
+                <CardHeader className="p-4 border-b border-border">
+                  <div className="flex items-center space-x-1">
+                    <CloudSun className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base font-medium">Refrigeration</CardTitle>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {latestPower && previousPower ? (
-                      <>
-                        {latestPower.refrigerationLoad > previousPower.refrigerationLoad ? 'Increased' : 'Decreased'} by{' '}
-                        {Math.abs(latestPower.refrigerationLoad - previousPower.refrigerationLoad).toFixed(2)} kW
-                      </>
-                    ) : 'No trend data available'}
-                  </p>
+                  <CardDescription className="text-xs">Cold storage systems</CardDescription>
+                </CardHeader>
+                <CardContent className="p-4">
+                  {latestPower ? (
+                    <>
+                      <div className="text-2xl font-bold mb-1">
+                        {latestPower.refrigerationLoad.toFixed(2)} kW
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {latestPower && previousPower ? (
+                          <>
+                            {latestPower.refrigerationLoad > previousPower.refrigerationLoad ? 'Increased' : 'Decreased'} by{' '}
+                            {Math.abs(latestPower.refrigerationLoad - previousPower.refrigerationLoad).toFixed(2)} kW
+                          </>
+                        ) : 'No trend data available'}
+                      </p>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-6 space-y-2">
+                      <div className="rounded-full p-3 bg-muted/10">
+                        <CloudSun className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">No refrigeration data available</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
           
           <TabsContent value="environment" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Environmental Conditions & Solar Production</CardTitle>
-                <CardDescription>
+            <Card className="bg-card rounded-lg border border-border">
+              <CardHeader className="p-4 border-b border-border">
+                <div className="flex items-center space-x-1">
+                  <Sun className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-base font-medium">Environmental Conditions & Solar Production</CardTitle>
+                </div>
+                <CardDescription className="text-xs">
                   Weather metrics and their impact on solar generation
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div>
-                    <EnvironmentalStats environmentalData={environmentalData ? [environmentalData] : []} />
+              <CardContent className="p-4">
+                {environmentalData ? (
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div>
+                      <EnvironmentalStats environmentalData={environmentalData ? [environmentalData] : []} />
+                    </div>
+                    <div>
+                      <SolcastLiveCard />
+                    </div>
                   </div>
-                  <div>
-                    <SolcastLiveCard />
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-6 space-y-2">
+                    <div className="rounded-full p-3 bg-muted/10">
+                      <Sun className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">No environmental data available</p>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
