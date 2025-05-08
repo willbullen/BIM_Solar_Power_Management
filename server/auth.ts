@@ -16,13 +16,14 @@ declare global {
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "emporium-power-dashboard-secret",
-    resave: false,
-    saveUninitialized: false,
+    resave: true,
+    saveUninitialized: true,
     store: storage.sessionStore,
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: 'lax',
-      secure: false // Set to false for Replit development
+      sameSite: 'none',
+      secure: process.env.NODE_ENV === 'production', // Only secure in production
+      httpOnly: true
     }
   };
 

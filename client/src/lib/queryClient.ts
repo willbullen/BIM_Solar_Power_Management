@@ -13,29 +13,15 @@ function getBaseUrl() {
   return window.location.origin;
 }
 
-// Handle both 1-arg and 3-arg formats:
-// apiRequest(url) - for GET requests
-// apiRequest(method, url, data) - for other methods
+// New apiRequest format with explicit method, url, and data parameters
 export async function apiRequest(
-  methodOrUrl: string,
-  urlOrData?: string | unknown,
+  method: string,
+  url: string,
   data?: unknown
 ): Promise<any> {
-  let method: string;
-  let url: string;
-  let requestData: unknown | undefined;
-  
-  // Determine which form was used
-  if (arguments.length === 1 || (arguments.length > 1 && typeof urlOrData !== 'string')) {
-    // Called as apiRequest(url) or apiRequest(url, data)
-    method = 'GET';
-    url = methodOrUrl;
-    requestData = urlOrData;
-  } else {
-    // Called as apiRequest(method, url, data)
-    method = methodOrUrl;
-    url = urlOrData as string;
-    requestData = data;
+  // Ensure we have valid values
+  if (!method || !url) {
+    throw new Error('Method and URL are required for API requests');
   }
   
   // Ensure URL starts with a slash
@@ -45,16 +31,20 @@ export async function apiRequest(
   // Add some logging to help debug the API calls
   console.log(`Making API request: ${method} ${fullUrl}`);
   
-  // Only include body for non-GET requests
+  // Setup request options
   const options: RequestInit = {
     method,
-    headers: requestData && method !== 'GET' ? { "Content-Type": "application/json" } : {},
+    headers: {
+      ...(data && method !== 'GET' ? { "Content-Type": "application/json" } : {}),
+      'Accept': 'application/json',
+    },
     credentials: "include",
+    mode: "cors",
   };
   
   // Only add body for non-GET requests
-  if (requestData && method !== 'GET') {
-    options.body = JSON.stringify(requestData);
+  if (data && method !== 'GET') {
+    options.body = JSON.stringify(data);
   }
   
   const res = await fetch(fullUrl, options);
@@ -88,6 +78,10 @@ export const getQueryFn: <T>(options: {
     
     const res = await fetch(fullUrl, {
       credentials: "include",
+      mode: "cors",
+      headers: {
+        'Accept': 'application/json',
+      },
     });
     
     console.log(`Query response status: ${res.status} ${res.statusText}`);
