@@ -3,6 +3,9 @@ import { ChatOpenAI } from "@langchain/openai";
 import { db } from "./db";
 import * as schema from "@shared/schema";
 import { AIService } from "./ai-service";
+import { DbUtils } from "./utils/db-utils";
+import { FunctionRegistry } from "./utils/function-registry";
+import { eq, and, or, asc, desc, sql } from "drizzle-orm";
 
 // Define the core agent capabilities and functions
 export class AgentService {
@@ -82,7 +85,12 @@ export class AgentService {
   /**
    * Generate a response from the agent
    */
-  async generateResponse(conversationId: number, maxTokens: number = 1000): Promise<schema.AgentMessage> {
+  async generateResponse(
+    conversationId: number, 
+    userId: number,
+    userRole: string,
+    maxTokens: number = 1000
+  ): Promise<schema.AgentMessage> {
     // Get the conversation history
     const messages = await db.query.agentMessages.findMany({
       where: (fields, { eq }) => eq(fields.conversationId, conversationId),
@@ -104,27 +112,109 @@ export class AgentService {
       content: msg.content,
     }));
 
+    // Get available functions based on user role
+    const availableFunctions = await this.getAvailableFunctions(userRole);
+    
+    // Create function definitions for OpenAI in the expected format
+    const functions = availableFunctions.map(func => ({
+      name: func.name,
+      description: func.description,
+      parameters: func.parameters
+    }));
+
     try {
-      // Call the OpenAI API
+      // Call the OpenAI API with function calling capability
       const response = await this.openai.chat.completions.create({
         model: "gpt-4",
         messages: openaiMessages,
         max_tokens: maxTokens,
+        functions: functions.length > 0 ? functions : undefined,
+        function_call: functions.length > 0 ? "auto" : undefined,
       });
 
-      const responseContent = response.choices[0]?.message?.content || "I apologize, but I couldn't generate a response at this time.";
+      const assistantResponse = response.choices[0]?.message;
+      
+      // Check if the model wants to call a function
+      if (assistantResponse?.function_call) {
+        const functionName = assistantResponse.function_call.name;
+        let functionArgs = {};
+        
+        try {
+          functionArgs = JSON.parse(assistantResponse.function_call.arguments);
+        } catch (e) {
+          console.error("Failed to parse function arguments:", e);
+        }
+        
+        // Save the function call to the database
+        const [functionCallMessage] = await db.insert(schema.agentMessages)
+          .values({
+            conversationId,
+            role: "assistant",
+            content: assistantResponse.content || "",
+            functionCall: {
+              name: functionName,
+              arguments: functionArgs
+            },
+            metadata: { completionId: response.id }
+          })
+          .returning();
+        
+        // Execute the function
+        try {
+          const functionResult = await FunctionRegistry.executeFunction(
+            functionName,
+            functionArgs,
+            { userId, userRole }
+          );
+          
+          // Save the function result
+          await db.update(schema.agentMessages)
+            .set({
+              functionResult: functionResult
+            })
+            .where(eq(schema.agentMessages.id, functionCallMessage.id));
+          
+          // Add the function result as a new message
+          await db.insert(schema.agentMessages).values({
+            conversationId,
+            role: "function",
+            content: JSON.stringify(functionResult),
+            metadata: { 
+              functionName,
+              executedAt: new Date()
+            }
+          });
+          
+          return functionCallMessage;
+        } catch (funcError) {
+          console.error(`Function execution error (${functionName}):`, funcError);
+          
+          // Update the message with the error
+          await db.update(schema.agentMessages)
+            .set({
+              functionResult: { error: String(funcError) }
+            })
+            .where(eq(schema.agentMessages.id, functionCallMessage.id));
+          
+          return functionCallMessage;
+        }
+      } else {
+        // Regular text response
+        const responseContent = assistantResponse?.content || 
+          "I apologize, but I couldn't generate a response at this time.";
 
-      // Save the response to the database
-      const [assistantMessage] = await db.insert(schema.agentMessages)
-        .values({
-          conversationId,
-          role: "assistant",
-          content: responseContent,
-          metadata: { completionId: response.id }
-        })
-        .returning();
+        // Save the response to the database
+        const [assistantMessage] = await db.insert(schema.agentMessages)
+          .values({
+            conversationId,
+            role: "assistant",
+            content: responseContent,
+            metadata: { completionId: response.id }
+          })
+          .returning();
 
-      return assistantMessage;
+        return assistantMessage;
+      }
     } catch (error) {
       console.error("Error generating agent response:", error);
       
@@ -145,27 +235,18 @@ export class AgentService {
   /**
    * Execute an agent function and store the result
    */
-  async executeFunction(name: string, parameters: any): Promise<any> {
+  async executeFunction(
+    name: string, 
+    parameters: any, 
+    userId: number, 
+    userRole: string
+  ): Promise<any> {
     try {
-      // Get the function definition from the database
-      const functionDef = await db.query.agentFunctions.findFirst({
-        where: (fields, { eq, and }) => and(
-          eq(fields.name, name),
-          eq(fields.enabled, true)
-        )
-      });
-
-      if (!functionDef) {
-        throw new Error(`Function ${name} not found or not enabled`);
-      }
-
-      // Execute the function (this is a security risk in production - function code should be validated)
-      // In a real-world scenario, use a map of predefined functions instead of eval
-      const funcCode = functionDef.functionCode;
-      const func = new Function('params', 'db', 'schema', 'aiService', funcCode);
-      
-      // Pass the database and schema to the function for database operations
-      return await func(parameters, db, schema, this.aiService);
+      return await FunctionRegistry.executeFunction(
+        name,
+        parameters,
+        { userId, userRole }
+      );
     } catch (error) {
       console.error(`Error executing function ${name}:`, error);
       throw error;
@@ -175,18 +256,33 @@ export class AgentService {
   /**
    * Get a list of available agent functions
    */
-  async getAvailableFunctions(accessLevel: string = 'public'): Promise<schema.AgentFunction[]> {
+  async getAvailableFunctions(userRole: string = 'user'): Promise<schema.AgentFunction[]> {
+    let accessLevels: string[] = ['public'];
+    
+    // Add role-specific levels based on user role
+    if (userRole === 'admin') {
+      accessLevels = ['public', 'user', 'manager', 'admin']; // Admin can access everything
+    } else if (userRole === 'manager') {
+      accessLevels.push('user', 'manager'); // Managers can access user and manager functions
+    } else if (userRole === 'user') {
+      accessLevels.push('user'); // Users can access user functions
+    }
+    
     const functions = await db.query.agentFunctions.findMany({
-      where: (fields, { eq, and, or }) => and(
+      where: (fields, { eq, and, inArray }) => and(
         eq(fields.enabled, true),
-        or(
-          eq(fields.accessLevel, 'public'),
-          eq(fields.accessLevel, accessLevel)
-        )
+        inArray(fields.accessLevel, accessLevels)
       )
     });
 
     return functions;
+  }
+
+  /**
+   * Register a new function
+   */
+  async registerFunction(functionData: Omit<schema.InsertAgentFunction, "id">): Promise<schema.AgentFunction> {
+    return await FunctionRegistry.registerFunction(functionData);
   }
 
   /**
@@ -218,7 +314,7 @@ export class AgentService {
 
     const [updatedTask] = await db.update(schema.agentTasks)
       .set(updateData)
-      .where(({ id }) => id.eq(taskId))
+      .where(sql`id = ${taskId}`)
       .returning();
     
     return updatedTask;
@@ -246,7 +342,7 @@ export class AgentService {
         updatedAt: new Date(),
         updatedBy: userId
       })
-      .where(({ name: settingName }) => settingName.eq(name))
+      .where(sql`name = ${name}`)
       .returning();
     
     return updatedSetting;
@@ -272,9 +368,39 @@ export class AgentService {
         status: 'sent',
         sentAt: new Date()
       })
-      .where(({ id }) => id.eq(notification.id))
+      .where(sql`id = ${notification.id}`)
       .returning();
     
     return sentNotification;
+  }
+  
+  /**
+   * Schedule a report to be sent at a specific time
+   */
+  async scheduleReport(
+    recipient: string, 
+    reportType: string, 
+    schedule: string, 
+    parameters: any = {}
+  ): Promise<schema.AgentTask> {
+    // Create a task for the scheduled report
+    const task = await this.createTask({
+      title: `Scheduled ${reportType} Report`,
+      description: `Generate and send a ${reportType} report to ${recipient}`,
+      type: 'scheduled_report',
+      status: 'scheduled',
+      priority: 'medium',
+      dueDate: new Date(), // This would be calculated based on the schedule
+      metadata: {
+        reportType,
+        recipient,
+        schedule,
+        parameters
+      },
+      creatorId: null,
+      assigneeId: null
+    });
+    
+    return task;
   }
 }

@@ -50,11 +50,36 @@ const notificationSchema = z.object({
 });
 
 // Authentication helper
+/**
+ * Middleware to require authentication
+ */
 function requireAuth(req: Request, res: Response, next: any) {
   if (!req.session || !req.session.userId) {
     return res.status(401).json({ message: 'Not authenticated' });
   }
   next();
+}
+
+/**
+ * Middleware to require specific role
+ * @param roles Array of allowed roles
+ */
+function requireRole(roles: string[]) {
+  return (req: Request, res: Response, next: any) => {
+    if (!req.session || !req.session.userId || !req.session.userRole) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+    
+    if (!roles.includes(req.session.userRole)) {
+      return res.status(403).json({ 
+        message: 'Access denied', 
+        required: roles,
+        current: req.session.userRole
+      });
+    }
+    
+    next();
+  };
 }
 
 // Register agent routes
@@ -130,6 +155,7 @@ export function registerAgentRoutes(app: Express) {
     try {
       const conversationId = parseInt(req.params.id);
       const userId = req.session!.userId;
+      const userRole = req.session!.userRole || 'user';
       const validatedData = messageSchema.parse(req.body);
       
       // Check if the conversation exists and belongs to the user
@@ -147,8 +173,13 @@ export function registerAgentRoutes(app: Express) {
       // Add the user message
       const userMessage = await agentService.addUserMessage(conversationId, validatedData.content);
       
-      // Generate a response
-      const assistantMessage = await agentService.generateResponse(conversationId);
+      // Generate a response with user role for proper permissions
+      const assistantMessage = await agentService.generateResponse(
+        conversationId,
+        userId,
+        userRole,
+        1000 // default max tokens
+      );
       
       res.status(201).json({ userMessage, assistantMessage });
     } catch (error) {
@@ -164,9 +195,16 @@ export function registerAgentRoutes(app: Express) {
   app.post('/api/agent/functions/execute', requireAuth, async (req: Request, res: Response) => {
     try {
       const { name, parameters } = functionCallSchema.parse(req.body);
+      const userId = req.session!.userId;
+      const userRole = req.session!.userRole || 'user';
       
-      // Execute the function
-      const result = await agentService.executeFunction(name, parameters);
+      // Execute the function with user permissions
+      const result = await agentService.executeFunction(
+        name, 
+        parameters, 
+        userId, 
+        userRole
+      );
       
       res.status(200).json({ result });
     } catch (error) {
@@ -174,7 +212,17 @@ export function registerAgentRoutes(app: Express) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ errors: error.errors });
       }
-      res.status(500).json({ message: `Failed to execute function: ${error instanceof Error ? error.message : String(error)}` });
+      
+      // More descriptive error messages for access denied
+      if (String(error).includes('Access denied') || String(error).includes('permissions')) {
+        return res.status(403).json({ 
+          message: `Access denied: ${error instanceof Error ? error.message : String(error)}` 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: `Failed to execute function: ${error instanceof Error ? error.message : String(error)}`
+      });
     }
   });
 
