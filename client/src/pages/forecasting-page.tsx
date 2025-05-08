@@ -17,7 +17,10 @@ import {
   Area,
 } from 'recharts';
 import { format } from 'date-fns';
-import { Loader2, AlertTriangle, Info, TrendingUp, CircleCheck, BarChart3, FlameIcon, Droplets } from 'lucide-react';
+import { Loader2, AlertTriangle, Info, TrendingUp, CircleCheck, BarChart3, FlameIcon, Droplets, ArrowRight } from 'lucide-react';
+import { Page } from '@/components/page';
+import { Header } from '@/components/header';
+import { Sidebar } from '@/components/ui/sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -26,8 +29,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { EnvironmentalChart, EnvironmentalStats, SolarInfluenceAnalysis } from '@/components/environmental-chart';
 import { WeatherCorrelationAnalysis } from '@/components/weather-correlation-analysis';
 import { SolarForecastSection } from '@/components/solar-forecast-section';
-import { Header } from "@/components/header";
-import { Sidebar } from "@/components/ui/sidebar";
+import { Button } from '@/components/ui/button';
 
 // Helper function to format timestamps for charts
 const formatTimestamp = (timestamp: Date | string) => {
