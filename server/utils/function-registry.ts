@@ -25,8 +25,7 @@ export class FunctionRegistry {
         // Update existing function
         const [updatedFunction] = await db.update(schema.agentFunctions)
           .set({
-            ...functionData,
-            updatedAt: new Date()
+            ...functionData
           })
           .where(({ name }) => name.eq(functionData.name))
           .returning();
@@ -36,9 +35,7 @@ export class FunctionRegistry {
         // Create new function
         const [newFunction] = await db.insert(schema.agentFunctions)
           .values({
-            ...functionData,
-            createdAt: new Date(),
-            updatedAt: new Date()
+            ...functionData
           })
           .returning();
         
@@ -79,14 +76,11 @@ export class FunctionRegistry {
     try {
       // Get the function definition
       const functionDef = await db.query.agentFunctions.findFirst({
-        where: (fields, { eq, and }) => and(
-          eq(fields.name, name),
-          eq(fields.enabled, true)
-        )
+        where: (fields, { eq }) => eq(fields.name, name)
       });
       
       if (!functionDef) {
-        throw new Error(`Function ${name} not found or not enabled`);
+        throw new Error(`Function ${name} not found`);
       }
       
       // Check if user has permission to execute this function

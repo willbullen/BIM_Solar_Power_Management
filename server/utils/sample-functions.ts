@@ -36,7 +36,7 @@ export async function registerSampleFunctions() {
       },
       required: ['startDate', 'endDate']
     },
-    returnType: 'object',
+    returnType: 'PowerDataAnalysis',
     functionCode: `
       async function analyzePowerData(params, dbUtils) {
         const { startDate, endDate, metrics = ['mainGridPower', 'solarOutput', 'totalLoad'] } = params;

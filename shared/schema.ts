@@ -320,9 +320,6 @@ export const agentFunctions = pgTable("agent_functions", {
   parameters: jsonb("parameters").notNull(), // Parameters definition in JSON Schema format
   returnType: text("return_type").notNull(), // Return type description
   functionCode: text("function_code").notNull(), // Actual callable function or reference
-  enabled: boolean("enabled").notNull().default(true),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
   accessLevel: text("access_level").notNull().default("restricted"), // 'public', 'admin', 'restricted'
   tags: text("tags").array(), // For categorization and search
 });
