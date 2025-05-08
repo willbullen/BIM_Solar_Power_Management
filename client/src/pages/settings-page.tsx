@@ -1,521 +1,971 @@
-import { useState, useEffect, ChangeEvent, FormEvent } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { PowerDataProvider, usePowerData } from "@/hooks/use-power-data";
-import { useToast } from "@/hooks/use-toast";
-import { Header } from "@/components/header";
-import { Sidebar } from "@/components/ui/sidebar";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
+import { Layout } from "@/components/ui/layout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2 } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
-import { Settings } from "@shared/schema";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2, Save, Settings, Users, Zap, CloudSun, Palette, Globe } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-function SettingsContent() {
-  const { settings, isLoading } = usePowerData();
+// Define schema for settings form
+const settingsSchema = z.object({
+  scenarioProfile: z.string(),
+  dataSource: z.string(),
+  processingInterval: z.number().min(1).max(60),
+  powerAlertThreshold: z.number().min(10),
+  solarAlertThreshold: z.number().min(5),
+  anomalyDetectionEnabled: z.boolean(),
+  forecastingEnabled: z.boolean(),
+});
+
+// Define schema for Solcast settings
+const solcastSchema = z.object({
+  apiKey: z.string().optional(),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  capacity: z.number().min(1),
+  tilt: z.number().min(0).max(90),
+  azimuth: z.number().min(0).max(360),
+});
+
+// Define schema for user settings
+const userSchema = z.object({
+  username: z.string().min(3),
+  email: z.string().email(),
+  currentPassword: z.string().optional(),
+  newPassword: z.string().optional(),
+  confirmPassword: z.string().optional(),
+}).refine(data => {
+  if (data.newPassword && !data.currentPassword) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Current password is required when setting a new password",
+  path: ["currentPassword"],
+}).refine(data => {
+  if (data.newPassword && data.newPassword !== data.confirmPassword) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+// Define schema for appearance settings
+const appearanceSchema = z.object({
+  theme: z.string(),
+  sidebarCollapsed: z.boolean(),
+  chartAnimations: z.boolean(),
+  dashboardLayout: z.string(),
+});
+
+export default function SettingsPage() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("general");
   
-  // Local state for form values
-  const [formValues, setFormValues] = useState<Partial<Settings>>({
-    dataSource: settings?.dataSource || 'live',
-    scenarioProfile: settings?.scenarioProfile || 'sunny',
-    gridImportThreshold: settings?.gridImportThreshold || 5,
-    solarOutputMinimum: settings?.solarOutputMinimum || 1.5,
-    unaccountedPowerThreshold: settings?.unaccountedPowerThreshold || 15,
-    enableEmailNotifications: settings?.enableEmailNotifications || true,
-    dataRefreshRate: settings?.dataRefreshRate || 10,
-    historicalDataStorage: settings?.historicalDataStorage || 90,
-    gridPowerCost: settings?.gridPowerCost || 0.28,
-    feedInTariff: settings?.feedInTariff || 0.09,
-    // API Keys
-    weatherApiKey: settings?.weatherApiKey || '',
-    powerMonitoringApiKey: settings?.powerMonitoringApiKey || '',
-    notificationsApiKey: settings?.notificationsApiKey || '',
-    // Solcast API settings
-    solcastApiKey: settings?.solcastApiKey || '',
-    locationLatitude: settings?.locationLatitude || 52.059937,
-    locationLongitude: settings?.locationLongitude || -9.507269,
-    useSolcastData: settings?.useSolcastData || false,
+  // Fetch current settings
+  const { data: settings, isLoading: isLoadingSettings } = useQuery({
+    queryKey: ['/api/settings'],
+    queryFn: getQueryFn({ on401: 'throw' }),
   });
   
-  // Update local state when settings load from the server
+  // Fetch current user data
+  const { data: user, isLoading: isLoadingUser } = useQuery({
+    queryKey: ['/api/user'],
+    queryFn: getQueryFn({ on401: 'throw' }),
+  });
+  
+  // Fetch Solcast settings
+  const { data: solcastSettings, isLoading: isLoadingSolcast } = useQuery({
+    queryKey: ['/api/settings/solcast'],
+    queryFn: getQueryFn({ on401: 'throw' }),
+  });
+  
+  // Create form for general settings
+  const generalForm = useForm<z.infer<typeof settingsSchema>>({
+    resolver: zodResolver(settingsSchema),
+    defaultValues: {
+      scenarioProfile: "standard",
+      dataSource: "live",
+      processingInterval: 5,
+      powerAlertThreshold: 50,
+      solarAlertThreshold: 20,
+      anomalyDetectionEnabled: true,
+      forecastingEnabled: true,
+    },
+  });
+  
+  // Create form for Solcast settings
+  const solcastForm = useForm<z.infer<typeof solcastSchema>>({
+    resolver: zodResolver(solcastSchema),
+    defaultValues: {
+      apiKey: "",
+      latitude: 52.059937,
+      longitude: -9.507269,
+      capacity: 25,
+      tilt: 30,
+      azimuth: 180,
+    },
+  });
+  
+  // Create form for user settings
+  const userForm = useForm<z.infer<typeof userSchema>>({
+    resolver: zodResolver(userSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+  
+  // Create form for appearance settings
+  const appearanceForm = useForm<z.infer<typeof appearanceSchema>>({
+    resolver: zodResolver(appearanceSchema),
+    defaultValues: {
+      theme: "dark",
+      sidebarCollapsed: false,
+      chartAnimations: true,
+      dashboardLayout: "standard",
+    },
+  });
+  
+  // Set form values when data is loaded
   useEffect(() => {
     if (settings) {
-      setFormValues(settings);
+      generalForm.reset({
+        scenarioProfile: settings.scenarioProfile,
+        dataSource: settings.dataSource,
+        processingInterval: settings.processingInterval,
+        powerAlertThreshold: settings.powerAlertThreshold,
+        solarAlertThreshold: settings.solarAlertThreshold,
+        anomalyDetectionEnabled: settings.anomalyDetectionEnabled,
+        forecastingEnabled: settings.forecastingEnabled,
+      });
     }
-  }, [settings]);
+  }, [settings, generalForm]);
+  
+  useEffect(() => {
+    if (solcastSettings) {
+      solcastForm.reset({
+        apiKey: solcastSettings.apiKey || "",
+        latitude: solcastSettings.latitude,
+        longitude: solcastSettings.longitude,
+        capacity: solcastSettings.capacity,
+        tilt: solcastSettings.tilt,
+        azimuth: solcastSettings.azimuth,
+      });
+    }
+  }, [solcastSettings, solcastForm]);
+  
+  useEffect(() => {
+    if (user) {
+      userForm.reset({
+        username: user.username,
+        email: user.email || "",
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    }
+  }, [user, userForm]);
   
   // Save settings mutation
   const saveSettingsMutation = useMutation({
-    mutationFn: async (updatedSettings: Partial<Settings>) => {
-      const res = await apiRequest("PUT", "/api/settings", updatedSettings);
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
-      toast({
-        title: "Settings saved",
-        description: "Your settings have been updated successfully.",
+    mutationFn: async (data: z.infer<typeof settingsSchema>) => {
+      return await apiRequest('/api/settings', {
+        method: 'POST',
+        data,
       });
     },
-    onError: (error: Error) => {
+    onSuccess: () => {
+      toast({
+        title: "Settings updated",
+        description: "Your changes have been saved successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
+    },
+    onError: (error: any) => {
       toast({
         title: "Failed to save settings",
-        description: error.message,
+        description: error.message || "There was an error saving your settings.",
         variant: "destructive",
       });
     },
   });
   
-  // Handle form input changes
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type } = e.target;
+  // Save Solcast settings mutation
+  const saveSolcastMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof solcastSchema>) => {
+      return await apiRequest('/api/settings/solcast', {
+        method: 'POST',
+        data,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Solcast settings updated",
+        description: "Your changes have been saved successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/settings/solcast'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to save Solcast settings",
+        description: error.message || "There was an error saving your settings.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Save user settings mutation
+  const saveUserMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof userSchema>) => {
+      return await apiRequest('/api/user', {
+        method: 'POST',
+        data,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "User settings updated",
+        description: "Your profile has been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      
+      // Clear password fields
+      userForm.setValue("currentPassword", "");
+      userForm.setValue("newPassword", "");
+      userForm.setValue("confirmPassword", "");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update profile",
+        description: error.message || "There was an error updating your profile.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Save appearance settings mutation
+  const saveAppearanceMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof appearanceSchema>) => {
+      return await apiRequest('/api/settings/appearance', {
+        method: 'POST',
+        data,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Appearance settings updated",
+        description: "Your changes have been saved successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to save appearance settings",
+        description: error.message || "There was an error saving your settings.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Form submission handlers
+  const onSubmitGeneralSettings = (data: z.infer<typeof settingsSchema>) => {
+    saveSettingsMutation.mutate(data);
+  };
+  
+  const onSubmitSolcastSettings = (data: z.infer<typeof solcastSchema>) => {
+    saveSolcastMutation.mutate(data);
+  };
+  
+  const onSubmitUserSettings = (data: z.infer<typeof userSchema>) => {
+    saveUserMutation.mutate(data);
+  };
+  
+  const onSubmitAppearanceSettings = (data: z.infer<typeof appearanceSchema>) => {
+    saveAppearanceMutation.mutate(data);
     
-    if (type === 'number') {
-      setFormValues({
-        ...formValues,
-        [name]: parseFloat(value),
-      });
-    } else {
-      setFormValues({
-        ...formValues,
-        [name]: value,
-      });
-    }
+    // Apply theme change immediately
+    document.documentElement.classList.toggle("dark", data.theme === "dark");
   };
-  
-  // Handle switch changes
-  const handleSwitchChange = (checked: boolean, name: string) => {
-    setFormValues({
-      ...formValues,
-      [name]: checked,
-    });
-  };
-  
-  // Handle radio button changes
-  const handleRadioChange = (value: string, name: string) => {
-    setFormValues({
-      ...formValues,
-      [name]: value,
-    });
-  };
-  
-  // Handle form submission
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    saveSettingsMutation.mutate(formValues);
-  };
-  
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Loading settings...</p>
-        </div>
-      </div>
-    );
-  }
   
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
-        <div>
-          <h1 className="text-xl font-semibold text-white">System Settings</h1>
-          <p className="text-muted-foreground">Configure monitoring system parameters</p>
-        </div>
+    <Layout title="Settings" description="Configure system settings and preferences">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full md:w-fit">
+          <TabsTrigger value="general">
+            <Settings className="h-4 w-4 mr-2" />
+            General
+          </TabsTrigger>
+          <TabsTrigger value="solcast">
+            <CloudSun className="h-4 w-4 mr-2" />
+            Solcast API
+          </TabsTrigger>
+          <TabsTrigger value="user">
+            <Users className="h-4 w-4 mr-2" />
+            User Profile
+          </TabsTrigger>
+          <TabsTrigger value="appearance">
+            <Palette className="h-4 w-4 mr-2" />
+            Appearance
+          </TabsTrigger>
+        </TabsList>
         
-        <div className="mt-3 md:mt-0">
-          <Button 
-            onClick={handleSubmit}
-            disabled={saveSettingsMutation.isPending}
-          >
-            {saveSettingsMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Changes"
-            )}
-          </Button>
-        </div>
-      </div>
-      
-      <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Data Source Settings */}
+        {/* General Settings */}
+        <TabsContent value="general">
           <Card>
             <CardHeader>
-              <CardTitle>Data Source</CardTitle>
-              <CardDescription>Configure how data is received and processed</CardDescription>
+              <CardTitle>General Settings</CardTitle>
+              <CardDescription>
+                Configure basic application settings and thresholds
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <RadioGroup 
-                value={formValues.dataSource} 
-                onValueChange={(value) => handleRadioChange(value, "dataSource")}
-                className="space-y-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="live" id="live" />
-                  <div className="grid gap-1.5">
-                    <Label htmlFor="live" className="flex items-center">
-                      <span>Live Data</span>
-                      <span className="status-badge live ml-2">Connected</span>
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Use real-time data from the on-site Emporium power monitoring system
-                    </p>
-                  </div>
+            <CardContent>
+              {isLoadingSettings ? (
+                <div className="flex justify-center items-center h-48">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-                
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="synthetic" id="synthetic" />
-                  <div className="grid gap-1.5">
-                    <Label htmlFor="synthetic" className="flex items-center">
-                      <span>Synthetic Data</span>
-                      <span className="status-badge synthetic ml-2">Demo Mode</span>
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Use simulated data for testing and demonstration purposes
-                    </p>
-                  </div>
-                </div>
-              </RadioGroup>
-              
-              {formValues.dataSource === "synthetic" && (
-                <div className="ml-7 mt-5 space-y-4">
-                  <p className="text-white font-medium">Select Scenario Profile:</p>
-                  
-                  <RadioGroup 
-                    value={formValues.scenarioProfile} 
-                    onValueChange={(value) => handleRadioChange(value, "scenarioProfile")}
-                    className="space-y-3"
+              ) : (
+                <Form {...generalForm}>
+                  <form 
+                    onSubmit={generalForm.handleSubmit(onSubmitGeneralSettings)} 
+                    className="space-y-6"
                   >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="sunny" id="sunny" />
-                      <div className="grid gap-1">
-                        <Label htmlFor="sunny" className="font-medium">Sunny High PV</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Max solar generation, low grid import
-                        </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={generalForm.control}
+                        name="dataSource"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Data Source</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select data source" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="live">Live Data</SelectItem>
+                                <SelectItem value="historical">Historical Data</SelectItem>
+                                <SelectItem value="synthetic">Synthetic Data</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              Choose the source of power and environmental data
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={generalForm.control}
+                        name="scenarioProfile"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Scenario Profile</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select scenario" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="standard">Standard Profile</SelectItem>
+                                <SelectItem value="peakDemand">Peak Demand</SelectItem>
+                                <SelectItem value="reducedLoad">Reduced Load</SelectItem>
+                                <SelectItem value="solarOptimized">Solar Optimized</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              Configure model behavior for synthetic data
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={generalForm.control}
+                        name="processingInterval"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Processing Interval (minutes)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min={1} 
+                                max={60} 
+                                {...field}
+                                onChange={e => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              How often to fetch and process new data
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={generalForm.control}
+                        name="powerAlertThreshold"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Power Alert Threshold (kW)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min={10} 
+                                {...field}
+                                onChange={e => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Threshold for power consumption alerts
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={generalForm.control}
+                        name="solarAlertThreshold"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Solar Alert Threshold (kW)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min={5} 
+                                {...field}
+                                onChange={e => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Threshold for solar production alerts
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={generalForm.control}
+                          name="anomalyDetectionEnabled"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between p-4 border rounded-lg">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">Anomaly Detection</FormLabel>
+                                <FormDescription>
+                                  Enable automated detection of unusual power patterns
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={generalForm.control}
+                          name="forecastingEnabled"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between p-4 border rounded-lg">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">Power Forecasting</FormLabel>
+                                <FormDescription>
+                                  Enable predictive power consumption forecasting
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="cloudy" id="cloudy" />
-                      <div className="grid gap-1">
-                        <Label htmlFor="cloudy" className="font-medium">Cloudy Low PV</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Reduced solar output, higher grid reliance
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="peak" id="peak" />
-                      <div className="grid gap-1">
-                        <Label htmlFor="peak" className="font-medium">Peak Load</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Maximum consumption across all systems
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="night" id="night" />
-                      <div className="grid gap-1">
-                        <Label htmlFor="night" className="font-medium">Night Operation</Label>
-                        <p className="text-xs text-muted-foreground">
-                          No solar, minimal activity except refrigeration
-                        </p>
-                      </div>
-                    </div>
-                  </RadioGroup>
-                </div>
+                    <Button 
+                      type="submit" 
+                      disabled={!generalForm.formState.isDirty || saveSettingsMutation.isPending}
+                    >
+                      {saveSettingsMutation.isPending && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Save Settings
+                    </Button>
+                  </form>
+                </Form>
               )}
             </CardContent>
           </Card>
-          
-          {/* Alert Settings */}
+        </TabsContent>
+        
+        {/* Solcast API Settings */}
+        <TabsContent value="solcast">
           <Card>
             <CardHeader>
-              <CardTitle>Alert Configuration</CardTitle>
-              <CardDescription>Set thresholds for system notifications</CardDescription>
+              <CardTitle>Solcast API Configuration</CardTitle>
+              <CardDescription>
+                Configure settings for solar radiation and weather data
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="gridImportThreshold">Grid Import Threshold (kW)</Label>
-                <Input 
-                  id="gridImportThreshold"
-                  name="gridImportThreshold"
-                  type="number"
-                  min={0}
-                  step={0.5}
-                  value={formValues.gridImportThreshold}
-                  onChange={handleChange}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Alert when grid power import exceeds this value
-                </p>
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="solarOutputMinimum">Solar Output Minimum (kW)</Label>
-                <Input 
-                  id="solarOutputMinimum"
-                  name="solarOutputMinimum"
-                  type="number"
-                  min={0}
-                  step={0.1}
-                  value={formValues.solarOutputMinimum}
-                  onChange={handleChange}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Alert when solar output falls below expected minimum during daylight
-                </p>
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="unaccountedPowerThreshold">Unaccounted Power Threshold (%)</Label>
-                <Input 
-                  id="unaccountedPowerThreshold"
-                  name="unaccountedPowerThreshold"
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={formValues.unaccountedPowerThreshold}
-                  onChange={handleChange}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Alert when unaccounted power exceeds this percentage of total
-                </p>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  id="enableEmailNotifications"
-                  checked={formValues.enableEmailNotifications}
-                  onCheckedChange={(checked) => 
-                    handleSwitchChange(checked, "enableEmailNotifications")
-                  }
-                />
-                <Label htmlFor="enableEmailNotifications">Enable Email Notifications</Label>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* System Parameters */}
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle>System Parameters</CardTitle>
-            <CardDescription>Advanced configuration settings</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="dataRefreshRate">Data Refresh Rate (seconds)</Label>
-                <Input 
-                  id="dataRefreshRate"
-                  name="dataRefreshRate"
-                  type="number"
-                  min={5}
-                  max={3600}
-                  value={formValues.dataRefreshRate}
-                  onChange={handleChange}
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="historicalDataStorage">Historical Data Storage (days)</Label>
-                <Input 
-                  id="historicalDataStorage"
-                  name="historicalDataStorage"
-                  type="number"
-                  min={1}
-                  max={365}
-                  value={formValues.historicalDataStorage}
-                  onChange={handleChange}
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="gridPowerCost">Grid Power Cost (€/kWh)</Label>
-                <Input 
-                  id="gridPowerCost"
-                  name="gridPowerCost"
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={formValues.gridPowerCost}
-                  onChange={handleChange}
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="feedInTariff">Feed-in Tariff (€/kWh)</Label>
-                <Input 
-                  id="feedInTariff"
-                  name="feedInTariff"
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={formValues.feedInTariff}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* API Keys */}
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle>API Keys</CardTitle>
-            <CardDescription>Configure external service integrations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="weatherApiKey">Weather API Key</Label>
-                <Input 
-                  id="weatherApiKey"
-                  name="weatherApiKey"
-                  type="password"
-                  value={formValues.weatherApiKey || ''}
-                  onChange={handleChange}
-                  placeholder="Enter your weather service API key"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Used for retrieving real-time weather data for correlation analysis
-                </p>
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="powerMonitoringApiKey">Power Monitoring API Key</Label>
-                <Input 
-                  id="powerMonitoringApiKey"
-                  name="powerMonitoringApiKey"
-                  type="password"
-                  value={formValues.powerMonitoringApiKey || ''}
-                  onChange={handleChange}
-                  placeholder="Enter your power monitoring system API key"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Used to connect to on-site power monitoring hardware for live data
-                </p>
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="notificationsApiKey">Notifications API Key</Label>
-                <Input 
-                  id="notificationsApiKey"
-                  name="notificationsApiKey"
-                  type="password"
-                  value={formValues.notificationsApiKey || ''}
-                  onChange={handleChange}
-                  placeholder="Enter your notifications service API key"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Used for sending alerts and notifications via SMS or push services
-                </p>
-              </div>
-              
-              <div className="border-t pt-4 mt-4">
-                <h3 className="font-medium text-white mb-4">Solcast Weather Integration</h3>
-                
-                <div className="flex items-center space-x-2 mb-4">
-                  <Switch 
-                    id="useSolcastData"
-                    checked={Boolean(formValues.useSolcastData)}
-                    onCheckedChange={(checked) => 
-                      handleSwitchChange(checked, "useSolcastData")
-                    }
-                  />
-                  <Label htmlFor="useSolcastData">Enable Solcast Integration</Label>
+            <CardContent>
+              {isLoadingSolcast ? (
+                <div className="flex justify-center items-center h-48">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-                
-                <div className="grid gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="solcastApiKey">Solcast API Key</Label>
-                    <Input 
-                      id="solcastApiKey"
-                      name="solcastApiKey"
-                      type="password"
-                      value={formValues.solcastApiKey || ''}
-                      onChange={handleChange}
-                      placeholder="Enter your Solcast API key"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Used to fetch accurate solar radiation and weather data
-                    </p>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="grid gap-2">
-                      <Label htmlFor="locationLatitude">Location Latitude</Label>
-                      <Input 
-                        id="locationLatitude"
-                        name="locationLatitude"
-                        type="number"
-                        step="0.000001"
-                        value={formValues.locationLatitude || 52.059937}
-                        onChange={handleChange}
-                        placeholder="52.059937"
+              ) : (
+                <Form {...solcastForm}>
+                  <form 
+                    onSubmit={solcastForm.handleSubmit(onSubmitSolcastSettings)} 
+                    className="space-y-6"
+                  >
+                    <Alert className="mb-6">
+                      <Globe className="h-4 w-4" />
+                      <AlertTitle>Solcast API Integration</AlertTitle>
+                      <AlertDescription>
+                        Solcast provides solar radiation and weather data for accurate forecasting. 
+                        Your API key is required for live data access.
+                      </AlertDescription>
+                    </Alert>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={solcastForm.control}
+                        name="apiKey"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-2">
+                            <FormLabel>Solcast API Key</FormLabel>
+                            <FormControl>
+                              <Input type="password" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Your Solcast API key for authentication
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={solcastForm.control}
+                        name="latitude"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Latitude</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                step="0.000001" 
+                                {...field}
+                                onChange={e => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Facility location latitude (decimal degrees)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={solcastForm.control}
+                        name="longitude"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Longitude</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                step="0.000001" 
+                                {...field}
+                                onChange={e => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Facility location longitude (decimal degrees)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={solcastForm.control}
+                        name="capacity"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>System Capacity (kW)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min={1} 
+                                {...field}
+                                onChange={e => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Solar system capacity in kilowatts
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={solcastForm.control}
+                        name="tilt"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Panel Tilt (degrees)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min={0} 
+                                max={90} 
+                                {...field}
+                                onChange={e => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Solar panel tilt angle from horizontal
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={solcastForm.control}
+                        name="azimuth"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Panel Azimuth (degrees)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min={0} 
+                                max={360} 
+                                {...field}
+                                onChange={e => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Solar panel orientation (180° = South)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
                     </div>
                     
-                    <div className="grid gap-2">
-                      <Label htmlFor="locationLongitude">Location Longitude</Label>
-                      <Input 
-                        id="locationLongitude"
-                        name="locationLongitude"
-                        type="number"
-                        step="0.000001"
-                        value={formValues.locationLongitude || -9.507269}
-                        onChange={handleChange}
-                        placeholder="-9.507269"
+                    <Button 
+                      type="submit" 
+                      disabled={!solcastForm.formState.isDirty || saveSolcastMutation.isPending}
+                    >
+                      {saveSolcastMutation.isPending && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Save Solcast Settings
+                    </Button>
+                  </form>
+                </Form>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* User Profile Settings */}
+        <TabsContent value="user">
+          <Card>
+            <CardHeader>
+              <CardTitle>User Profile</CardTitle>
+              <CardDescription>
+                Manage your account and profile settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingUser ? (
+                <div className="flex justify-center items-center h-48">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <Form {...userForm}>
+                  <form 
+                    onSubmit={userForm.handleSubmit(onSubmitUserSettings)} 
+                    className="space-y-6"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={userForm.control}
+                        name="username"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Username</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Your display name on the platform
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={userForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email Address</FormLabel>
+                            <FormControl>
+                              <Input type="email" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Your email for notifications and alerts
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
                     </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    GPS coordinates for Kerry, Ireland location (default: 52.059937, -9.507269)
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </form>
-    </div>
-  );
-}
-
-export default function SettingsPage() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
-  
-  return (
-    <PowerDataProvider>
-      <div className={`min-h-screen bg-background flex flex-col ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-        <Header onToggleSidebar={toggleSidebar} />
+                    
+                    <div className="space-y-4 border rounded-lg p-4 mt-8">
+                      <h3 className="text-lg font-medium">Change Password</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Update your password to maintain account security
+                      </p>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        <FormField
+                          control={userForm.control}
+                          name="currentPassword"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Current Password</FormLabel>
+                              <FormControl>
+                                <Input type="password" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <FormField
+                            control={userForm.control}
+                            name="newPassword"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>New Password</FormLabel>
+                                <FormControl>
+                                  <Input type="password" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={userForm.control}
+                            name="confirmPassword"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Confirm New Password</FormLabel>
+                                <FormControl>
+                                  <Input type="password" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      type="submit" 
+                      disabled={!userForm.formState.isDirty || saveUserMutation.isPending}
+                    >
+                      {saveUserMutation.isPending && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Save Profile
+                    </Button>
+                  </form>
+                </Form>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
         
-        <div className="flex flex-1 overflow-hidden">
-          <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
-          
-          <main className="flex-1 app-content p-4">
-            <SettingsContent />
-          </main>
-        </div>
-      </div>
-    </PowerDataProvider>
+        {/* Appearance Settings */}
+        <TabsContent value="appearance">
+          <Card>
+            <CardHeader>
+              <CardTitle>Appearance</CardTitle>
+              <CardDescription>
+                Customize the application interface and display options
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...appearanceForm}>
+                <form 
+                  onSubmit={appearanceForm.handleSubmit(onSubmitAppearanceSettings)} 
+                  className="space-y-6"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={appearanceForm.control}
+                      name="theme"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Theme</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select theme" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="light">Light</SelectItem>
+                              <SelectItem value="dark">Dark</SelectItem>
+                              <SelectItem value="system">System Default</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Choose your preferred color theme
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={appearanceForm.control}
+                      name="dashboardLayout"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Dashboard Layout</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select layout" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="standard">Standard</SelectItem>
+                              <SelectItem value="compact">Compact</SelectItem>
+                              <SelectItem value="expanded">Expanded</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Configure the dashboard component layout
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={appearanceForm.control}
+                      name="sidebarCollapsed"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between p-4 border rounded-lg">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Sidebar Collapsed by Default</FormLabel>
+                            <FormDescription>
+                              Start with a collapsed sidebar for more screen space
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={appearanceForm.control}
+                      name="chartAnimations"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between p-4 border rounded-lg">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Chart Animations</FormLabel>
+                            <FormDescription>
+                              Enable smooth animations in charts and graphs
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    disabled={!appearanceForm.formState.isDirty || saveAppearanceMutation.isPending}
+                  >
+                    {saveAppearanceMutation.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Save Appearance
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </Layout>
   );
 }

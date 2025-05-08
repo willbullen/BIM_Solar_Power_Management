@@ -223,17 +223,17 @@ function ForecastingContent() {
   
   // Render the page
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
         <div>
-          <h1 className="text-xl font-semibold text-white">Power Forecasting &amp; Analysis</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold tracking-tight">Power Forecasting &amp; Analysis</h1>
+          <p className="text-muted-foreground mt-1">
             Advanced analytics to predict power usage, detect anomalies, and optimize efficiency
           </p>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -327,32 +327,11 @@ function ForecastingContent() {
                       Solar Output
                     </Badge>
                     <Badge 
-                      variant={selectedMetric === 'refrigerationLoad' ? 'default' : 'outline'}
+                      variant={selectedMetric === 'processLoad' ? 'default' : 'outline'}
                       className="cursor-pointer"
-                      onClick={() => setSelectedMetric('refrigerationLoad')}
+                      onClick={() => setSelectedMetric('processLoad')}
                     >
-                      Refrigeration
-                    </Badge>
-                    <Badge 
-                      variant={selectedMetric === 'bigColdRoom' ? 'default' : 'outline'}
-                      className="cursor-pointer"
-                      onClick={() => setSelectedMetric('bigColdRoom')}
-                    >
-                      Big Cold Room
-                    </Badge>
-                    <Badge 
-                      variant={selectedMetric === 'bigFreezer' ? 'default' : 'outline'}
-                      className="cursor-pointer"
-                      onClick={() => setSelectedMetric('bigFreezer')}
-                    >
-                      Big Freezer
-                    </Badge>
-                    <Badge 
-                      variant={selectedMetric === 'smoker' ? 'default' : 'outline'}
-                      className="cursor-pointer"
-                      onClick={() => setSelectedMetric('smoker')}
-                    >
-                      Smoker
+                      Process Load
                     </Badge>
                   </div>
                   
@@ -362,122 +341,85 @@ function ForecastingContent() {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
                           dataKey="name" 
+                          scale="band" 
                           padding={{ left: 10, right: 10 }} 
-                          tickMargin={10}
                         />
-                        <YAxis />
-                        <Tooltip 
-                          formatter={(value: any) => value ? [Number(value).toFixed(2), 'kW'] : ['N/A', '']}
-                          labelFormatter={(label) => `Time: ${label}`}
+                        <YAxis 
+                          label={{ 
+                            value: 'Power (kW)', 
+                            angle: -90, 
+                            position: 'insideLeft',
+                            style: { textAnchor: 'middle' }
+                          }}
                         />
+                        <Tooltip />
                         <Legend />
-                        <Area 
-                          type="monotone" 
-                          dataKey="upperBound" 
-                          fill="#e2e8f0" 
-                          stroke="#cbd5e1" 
-                          dot={false}
-                          name="Upper Bound" 
-                        />
-                        <Area 
-                          type="monotone" 
-                          dataKey="lowerBound" 
-                          fill="#f1f5f9" 
-                          stroke="#cbd5e1" 
-                          dot={false}
-                          name="Lower Bound" 
-                        />
+                        
+                        {/* Historical data */}
                         <Line 
                           type="monotone" 
                           dataKey="value" 
-                          stroke="#0ea5e9" 
-                          strokeWidth={2} 
+                          stroke="#8884d8" 
+                          name="Historical" 
                           dot={true}
-                          name="Actual" 
+                          activeDot={{ r: 8 }}
+                          strokeWidth={2}
                         />
+                        
+                        {/* Forecast */}
                         <Line 
                           type="monotone" 
                           dataKey="forecast" 
-                          stroke="#6366f1" 
-                          strokeWidth={2} 
-                          strokeDasharray="5 5"
-                          dot={false}
+                          stroke="#82ca9d" 
                           name="Forecast" 
+                          strokeDasharray="5 5"
+                          strokeWidth={2}
+                        />
+                        
+                        {/* Confidence bounds as shaded area */}
+                        <Area 
+                          type="monotone" 
+                          dataKey="lowerBound" 
+                          fill="#82ca9d" 
+                          fillOpacity={0.2} 
+                          stroke="none" 
+                          name="Lower Bound" 
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="upperBound" 
+                          fill="#82ca9d" 
+                          fillOpacity={0.2} 
+                          stroke="none" 
+                          name="Upper Bound" 
+                          baseLine={d => d.lowerBound}
                         />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <Card>
-                      <CardHeader className="py-2">
-                        <CardTitle className="text-sm">Peak Forecast</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-2xl font-bold">
-                              {forecast[selectedMetric].length > 0 
-                                ? Math.max(...forecast[selectedMetric].map(f => f.predictedValue)).toFixed(2)
-                                : 'N/A'} kW
-                            </p>
-                            <p className="text-xs text-muted-foreground">Expected peak value</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm">
-                              {forecast[selectedMetric].length > 0 
-                                ? (() => {
-                                    const maxIndex = forecast[selectedMetric].reduce((maxIdx, f, idx, arr) => 
-                                      f.predictedValue > arr[maxIdx].predictedValue ? idx : maxIdx, 0);
-                                    return format(new Date(forecast[selectedMetric][maxIndex].timestamp), 'HH:mm');
-                                  })()
-                                : 'N/A'}
-                            </p>
-                            <p className="text-xs text-muted-foreground">Expected time</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardHeader className="py-2">
-                        <CardTitle className="text-sm">Forecast Confidence</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-2xl font-bold">
-                              {forecast[selectedMetric].length > 0
-                                ? `±${((forecast[selectedMetric].reduce((sum, f) => 
-                                  sum + (f.upperBound - f.lowerBound), 0) / 
-                                  forecast[selectedMetric].length) / 2).toFixed(2)}`
-                                : 'N/A'} kW
-                            </p>
-                            <p className="text-xs text-muted-foreground">Average confidence interval</p>
-                          </div>
-                          <div>
-                            <CircleCheck className="h-10 w-10 text-green-500" />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <Alert className="mt-4">
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Forecast Confidence</AlertTitle>
+                    <AlertDescription>
+                      Shaded area represents the 95% confidence interval. Forecasts incorporate environmental data and historical patterns.
+                    </AlertDescription>
+                  </Alert>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-80 space-y-4">
-                  <p>No forecast data available yet</p>
-                  <button 
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+                  <p>No forecasts have been generated yet</p>
+                  <Button 
                     onClick={generateForecasts}
-                    disabled={isGenerating || isLoadingHistorical}
+                    disabled={isLoadingHistorical}
                   >
-                    {isGenerating ? (
+                    {isLoadingHistorical ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin inline" />
-                        Generating...
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading Data...
                       </>
-                    ) : 'Generate Forecast'}
-                  </button>
+                    ) : 'Generate Forecasts'}
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -485,44 +427,29 @@ function ForecastingContent() {
         </TabsContent>
         
         <TabsContent value="environment" className="space-y-4">
-          <div className="grid grid-cols-1 gap-4">
-            {isGenerating || isLoadingHistorical || isLoadingEnvData ? (
-              <div className="flex items-center justify-center h-80">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <span className="ml-2">Analyzing environmental data...</span>
-              </div>
-            ) : (
-              <>
-                {/* Solcast Solar Forecast Section */}
-                <SolarForecastSection />
-                
-                {/* Environmental chart */}
-                <EnvironmentalChart 
-                  environmentalData={envData || historicalEnvironmentalData || []}
-                  isLoading={isLoadingEnvData}
-                />
-                
-                {/* Environmental statistics */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <EnvironmentalStats 
-                    environmentalData={envData || historicalEnvironmentalData || []}
-                  />
-                  
-                  <SolarInfluenceAnalysis 
-                    environmentalData={envData || historicalEnvironmentalData || []}
-                    powerData={historicalData || historicalPowerData || []}
-                  />
-                </div>
-                
-                {/* Advanced Weather Correlation Analysis */}
-                <WeatherCorrelationAnalysis
-                  powerData={historicalData || historicalPowerData || []}
-                  environmentalData={envData || historicalEnvironmentalData || []}
-                  isLoading={isLoadingEnvData || isLoadingHistorical}
-                />
-              </>
-            )}
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Environmental Conditions</CardTitle>
+              <CardDescription>
+                Weather and environmental factors that influence power usage
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EnvironmentalStats environmentalData={environmentalData} />
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Solar Production Influence</CardTitle>
+              <CardDescription>
+                How environmental factors affect solar power generation
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SolarInfluenceAnalysis environmentalData={environmentalData} />
+            </CardContent>
+          </Card>
         </TabsContent>
         
         <TabsContent value="anomalies" className="space-y-4">
@@ -530,7 +457,7 @@ function ForecastingContent() {
             <CardHeader>
               <CardTitle>Anomaly Detection</CardTitle>
               <CardDescription>
-                Unusual patterns in power consumption that may indicate issues or opportunities
+                Unusual patterns in power consumption that may indicate issues
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -549,119 +476,96 @@ function ForecastingContent() {
                         className="cursor-pointer"
                         onClick={() => setSelectedMetric(metric as keyof PowerForecast)}
                       >
-                        {metric.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                        {metric.replace(/([A-Z])/g, ' $1').trim()}
                       </Badge>
                     ))}
                   </div>
                   
-                  <div className="h-64">
+                  <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart data={prepareAnomalyChartData()}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
                           dataKey="name" 
-                          padding={{ left: 10, right: 10 }} 
-                          tickMargin={10}
+                          scale="band" 
                         />
-                        <YAxis />
-                        <Tooltip 
-                          formatter={(value: any) => value ? [Number(value).toFixed(2), 'kW'] : ['N/A', '']}
-                          labelFormatter={(label) => `Time: ${label}`}
+                        <YAxis 
+                          label={{ 
+                            value: 'Power (kW)', 
+                            angle: -90, 
+                            position: 'insideLeft',
+                            style: { textAnchor: 'middle' }
+                          }}
                         />
+                        <Tooltip />
                         <Legend />
+                        
+                        {/* Actual values */}
                         <Line 
                           type="monotone" 
                           dataKey="value" 
-                          stroke="#0ea5e9" 
-                          strokeWidth={2} 
+                          stroke="#8884d8" 
                           name="Actual" 
+                          strokeWidth={2}
+                          dot={(props) => {
+                            const { cx, cy, isAnomaly } = props.payload;
+                            if (isAnomaly) {
+                              return (
+                                <circle 
+                                  cx={cx} 
+                                  cy={cy} 
+                                  r={6} 
+                                  fill="#ff4d4f" 
+                                  stroke="#8884d8" 
+                                  strokeWidth={2}
+                                />
+                              );
+                            }
+                            return <circle cx={cx} cy={cy} r={3} fill="#8884d8" />;
+                          }}
                         />
+                        
+                        {/* Expected values when anomaly is present */}
                         <Line 
                           type="monotone" 
                           dataKey="expected" 
-                          stroke="#6366f1" 
-                          strokeWidth={2} 
+                          stroke="#82ca9d" 
+                          name="Expected" 
                           strokeDasharray="5 5"
-                          name="Expected Range" 
-                        />
-                        {/* Anomaly points */}
-                        {/* Simple anomaly rendering */}
-                        <Line 
-                          type="monotone" 
-                          dataKey="isAnomaly" 
-                          stroke="#ef4444" 
-                          strokeWidth={0}
-                          name="Anomaly"
-                          activeDot={{ r: 8, fill: 'transparent', stroke: '#ef4444', strokeWidth: 2 }}
-                          dot={{ r: 6, fill: 'transparent', stroke: '#ef4444', strokeWidth: 2 }}
                         />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
                   
-                  <div className="space-y-4 mt-6">
-                    <h3 className="text-lg font-medium">Detected Anomalies</h3>
-                    
-                    {anomalies
-                      .filter(anomaly => anomaly.metric === selectedMetric)
-                      .map((anomaly, index) => (
-                        <Alert key={index} variant={anomaly.severity === 'high' ? 'destructive' : 'default'}>
-                          <AlertTriangle className="h-4 w-4" />
-                          <AlertTitle className="flex items-center gap-2">
-                            Anomaly on {format(new Date(anomaly.timestamp), 'MMM d, yyyy HH:mm')}
-                            <Badge variant={
-                              anomaly.severity === 'high' ? 'destructive' : 
-                              anomaly.severity === 'medium' ? 'default' : 
-                              'outline'
-                            }>
-                              {anomaly.severity.toUpperCase()}
-                            </Badge>
-                          </AlertTitle>
-                          <AlertDescription>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                              <div>
-                                <p className="text-sm font-medium">Details</p>
-                                <p className="text-sm mt-1">
-                                  Actual value: <span className="font-medium">{anomaly.actualValue.toFixed(2)} kW</span>
-                                </p>
-                                <p className="text-sm">
-                                  Expected value: <span className="font-medium">{anomaly.expectedValue.toFixed(2)} kW</span>
-                                </p>
-                                <p className="text-sm">
-                                  Deviation: <span className="font-medium">{anomaly.deviation.toFixed(2)}%</span>
-                                </p>
-                              </div>
-                              
-                              <div>
-                                <p className="text-sm font-medium">Possible Causes</p>
-                                <ul className="text-sm list-disc pl-5 mt-1">
-                                  {anomaly.possibleCauses.map((cause, idx) => (
-                                    <li key={idx}>{cause}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            </div>
-                            
-                            <div className="mt-3">
-                              <p className="text-sm font-medium">Recommended Actions</p>
-                              <ul className="text-sm list-disc pl-5 mt-1">
-                                {anomaly.recommendedActions.map((action, idx) => (
-                                  <li key={idx}>{action}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          </AlertDescription>
-                        </Alert>
-                      ))}
+                  <div className="mt-4 space-y-4">
+                    <h3 className="text-lg font-semibold">Detected Anomalies</h3>
+                    <div className="space-y-2">
+                      {anomalies
+                        .filter(a => a.metric === selectedMetric)
+                        .map((anomaly, index) => (
+                          <Alert key={index} variant={anomaly.severity === 'high' ? 'destructive' : 'default'}>
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle className="flex items-center gap-2">
+                              {anomaly.metric} Anomaly
+                              <Badge>{anomaly.severity}</Badge>
+                            </AlertTitle>
+                            <AlertDescription>
+                              <p>At {format(anomaly.timestamp, 'PPp')}</p>
+                              <p>Expected: {anomaly.expectedValue.toFixed(2)} kW, Actual: {anomaly.actualValue.toFixed(2)} kW</p>
+                              <p className="mt-1">{anomaly.description}</p>
+                            </AlertDescription>
+                          </Alert>
+                        ))}
                       
-                    {anomalies.filter(anomaly => anomaly.metric === selectedMetric).length === 0 && (
-                      <p className="text-muted-foreground">No anomalies detected for {selectedMetric}</p>
-                    )}
+                      {anomalies.filter(a => a.metric === selectedMetric).length === 0 && (
+                        <p>No anomalies detected for {selectedMetric.replace(/([A-Z])/g, ' $1').trim()}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-80 space-y-4">
-                  <p>No anomalies detected yet</p>
+                  <p>No anomalies have been detected yet</p>
                   <button 
                     className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
                     onClick={generateForecasts}
@@ -672,7 +576,7 @@ function ForecastingContent() {
                         <Loader2 className="mr-2 h-4 w-4 animate-spin inline" />
                         Analyzing...
                       </>
-                    ) : 'Run Anomaly Detection'}
+                    ) : 'Detect Anomalies'}
                   </button>
                 </div>
               )}
@@ -685,7 +589,7 @@ function ForecastingContent() {
             <CardHeader>
               <CardTitle>Efficiency Recommendations</CardTitle>
               <CardDescription>
-                AI-powered insights to help optimize power usage and reduce costs
+                Suggestions to improve energy efficiency based on analysis
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -695,62 +599,21 @@ function ForecastingContent() {
                   <span className="ml-2">Generating efficiency recommendations...</span>
                 </div>
               ) : recommendations.length > 0 ? (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-green-700 dark:text-green-300 flex items-center">
-                          <BarChart3 className="h-4 w-4 mr-1" />
-                          Power Optimization
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-green-700 dark:text-green-300">
-                          Strategies to reduce overall power consumption and costs
-                        </p>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-blue-700 dark:text-blue-300 flex items-center">
-                          <Droplets className="h-4 w-4 mr-1" />
-                          Refrigeration Efficiency
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-blue-700 dark:text-blue-300">
-                          Optimize cooling systems for better energy usage
-                        </p>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-amber-700 dark:text-amber-300 flex items-center">
-                          <FlameIcon className="h-4 w-4 mr-1" />
-                          Production Scheduling
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-amber-700 dark:text-amber-300">
-                          Align operations with optimal energy availability
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">AI-Generated Recommendations</h3>
-                    
-                    <div className="space-y-3">
-                      {recommendations.map((recommendation, index) => (
-                        <div key={index} className="flex items-start gap-2 p-3 border rounded-md bg-muted/20">
-                          <Info className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                          <p>{recommendation}</p>
+                <div className="space-y-4">
+                  <div className="grid gap-4">
+                    {recommendations.map((rec, index) => (
+                      <div 
+                        key={index} 
+                        className="p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <CircleCheck className="h-5 w-5 text-green-500 mt-0.5" />
+                          <div>
+                            <p>{rec}</p>
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ) : (

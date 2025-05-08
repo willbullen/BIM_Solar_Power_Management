@@ -1,1136 +1,1122 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Header } from "@/components/header";
-import { Sidebar } from "@/components/ui/sidebar";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
+import { Layout } from "@/components/ui/layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MessageSquare, TicketCheck, ClipboardList, CirclePlus, MessageCircle, AlertCircle, CheckCircle2 } from "lucide-react";
-import { format } from "date-fns";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
+import { 
+  Loader2, 
+  MessageSquare, 
+  Bug, 
+  Lightbulb, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Clock, 
+  PlusCircle,
+  Search,
+  Filter,
+  ChevronUp,
+  ChevronDown,
+  Send,
+  Sparkles,
+  User,
+  Tag
+} from "lucide-react";
+import { format, compareDesc } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
-// Define types based on our backend schema
-type User = {
-  id: number;
-  username: string;
-  role: string;
-};
+// Define types for issues and feedback
+type IssueStatus = 'open' | 'in_progress' | 'resolved' | 'wont_fix';
+type IssuePriority = 'low' | 'medium' | 'high' | 'critical';
+type IssueType = 'bug' | 'feature' | 'improvement' | 'question';
 
-type Issue = {
+interface Issue {
   id: number;
   title: string;
   description: string;
-  type: string;
-  status: string;
-  priority: string;
-  submitterId: number;
-  assignedToId?: number;
-  createdAt: string;
-  updatedAt: string;
-  closedAt?: string;
-};
+  status: IssueStatus;
+  priority: IssuePriority;
+  type: IssueType;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: string;
+  assignedTo: string | null;
+  votes: number;
+  comments: Comment[];
+  tags: string[];
+}
 
-type IssueComment = {
+interface Comment {
   id: number;
   issueId: number;
-  userId: number;
   content: string;
-  createdAt: string;
-  updatedAt: string;
-  isEdited: boolean;
-};
-
-type TodoItem = {
-  id: number;
-  title: string;
-  description?: string;
-  status: string;
-  stage: number;
-  priority: string;
-  createdAt: string;
-  updatedAt: string;
-  completedAt?: string;
-  linkedIssueId?: number;
-};
-
-// Issue form
-function IssueForm({ onSubmit, isSubmitting }: { onSubmit: (data: any) => void, isSubmitting: boolean }) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [type, setType] = useState("bug");
-  const [priority, setPriority] = useState("medium");
-  const [errors, setErrors] = useState<{title?: string; description?: string}>({});
-  
-  // Track character count for description
-  const descriptionCharsRemaining = 2000 - description.length;
-  const isDescriptionTooLong = descriptionCharsRemaining < 0;
-  
-  const validateForm = () => {
-    const newErrors: {title?: string; description?: string} = {};
-    let isValid = true;
-    
-    if (!title.trim()) {
-      newErrors.title = "Title is required";
-      isValid = false;
-    } else if (title.length < 5) {
-      newErrors.title = "Title must be at least 5 characters";
-      isValid = false;
-    } else if (title.length > 100) {
-      newErrors.title = "Title must be less than 100 characters";
-      isValid = false;
-    }
-    
-    if (!description.trim()) {
-      newErrors.description = "Description is required";
-      isValid = false;
-    } else if (description.length < 10) {
-      newErrors.description = "Description must be at least 10 characters";
-      isValid = false;
-    } else if (description.length > 2000) {
-      newErrors.description = "Description must be less than 2000 characters";
-      isValid = false;
-    }
-    
-    setErrors(newErrors);
-    return isValid;
-  };
-  
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validateForm()) {
-      onSubmit({
-        title,
-        description,
-        type,
-        priority,
-        status: "open"
-      });
-    }
-  };
-  
-  // Get the icon for the issue type
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'bug':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case 'feature':
-        return <CirclePlus className="h-4 w-4 text-blue-500" />;
-      case 'enhancement':
-        return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-purple-500"><path d="m6 9 6 6 6-6"/></svg>;
-      case 'question':
-        return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-orange-500"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>;
-      default:
-        return <MessageSquare className="h-4 w-4" />;
-    }
-  };
-  
-  return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div>
-        <div className="flex justify-between items-center mb-1.5">
-          <label htmlFor="title" className="text-sm font-medium">Title</label>
-          <span className="text-xs text-muted-foreground">
-            {title.length}/100 characters
-          </span>
-        </div>
-        <Input 
-          id="title" 
-          value={title} 
-          onChange={(e) => {
-            setTitle(e.target.value);
-            if (errors.title) {
-              setErrors({...errors, title: undefined});
-            }
-          }}
-          placeholder="Brief summary of the issue"
-          className={errors.title ? "border-destructive" : ""}
-        />
-        {errors.title && (
-          <p className="mt-1 text-xs text-destructive">{errors.title}</p>
-        )}
-      </div>
-      
-      <div>
-        <div className="flex justify-between items-center mb-1.5">
-          <label htmlFor="description" className="text-sm font-medium">Description</label>
-          <span className={`text-xs ${isDescriptionTooLong ? "text-destructive font-medium" : "text-muted-foreground"}`}>
-            {descriptionCharsRemaining} characters remaining
-          </span>
-        </div>
-        <Textarea 
-          id="description" 
-          value={description} 
-          onChange={(e) => {
-            setDescription(e.target.value);
-            if (errors.description) {
-              setErrors({...errors, description: undefined});
-            }
-          }}
-          placeholder="Please provide detailed information about the issue or feature request"
-          rows={6}
-          className={errors.description ? "border-destructive" : ""}
-        />
-        {errors.description && (
-          <p className="mt-1 text-xs text-destructive">{errors.description}</p>
-        )}
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div>
-          <label htmlFor="type" className="block text-sm font-medium mb-1.5">Issue Type</label>
-          <div className="flex items-center space-x-2 mb-2">
-            {getTypeIcon(type)}
-            <span className="text-sm">{type.charAt(0).toUpperCase() + type.slice(1)}</span>
-          </div>
-          <select 
-            id="type" 
-            value={type} 
-            onChange={(e) => setType(e.target.value)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          >
-            <option value="bug">Bug</option>
-            <option value="feature">Feature Request</option>
-            <option value="enhancement">Enhancement</option>
-            <option value="question">Question</option>
-          </select>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Select the type that best describes your issue
-          </p>
-        </div>
-        
-        <div>
-          <label htmlFor="priority" className="block text-sm font-medium mb-1.5">Priority</label>
-          <div className="relative">
-            <select 
-              id="priority" 
-              value={priority} 
-              onChange={(e) => setPriority(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-            <div className={`absolute top-0 left-0 w-1 h-full rounded-l-md ${
-              priority === 'high' ? 'bg-red-500' : 
-              priority === 'medium' ? 'bg-yellow-500' : 
-              'bg-green-500'
-            }`}></div>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {priority === 'high' ? 
-              'High priority issues need immediate attention' : 
-              priority === 'medium' ? 
-                'Medium priority issues will be addressed soon' : 
-                'Low priority issues will be addressed when possible'
-            }
-          </p>
-        </div>
-      </div>
-      
-      <div className="pt-2">
-        <Button 
-          type="submit" 
-          disabled={isSubmitting || isDescriptionTooLong}
-          className="w-full sm:w-auto bg-primary/90 hover:bg-primary transition-colors"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Submitting...
-            </>
-          ) : (
-            <>
-              <CirclePlus className="mr-2 h-4 w-4" />
-              Submit Issue
-            </>
-          )}
-        </Button>
-      </div>
-    </form>
-  );
+  createdAt: Date;
+  createdBy: string;
 }
 
-// Comment form
-function CommentForm({ issueId, onSubmit, isSubmitting }: { issueId: number, onSubmit: (data: any) => void, isSubmitting: boolean }) {
-  const [content, setContent] = useState("");
-  const [isFocused, setIsFocused] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (content.trim() === "") return;
-    
-    onSubmit({
-      content,
-      issueId
-    });
-    setContent("");
-    setIsFocused(false);
-    textareaRef.current?.blur();
-  };
-  
-  const handleCancel = () => {
-    setContent("");
-    setIsFocused(false);
-    textareaRef.current?.blur();
-  };
-  
-  const remainingChars = 1000 - content.length;
-  const isExceedingLimit = remainingChars < 0;
-  
-  return (
-    <div className="rounded-md border border-border/60 overflow-hidden">
-      <form onSubmit={handleSubmit}>
-        <div>
-          <div className="p-1 bg-card/50">
-            <Textarea 
-              ref={textareaRef}
-              id="comment" 
-              placeholder="Add your comment here..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              onFocus={() => setIsFocused(true)}
-              rows={isFocused ? 5 : 3}
-              className="w-full resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
-            />
-          </div>
-          
-          <div className={`flex justify-between items-center p-2 border-t border-border/30 transition-all duration-200 ${isFocused || content ? 'opacity-100' : 'opacity-0'}`}>
-            <div className="text-xs text-muted-foreground">
-              <span className={isExceedingLimit ? 'text-destructive font-semibold' : ''}>
-                {remainingChars} characters remaining
-              </span>
-            </div>
-            
-            <div className="flex gap-2">
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="sm"
-                onClick={handleCancel}
-                className="h-8 text-xs"
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit"
-                disabled={isSubmitting || content.trim() === "" || isExceedingLimit}
-                size="sm"
-                className="h-8 text-xs bg-primary/90 hover:bg-primary transition-colors"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 h-3 w-3">
-                      <path d="m3 10 10 10L21 4"/>
-                    </svg>
-                    Submit Comment
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-// Issue details component
-function IssueDetails({ issue, onBack }: { issue: Issue, onBack: () => void }) {
-  const { toast } = useToast();
-  const [newComment, setNewComment] = useState("");
-  
-  // Fetch comments for this issue
-  const { data: comments = [], isLoading: isLoadingComments } = useQuery({
-    queryKey: [`/api/issues/${issue.id}/comments`],
-    queryFn: () => apiRequest(`/api/issues/${issue.id}/comments`),
-  });
-  
-  // Create comment mutation
-  const createCommentMutation = useMutation({
-    mutationFn: (data: any) => 
-      apiRequest('POST', `/api/issues/${issue.id}/comments`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/issues/${issue.id}/comments`] });
-      toast({
-        title: "Comment added",
-        description: "Your comment has been added to the issue."
-      });
-      setNewComment("");
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to add comment",
-        description: "There was an error adding your comment. Please try again.",
-        variant: "destructive"
-      });
-    }
-  });
-  
-  // Close issue mutation
-  const closeIssueMutation = useMutation({
-    mutationFn: (data: any) => 
-      apiRequest('POST', `/api/issues/${issue.id}/close`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/issues/${issue.id}`] });
-      toast({
-        title: "Issue closed",
-        description: "The issue has been closed successfully."
-      });
-      onBack(); // Return to the issues list after closing
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to close issue",
-        description: "There was an error closing the issue. Please try again.",
-        variant: "destructive"
-      });
-    }
-  });
-  
-  // Update status mutation
-  const updateStatusMutation = useMutation({
-    mutationFn: (data: any) => 
-      apiRequest('PATCH', `/api/issues/${issue.id}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/issues/${issue.id}`] });
-      toast({
-        title: "Status updated",
-        description: "The issue status has been updated successfully."
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to update status",
-        description: "There was an error updating the status. Please try again.",
-        variant: "destructive"
-      });
-    }
-  });
-  
-  const handleUpdateStatus = (status: string) => {
-    updateStatusMutation.mutate({ status });
-  };
-  
-  const handleCloseIssue = () => {
-    closeIssueMutation.mutate({ resolution: "Resolved by user" });
-  };
-  
-  const handleSubmitComment = (data: any) => {
-    createCommentMutation.mutate(data);
-  };
-  
-  // Get the icon for the issue type
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'bug':
-        return <AlertCircle className="h-5 w-5 text-red-500" />;
-      case 'feature':
-        return <CirclePlus className="h-5 w-5 text-blue-500" />;
-      case 'enhancement':
-        return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-purple-500"><path d="m6 9 6 6 6-6"/></svg>;
-      case 'question':
-        return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-orange-500"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>;
-      default:
-        return <MessageSquare className="h-5 w-5" />;
-    }
-  };
-  
-  // Format the priority for display
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return <Badge className="bg-red-500 hover:bg-red-600">High</Badge>;
-      case 'medium':
-        return <Badge className="bg-yellow-500 hover:bg-yellow-600">Medium</Badge>;
-      case 'low':
-        return <Badge className="bg-green-500 hover:bg-green-600">Low</Badge>;
-      default:
-        return <Badge>Unknown</Badge>;
-    }
-  };
-  
-  // Format the type for display
-  const getTypeBadge = (type: string) => {
-    switch (type) {
-      case 'bug':
-        return <Badge className="bg-destructive hover:bg-destructive/90">Bug</Badge>;
-      case 'feature':
-        return <Badge className="bg-blue-500 hover:bg-blue-600">Feature</Badge>;
-      case 'enhancement':
-        return <Badge className="bg-purple-500 hover:bg-purple-600">Enhancement</Badge>;
-      case 'question':
-        return <Badge className="bg-orange-500 hover:bg-orange-600">Question</Badge>;
-      default:
-        return <Badge>Unknown</Badge>;
-    }
-  };
-  
-  // Format the status for display
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'open':
-        return <Badge className="bg-blue-500 hover:bg-blue-600">Open</Badge>;
-      case 'in_progress':
-        return <Badge className="bg-yellow-500 hover:bg-yellow-600">In Progress</Badge>;
-      case 'completed':
-        return <Badge className="bg-green-500 hover:bg-green-600">Completed</Badge>;
-      default:
-        return <Badge>Unknown</Badge>;
-    }
-  };
-  
-  return (
-    <div className="pb-8">
-      <div className="flex items-center mb-6">
-        <Button variant="ghost" onClick={onBack} className="mr-2">
-          ← Back
-        </Button>
-        <h2 className="text-2xl font-bold">Issue Details</h2>
-      </div>
-      
-      <Card className="border border-border/40 shadow-sm">
-        <CardHeader className="pb-3 border-b">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-            <div className="flex items-start gap-3">
-              <div className="mt-1">
-                {getTypeIcon(issue.type)}
-              </div>
-              <div>
-                <CardTitle className="text-xl font-bold">{issue.title}</CardTitle>
-                <CardDescription className="mt-1 text-muted-foreground">
-                  Issue #{issue.id} opened on {format(new Date(issue.createdAt), 'MMM d, yyyy')} by User #{issue.submitterId}
-                </CardDescription>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2 mt-1">
-              {getTypeBadge(issue.type)}
-              {getPriorityBadge(issue.priority)}
-              {getStatusBadge(issue.status)}
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="pt-6">
-          {/* Issue description with styling */}
-          <div className="prose prose-invert max-w-none mb-8 p-4 bg-card/40 rounded-md border border-border/30">
-            <p className="whitespace-pre-line text-base">{issue.description}</p>
-          </div>
-          
-          {/* Status control */}
-          {issue.status !== 'completed' && (
-            <div className="mb-8 p-4 bg-card/30 rounded-lg border border-border/30">
-              <h3 className="text-base font-medium mb-3">Update Status</h3>
-              <div className="flex flex-wrap gap-2">
-                <Button 
-                  size="sm" 
-                  variant={issue.status === 'open' ? 'default' : 'outline'} 
-                  onClick={() => handleUpdateStatus('open')}
-                  disabled={updateStatusMutation.isPending || issue.status === 'open'}
-                  className="text-xs"
-                >
-                  Open
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant={issue.status === 'in_progress' ? 'default' : 'outline'}
-                  onClick={() => handleUpdateStatus('in_progress')}
-                  disabled={updateStatusMutation.isPending || issue.status === 'in_progress'}
-                  className="text-xs"
-                >
-                  In Progress
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="destructive"
-                  onClick={handleCloseIssue}
-                  disabled={closeIssueMutation.isPending}
-                  className="ml-auto text-xs"
-                >
-                  <CheckCircle2 className="mr-1 h-3 w-3" />
-                  {closeIssueMutation.isPending ? "Closing..." : "Close Issue"}
-                </Button>
-              </div>
-            </div>
-          )}
-          
-          {/* Comments section */}
-          <div className="mt-6">
-            <div className="flex items-center mb-4">
-              <MessageCircle className="mr-2 h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">Comments</h3>
-              <Badge variant="outline" className="ml-2 px-2 py-0 h-5">
-                {comments.length}
-              </Badge>
-            </div>
-            
-            {isLoadingComments ? (
-              <div className="flex justify-center p-6">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : comments.length > 0 ? (
-              <div className="space-y-4">
-                {comments.map((comment: IssueComment) => (
-                  <div key={comment.id} className="bg-card/30 p-4 rounded-md border border-border/30">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary mr-2">
-                          {comment.userId.toString().charAt(0)}
-                        </div>
-                        <div className="font-medium">User #{comment.userId}</div>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {format(new Date(comment.createdAt), 'MMM d, yyyy h:mm a')}
-                        {comment.isEdited && <span className="ml-2 italic">(Edited)</span>}
-                      </div>
-                    </div>
-                    <div className="pl-10">
-                      <p className="whitespace-pre-line">{comment.content}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center p-8 border border-dashed rounded-md bg-card/20">
-                <MessageCircle className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-muted-foreground">No comments yet. Be the first to add a comment.</p>
-              </div>
-            )}
-            
-            <div className="mt-6">
-              <CommentForm 
-                issueId={issue.id} 
-                onSubmit={handleSubmitComment} 
-                isSubmitting={createCommentMutation.isPending} 
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// Main component for list of issues
-function IssuesList() {
-  const { toast } = useToast();
-  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
-  const [showIssueForm, setShowIssueForm] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filter, setFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<string>("newest");
-  
-  // Fetch issues
-  const { data: issues = [], isLoading } = useQuery({
-    queryKey: ['/api/issues'],
-    queryFn: async () => {
-      const response = await apiRequest('/api/issues');
-      console.log('Issues response:', response);
-      return response;
-    },
-  });
-  
-  // Create issue mutation
-  const createIssueMutation = useMutation({
-    mutationFn: (data: any) => 
-      apiRequest('POST', '/api/issues', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/issues'] });
-      toast({
-        title: "Issue created",
-        description: "Your issue has been created successfully."
-      });
-      setShowIssueForm(false);
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to create issue",
-        description: "There was an error creating your issue. Please try again.",
-        variant: "destructive"
-      });
-    }
-  });
-  
-  // Filter and search issues
-  const filteredAndSortedIssues = useMemo(() => {
-    // First, filter by status
-    let result = issues.filter((issue: Issue) => {
-      if (filter === "all") return true;
-      return issue.status === filter;
-    });
-    
-    // Then, filter by search term
-    if (searchTerm.trim() !== "") {
-      const term = searchTerm.toLowerCase();
-      result = result.filter((issue: Issue) => 
-        issue.title.toLowerCase().includes(term) || 
-        issue.description.toLowerCase().includes(term)
-      );
-    }
-    
-    // Finally, sort the issues
-    return result.sort((a: Issue, b: Issue) => {
-      switch (sortBy) {
-        case "newest":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case "oldest":
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        case "priority":
-          const priorityOrder = { high: 0, medium: 1, low: 2 };
-          return priorityOrder[a.priority as keyof typeof priorityOrder] - 
-                 priorityOrder[b.priority as keyof typeof priorityOrder];
-        default:
-          return 0;
+// Mock data for issues
+const mockIssues: Issue[] = [
+  {
+    id: 1,
+    title: "Dashboard doesn't update in real-time",
+    description: "The power metrics on the dashboard don't update automatically. I have to refresh the page to see new data.",
+    status: "in_progress",
+    priority: "high",
+    type: "bug",
+    createdAt: new Date(2025, 4, 2), // May 2, 2025
+    updatedAt: new Date(2025, 4, 5), // May 5, 2025
+    createdBy: "john.doe",
+    assignedTo: "tech.support",
+    votes: 8,
+    comments: [
+      {
+        id: 1,
+        issueId: 1,
+        content: "I'm having the same issue. It seems to happen more frequently during peak hours.",
+        createdAt: new Date(2025, 4, 3), // May 3, 2025
+        createdBy: "sarah.smith",
+      },
+      {
+        id: 2,
+        issueId: 1,
+        content: "We're working on this issue. It's related to the WebSocket connection dropping. Should be fixed in the next update.",
+        createdAt: new Date(2025, 4, 5), // May 5, 2025
+        createdBy: "tech.support",
       }
-    });
-  }, [issues, filter, searchTerm, sortBy]);
+    ],
+    tags: ["dashboard", "real-time", "websocket"]
+  },
+  {
+    id: 2,
+    title: "Add mobile app support",
+    description: "It would be great to have a mobile app version of the dashboard for monitoring on the go.",
+    status: "open",
+    priority: "medium",
+    type: "feature",
+    createdAt: new Date(2025, 3, 15), // April 15, 2025
+    updatedAt: new Date(2025, 3, 18), // April 18, 2025
+    createdBy: "sarah.smith",
+    assignedTo: null,
+    votes: 15,
+    comments: [
+      {
+        id: 3,
+        issueId: 2,
+        content: "This would be very useful for our technicians in the field.",
+        createdAt: new Date(2025, 3, 16), // April 16, 2025
+        createdBy: "john.doe",
+      },
+      {
+        id: 4,
+        issueId: 2,
+        content: "We're considering this for Q3. Would you prefer iOS, Android, or both?",
+        createdAt: new Date(2025, 3, 18), // April 18, 2025
+        createdBy: "product.manager",
+      }
+    ],
+    tags: ["mobile", "feature-request", "enhancement"]
+  },
+  {
+    id: 3,
+    title: "Forecasting accuracy improvement",
+    description: "The power consumption forecasts are consistently off by 10-15%. Can we improve the algorithm?",
+    status: "open",
+    priority: "medium",
+    type: "improvement",
+    createdAt: new Date(2025, 4, 1), // May 1, 2025
+    updatedAt: new Date(2025, 4, 1), // May 1, 2025
+    createdBy: "david.jones",
+    assignedTo: null,
+    votes: 5,
+    comments: [],
+    tags: ["forecasting", "algorithm", "accuracy"]
+  },
+  {
+    id: 4,
+    title: "Error when exporting reports to CSV",
+    description: "When I try to export reports to CSV, I get an error message saying 'Export failed'.",
+    status: "resolved",
+    priority: "high",
+    type: "bug",
+    createdAt: new Date(2025, 3, 28), // April 28, 2025
+    updatedAt: new Date(2025, 4, 6), // May 6, 2025
+    createdBy: "emily.wilson",
+    assignedTo: "tech.support",
+    votes: 3,
+    comments: [
+      {
+        id: 5,
+        issueId: 4,
+        content: "Fixed in version 1.2.3. The issue was related to handling large datasets.",
+        createdAt: new Date(2025, 4, 6), // May 6, 2025
+        createdBy: "tech.support",
+      }
+    ],
+    tags: ["reports", "export", "csv", "fixed"]
+  },
+  {
+    id: 5,
+    title: "Add equipment maintenance prediction",
+    description: "It would be helpful to have predictive maintenance alerts based on equipment performance patterns.",
+    status: "open",
+    priority: "low",
+    type: "feature",
+    createdAt: new Date(2025, 3, 20), // April 20, 2025
+    updatedAt: new Date(2025, 3, 20), // April 20, 2025
+    createdBy: "john.doe",
+    assignedTo: null,
+    votes: 7,
+    comments: [],
+    tags: ["equipment", "predictive-maintenance", "feature-request"]
+  },
+  {
+    id: 6,
+    title: "How do I set up alert notifications?",
+    description: "I'd like to receive SMS or email notifications when power usage exceeds certain thresholds. How can I set this up?",
+    status: "resolved",
+    priority: "low",
+    type: "question",
+    createdAt: new Date(2025, 4, 3), // May 3, 2025
+    updatedAt: new Date(2025, 4, 4), // May 4, 2025
+    createdBy: "sarah.smith",
+    assignedTo: "customer.support",
+    votes: 1,
+    comments: [
+      {
+        id: 6,
+        issueId: 6,
+        content: "You can configure notifications in Settings > Alerts > Notification Preferences. You'll need to verify your email or phone number first.",
+        createdAt: new Date(2025, 4, 4), // May 4, 2025
+        createdBy: "customer.support",
+      }
+    ],
+    tags: ["notifications", "alerts", "how-to"]
+  },
+  {
+    id: 7,
+    title: "Equipment page doesn't load on Safari",
+    description: "The equipment monitoring page fails to load properly when using Safari on macOS. Works fine on Chrome and Firefox.",
+    status: "in_progress",
+    priority: "medium",
+    type: "bug",
+    createdAt: new Date(2025, 4, 5), // May 5, 2025
+    updatedAt: new Date(2025, 4, 6), // May 6, 2025
+    createdBy: "emily.wilson",
+    assignedTo: "tech.support",
+    votes: 4,
+    comments: [
+      {
+        id: 7,
+        issueId: 7,
+        content: "I can reproduce this on Safari 16.4. Looking into it now.",
+        createdAt: new Date(2025, 4, 6), // May 6, 2025
+        createdBy: "tech.support",
+      }
+    ],
+    tags: ["safari", "browser-compatibility", "equipment-page"]
+  },
+];
+
+// Define the schema for feedback form
+const feedbackSchema = z.object({
+  title: z.string().min(5, "Title must be at least 5 characters").max(100, "Title must be less than 100 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters").max(1000, "Description must be less than 1000 characters"),
+  type: z.enum(["bug", "feature", "improvement", "question"]),
+  priority: z.enum(["low", "medium", "high", "critical"]),
+  tags: z.string().optional(),
+});
+
+// Define the schema for comment form
+const commentSchema = z.object({
+  content: z.string().min(1, "Comment cannot be empty").max(500, "Comment must be less than 500 characters"),
+});
+
+export default function FeedbackPage() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("issues");
+  const [issues, setIssues] = useState<Issue[]>(mockIssues);
+  const [selectedIssueId, setSelectedIssueId] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [priorityFilter, setFilterPriority] = useState<string>("all");
+  const [sortType, setSortType] = useState<"newest" | "oldest" | "most_votes" | "priority">("newest");
   
-  const handleCreateIssue = (data: any) => {
-    createIssueMutation.mutate(data);
+  // Get the selected issue
+  const selectedIssue = selectedIssueId 
+    ? issues.find(issue => issue.id === selectedIssueId) 
+    : null;
+  
+  // Initialize form for feedback submission
+  const feedbackForm = useForm<z.infer<typeof feedbackSchema>>({
+    resolver: zodResolver(feedbackSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      type: "bug",
+      priority: "medium",
+      tags: "",
+    },
+  });
+  
+  // Initialize form for comment submission
+  const commentForm = useForm<z.infer<typeof commentSchema>>({
+    resolver: zodResolver(commentSchema),
+    defaultValues: {
+      content: "",
+    },
+  });
+  
+  // Filter and sort issues
+  const getFilteredIssues = () => {
+    // Apply filters
+    let filtered = issues.filter(issue => {
+      const statusMatch = statusFilter === "all" || issue.status === statusFilter;
+      const typeMatch = typeFilter === "all" || issue.type === typeFilter;
+      const priorityMatch = priorityFilter === "all" || issue.priority === priorityFilter;
+      return statusMatch && typeMatch && priorityMatch;
+    });
+    
+    // Apply sorting
+    switch (sortType) {
+      case "newest":
+        filtered = filtered.sort((a, b) => compareDesc(new Date(a.createdAt), new Date(b.createdAt)));
+        break;
+      case "oldest":
+        filtered = filtered.sort((a, b) => compareDesc(new Date(b.createdAt), new Date(a.createdAt)));
+        break;
+      case "most_votes":
+        filtered = filtered.sort((a, b) => b.votes - a.votes);
+        break;
+      case "priority":
+        const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+        filtered = filtered.sort((a, b) => 
+          priorityOrder[a.priority as keyof typeof priorityOrder] - 
+          priorityOrder[b.priority as keyof typeof priorityOrder]
+        );
+        break;
+    }
+    
+    return filtered;
   };
   
-  // Count issues by status
-  const issueCounts = useMemo(() => {
-    const counts = {
-      all: issues.length,
-      open: 0,
-      in_progress: 0,
-      completed: 0
+  // Format date for display
+  const formatDate = (date: Date) => {
+    return format(date, "MMM d, yyyy");
+  };
+  
+  // Get status badge
+  const getStatusBadge = (status: IssueStatus) => {
+    switch (status) {
+      case "open":
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">Open</Badge>;
+      case "in_progress":
+        return <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">In Progress</Badge>;
+      case "resolved":
+        return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Resolved</Badge>;
+      case "wont_fix":
+        return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">Won't Fix</Badge>;
+    }
+  };
+  
+  // Get priority badge
+  const getPriorityBadge = (priority: IssuePriority) => {
+    switch (priority) {
+      case "critical":
+        return <Badge variant="destructive">Critical</Badge>;
+      case "high":
+        return <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">High</Badge>;
+      case "medium":
+        return <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">Medium</Badge>;
+      case "low":
+        return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Low</Badge>;
+    }
+  };
+  
+  // Get type icon
+  const getTypeIcon = (type: IssueType) => {
+    switch (type) {
+      case "bug":
+        return <Bug className="h-4 w-4 text-red-500" />;
+      case "feature":
+        return <Sparkles className="h-4 w-4 text-purple-500" />;
+      case "improvement":
+        return <Lightbulb className="h-4 w-4 text-amber-500" />;
+      case "question":
+        return <MessageSquare className="h-4 w-4 text-blue-500" />;
+    }
+  };
+  
+  // Get type badge
+  const getTypeBadge = (type: IssueType) => {
+    switch (type) {
+      case "bug":
+        return (
+          <div className="flex items-center gap-1">
+            <Bug className="h-3.5 w-3.5 text-red-500" />
+            <span>Bug</span>
+          </div>
+        );
+      case "feature":
+        return (
+          <div className="flex items-center gap-1">
+            <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+            <span>Feature</span>
+          </div>
+        );
+      case "improvement":
+        return (
+          <div className="flex items-center gap-1">
+            <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
+            <span>Improvement</span>
+          </div>
+        );
+      case "question":
+        return (
+          <div className="flex items-center gap-1">
+            <MessageSquare className="h-3.5 w-3.5 text-blue-500" />
+            <span>Question</span>
+          </div>
+        );
+    }
+  };
+  
+  // Submit new feedback
+  const handleSubmitFeedback = (data: z.infer<typeof feedbackSchema>) => {
+    // Create new issue
+    const newIssue: Issue = {
+      id: Math.max(...issues.map(issue => issue.id), 0) + 1,
+      title: data.title,
+      description: data.description,
+      status: "open",
+      priority: data.priority as IssuePriority,
+      type: data.type as IssueType,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy: user?.username || "anonymous",
+      assignedTo: null,
+      votes: 0,
+      comments: [],
+      tags: data.tags ? data.tags.split(",").map(tag => tag.trim()) : [],
     };
     
-    issues.forEach((issue: Issue) => {
-      if (counts[issue.status as keyof typeof counts] !== undefined) {
-        counts[issue.status as keyof typeof counts]++;
-      }
+    // Add new issue to the list
+    setIssues([newIssue, ...issues]);
+    
+    // Show success message
+    toast({
+      title: "Feedback submitted",
+      description: "Thank you for your feedback. We'll review it shortly.",
     });
     
-    return counts;
-  }, [issues]);
-  
-  // Get the icon for the issue type
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'bug':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case 'feature':
-        return <CirclePlus className="h-4 w-4 text-blue-500" />;
-      case 'enhancement':
-        return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-purple-500"><path d="m6 9 6 6 6-6"/></svg>;
-      case 'question':
-        return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-orange-500"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>;
-      default:
-        return <MessageSquare className="h-4 w-4" />;
-    }
+    // Reset the form
+    feedbackForm.reset();
+    
+    // Switch to issues tab and select the new issue
+    setActiveTab("issues");
+    setSelectedIssueId(newIssue.id);
   };
   
-  // If viewing issue details
-  if (selectedIssue) {
-    return <IssueDetails issue={selectedIssue} onBack={() => setSelectedIssue(null)} />;
-  }
+  // Submit new comment
+  const handleSubmitComment = (data: z.infer<typeof commentSchema>) => {
+    if (!selectedIssueId) return;
+    
+    // Create new comment
+    const newComment: Comment = {
+      id: Math.max(...issues.flatMap(issue => issue.comments.map(comment => comment.id)), 0) + 1,
+      issueId: selectedIssueId,
+      content: data.content,
+      createdAt: new Date(),
+      createdBy: user?.username || "anonymous",
+    };
+    
+    // Add comment to the issue
+    setIssues(issues.map(issue => 
+      issue.id === selectedIssueId 
+        ? { 
+            ...issue, 
+            comments: [...issue.comments, newComment],
+            updatedAt: new Date(),
+          } 
+        : issue
+    ));
+    
+    // Reset the comment form
+    commentForm.reset();
+  };
+  
+  // Vote for an issue
+  const handleVote = (issueId: number) => {
+    setIssues(issues.map(issue => 
+      issue.id === issueId 
+        ? { ...issue, votes: issue.votes + 1 } 
+        : issue
+    ));
+  };
+  
+  // Calculate issue statistics
+  const getIssueStats = () => {
+    return {
+      total: issues.length,
+      open: issues.filter(issue => issue.status === "open").length,
+      inProgress: issues.filter(issue => issue.status === "in_progress").length,
+      resolved: issues.filter(issue => issue.status === "resolved").length,
+      bugs: issues.filter(issue => issue.type === "bug").length,
+      features: issues.filter(issue => issue.type === "feature").length,
+      improvements: issues.filter(issue => issue.type === "improvement").length,
+      questions: issues.filter(issue => issue.type === "question").length,
+    };
+  };
+  
+  const stats = getIssueStats();
   
   return (
-    <div>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold">Issues & Feedback</h1>
-        <Button 
-          onClick={() => setShowIssueForm(!showIssueForm)}
-          className="bg-primary/90 hover:bg-primary transition-colors"
-          size="sm"
-        >
-          {showIssueForm ? "Cancel" : (
-            <>
-              <CirclePlus className="mr-2 h-4 w-4" />
-              New Issue
-            </>
-          )}
-        </Button>
-      </div>
-      
-      {showIssueForm && (
-        <Card className="mb-8 border border-border/50 shadow-md">
-          <CardHeader className="bg-card/50 pb-2">
-            <CardTitle>Create New Issue</CardTitle>
-            <CardDescription>
-              Submit a bug report, feature request, or feedback about the application.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <IssueForm
-              onSubmit={handleCreateIssue}
-              isSubmitting={createIssueMutation.isPending}
-            />
-          </CardContent>
-        </Card>
-      )}
-      
-      {/* Search and Filter Controls */}
-      <div className="mb-6 space-y-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-            <Input
-              className="pl-10"
-              placeholder="Search issues..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <div className="flex flex-wrap gap-2">
-            <select 
-              className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="priority">Priority (High to Low)</option>
-            </select>
-          </div>
-        </div>
+    <Layout title="Feedback & Issues" description="Report issues and submit feedback for the system">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid grid-cols-2 md:grid-cols-2 w-full md:w-fit">
+          <TabsTrigger value="issues">
+            <Bug className="h-4 w-4 mr-2" />
+            Issues & Feedback
+          </TabsTrigger>
+          <TabsTrigger value="new">
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Submit New
+          </TabsTrigger>
+        </TabsList>
         
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-muted-foreground">Filter:</span>
-          <Button 
-            variant={filter === "all" ? "default" : "outline"} 
-            onClick={() => setFilter("all")}
-            size="sm"
-            className="text-xs h-8"
-          >
-            All
-            <Badge variant="secondary" className="ml-2 bg-primary/20">
-              {issueCounts.all}
-            </Badge>
-          </Button>
-          <Button 
-            variant={filter === "open" ? "default" : "outline"}
-            onClick={() => setFilter("open")}
-            size="sm"
-            className="text-xs h-8"
-          >
-            Open
-            <Badge variant="secondary" className="ml-2 bg-primary/20">
-              {issueCounts.open}
-            </Badge>
-          </Button>
-          <Button 
-            variant={filter === "in_progress" ? "default" : "outline"}
-            onClick={() => setFilter("in_progress")}
-            size="sm"
-            className="text-xs h-8"
-          >
-            In Progress
-            <Badge variant="secondary" className="ml-2 bg-primary/20">
-              {issueCounts.in_progress}
-            </Badge>
-          </Button>
-          <Button 
-            variant={filter === "completed" ? "default" : "outline"}
-            onClick={() => setFilter("completed")}
-            size="sm"
-            className="text-xs h-8"
-          >
-            Completed
-            <Badge variant="secondary" className="ml-2 bg-primary/20">
-              {issueCounts.completed}
-            </Badge>
-          </Button>
-        </div>
-      </div>
-      
-      {/* Issues List */}
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-lg">
-          <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-          <p className="text-muted-foreground">Loading issues...</p>
-        </div>
-      ) : filteredAndSortedIssues.length > 0 ? (
-        <div className="space-y-3">
-          {filteredAndSortedIssues.map((issue: Issue) => (
-            <Card 
-              key={issue.id} 
-              className="overflow-hidden cursor-pointer hover:bg-card/80 transition-colors border border-border/50 shadow-sm"
-              onClick={() => setSelectedIssue(issue)}
-            >
-              <div className={`h-1 ${issue.priority === 'high' ? 'bg-red-500' : issue.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`} />
-              <CardHeader className="p-4 pb-2">
-                <div className="flex justify-between items-start gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="mt-[2px]">
-                      {getTypeIcon(issue.type)}
+        {/* Issue Tracking Tab */}
+        <TabsContent value="issues" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Total Issues</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.total}</div>
+                <div className="mt-1 flex justify-between items-center text-xs">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1">
+                      <div className="h-2 w-2 rounded-full bg-blue-500" />
+                      <span>Open: {stats.open}</span>
                     </div>
-                    <CardTitle className="text-base font-semibold">{issue.title}</CardTitle>
+                    <div className="flex items-center gap-1">
+                      <div className="h-2 w-2 rounded-full bg-amber-500" />
+                      <span>In Progress: {stats.inProgress}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {issue.status === "open" && (
-                      <Badge className="bg-blue-500 hover:bg-blue-600 text-[10px]">Open</Badge>
-                    )}
-                    {issue.status === "in_progress" && (
-                      <Badge className="bg-yellow-500 hover:bg-yellow-600 text-[10px]">In Progress</Badge>
-                    )}
-                    {issue.status === "completed" && (
-                      <Badge className="bg-green-500 hover:bg-green-600 text-[10px]">Completed</Badge>
-                    )}
-                    {issue.priority === "high" && (
-                      <Badge className="bg-red-500 hover:bg-red-600 text-[10px]">High Priority</Badge>
-                    )}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1">
+                      <div className="h-2 w-2 rounded-full bg-green-500" />
+                      <span>Resolved: {stats.resolved}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="h-2 w-2 rounded-full bg-red-500" />
+                      <span>Bugs: {stats.bugs}</span>
+                    </div>
                   </div>
                 </div>
-                <CardDescription className="flex items-center mt-1 text-xs">
-                  <span className="text-muted-foreground">#{issue.id} opened on {format(new Date(issue.createdAt), 'MMM d, yyyy')}</span>
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <p className="line-clamp-2 text-sm text-muted-foreground">
-                  {issue.description}
-                </p>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center text-center p-12 border border-dashed rounded-lg">
-          <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="font-medium text-lg mb-2">No issues found</h3>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            {searchTerm ? 
-              `No issues matching "${searchTerm}" found. Try a different search term or clear your search.` :
-              filter !== "all" ? 
-                `No issues with status "${filter}" found. Try changing the filter or create a new issue.` :
-                "There are no issues yet. Create the first one by clicking the 'New Issue' button."}
-          </p>
-          {(searchTerm || filter !== "all") && (
-            <Button 
-              variant="outline" 
-              className="mt-4"
-              onClick={() => {
-                setSearchTerm("");
-                setFilter("all");
-              }}
-            >
-              Clear filters
-            </Button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Todo items list
-function TodoList() {
-  const { toast } = useToast();
-  
-  // Fetch todos
-  const { data: todos = [], isLoading } = useQuery({
-    queryKey: ['/api/todo-items'],
-    queryFn: async () => {
-      const response = await apiRequest('/api/todo-items');
-      console.log('Todo items response:', response);
-      return response;
-    },
-  });
-  
-  // Complete todo mutation
-  const completeTodoMutation = useMutation({
-    mutationFn: (id: number) => 
-      apiRequest('POST', `/api/todo-items/${id}/complete`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/todo-items'] });
-      toast({
-        title: "Task completed",
-        description: "The task has been marked as completed."
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to complete task",
-        description: "There was an error completing the task. Please try again.",
-        variant: "destructive"
-      });
-    }
-  });
-  
-  // Group todos by stage
-  const todosByStage: Record<number, TodoItem[]> = {};
-  
-  if (!isLoading && todos.length > 0) {
-    todos.forEach((todo: TodoItem) => {
-      if (!todosByStage[todo.stage]) {
-        todosByStage[todo.stage] = [];
-      }
-      todosByStage[todo.stage].push(todo);
-    });
-  }
-  
-  const handleCompleteTodo = (id: number) => {
-    completeTodoMutation.mutate(id);
-  };
-  
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'bg-red-500';
-      case 'medium':
-        return 'bg-yellow-500';
-      case 'low':
-        return 'bg-green-500';
-      default:
-        return 'bg-blue-500';
-    }
-  };
-  
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Development Roadmap</h1>
-      </div>
-      
-      {isLoading ? (
-        <div className="flex justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : Object.keys(todosByStage).length > 0 ? (
-        <div className="space-y-8">
-          {Object.entries(todosByStage)
-            .sort(([stageA], [stageB]) => parseInt(stageA) - parseInt(stageB))
-            .map(([stage, stageTodos]) => (
-              <div key={stage} className="space-y-4">
-                <h2 className="text-xl font-bold border-b pb-2">
-                  Stage {stage}
-                </h2>
-                <div className="space-y-4">
-                  {stageTodos.map((todo) => (
-                    <Card key={todo.id} className="overflow-hidden">
-                      <div className={`h-1 ${getPriorityColor(todo.priority)}`} />
-                      <CardHeader className="pb-2">
-                        <div className="flex justify-between items-start">
-                          <CardTitle className={todo.status === 'completed' ? 'line-through text-muted-foreground' : ''}>
-                            {todo.title}
-                          </CardTitle>
-                          <div className="flex items-center space-x-2">
-                            {todo.status === 'pending' && (
-                              <Badge className="bg-blue-500">Pending</Badge>
-                            )}
-                            {todo.status === 'in_progress' && (
-                              <Badge className="bg-yellow-500">In Progress</Badge>
-                            )}
-                            {todo.status === 'completed' && (
-                              <Badge className="bg-green-500">Completed</Badge>
-                            )}
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">By Issue Type</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="flex items-center gap-1">
+                        <Bug className="h-3 w-3 text-red-500" />
+                        Bugs
+                      </span>
+                      <span>{stats.bugs}</span>
+                    </div>
+                    <Progress value={(stats.bugs / stats.total) * 100} className="h-1" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="flex items-center gap-1">
+                        <Sparkles className="h-3 w-3 text-purple-500" />
+                        Features
+                      </span>
+                      <span>{stats.features}</span>
+                    </div>
+                    <Progress value={(stats.features / stats.total) * 100} className="h-1" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="flex items-center gap-1">
+                        <Lightbulb className="h-3 w-3 text-amber-500" />
+                        Improvements
+                      </span>
+                      <span>{stats.improvements}</span>
+                    </div>
+                    <Progress value={(stats.improvements / stats.total) * 100} className="h-1" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="flex items-center gap-1">
+                        <MessageSquare className="h-3 w-3 text-blue-500" />
+                        Questions
+                      </span>
+                      <span>{stats.questions}</span>
+                    </div>
+                    <Progress value={(stats.questions / stats.total) * 100} className="h-1" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="md:col-span-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Recently Resolved</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {issues
+                    .filter(issue => issue.status === "resolved")
+                    .sort((a, b) => compareDesc(new Date(a.updatedAt), new Date(b.updatedAt)))
+                    .slice(0, 3)
+                    .map(issue => (
+                      <div 
+                        key={issue.id}
+                        className="p-2 border rounded flex items-start gap-2 text-sm cursor-pointer hover:bg-accent"
+                        onClick={() => setSelectedIssueId(issue.id)}
+                      >
+                        <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5" />
+                        <div>
+                          <div>{issue.title}</div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
+                            <span>{formatDate(issue.updatedAt)}</span>
+                            <span className="flex items-center gap-1">
+                              {getTypeIcon(issue.type)}
+                              <span>{issue.type}</span>
+                            </span>
                           </div>
                         </div>
-                      </CardHeader>
-                      {todo.description && (
-                        <CardContent className="pb-4">
-                          <p className="text-muted-foreground">{todo.description}</p>
-                        </CardContent>
-                      )}
-                      {todo.status !== 'completed' && (
-                        <CardFooter>
+                      </div>
+                    ))}
+                  
+                  {issues.filter(issue => issue.status === "resolved").length === 0 && (
+                    <div className="text-center text-muted-foreground text-sm py-4">
+                      No resolved issues yet
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4 flex-wrap">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="open">Open</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                  <SelectItem value="wont_fix">Won't Fix</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="bug">Bugs</SelectItem>
+                  <SelectItem value="feature">Features</SelectItem>
+                  <SelectItem value="improvement">Improvements</SelectItem>
+                  <SelectItem value="question">Questions</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={priorityFilter} onValueChange={setFilterPriority}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priorities</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <Select value={sortType} onValueChange={(value) => setSortType(value as any)}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest</SelectItem>
+                <SelectItem value="oldest">Oldest</SelectItem>
+                <SelectItem value="most_votes">Most Votes</SelectItem>
+                <SelectItem value="priority">Priority</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {/* Issues List */}
+            <Card className="md:col-span-1">
+              <CardHeader>
+                <CardTitle>Issues</CardTitle>
+                <CardDescription>
+                  {getFilteredIssues().length} issues found
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {getFilteredIssues().map(issue => (
+                    <div 
+                      key={issue.id}
+                      className={`p-3 rounded-lg border cursor-pointer ${
+                        selectedIssueId === issue.id 
+                          ? 'border-primary bg-primary/5' 
+                          : 'hover:bg-accent'
+                      }`}
+                      onClick={() => setSelectedIssueId(issue.id)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="font-medium flex items-center gap-2">
+                            {getTypeIcon(issue.type)}
+                            <span>{issue.title}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1 flex flex-wrap items-center gap-2">
+                            <span>{formatDate(issue.createdAt)}</span>
+                            <span>by {issue.createdBy}</span>
+                          </div>
+                        </div>
+                        {getStatusBadge(issue.status)}
+                      </div>
+                      
+                      <div className="mt-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
                           <Button 
-                            size="sm" 
-                            variant="secondary"
-                            onClick={() => handleCompleteTodo(todo.id)}
-                            disabled={completeTodoMutation.isPending}
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleVote(issue.id);
+                            }}
                           >
-                            {completeTodoMutation.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            ) : (
-                              <CheckCircle2 className="h-4 w-4 mr-2" />
-                            )}
-                            Mark Complete
+                            <ChevronUp className="h-4 w-4" />
                           </Button>
-                        </CardFooter>
+                          <span className="text-sm">{issue.votes}</span>
+                        </div>
+                        {getPriorityBadge(issue.priority)}
+                      </div>
+                      
+                      {issue.comments.length > 0 && (
+                        <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
+                          <MessageSquare className="h-3 w-3" />
+                          <span>{issue.comments.length} comment{issue.comments.length > 1 ? 's' : ''}</span>
+                        </div>
                       )}
-                    </Card>
+                    </div>
                   ))}
+                  
+                  {getFilteredIssues().length === 0 && (
+                    <div className="text-center py-6 text-muted-foreground">
+                      No issues match the selected filters
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Issue Details */}
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>
+                  {selectedIssue ? (
+                    <div className="flex items-center gap-2">
+                      {getTypeIcon(selectedIssue.type)}
+                      <span>{selectedIssue.title}</span>
+                    </div>
+                  ) : 'Issue Details'}
+                </CardTitle>
+                <CardDescription>
+                  {selectedIssue ? (
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <span>Reported by {selectedIssue.createdBy} on {formatDate(selectedIssue.createdAt)}</span>
+                      {getStatusBadge(selectedIssue.status)}
+                      {getPriorityBadge(selectedIssue.priority)}
+                    </div>
+                  ) : 'Select an issue to view details'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {selectedIssue ? (
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      <div className="p-4 border rounded-lg bg-muted/50">
+                        <p>{selectedIssue.description}</p>
+                      </div>
+                      
+                      {selectedIssue.tags.length > 0 && (
+                        <div className="flex items-center flex-wrap gap-2">
+                          <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+                          {selectedIssue.tags.map((tag, index) => (
+                            <Badge key={index} variant="outline">{tag}</Badge>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleVote(selectedIssue.id)}
+                            className="flex items-center gap-1 h-8"
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                            Upvote ({selectedIssue.votes})
+                          </Button>
+                        </div>
+                        
+                        <div>
+                          {selectedIssue.assignedTo ? (
+                            <div className="flex items-center gap-2 text-sm">
+                              <span>Assigned to:</span>
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-6 w-6">
+                                  <AvatarFallback>{selectedIssue.assignedTo.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <span>{selectedIssue.assignedTo}</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <Badge variant="outline">Unassigned</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div className="space-y-4">
+                      <h3 className="font-medium">Comments ({selectedIssue.comments.length})</h3>
+                      
+                      <div className="space-y-4">
+                        {selectedIssue.comments.map(comment => (
+                          <div key={comment.id} className="flex gap-4">
+                            <Avatar>
+                              <AvatarFallback>{comment.createdBy.substring(0, 2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{comment.createdBy}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {formatDate(comment.createdAt)}
+                                </span>
+                              </div>
+                              <p className="mt-1">{comment.content}</p>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {selectedIssue.comments.length === 0 && (
+                          <div className="text-center py-4 text-muted-foreground">
+                            No comments yet
+                          </div>
+                        )}
+                        
+                        <Form {...commentForm}>
+                          <form 
+                            onSubmit={commentForm.handleSubmit(handleSubmitComment)} 
+                            className="space-y-4"
+                          >
+                            <FormField
+                              control={commentForm.control}
+                              name="content"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Add Comment</FormLabel>
+                                  <FormControl>
+                                    <Textarea 
+                                      placeholder="Type your comment here..."
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <Button 
+                              type="submit" 
+                              className="gap-2"
+                              disabled={!commentForm.formState.isValid}
+                            >
+                              <Send className="h-4 w-4" />
+                              Post Comment
+                            </Button>
+                          </form>
+                        </Form>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p>Select an issue from the list to view details</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Or submit a new issue using the "Submit New" tab
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        {/* Submit New Issue Tab */}
+        <TabsContent value="new" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Submit New Feedback</CardTitle>
+              <CardDescription>
+                Report an issue or suggest an improvement
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...feedbackForm}>
+                <form 
+                  onSubmit={feedbackForm.handleSubmit(handleSubmitFeedback)} 
+                  className="space-y-6"
+                >
+                  <FormField
+                    control={feedbackForm.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Title</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Brief summary of the issue or suggestion"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          A clear, concise title helps others understand your feedback
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={feedbackForm.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Type</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="bug">
+                                <div className="flex items-center gap-2">
+                                  <Bug className="h-4 w-4 text-red-500" />
+                                  <span>Bug Report</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="feature">
+                                <div className="flex items-center gap-2">
+                                  <Sparkles className="h-4 w-4 text-purple-500" />
+                                  <span>Feature Request</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="improvement">
+                                <div className="flex items-center gap-2">
+                                  <Lightbulb className="h-4 w-4 text-amber-500" />
+                                  <span>Improvement</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="question">
+                                <div className="flex items-center gap-2">
+                                  <MessageSquare className="h-4 w-4 text-blue-500" />
+                                  <span>Question</span>
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={feedbackForm.control}
+                      name="priority"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Priority</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select priority" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="low">Low</SelectItem>
+                              <SelectItem value="medium">Medium</SelectItem>
+                              <SelectItem value="high">High</SelectItem>
+                              <SelectItem value="critical">Critical</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={feedbackForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Provide details about the issue or suggestion"
+                            className="min-h-32"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Include steps to reproduce if reporting a bug, or detailed explanation if suggesting a feature
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={feedbackForm.control}
+                    name="tags"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tags</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="dashboard, export, mobile, etc. (comma separated)"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Optional: Add tags to help categorize your feedback
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <Button 
+                    type="submit" 
+                    className="gap-2"
+                    disabled={!feedbackForm.formState.isValid || feedbackForm.formState.isSubmitting}
+                  >
+                    {feedbackForm.formState.isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <PlusCircle className="h-4 w-4" />
+                    )}
+                    Submit Feedback
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Before Submitting</CardTitle>
+              <CardDescription>
+                Tips for effective feedback
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Bug className="h-5 w-5 text-red-500" />
+                    <h3 className="font-medium">Reporting Bugs</h3>
+                  </div>
+                  <ul className="text-sm space-y-1 text-muted-foreground list-disc pl-5">
+                    <li>Include steps to reproduce the issue</li>
+                    <li>Describe what happened vs. what you expected</li>
+                    <li>Note which page/feature the bug occurred in</li>
+                    <li>Mention your browser and device if relevant</li>
+                  </ul>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-purple-500" />
+                    <h3 className="font-medium">Feature Requests</h3>
+                  </div>
+                  <ul className="text-sm space-y-1 text-muted-foreground list-disc pl-5">
+                    <li>Clearly explain the problem you're trying to solve</li>
+                    <li>Describe how the feature would work</li>
+                    <li>Explain the benefit to users</li>
+                    <li>Include mockups or examples if possible</li>
+                  </ul>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-blue-500" />
+                    <h3 className="font-medium">General Tips</h3>
+                  </div>
+                  <ul className="text-sm space-y-1 text-muted-foreground list-disc pl-5">
+                    <li>Check if your issue has already been reported</li>
+                    <li>Be specific and concise</li>
+                    <li>One issue per submission</li>
+                    <li>Use appropriate tags to help categorize</li>
+                  </ul>
                 </div>
               </div>
-            ))}
-        </div>
-      ) : (
-        <div className="text-center p-8 border border-dashed rounded-lg">
-          <ClipboardList className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="font-medium text-lg mb-2">No tasks found</h3>
-          <p className="text-muted-foreground">
-            The development roadmap appears to be empty.
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Main feedback page content
-function FeedbackContent() {
-  return (
-    <Tabs defaultValue="issues" className="w-full">
-      <TabsList className="mb-6">
-        <TabsTrigger value="issues">
-          <MessageSquare className="w-4 h-4 mr-2" />
-          Issues & Feedback
-        </TabsTrigger>
-        <TabsTrigger value="todos">
-          <TicketCheck className="w-4 h-4 mr-2" />
-          Development Roadmap
-        </TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="issues" className="mt-0">
-        <IssuesList />
-      </TabsContent>
-      
-      <TabsContent value="todos" className="mt-0">
-        <TodoList />
-      </TabsContent>
-    </Tabs>
-  );
-}
-
-// Main page component
-export default function FeedbackPage() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
-  
-  return (
-    <div className={`min-h-screen bg-background flex flex-col ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-      <Header onToggleSidebar={toggleSidebar} />
-      
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
-        
-        <main className="flex-1 app-content p-4 overflow-y-auto">
-          <FeedbackContent />
-        </main>
-      </div>
-    </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </Layout>
   );
 }
