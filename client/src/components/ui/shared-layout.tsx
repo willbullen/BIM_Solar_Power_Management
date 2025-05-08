@@ -83,8 +83,11 @@ export function SharedLayout({ children, user }: LayoutProps) {
         <div className="flex flex-col h-full">
           <div className="flex h-14 items-center border-b px-6 border-sidebar-border">
             <Link href="/" className="flex items-center gap-2 font-semibold">
-              <img src={logoImage} alt="Emporium Logo" className="h-8 w-auto" />
-              <span className="text-lg font-bold ml-1 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">Emporium</span>
+              <img src={logoImage} alt="BIM Logo" className="h-8 w-auto" />
+              <div className="flex flex-col">
+                <span className="text-lg font-bold ml-1 bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent">BIM</span>
+                <span className="text-xs ml-1 text-muted-foreground">Management</span>
+              </div>
             </Link>
           </div>
           <ScrollArea className="flex-1 py-4">
@@ -107,7 +110,7 @@ export function SharedLayout({ children, user }: LayoutProps) {
                       )}
                     >
                       <Icon className="h-4 w-4" />
-                      <span className="text-sm">{item.name}</span>
+                      <span className="text-sm font-medium">{item.name}</span>
                     </div>
                   </Link>
                 );
