@@ -139,11 +139,6 @@ export class SolcastService {
    */
   mapToEnvironmentalData(solcastData: SolcastForecastResponse): InsertEnvironmentalData[] {
     return solcastData.forecasts.map(forecast => {
-      // Convert GHI (Global Horizontal Irradiance) to a percentage for sunIntensity
-      // Typical max GHI is around 1000 W/m², so we'll use that as our baseline
-      const maxGHI = 1000;
-      const sunIntensity = Math.min(100, Math.max(0, (forecast.ghi / maxGHI) * 100));
-      
       // Determine weather based on GHI and DNI values
       // DNI (Direct Normal Irradiance) vs GHI ratio indicates cloud cover
       const weather = this.determineWeatherFromRadiation(forecast.ghi, forecast.dni);
@@ -152,6 +147,11 @@ export class SolcastService {
       // This is a simplification as we don't have actual humidity data
       const forecastDate = new Date(forecast.period_end);
       const hour = forecastDate.getHours();
+      
+      // Calculate sun intensity for internal use (needed for humidity estimation)
+      // Typical max GHI is around 1000 W/m², so we'll use that as our baseline
+      const maxGHI = 1000;
+      const sunIntensity = Math.min(100, Math.max(0, (forecast.ghi / maxGHI) * 100));
       const estimatedHumidity = this.estimateHumidity(forecast.air_temp, hour, sunIntensity);
       
       // Estimate wind speed (since it's not provided, we'll use a placeholder value)
@@ -161,8 +161,9 @@ export class SolcastService {
       return {
         timestamp: new Date(forecast.period_end),
         weather: weather,
-        temperature: forecast.air_temp,
-        sunIntensity: sunIntensity,
+        air_temp: forecast.air_temp,
+        ghi: forecast.ghi,
+        dni: forecast.dni,
         humidity: estimatedHumidity,
         windSpeed: estimatedWindSpeed
       };
