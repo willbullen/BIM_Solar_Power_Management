@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { EnvironmentalChart, EnvironmentalStats, SolarInfluenceAnalysis } from '@/components/environmental-chart';
 import { WeatherCorrelationAnalysis } from '@/components/weather-correlation-analysis';
+import { SolarForecastSection } from '@/components/solar-forecast-section';
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/ui/sidebar";
 
@@ -490,6 +491,9 @@ function ForecastingContent() {
               </div>
             ) : (
               <>
+                {/* Solcast Solar Forecast Section */}
+                <SolarForecastSection />
+                
                 {/* Environmental chart */}
                 <EnvironmentalChart 
                   environmentalData={envData || historicalEnvironmentalData || []}

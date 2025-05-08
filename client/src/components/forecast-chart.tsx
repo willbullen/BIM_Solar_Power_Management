@@ -89,8 +89,8 @@ export function ForecastChart({
 
   // Day/night reference lines
   const today = new Date();
-  const sunriseTime = new Date(today.setHours(6, 0, 0, 0));
-  const sunsetTime = new Date(today.setHours(20, 0, 0, 0));
+  const sunriseTime = format(new Date(today.getFullYear(), today.getMonth(), today.getDate(), 6, 0, 0), 'HH:mm');
+  const sunsetTime = format(new Date(today.getFullYear(), today.getMonth(), today.getDate(), 20, 0, 0), 'HH:mm');
 
   return (
     <Card className={cn("w-full", className)}>
