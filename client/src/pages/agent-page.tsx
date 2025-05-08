@@ -511,27 +511,27 @@ function ChatInterface() {
               )
             ) : (
               <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-                <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center dark:bg-blue-900/30">
-                  <MessageSquarePlus className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                <div className="h-16 w-16 rounded-full bg-blue-900/30 flex items-center justify-center">
+                  <MessageSquarePlus className="h-8 w-8 text-blue-400" />
                 </div>
                 <div className="space-y-2 max-w-md">
-                  <h3 className="text-lg font-semibold">No Conversation Selected</h3>
-                  <p className="text-muted-foreground">
+                  <h3 className="text-lg font-semibold text-white">No Conversation Selected</h3>
+                  <p className="text-gray-400">
                     Select an existing conversation from the sidebar or create a new one 
                     to start interacting with the AI Agent Architect.
                   </p>
                 </div>
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button>
+                    <Button className="bg-blue-600 hover:bg-blue-700">
                       <Plus className="h-4 w-4 mr-2" />
                       Create New Conversation
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
+                  <DialogContent className="sm:max-w-[425px] bg-slate-900 border-slate-800">
                     <DialogHeader>
-                      <DialogTitle>New Conversation</DialogTitle>
-                      <DialogDescription>
+                      <DialogTitle className="text-white">New Conversation</DialogTitle>
+                      <DialogDescription className="text-gray-400">
                         Create a new conversation with the AI Agent Architect
                       </DialogDescription>
                     </DialogHeader>
@@ -569,7 +569,7 @@ function ChatInterface() {
           </ScrollArea>
         </CardContent>
         
-        <CardFooter className="border-t border-border p-4">
+        <CardFooter className="border-t border-slate-800 p-4 bg-slate-900">
           <form onSubmit={handleSendMessage} className="flex w-full space-x-2">
             <Input 
               value={input}
@@ -577,12 +577,12 @@ function ChatInterface() {
               onKeyDown={handleKeyDown}
               placeholder={activeConversation ? "Type your message..." : "Select a conversation to start chatting"}
               disabled={!activeConversation || sendMessage.isPending || createConversation.isPending}
-              className="flex-1 border-border focus-visible:ring-primary"
+              className="flex-1 bg-slate-800 border-slate-700 text-white placeholder:text-gray-400 focus-visible:ring-blue-600"
             />
             <Button 
               type="submit" 
               disabled={!activeConversation || !input.trim() || sendMessage.isPending || createConversation.isPending}
-              className={!activeConversation || !input.trim() || sendMessage.isPending || createConversation.isPending ? "" : "bg-primary hover:bg-primary/90"}
+              className={!activeConversation || !input.trim() || sendMessage.isPending || createConversation.isPending ? "bg-slate-700" : "bg-blue-600 hover:bg-blue-700"}
             >
               {sendMessage.isPending || createConversation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -1227,39 +1227,39 @@ export default function AgentPage() {
               <Bot className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">AI Agent Architect</h1>
-              <p className="text-sm text-muted-foreground">
+              <h1 className="text-2xl font-bold text-white">AI Agent Architect</h1>
+              <p className="text-sm text-gray-400">
                 Your intelligent assistant for energy monitoring and optimization
               </p>
             </div>
           </div>
 
           {/* Tabs Section */}
-          <div className="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/10 dark:to-indigo-950/10 rounded-xl p-1 shadow-sm mb-6">
+          <div className="bg-slate-900 rounded-xl p-1 shadow-sm mb-6">
             <Tabs 
               defaultValue="chat" 
               className="w-full"
               onValueChange={(value) => setActiveTab(value)}
             >
               <div className="flex justify-between items-center px-4 py-4">
-                <TabsList className="grid w-full max-w-md grid-cols-3 p-1 bg-white dark:bg-slate-900 rounded-lg shadow-sm">
+                <TabsList className="grid w-full max-w-md grid-cols-3 p-1 bg-slate-800 rounded-lg shadow-sm">
                   <TabsTrigger 
                     value="chat" 
-                    className="flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white"
+                    className="flex items-center justify-center gap-2 rounded-md text-gray-300 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
                   >
                     <MessageSquare className="h-4 w-4" />
                     <span className="hidden sm:inline">Chat</span>
                   </TabsTrigger>
                   <TabsTrigger 
                     value="tasks" 
-                    className="flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white"
+                    className="flex items-center justify-center gap-2 rounded-md text-gray-300 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
                   >
                     <ListChecks className="h-4 w-4" />
                     <span className="hidden sm:inline">Tasks</span>
                   </TabsTrigger>
                   <TabsTrigger 
                     value="settings" 
-                    className="flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white"
+                    className="flex items-center justify-center gap-2 rounded-md text-gray-300 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
                   >
                     <Settings className="h-4 w-4" />
                     <span className="hidden sm:inline">Settings</span>
@@ -1303,7 +1303,7 @@ export default function AgentPage() {
                 </div>
               </div>
               
-              <div className="bg-card rounded-lg border border-border p-6 shadow-md">
+              <div className="bg-slate-900 rounded-lg border border-slate-800 p-6 shadow-md">
                 <TabsContent value="chat" className="mt-0 focus-visible:outline-none focus-visible:ring-0 space-y-4">
                   <ChatInterface />
                 </TabsContent>
@@ -1320,24 +1320,24 @@ export default function AgentPage() {
           </div>
           
           {/* Footer */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between bg-slate-900 p-4 rounded-lg border border-slate-800">
             <div className="flex items-center gap-3">
-              <div className="text-sm text-muted-foreground flex items-center gap-2">
+              <div className="text-sm text-gray-400 flex items-center gap-2">
                 {activeTab === "chat" && (
                   <>
-                    <MessageSquare className="h-4 w-4 text-blue-500" />
+                    <MessageSquare className="h-4 w-4 text-blue-400" />
                     <span>Chat with AI to ask questions about your energy data</span>
                   </>
                 )}
                 {activeTab === "tasks" && (
                   <>
-                    <ListChecks className="h-4 w-4 text-blue-500" />
+                    <ListChecks className="h-4 w-4 text-blue-400" />
                     <span>Create and manage automated AI tasks for deeper analysis</span>
                   </>
                 )}
                 {activeTab === "settings" && (
                   <>
-                    <Settings className="h-4 w-4 text-blue-500" />
+                    <Settings className="h-4 w-4 text-blue-400" />
                     <span>Configure AI model parameters and capabilities</span>
                   </>
                 )}
@@ -1345,12 +1345,12 @@ export default function AgentPage() {
             </div>
             
             <div className="flex items-center gap-3">
-              <div className="h-6 w-px bg-border"></div>
+              <div className="h-6 w-px bg-slate-700"></div>
               <a 
                 href="https://docs.openai.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-sm text-primary hover:text-primary/80 flex items-center gap-1"
+                className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 <span>Learn more</span>
