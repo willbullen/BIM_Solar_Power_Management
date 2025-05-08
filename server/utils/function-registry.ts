@@ -1,6 +1,7 @@
 import { db } from "../db";
 import * as schema from "@shared/schema";
 import { DbUtils } from "./db-utils";
+import { eq } from "drizzle-orm";
 
 /**
  * Function registry for agent capabilities
@@ -53,9 +54,10 @@ export class FunctionRegistry {
    * @returns The function or null if not found
    */
   static async getFunction(name: string): Promise<schema.AgentFunction | null> {
-    return await db.query.agentFunctions.findFirst({
+    const func = await db.query.agentFunctions.findFirst({
       where: (fields, { eq }) => eq(fields.name, name)
     });
+    return func || null;
   }
   
   /**
