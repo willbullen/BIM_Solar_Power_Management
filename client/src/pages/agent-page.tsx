@@ -593,9 +593,21 @@ function TasksInterface() {
   const [newTaskDescription, setNewTaskDescription] = useState("");
 
   // Fetch tasks
-  const { data: tasks, isLoading, refetch: refetchTasks } = useQuery({
+  const { data: tasks, isLoading, refetch: refetchTasks } = useQuery<any[]>({
     queryKey: ['/api/agent/tasks'],
-    retry: false
+    retry: false,
+    onError: (error: Error) => {
+      console.error('Error fetching tasks:', error);
+      if (error.message.includes('401')) {
+        // If we get a 401, try refreshing the user data
+        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Your session may have expired. Please refresh and log in again."
+        });
+      }
+    }
   });
 
   // Create a new task
@@ -611,12 +623,24 @@ function TasksInterface() {
         description: "Your new task has been created and assigned to the AI agent."
       });
     },
-    onError: () => {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to create a new task."
-      });
+    onError: (error: Error) => {
+      console.error("Task creation error:", error);
+      
+      if (error.message.includes("401")) {
+        // If we get a 401, try refreshing the user data
+        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Your session may have expired. Please log in and try again."
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to create a new task: " + error.message
+        });
+      }
     }
   });
 
@@ -631,12 +655,24 @@ function TasksInterface() {
         description: "The task status has been updated."
       });
     },
-    onError: () => {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update task status."
-      });
+    onError: (error: Error) => {
+      console.error("Update task status error:", error);
+      
+      if (error.message.includes("401")) {
+        // If we get a 401, try refreshing the user data
+        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Your session may have expired. Please log in and try again."
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to update task status: " + error.message
+        });
+      }
     }
   });
 
@@ -817,9 +853,21 @@ function AgentSettingsInterface() {
   const [settingValue, setSettingValue] = useState<string>("");
   
   // Fetch settings
-  const { data: settings, isLoading, refetch: refetchSettings } = useQuery({
+  const { data: settings, isLoading, refetch: refetchSettings } = useQuery<any[]>({
     queryKey: ['/api/agent/settings'],
-    retry: false
+    retry: false,
+    onError: (error: Error) => {
+      console.error('Error fetching agent settings:', error);
+      if (error.message.includes('401')) {
+        // If we get a 401, try refreshing the user data
+        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Your session may have expired. Please refresh and log in again."
+        });
+      }
+    }
   });
   
   // Update setting
@@ -834,12 +882,24 @@ function AgentSettingsInterface() {
         description: "The agent setting has been updated successfully."
       });
     },
-    onError: () => {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update setting."
-      });
+    onError: (error: Error) => {
+      console.error("Update setting error:", error);
+      
+      if (error.message.includes("401")) {
+        // If we get a 401, try refreshing the user data
+        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Your session may have expired. Please log in and try again."
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to update setting: " + error.message
+        });
+      }
     }
   });
   
