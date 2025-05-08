@@ -16,7 +16,7 @@ import {
   CheckCircle, Database, MessageSquarePlus, ArrowRight, BarChart,
   Zap, CloudSun, Sun, CheckCheck, Calendar, Cpu, Key, Thermometer,
   BookOpen, FileText, Code2, BellRing, Settings2, PencilLine,
-  Sparkles, Info as InfoIcon, ExternalLink, Separator as SeparatorIcon
+  Sparkles, Info as InfoIcon, ExternalLink
 } from "lucide-react";
 import { 
   Dialog, DialogContent, DialogDescription, 
@@ -227,53 +227,56 @@ function ChatInterface() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
       {/* Sidebar with conversation list */}
-      <Card className="md:col-span-1 h-[calc(80vh-7rem)] overflow-hidden border-slate-200 dark:border-slate-800">
-        <CardHeader className="pb-3 border-b">
-          <CardTitle className="text-md flex justify-between items-center">
-            Conversations
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>New Conversation</DialogTitle>
-                  <DialogDescription>
-                    Create a new conversation with the AI Agent Architect
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleCreateConversation}>
-                  <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="title">Conversation Name</Label>
-                      <Input
-                        id="title"
-                        value={newConversationTitle}
-                        onChange={(e) => setNewConversationTitle(e.target.value)}
-                        placeholder="e.g., Energy Optimization Plan"
-                        className="col-span-3"
-                        autoFocus
-                      />
+      <Card className="md:col-span-1 h-[calc(80vh-7rem)] overflow-hidden bg-card rounded-lg border border-border shadow-md">
+        <CardHeader className="pb-3 border-b border-border">
+          <div className="flex items-center space-x-1">
+            <MessageSquare className="h-5 w-5 text-primary" />
+            <CardTitle className="text-md flex justify-between items-center w-full">
+              Conversations
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>New Conversation</DialogTitle>
+                    <DialogDescription>
+                      Create a new conversation with the AI Agent Architect
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateConversation}>
+                    <div className="grid gap-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="title">Conversation Name</Label>
+                        <Input
+                          id="title"
+                          value={newConversationTitle}
+                          onChange={(e) => setNewConversationTitle(e.target.value)}
+                          placeholder="e.g., Energy Optimization Plan"
+                          className="col-span-3"
+                          autoFocus
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <DialogFooter>
-                    <Button type="submit" disabled={createConversation.isPending || !newConversationTitle.trim()}>
-                      {createConversation.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Creating...
-                        </>
-                      ) : (
-                        'Create Conversation'
-                      )}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </CardTitle>
+                    <DialogFooter>
+                      <Button type="submit" disabled={createConversation.isPending || !newConversationTitle.trim()}>
+                        {createConversation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Creating...
+                          </>
+                        ) : (
+                          'Create Conversation'
+                        )}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </CardTitle>
+          </div>
         </CardHeader>
         <ScrollArea className="flex-1 h-full">
           <div className="p-2">
@@ -322,14 +325,17 @@ function ChatInterface() {
       </Card>
 
       {/* Chat area */}
-      <Card className="md:col-span-3 h-[calc(80vh-7rem)] flex flex-col overflow-hidden border-slate-200 dark:border-slate-800">
-        <CardHeader className="pb-4 border-b">
+      <Card className="md:col-span-3 h-[calc(80vh-7rem)] flex flex-col overflow-hidden bg-card rounded-lg border border-border shadow-md">
+        <CardHeader className="pb-4 border-b border-border">
           <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>AI Agent Architect</CardTitle>
-              <CardDescription>
-                Ask questions about energy data, generate insights, or request analysis.
-              </CardDescription>
+            <div className="flex items-center space-x-2">
+              <Bot className="h-5 w-5 text-primary" />
+              <div>
+                <CardTitle>AI Agent Architect</CardTitle>
+                <CardDescription>
+                  Ask questions about energy data, generate insights, or request analysis.
+                </CardDescription>
+              </div>
             </div>
             {activeConversation && (
               <HoverCard>
@@ -513,7 +519,7 @@ function ChatInterface() {
           </ScrollArea>
         </CardContent>
         
-        <CardFooter className="border-t p-4">
+        <CardFooter className="border-t border-border p-4">
           <form onSubmit={handleSendMessage} className="flex w-full space-x-2">
             <Input 
               value={input}
@@ -521,12 +527,12 @@ function ChatInterface() {
               onKeyDown={handleKeyDown}
               placeholder={activeConversation ? "Type your message..." : "Select a conversation to start chatting"}
               disabled={!activeConversation || sendMessage.isPending || createConversation.isPending}
-              className="flex-1"
+              className="flex-1 border-border focus-visible:ring-primary"
             />
             <Button 
               type="submit" 
               disabled={!activeConversation || !input.trim() || sendMessage.isPending || createConversation.isPending}
-              className={!activeConversation || !input.trim() || sendMessage.isPending || createConversation.isPending ? "" : "bg-blue-600 hover:bg-blue-700"}
+              className={!activeConversation || !input.trim() || sendMessage.isPending || createConversation.isPending ? "" : "bg-primary hover:bg-primary/90"}
             >
               {sendMessage.isPending || createConversation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -641,12 +647,17 @@ function TasksInterface() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Create a New Task</CardTitle>
-          <CardDescription>
-            Assign tasks to the AI agent for automated processing
-          </CardDescription>
+      <Card className="bg-card rounded-lg border border-border shadow-md">
+        <CardHeader className="border-b border-border">
+          <div className="flex items-center space-x-2">
+            <ClipboardList className="h-5 w-5 text-primary" />
+            <div>
+              <CardTitle>Create a New Task</CardTitle>
+              <CardDescription>
+                Assign tasks to the AI agent for automated processing
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -686,12 +697,17 @@ function TasksInterface() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Task List</CardTitle>
-          <CardDescription>
-            View and manage AI agent tasks
-          </CardDescription>
+      <Card className="bg-card rounded-lg border border-border shadow-md">
+        <CardHeader className="border-b border-border">
+          <div className="flex items-center space-x-2">
+            <ListChecks className="h-5 w-5 text-primary" />
+            <div>
+              <CardTitle>Task List</CardTitle>
+              <CardDescription>
+                View and manage AI agent tasks
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -978,34 +994,27 @@ export default function AgentPage() {
   
   return (
     <SharedLayout user={user}>
-      <div className="container mx-auto py-8 space-y-6">
+      <div className="space-y-8">
         <TooltipProvider>
           {/* Header */}
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-6">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                  <Bot className="h-6 w-6 text-white" />
-                </div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  AI Agent Architect
-                </h1>
-              </div>
-              <p className="text-muted-foreground pl-1">
-                Your intelligent assistant for energy monitoring and optimization
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300">
+                AI Architect
+              </Badge>
+              <Badge variant="default">
+                Active
+              </Badge>
+              <p className="text-sm text-muted-foreground">
+                Version 1.0
               </p>
             </div>
             
-            <div className="hidden md:flex items-center gap-3">
-              <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 px-4 py-2 rounded-lg">
-                <Sparkles className="h-5 w-5 text-amber-500" />
-                <span className="text-sm font-medium">Powered by AI</span>
-              </div>
-              
+            <div className="mt-2 sm:mt-0 flex items-center gap-2">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2">
-                    <Database className="h-4 w-4 text-blue-500" />
+                    <Database className="h-4 w-4 text-primary" />
                     <span>Database Access</span>
                   </Button>
                 </TooltipTrigger>
@@ -1027,6 +1036,25 @@ export default function AgentPage() {
                   </div>
                 </TooltipContent>
               </Tooltip>
+              
+              <Button variant="outline" size="sm">
+                <Sparkles className="mr-2 h-4 w-4" />
+                AI Settings
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Title Section */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Bot className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">AI Agent Architect</h1>
+              <p className="text-sm text-muted-foreground">
+                Your intelligent assistant for energy monitoring and optimization
+              </p>
             </div>
           </div>
 
@@ -1099,16 +1127,16 @@ export default function AgentPage() {
                 </div>
               </div>
               
-              <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm">
-                <TabsContent value="chat" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+              <div className="bg-card rounded-lg border border-border p-6 shadow-md">
+                <TabsContent value="chat" className="mt-0 focus-visible:outline-none focus-visible:ring-0 space-y-4">
                   <ChatInterface />
                 </TabsContent>
                 
-                <TabsContent value="tasks" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+                <TabsContent value="tasks" className="mt-0 focus-visible:outline-none focus-visible:ring-0 space-y-4">
                   <TasksInterface />
                 </TabsContent>
                 
-                <TabsContent value="settings" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+                <TabsContent value="settings" className="mt-0 focus-visible:outline-none focus-visible:ring-0 space-y-4">
                   <AgentSettingsInterface />
                 </TabsContent>
               </div>
@@ -1141,12 +1169,12 @@ export default function AgentPage() {
             </div>
             
             <div className="flex items-center gap-3">
-              <Separator orientation="vertical" className="h-6" />
+              <div className="h-6 w-px bg-border"></div>
               <a 
                 href="https://docs.openai.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-1"
+                className="text-sm text-primary hover:text-primary/80 flex items-center gap-1"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 <span>Learn more</span>
