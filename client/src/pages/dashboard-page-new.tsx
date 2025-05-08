@@ -25,6 +25,9 @@ import SharedLayout from "@/components/ui/shared-layout";
 import { StatCard } from "@/components/ui/stat-card";
 
 function DashboardPage() {
+  // Debug message to verify this component is being used
+  console.log("*** DEBUG: Loading dashboard-page-NEW.tsx - UPDATED VERSION ***");
+  
   const { 
     powerData, 
     environmentalData, 
