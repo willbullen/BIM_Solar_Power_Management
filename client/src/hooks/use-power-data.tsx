@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PowerData, EnvironmentalData, Settings } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useRefreshRate } from "@/hooks/use-refresh-rate";
 
 type PowerDataContextType = {
   powerData: PowerData | null;
@@ -20,6 +21,7 @@ export const PowerDataContext = createContext<PowerDataContextType | null>(null)
 
 export function PowerDataProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const { refreshInterval } = useRefreshRate();
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [powerData, setPowerData] = useState<PowerData | null>(null);
   const [environmentalData, setEnvironmentalData] = useState<EnvironmentalData | null>(null);
@@ -56,7 +58,7 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
   
   // Set up data fetching mechanism - use polling instead of WebSockets for better compatibility
   useEffect(() => {
-    console.log('Starting power data polling...');
+    console.log(`Starting power data polling with interval: ${refreshInterval}ms`);
     
     // Initial data fetch
     const fetchLatestData = async () => {
@@ -100,14 +102,14 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     // Fetch data immediately
     fetchLatestData();
     
-    // Set up polling interval - get fresh data every 10 seconds
-    const pollingInterval = setInterval(fetchLatestData, 10000);
+    // Set up polling interval based on the selected refresh rate
+    const pollingInterval = setInterval(fetchLatestData, refreshInterval);
     
     // Clean up on unmount
     return () => {
       clearInterval(pollingInterval);
     };
-  }, [toast, lastUpdated]);
+  }, [toast, lastUpdated, refreshInterval]);
   
   // Update settings when they change from the query
   useEffect(() => {
