@@ -2,7 +2,7 @@
  * This script migrates the database to add feedback and issue tracking functionality
  */
 import { db, pool } from "./db";
-import { issues, issueComments, todoItems } from "@shared/schema";
+import { issues, issueComments, todoItems, users } from "@shared/schema";
 import { sql } from "drizzle-orm";
 import { log } from "./vite";
 import { parseMarkdownTasks } from "./utils";
@@ -103,8 +103,8 @@ async function importTodoItems() {
     const todoContent = fs.readFileSync(todoPath, 'utf8');
     
     // Get admin user for assigning tasks
-    const [adminUser] = await db.execute(sql`SELECT id FROM users WHERE role = 'Admin' LIMIT 1`);
-    const adminId = adminUser ? adminUser.id : 1; // Default to ID 1 if no admin found
+    const adminUsers = await db.select({ id: users.id }).from(users).where(sql`role = 'Admin'`).limit(1);
+    const adminId = adminUsers.length > 0 ? adminUsers[0].id : 1; // Default to ID 1 if no admin found
     
     // Parse todo.md content and extract tasks
     const tasks = parseMarkdownTasks(todoContent);

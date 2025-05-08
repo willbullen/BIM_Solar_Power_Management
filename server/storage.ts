@@ -5,7 +5,10 @@ import {
   environmentalData, type EnvironmentalData, type InsertEnvironmentalData,
   equipment, type Equipment, type InsertEquipment,
   equipmentEfficiency, type EquipmentEfficiency, type InsertEquipmentEfficiency,
-  maintenanceLog, type MaintenanceLog, type InsertMaintenanceLog
+  maintenanceLog, type MaintenanceLog, type InsertMaintenanceLog,
+  issues, type Issue, type InsertIssue,
+  issueComments, type IssueComment, type InsertIssueComment,
+  todoItems, type TodoItem, type InsertTodoItem
 } from "@shared/schema";
 import session from "express-session";
 import * as expressSession from "express-session";
@@ -56,6 +59,28 @@ export interface IStorage {
   getMaintenanceHistory(equipmentId: number): Promise<MaintenanceLog[]>;
   createMaintenanceRecord(data: InsertMaintenanceLog): Promise<MaintenanceLog>;
   getUpcomingMaintenanceSchedule(): Promise<{ equipment: Equipment, nextMaintenance: Date }[]>;
+  
+  // Feedback and Issue operations
+  getAllIssues(limit?: number): Promise<Issue[]>; 
+  getIssueById(id: number): Promise<Issue | undefined>;
+  getIssuesByStatus(status: string): Promise<Issue[]>;
+  getIssuesByType(type: string): Promise<Issue[]>;
+  createIssue(data: InsertIssue): Promise<Issue>;
+  updateIssue(id: number, data: Partial<InsertIssue>): Promise<Issue>;
+  closeIssue(id: number, resolution?: string): Promise<Issue>;
+  
+  // Issue comment operations
+  getIssueComments(issueId: number): Promise<IssueComment[]>;
+  createIssueComment(data: InsertIssueComment): Promise<IssueComment>;
+  updateIssueComment(id: number, content: string): Promise<IssueComment>;
+  
+  // Todo item operations
+  getAllTodoItems(): Promise<TodoItem[]>;
+  getTodoItemsByStatus(status: string): Promise<TodoItem[]>;
+  getTodoItemsByStage(stage: number): Promise<TodoItem[]>;
+  createTodoItem(data: InsertTodoItem): Promise<TodoItem>;
+  updateTodoItem(id: number, data: Partial<InsertTodoItem>): Promise<TodoItem>;
+  completeTodoItem(id: number): Promise<TodoItem>;
   
   // Session store
   sessionStore: expressSession.Store;
@@ -404,6 +429,172 @@ export class DatabaseStorage implements IStorage {
       equipment: item,
       nextMaintenance: item.nextMaintenance!
     }));
+  }
+  
+  // Issue methods
+  async getAllIssues(limit: number = 100): Promise<Issue[]> {
+    return db
+      .select()
+      .from(issues)
+      .orderBy(desc(issues.createdAt))
+      .limit(limit);
+  }
+  
+  async getIssueById(id: number): Promise<Issue | undefined> {
+    const [issue] = await db
+      .select()
+      .from(issues)
+      .where(eq(issues.id, id));
+    return issue;
+  }
+  
+  async getIssuesByStatus(status: string): Promise<Issue[]> {
+    return db
+      .select()
+      .from(issues)
+      .where(eq(issues.status, status))
+      .orderBy(desc(issues.createdAt));
+  }
+  
+  async getIssuesByType(type: string): Promise<Issue[]> {
+    return db
+      .select()
+      .from(issues)
+      .where(eq(issues.type, type))
+      .orderBy(desc(issues.createdAt));
+  }
+  
+  async createIssue(data: InsertIssue): Promise<Issue> {
+    const [issue] = await db
+      .insert(issues)
+      .values(data)
+      .returning();
+    return issue;
+  }
+  
+  async updateIssue(id: number, data: Partial<InsertIssue>): Promise<Issue> {
+    const [updated] = await db
+      .update(issues)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(issues.id, id))
+      .returning();
+    return updated;
+  }
+  
+  async closeIssue(id: number, resolution?: string): Promise<Issue> {
+    const [closed] = await db
+      .update(issues)
+      .set({
+        status: 'completed',
+        closedAt: new Date(),
+        updatedAt: new Date(),
+        description: resolution 
+          ? sql`${issues.description} || E'\n\n**Resolution:** ' || ${resolution}`
+          : issues.description
+      })
+      .where(eq(issues.id, id))
+      .returning();
+    return closed;
+  }
+  
+  // Issue comment methods
+  async getIssueComments(issueId: number): Promise<IssueComment[]> {
+    return db
+      .select()
+      .from(issueComments)
+      .where(eq(issueComments.issueId, issueId))
+      .orderBy(issueComments.createdAt);
+  }
+  
+  async createIssueComment(data: InsertIssueComment): Promise<IssueComment> {
+    const [comment] = await db
+      .insert(issueComments)
+      .values(data)
+      .returning();
+    return comment;
+  }
+  
+  async updateIssueComment(id: number, content: string): Promise<IssueComment> {
+    const [updated] = await db
+      .update(issueComments)
+      .set({
+        content,
+        updatedAt: new Date(),
+        isEdited: true
+      })
+      .where(eq(issueComments.id, id))
+      .returning();
+    return updated;
+  }
+  
+  // Todo item methods
+  async getAllTodoItems(): Promise<TodoItem[]> {
+    return db
+      .select()
+      .from(todoItems)
+      .orderBy([
+        { column: todoItems.status, order: 'asc' }, // Show pending first
+        { column: todoItems.stage, order: 'asc' },  // Lower stages first
+        { column: todoItems.createdAt, order: 'desc' } // Newest first
+      ]);
+  }
+  
+  async getTodoItemsByStatus(status: string): Promise<TodoItem[]> {
+    return db
+      .select()
+      .from(todoItems)
+      .where(eq(todoItems.status, status))
+      .orderBy([
+        { column: todoItems.stage, order: 'asc' },
+        { column: todoItems.createdAt, order: 'desc' }
+      ]);
+  }
+  
+  async getTodoItemsByStage(stage: number): Promise<TodoItem[]> {
+    return db
+      .select()
+      .from(todoItems)
+      .where(eq(todoItems.stage, stage))
+      .orderBy([
+        { column: todoItems.status, order: 'asc' },
+        { column: todoItems.createdAt, order: 'desc' }
+      ]);
+  }
+  
+  async createTodoItem(data: InsertTodoItem): Promise<TodoItem> {
+    const [item] = await db
+      .insert(todoItems)
+      .values(data)
+      .returning();
+    return item;
+  }
+  
+  async updateTodoItem(id: number, data: Partial<InsertTodoItem>): Promise<TodoItem> {
+    const [updated] = await db
+      .update(todoItems)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(todoItems.id, id))
+      .returning();
+    return updated;
+  }
+  
+  async completeTodoItem(id: number): Promise<TodoItem> {
+    const [completed] = await db
+      .update(todoItems)
+      .set({
+        status: 'completed',
+        completedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(todoItems.id, id))
+      .returning();
+    return completed;
   }
   
   // Database initialization
