@@ -192,11 +192,11 @@ function DashboardPage() {
                   {latestPower && environmentalData ? (
                     <InsightsCard powerData={latestPower} environmentalData={environmentalData} />
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-6 space-y-2">
-                      <div className="rounded-full p-3 bg-muted/10">
-                        <TrendingUp className="h-6 w-6 text-muted-foreground" />
+                    <div className="flex flex-col items-center justify-center min-h-[260px] p-6 space-y-4">
+                      <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-muted/10">
+                        <TrendingUp className="h-10 w-10 text-muted-foreground/40" />
                       </div>
-                      <p className="text-sm text-muted-foreground">No operational data available</p>
+                      <p className="text-base text-muted-foreground/70">No operational data available</p>
                     </div>
                   )}
                 </CardContent>
@@ -214,11 +214,11 @@ function DashboardPage() {
                   {environmentalData ? (
                     <EnvironmentalStats environmentalData={environmentalData ? [environmentalData] : []} />
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-6 space-y-2">
-                      <div className="rounded-full p-3 bg-muted/10">
-                        <CloudSun className="h-6 w-6 text-muted-foreground" />
+                    <div className="flex flex-col items-center justify-center min-h-[260px] p-6 space-y-4">
+                      <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-muted/10">
+                        <CloudSun className="h-10 w-10 text-muted-foreground/40" />
                       </div>
-                      <p className="text-sm text-muted-foreground">No environmental data available</p>
+                      <p className="text-base text-muted-foreground/70">No environmental data available</p>
                     </div>
                   )}
                 </CardContent>
@@ -285,11 +285,11 @@ function DashboardPage() {
                       </p>
                     </>
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-6 space-y-2">
-                      <div className="rounded-full p-3 bg-muted/10">
-                        <Zap className="h-6 w-6 text-muted-foreground" />
+                    <div className="flex flex-col items-center justify-center min-h-[150px] p-6 space-y-4">
+                      <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-muted/10">
+                        <Zap className="h-8 w-8 text-muted-foreground/40" />
                       </div>
-                      <p className="text-sm text-muted-foreground">No process load data available</p>
+                      <p className="text-base text-muted-foreground/70">No process load data available</p>
                     </div>
                   )}
                 </CardContent>
@@ -319,11 +319,11 @@ function DashboardPage() {
                       </p>
                     </>
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-6 space-y-2">
-                      <div className="rounded-full p-3 bg-muted/10">
-                        <Thermometer className="h-6 w-6 text-muted-foreground" />
+                    <div className="flex flex-col items-center justify-center min-h-[150px] p-6 space-y-4">
+                      <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-muted/10">
+                        <Thermometer className="h-8 w-8 text-muted-foreground/40" />
                       </div>
-                      <p className="text-sm text-muted-foreground">No HVAC data available</p>
+                      <p className="text-base text-muted-foreground/70">No HVAC data available</p>
                     </div>
                   )}
                 </CardContent>
@@ -353,11 +353,11 @@ function DashboardPage() {
                       </p>
                     </>
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-6 space-y-2">
-                      <div className="rounded-full p-3 bg-muted/10">
-                        <CloudSun className="h-6 w-6 text-muted-foreground" />
+                    <div className="flex flex-col items-center justify-center min-h-[150px] p-6 space-y-4">
+                      <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-muted/10">
+                        <CloudSun className="h-8 w-8 text-muted-foreground/40" />
                       </div>
-                      <p className="text-sm text-muted-foreground">No refrigeration data available</p>
+                      <p className="text-base text-muted-foreground/70">No refrigeration data available</p>
                     </div>
                   )}
                 </CardContent>
@@ -387,11 +387,11 @@ function DashboardPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center p-6 space-y-2">
-                    <div className="rounded-full p-3 bg-muted/10">
-                      <Sun className="h-6 w-6 text-muted-foreground" />
+                  <div className="flex flex-col items-center justify-center min-h-[300px] p-6 space-y-4">
+                    <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-muted/10">
+                      <Sun className="h-10 w-10 text-muted-foreground/40" />
                     </div>
-                    <p className="text-sm text-muted-foreground">No environmental data available</p>
+                    <p className="text-base text-muted-foreground/70">No environmental data available</p>
                   </div>
                 )}
               </CardContent>
