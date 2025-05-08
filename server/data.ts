@@ -65,10 +65,12 @@ export function generateSyntheticData(
       environmentalData = {
         timestamp: now,
         weather: 'Sunny',
-        temperature: getRandomInRange(8, 13),  // April sunny day in SW Kerry is mild
+        air_temp: getRandomInRange(8, 13),  // April sunny day in SW Kerry is mild
         humidity: getKerryHumidity('Sunny'),
         windSpeed: getKerryWindSpeed(),
-        sunIntensity: getRandomInRange(55, 70)  // Even on sunny days, Kerry has lower solar intensity than mainland Europe
+        // Convert sunIntensity to GHI and DNI for Solcast compatibility
+        ghi: getRandomInRange(550, 700), // Global Horizontal Irradiance in W/m²
+        dni: getRandomInRange(650, 850)  // Direct Normal Irradiance in W/m²
       };
       break;
       
@@ -89,10 +91,11 @@ export function generateSyntheticData(
       environmentalData = {
         timestamp: now,
         weather: 'Cloudy',
-        temperature: getRandomInRange(6, 11),  // Typical April cloudy day in Kerry is cooler
+        air_temp: getRandomInRange(6, 11),  // Typical April cloudy day in Kerry is cooler
         humidity: getKerryHumidity('Cloudy'),
         windSpeed: getKerryWindSpeed(),  // Kerry's typical wind is strong
-        sunIntensity: getRandomInRange(10, 25)  // Low sun intensity due to thick cloud cover
+        ghi: getRandomInRange(100, 250),  // GHI in W/m² for cloudy conditions
+        dni: getRandomInRange(50, 150)    // DNI in W/m² for cloudy conditions
       };
       break;
       
@@ -113,10 +116,11 @@ export function generateSyntheticData(
       environmentalData = {
         timestamp: now,
         weather: 'Partly Cloudy',
-        temperature: getRandomInRange(7, 12),  // Kerry's temperature range is narrower due to coastal influence
+        air_temp: getRandomInRange(7, 12),  // Kerry's temperature range is narrower due to coastal influence
         humidity: getKerryHumidity('Partly Cloudy'),
         windSpeed: getKerryWindSpeed(),
-        sunIntensity: getRandomInRange(30, 50)  // Moderate sun with fast-moving clouds (typical Kerry)
+        ghi: getRandomInRange(300, 500),  // GHI in W/m² for partly cloudy conditions
+        dni: getRandomInRange(250, 450)   // DNI in W/m² for partly cloudy conditions
       };
       break;
       
@@ -137,10 +141,11 @@ export function generateSyntheticData(
       environmentalData = {
         timestamp: now,
         weather: Math.random() > 0.3 ? 'Cloudy' : 'Clear',  // More cloudy nights than clear in Kerry
-        temperature: getRandomInRange(2, 7),  // Cold April nights in Kerry
+        air_temp: getRandomInRange(2, 7),  // Cold April nights in Kerry
         humidity: getKerryHumidity(Math.random() > 0.3 ? 'Cloudy' : 'Clear'),
         windSpeed: getRandomInRange(8, 15),  // Kerry's wind rarely completely stops
-        sunIntensity: 0  // No sun at night
+        ghi: 0,  // No solar radiation at night
+        dni: 0   // No direct solar radiation at night
       };
       break;
       
@@ -167,12 +172,13 @@ export function generateSyntheticData(
       environmentalData = {
         timestamp: now,
         weather: isHeavyRain ? 'Heavy Rain' : (isDrizzle ? 'Drizzle' : 'Rain'),
-        temperature: getRandomInRange(5, 10),  // Rain days are cooler in Kerry
+        air_temp: getRandomInRange(5, 10),  // Rain days are cooler in Kerry
         humidity: isHeavyRain ? 
                   getRandomInRange(92, 98) : // Heavy rain brings maximum humidity
                   getKerryHumidity(isDrizzle ? 'Drizzle' : 'Rain'),
         windSpeed: getKerryWindSpeed(isHeavyRain || Math.random() > 0.6),  // Often stormy with rain
-        sunIntensity: getRandomInRange(3, 12)  // Very low sun intensity in rain
+        ghi: getRandomInRange(30, 120),  // Low GHI during rainy conditions
+        dni: getRandomInRange(10, 60)    // Very low DNI during rainy conditions
       };
       break;
       

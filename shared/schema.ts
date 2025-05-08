@@ -78,8 +78,8 @@ export const environmentalData = pgTable("environmental_data", {
   timestamp: timestamp("timestamp").notNull().defaultNow(),
   weather: text("weather").notNull(), // Sunny, Partly Cloudy, Drizzle, Rain, etc.
   air_temp: real("air_temp").notNull(), // in °C, directly from Solcast API
-  ghi: real("ghi"), // Global Horizontal Irradiance, directly from Solcast API
-  dni: real("dni"), // Direct Normal Irradiance, directly from Solcast API
+  ghi: real("ghi").notNull(), // Global Horizontal Irradiance, directly from Solcast API
+  dni: real("dni").notNull(), // Direct Normal Irradiance, directly from Solcast API
   humidity: real("humidity"), // in %
   windSpeed: real("wind_speed"), // in km/h
 });
