@@ -32,7 +32,7 @@ export function MetricsCard({
         <div>
           <p className="text-sm text-muted-foreground">{title}</p>
           <h2 className="metric-value text-white mt-1">
-            {value.toFixed(1)} {unit}
+            {value !== null && value !== undefined ? value.toFixed(1) : "0.0"} {unit}
           </h2>
           <p className="text-sm">
             <span className={`text-${statusColor}`}>{status}</span>
@@ -78,9 +78,10 @@ export function SummaryCards({ powerData }: SummaryCardsProps) {
   }
   
   // Calculate daily values (current power × 24 hours)
-  const mainGridDaily = powerData.mainGridPower * 24;
-  const solarEfficiency = (powerData.solarOutput / 5) * 100; // Assuming max output is 5kW
-  const refrigerationDaily = powerData.refrigerationLoad * 24;
+  // Use nullish coalescing to handle null or undefined values
+  const mainGridDaily = (powerData.mainGridPower ?? 0) * 24;
+  const solarEfficiency = ((powerData.solarOutput ?? 0) / 5) * 100; // Assuming max output is 5kW
+  const refrigerationDaily = (powerData.refrigerationLoad ?? 0) * 24;
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -93,8 +94,8 @@ export function SummaryCards({ powerData }: SummaryCardsProps) {
         statusColor="destructive"
         icon={<i className="bi bi-plug-fill text-xl text-primary"></i>}
         extraInfo1={`Daily: ${mainGridDaily.toFixed(2)} kWh`}
-        extraInfo2={`${(powerData.mainGridPower * 1000).toFixed(0)} Watts`}
-        percentFill={(powerData.mainGridPower / 10) * 100}
+        extraInfo2={`${((powerData.mainGridPower ?? 0) * 1000).toFixed(0)} Watts`}
+        percentFill={((powerData.mainGridPower ?? 0) / 10) * 100}
       />
       
       {/* Solar PV Output */}
@@ -107,7 +108,7 @@ export function SummaryCards({ powerData }: SummaryCardsProps) {
         icon={<i className="bi bi-sun-fill text-xl text-[#ff9f0c]"></i>}
         extraInfo1={`Efficiency: ${solarEfficiency.toFixed(0)}%`}
         extraInfo2={`Peak: 5.0 kW`}
-        percentFill={(powerData.solarOutput / 5) * 100}
+        percentFill={((powerData.solarOutput ?? 0) / 5) * 100}
       />
       
       {/* Refrigeration Load */}
@@ -119,8 +120,8 @@ export function SummaryCards({ powerData }: SummaryCardsProps) {
         statusColor="warning"
         icon={<i className="bi bi-thermometer-snow text-xl text-primary"></i>}
         extraInfo1={`Daily: ${refrigerationDaily.toFixed(2)} kWh`}
-        extraInfo2={`${(powerData.refrigerationLoad * 1000).toFixed(0)} Watts`}
-        percentFill={(powerData.refrigerationLoad / 6) * 100}
+        extraInfo2={`${((powerData.refrigerationLoad ?? 0) * 1000).toFixed(0)} Watts`}
+        percentFill={((powerData.refrigerationLoad ?? 0) / 6) * 100}
       />
       
       {/* Unaccounted Consumption */}
@@ -131,9 +132,9 @@ export function SummaryCards({ powerData }: SummaryCardsProps) {
         status="Other consumption"
         statusColor="secondary"
         icon={<i className="bi bi-question-circle-fill text-xl text-secondary"></i>}
-        extraInfo1={`Percent: ${((powerData.unaccountedLoad / powerData.totalLoad) * 100).toFixed(0)}%`}
-        extraInfo2={`Daily: ${(powerData.unaccountedLoad * 24).toFixed(2)} kWh`}
-        percentFill={(powerData.unaccountedLoad / powerData.totalLoad) * 100}
+        extraInfo1={`Percent: ${(((powerData.unaccountedLoad ?? 0) / (powerData.totalLoad ?? 1)) * 100).toFixed(0)}%`}
+        extraInfo2={`Daily: ${((powerData.unaccountedLoad ?? 0) * 24).toFixed(2)} kWh`}
+        percentFill={((powerData.unaccountedLoad ?? 0) / (powerData.totalLoad ?? 1)) * 100}
       />
     </div>
   );
