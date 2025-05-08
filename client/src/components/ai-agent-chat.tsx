@@ -2,9 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Textarea } from './ui/textarea';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Send } from 'lucide-react';
+import { Send, AlertTriangle } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -56,6 +59,39 @@ export default function AIAgentChat() {
   useEffect(() => {
     scrollToBottom();
   }, [activeConversation?.messages]);
+
+  // Check if OpenAI API key is configured
+  const checkApiKeyStatus = async () => {
+    try {
+      const response = await apiRequest<{ configured: boolean }>('GET', '/api/agent/settings/openai-api-key');
+      setApiKeyConfigured(response.configured);
+    } catch (error) {
+      console.error('Error checking API key status:', error);
+      setApiKeyConfigured(false);
+    }
+  };
+
+  // Save OpenAI API key
+  const saveApiKey = async (apiKey: string) => {
+    try {
+      setIsLoading(true);
+      await apiRequest('PATCH', '/api/agent/settings/openai-api-key', { value: apiKey });
+      setApiKeyConfigured(true);
+      toast({
+        title: 'Success',
+        description: 'OpenAI API key saved successfully',
+      });
+    } catch (error) {
+      console.error('Error saving API key:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save OpenAI API key',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -197,6 +233,65 @@ export default function AIAgentChat() {
     );
   };
 
+  // State for API key input
+  const [apiKeyInput, setApiKeyInput] = useState('');
+
+  // If API key status is still being checked
+  if (apiKeyConfigured === null) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <p>Checking AI agent configuration...</p>
+      </div>
+    );
+  }
+
+  // If API key is not configured, show configuration UI
+  if (apiKeyConfigured === false) {
+    return (
+      <div className="flex h-full flex-col p-6">
+        <Card className="mx-auto max-w-lg">
+          <CardHeader>
+            <CardTitle>AI Agent Configuration</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Alert className="mb-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>OpenAI API Key Required</AlertTitle>
+              <AlertDescription>
+                To use the AI Agent, you need to configure an OpenAI API key with function calling capability.
+              </AlertDescription>
+            </Alert>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="apiKey">OpenAI API Key</Label>
+                <Input
+                  id="apiKey"
+                  type="password"
+                  placeholder="sk-..."
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Your API key will be stored securely and is not shared outside of this application.
+                </p>
+              </div>
+              
+              <Button 
+                className="w-full" 
+                onClick={() => saveApiKey(apiKeyInput)}
+                disabled={isLoading || !apiKeyInput.trim().startsWith('sk-')}
+              >
+                {isLoading ? 'Saving...' : 'Save API Key'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Normal UI with API key configured
   return (
     <div className="flex h-full flex-col">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
@@ -306,10 +401,24 @@ export default function AIAgentChat() {
               <CardTitle>Agent Settings</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>Configure agent behavior, model settings, and access controls.</p>
-              <p className="text-muted-foreground">
-                Settings management is coming soon.
-              </p>
+              <div className="mb-4">
+                <h3 className="mb-2 text-lg font-medium">OpenAI API Configuration</h3>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">OpenAI API key is configured</p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => setApiKeyConfigured(false)}>
+                    Change API Key
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="border-t border-muted-foreground/20 pt-4">
+                <h3 className="mb-2 text-lg font-medium">Other Settings</h3>
+                <p className="text-muted-foreground">
+                  Additional settings management is coming soon.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
