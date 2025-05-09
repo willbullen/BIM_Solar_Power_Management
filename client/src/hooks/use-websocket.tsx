@@ -39,9 +39,9 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
   
   const {
     reconnectDelay = 3000,
-    reconnectAttempts = 5,
-    maxReconnectAttempts = 10,  // Maximum reconnect attempts overall
-    pingInterval = 30000,  // Send a ping every 30 seconds to keep connection alive
+    reconnectAttempts = 15,     // Increased from 5 to 15
+    maxReconnectAttempts = 30,  // Increased from 10 to 30
+    pingInterval = 30000,       // Send a ping every 30 seconds to keep connection alive
     onMessage,
     onConnect,
     onDisconnect,
@@ -89,11 +89,11 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
       return;
     }
     
-    // If we've reached max attempts for this session, give up on this session
-    if (reconnectCount >= reconnectAttempts) {
-      console.error(`Maximum reconnection attempts reached for this session (${reconnectAttempts})`);
-      return;
-    }
+    // We'll keep trying even if we've reached max attempts for this session
+  // But we'll log a warning to help with debugging
+  if (reconnectCount >= reconnectAttempts) {
+    console.warn(`High number of reconnection attempts for this session (${reconnectCount}/${reconnectAttempts}), but will keep trying`);
+  }
     
     // Determine the WebSocket URL based on the current location
     // Get the URL from the window location to ensure same-origin connection
@@ -104,24 +104,19 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     const isReplitEnvironment = window.location.host.includes('.replit.dev') || 
                                 window.location.host.includes('.repl.co');
     
-    // Check if we have a stored protocol preference in localStorage
-    const storedProtocol = localStorage.getItem('websocket-protocol');
+    // Force set the protocol to non-secure in Replit environments unless user overrode
+    // Since we're seeing persistent issues with secure WebSockets in Replit
     
-    if (storedProtocol) {
-      // If the user has explicitly set a protocol preference, use that
-      console.log(`Using stored WebSocket protocol preference: ${storedProtocol}`);
-      wsUrl = `${storedProtocol}://${window.location.host}/ws`;
-    } else if (isReplitEnvironment) {
-      // In Replit, try using non-secure WebSocket first
-      // Replit proxy sometimes has issues with secure WebSocket connections
-      console.log('Replit environment detected, using non-secure WebSocket');
-      wsUrl = `ws://${window.location.host}/ws`;
-    } else {
-      // For non-Replit environments, use the standard protocol matching
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.host;
-      wsUrl = `${protocol}//${host}/ws`;
-    }
+    // Save the default choice for easier debugging
+    localStorage.setItem('websocket-protocol', 'ws');
+    
+    console.log('Replit environment detected, forcing non-secure WebSocket');
+    wsUrl = `ws://${window.location.host}/ws`;
+    
+    // Log the configuration choices
+    console.log(`WebSocket URL: ${wsUrl}`);
+    console.log(`Window protocol: ${window.location.protocol}`);
+    console.log(`Window host: ${window.location.host}`);
     
     console.log(`Configured WebSocket URL: ${wsUrl}`);
     

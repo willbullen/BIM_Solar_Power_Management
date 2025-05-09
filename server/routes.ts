@@ -38,10 +38,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     perMessageDeflate: false, // Disable per-message-deflate to reduce overhead
     clientTracking: true,     // Track clients automatically
     maxPayload: 65536,        // Set reasonable max payload size (64KB)
-    // Add more debugging info
+    // Accept both secure and non-secure WebSocket connections
     handleProtocols: (protocols, request) => {
       console.log('WebSocket handshake protocols:', protocols);
-      return protocols[0]; // Accept the first protocol
+      console.log('WebSocket request headers:', request.headers);
+      // Accept any protocol
+      return protocols && protocols.length > 0 ? protocols[0] : '';
     }
   });
   
@@ -114,6 +116,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     console.log(`[WebSocket] New connection established from ${clientIp} on ${url}`);
     console.log(`[WebSocket] Client headers: Origin: ${headers.origin}, Host: ${headers.host}`);
+    console.log(`[WebSocket] Connection details - Protocol: ${ws.protocol}, Secure: ${request.socket.encrypted ? 'Yes' : 'No'}`);
+    
+    // Log all active WebSocket connections
+    console.log(`[WebSocket] Active connections: ${wss.clients.size}`);
     
     // Track last activity time for this connection
     let lastActivity = Date.now();

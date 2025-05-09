@@ -104,6 +104,24 @@ export function WebSocketDebugger() {
           Toggle Protocol
         </button>
       </div>
+      
+      <div className="mt-1">
+        <button 
+          onClick={() => {
+            // Force use ws:// protocol
+            localStorage.setItem('websocket-protocol', 'ws');
+            localStorage.setItem('debug-websockets', 'true');
+            window.location.reload();
+          }}
+          className="w-full bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-sm text-xs"
+        >
+          Force Reload with WS Protocol
+        </button>
+      </div>
+      
+      <div className="text-xs text-gray-500 mt-1">
+        {reconnectCount > 0 && <p>Try the "Force Reload" button if connection fails repeatedly</p>}
+      </div>
     </div>
   );
 }
