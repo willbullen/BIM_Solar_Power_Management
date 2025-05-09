@@ -14,9 +14,10 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Save, Settings, Users, Zap, CloudSun, Palette, Globe } from "lucide-react";
+import { Loader2, Save, Settings, Users, Zap, CloudSun, Palette, Globe, BugPlay } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CreateTestNotificationButton } from "@/components/create-test-notification-button";
 
 // Define schema for settings form
 const settingsSchema = z.object({
@@ -308,7 +309,7 @@ export default function SettingsPage() {
     <SharedLayout>
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full md:w-fit">
+        <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full md:w-fit">
           <TabsTrigger value="general">
             <Settings className="h-4 w-4 mr-2" />
             General
@@ -324,6 +325,10 @@ export default function SettingsPage() {
           <TabsTrigger value="appearance">
             <Palette className="h-4 w-4 mr-2" />
             Appearance
+          </TabsTrigger>
+          <TabsTrigger value="developer">
+            <BugPlay className="h-4 w-4 mr-2" />
+            Advanced
           </TabsTrigger>
         </TabsList>
         
@@ -964,6 +969,29 @@ export default function SettingsPage() {
                   </Button>
                 </form>
               </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Advanced Developer Settings */}
+        <TabsContent value="developer">
+          <Card>
+            <CardHeader>
+              <CardTitle>Advanced Developer Settings</CardTitle>
+              <CardDescription>
+                Tools and utilities for testing and development
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="border p-4 rounded-lg">
+                <h3 className="text-lg font-medium mb-2">Notification System</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Test the notification system by creating sample notifications
+                </p>
+                <div className="flex items-center space-x-4">
+                  <CreateTestNotificationButton />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
