@@ -117,9 +117,12 @@ function ChatInterface() {
     queryKey: ['/api/agent/conversations'],
     retry: false,
     enabled: !!user, // Only run the query if user is authenticated
-    onError: (error: Error) => {
+    onSuccess: (data) => {
+      // Success handler
+    },
+    onError: (error) => {
       console.error('Error fetching conversations:', error);
-      if (error.message.includes('401')) {
+      if (error instanceof Error && error.message.includes('401')) {
         // If we get a 401, try refreshing the user data
         queryClient.invalidateQueries({ queryKey: ['/api/user'] });
         toast({
@@ -136,9 +139,12 @@ function ChatInterface() {
     queryKey: ['/api/agent/conversations', activeConversation, 'messages'],
     enabled: !!activeConversation,
     retry: false,
-    onError: (error: Error) => {
+    onSuccess: (data) => {
+      // Success handler
+    },
+    onError: (error) => {
       console.error('Error fetching messages:', error);
-      if (error.message.includes('401')) {
+      if (error instanceof Error && error.message.includes('401')) {
         // If we get a 401, try refreshing the user data
         queryClient.invalidateQueries({ queryKey: ['/api/user'] });
         toast({
@@ -603,9 +609,12 @@ function TasksInterface() {
   const { data: tasks, isLoading, refetch: refetchTasks } = useQuery<any[]>({
     queryKey: ['/api/agent/tasks'],
     retry: false,
-    onError: (error: Error) => {
+    onSuccess: (data) => {
+      // Success handler
+    },
+    onError: (error) => {
       console.error('Error fetching tasks:', error);
-      if (error.message.includes('401')) {
+      if (error instanceof Error && error.message.includes('401')) {
         // If we get a 401, try refreshing the user data
         queryClient.invalidateQueries({ queryKey: ['/api/user'] });
         toast({
@@ -863,9 +872,12 @@ function AgentSettingsInterface() {
   const { data: settings, isLoading, refetch: refetchSettings } = useQuery<any[]>({
     queryKey: ['/api/agent/settings'],
     retry: false,
-    onError: (error: Error) => {
+    onSuccess: (data) => {
+      // Success handler
+    },
+    onError: (error) => {
       console.error('Error fetching agent settings:', error);
-      if (error.message.includes('401')) {
+      if (error instanceof Error && error.message.includes('401')) {
         // If we get a 401, try refreshing the user data
         queryClient.invalidateQueries({ queryKey: ['/api/user'] });
         toast({
