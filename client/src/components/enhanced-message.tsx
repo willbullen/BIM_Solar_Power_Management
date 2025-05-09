@@ -115,7 +115,7 @@ export function EnhancedMessage({
             </div>
             
             <div className="flex items-center gap-1.5">
-              {/* Delete button with confirmation dialog */}
+              {/* Delete button with confirmation dialog - enabled for all message types */}
               {onDelete && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -131,7 +131,10 @@ export function EnhancedMessage({
                     <AlertDialogHeader>
                       <AlertDialogTitle className="text-white">Delete Message</AlertDialogTitle>
                       <AlertDialogDescription className="text-slate-300">
-                        Are you sure you want to delete this message? This action cannot be undone.
+                        {role === 'system' 
+                          ? "Are you sure you want to delete this system message? This may affect how the AI responds to future messages."
+                          : "Are you sure you want to delete this message? This action cannot be undone."
+                        }
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

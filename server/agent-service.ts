@@ -107,7 +107,7 @@ export class AgentService {
         return false;
       }
       
-      // Delete the message
+      // Delete the message (including system messages)
       const result = await db.delete(schema.agentMessages)
         .where(eq(schema.agentMessages.id, messageId))
         .returning();
@@ -161,7 +161,7 @@ export class AgentService {
     const functions = availableFunctions.map(func => ({
       name: func.name,
       description: func.description,
-      parameters: func.parameters
+      parameters: func.parameters as any // Type assertion to fix TypeScript error
     }));
 
     try {
@@ -170,8 +170,11 @@ export class AgentService {
         model: "gpt-4o", // The newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: openaiMessages,
         max_tokens: maxTokens,
-        functions: functions.length > 0 ? functions : undefined,
-        function_call: functions.length > 0 ? "auto" : undefined,
+        tools: functions.length > 0 ? functions.map(func => ({
+          type: "function",
+          function: func
+        })) : undefined,
+        tool_choice: functions.length > 0 ? "auto" : "none",
       });
 
       const assistantResponse = response.choices[0]?.message;
