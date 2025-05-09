@@ -187,6 +187,28 @@ export function registerTelegramRoutes(app: Express) {
       res.status(500).json({ error: 'Failed to fetch Telegram status' });
     }
   });
+  
+  /**
+   * Get current user's Telegram information
+   */
+  app.get('/api/telegram/user', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const telegramUser = await db.select().from(telegramUsers)
+        .where(eq(telegramUsers.userId, userId))
+        .limit(1);
+      
+      if (telegramUser.length === 0) {
+        return res.json(null);
+      }
+      
+      res.json(telegramUser[0]);
+    } catch (error) {
+      console.error('Error fetching Telegram user:', error);
+      res.status(500).json({ error: 'Failed to fetch Telegram user information' });
+    }
+  });
 
   /**
    * Update user's Telegram preferences
