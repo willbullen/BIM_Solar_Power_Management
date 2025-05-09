@@ -136,12 +136,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const url = request.url;
     const headers = request.headers;
     
-    console.log(`[WebSocket] New connection established from ${clientIp} on ${url}`);
-    console.log(`[WebSocket] Client headers: Origin: ${headers.origin}, Host: ${headers.host}`);
-    console.log(`[WebSocket] Connection details - Protocol: ${ws.protocol}, Secure: ${request.headers['x-forwarded-proto'] === 'https' ? 'Yes' : 'No'}`);
-    
-    // Log all active WebSocket connections
-    console.log(`[WebSocket] Active connections: ${wss.clients.size}`);
+    // Simple connection confirmation for client stability
+    console.log(`New connection established`);
     
     // Track last activity time for this connection
     let lastActivity = Date.now();

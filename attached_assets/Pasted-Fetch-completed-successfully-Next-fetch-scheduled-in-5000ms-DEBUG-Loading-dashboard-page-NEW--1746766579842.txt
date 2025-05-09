@@ -1,0 +1,37 @@
+Fetch completed successfully
+Next fetch scheduled in 5000ms
+*** DEBUG: Loading dashboard-page-NEW.tsx - UPDATED VERSION ***
+Exceeded maximum reconnection attempts (15), giving up
+Refresh interval or WebSocket status changed, updating polling
+🔄 Starting data polling with interval: 5000ms
+Skipping fetch - already fetching: false, time since last: 24ms
+Next fetch scheduled in 4976ms
+Skipping fetch - already fetching: false, time since last: 2223ms
+Next fetch scheduled in 7777ms
+Dropdown selection: changing refresh rate to 10000ms
+Changing refresh rate from 5000ms to 10000ms
+*** DEBUG: Loading dashboard-page-NEW.tsx - UPDATED VERSION ***
+*** REFRESH RATE PROVIDER CLEANUP ***
+Releasing RefreshRateProvider singleton
+Exceeded maximum reconnection attempts (15), giving up
+Refresh interval or WebSocket status changed, updating polling
+🔄 Starting data polling with interval: 10000ms
+Skipping fetch - already fetching: false, time since last: 4198ms
+Next fetch scheduled in 5802ms
+*** REFRESH RATE PROVIDER INITIALIZED: 10000ms ***
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+⏰ Fetching data (refresh rate: 5000ms)
+Fetching latest data via REST API...
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+API response status: 200 OK
+Latest data fetched successfully
+Fetch completed successfully
+Next fetch scheduled in 5000ms
+*** DEBUG: Loading dashboard-page-NEW.tsx - UPDATED VERSION ***
+Exceeded maximum reconnection attempts (15), giving up
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400

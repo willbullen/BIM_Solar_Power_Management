@@ -38,10 +38,10 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
   const manuallyClosedRef = useRef(false);
   
   const {
-    reconnectDelay = 3000,
-    reconnectAttempts = 15,     // Increased from 5 to 15
-    maxReconnectAttempts = 30,  // Increased from 10 to 30
-    pingInterval = 30000,       // Send a ping every 30 seconds to keep connection alive
+    reconnectDelay = 2000,      // Decreased to speed up reconnection attempts
+    reconnectAttempts = 5,      // Reduced to avoid excessive logging
+    maxReconnectAttempts = 6,   // Reduced to avoid excessive reconnection attempts
+    pingInterval = 15000,       // Send a ping every 15 seconds to keep connection alive
     onMessage,
     onConnect,
     onDisconnect,
@@ -208,15 +208,27 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
         console.log('Reusing existing global WebSocket instance');
         wsRef.current = window._activeWebSocketInstance;
       } else {
-        // Create a new WebSocket connection
-        console.log('Creating new WebSocket connection as singleton');
-        const socket = new WebSocket(wsUrl);
-        wsRef.current = socket;
+        // REPLIT FIX: Try to detect the "Access has been blocked" error
+        // This happens in Replit when the browser blocks mixed content
+        if (isReplitEnvironment && window.location.protocol === 'https:') {
+          console.log('⚠️ REPLIT MIXED CONTENT WARNING: Trying to create WebSocket from HTTPS page');
+          console.log('⚠️ Browser will likely block this connection attempt');
+        }
         
-        // Set global instance
-        if (typeof window !== 'undefined') {
-          window._webSocketInitialized = true;
-          window._activeWebSocketInstance = socket;
+        // Create a new WebSocket connection with try/catch around constructor
+        try {
+          console.log('Creating new WebSocket connection as singleton');
+          const socket = new WebSocket(wsUrl);
+          wsRef.current = socket;
+          
+          // Set global instance
+          if (typeof window !== 'undefined') {
+            window._webSocketInitialized = true;
+            window._activeWebSocketInstance = socket;
+          }
+        } catch (constructError) {
+          console.error('WebSocket constructor error:', constructError);
+          throw new Error('Failed to create WebSocket object: ' + (constructError as Error).message);
         }
       }
       
