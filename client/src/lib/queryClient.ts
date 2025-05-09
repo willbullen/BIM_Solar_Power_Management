@@ -27,15 +27,23 @@ export async function apiRequest(
     // Old format: apiRequest(url, method, data)
     method = options;
     requestData = data;
-  } else {
+  } else if (options && typeof options === 'object') {
     // New format: apiRequest(url, { method, data })
     method = options.method;
     requestData = options.data;
+  } else {
+    throw new Error('Invalid options format for API request');
   }
   
   // Ensure we have valid values
   if (!method || !url) {
     throw new Error('Method and URL are required for API requests');
+  }
+  
+  // Ensure method is a valid HTTP method
+  const validMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+  if (!validMethods.includes(method.toUpperCase())) {
+    throw new Error(`Invalid HTTP method: ${method}`);
   }
   
   // Ensure URL starts with a slash

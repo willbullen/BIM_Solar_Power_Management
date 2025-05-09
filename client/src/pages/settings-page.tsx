@@ -1197,12 +1197,6 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Telegram Integration */}
-              <div>
-                <h3 className="text-lg font-medium mb-2 flex items-center">
-                  <MessageCircle className="h-5 w-5 mr-2" />
-                  Telegram Integration
-                </h3>
                 
                 {user?.role === 'Admin' && (
                   <>
