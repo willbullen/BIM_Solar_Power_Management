@@ -13,13 +13,17 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { AgentMcpTasksPage } from "@/pages/agent-mcp-tasks";
 import { TelegramChat } from "@/components/telegram-chat";
+import { EnhancedMessage } from "@/components/enhanced-message";
+import { MessageSearch } from "@/components/message-search";
+import { cn } from "@/lib/utils";
 import { 
   Loader2, Send, Bot, MessageSquare, ListChecks, Settings, Plus, 
   CheckCircle, Database, MessageSquarePlus, ArrowRight, BarChart,
   Zap, CloudSun, Sun, CheckCheck, Calendar, Cpu, Key, Thermometer,
   BookOpen, FileText, Code2, BellRing, Settings2, PencilLine,
   Sparkles, Info as InfoIcon, ExternalLink, ClipboardList,
-  ToggleLeft, Clock, BarChart3, MessageCircle
+  ToggleLeft, Clock, BarChart3, MessageCircle, Search, Mic, MicOff,
+  Pin, LineChart, AlignJustify, X
 } from "lucide-react";
 import { 
   Dialog, DialogContent, DialogDescription, 
@@ -38,6 +42,14 @@ import {
   TooltipTrigger,
   TooltipProvider
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Message types
 interface Message {
