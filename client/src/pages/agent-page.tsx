@@ -1311,64 +1311,79 @@ export default function AgentPage() {
             </div>
           </div>
 
-          {/* Streamlined Tabs Section */}
-          <div className="bg-slate-950 rounded-xl shadow-sm mb-3 h-[40vh] min-h-[280px] max-h-[450px] overflow-hidden flex flex-col">
+          {/* Enhanced Agent Interface Section */}
+          <div className="bg-slate-950 rounded-xl shadow-lg mb-3 h-[40vh] min-h-[280px] max-h-[450px] overflow-hidden flex flex-col">
             <Tabs 
               defaultValue="chat" 
               className="flex flex-col h-full"
               onValueChange={(value) => setActiveTab(value)}
             >
-              {/* Top Navigation Bar with Improved Layout */}
-              <div className="flex justify-between items-center px-2 py-0.5 bg-slate-900/70 border-b border-slate-800">
-                <TabsList className="flex p-0 bg-transparent space-x-1">
-                  <TabsTrigger 
-                    value="chat" 
-                    className="flex items-center justify-center gap-1 text-xs py-1 px-2 rounded data-[state=active]:bg-blue-600/90 data-[state=active]:text-white text-slate-300"
-                  >
-                    <MessageSquare className="h-3 w-3" />
-                    <span className="font-medium">Chat</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="tasks" 
-                    className="flex items-center justify-center gap-1 text-xs py-1 px-2 rounded data-[state=active]:bg-blue-600/90 data-[state=active]:text-white text-slate-300"
-                  >
-                    <ListChecks className="h-3 w-3" />
-                    <span className="font-medium">Tasks</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="settings" 
-                    className="flex items-center justify-center gap-1 text-xs py-1 px-2 rounded data-[state=active]:bg-blue-600/90 data-[state=active]:text-white text-slate-300"
-                  >
-                    <Settings className="h-3 w-3" />
-                    <span className="font-medium">Settings</span>
-                  </TabsTrigger>
-                </TabsList>
+              {/* Modern Navigation Bar with Improved Visual Hierarchy */}
+              <div className="flex justify-between items-center p-3 bg-gradient-to-r from-slate-900 to-slate-950 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-1.5 bg-blue-600/30 text-blue-200 py-1 px-2 rounded-md text-xs font-medium">
+                    <Bot className="h-3.5 w-3.5" />
+                    <span>AI Agent</span>
+                  </span>
+                  
+                  <TabsList className="flex bg-slate-900/60 p-0.5 rounded-md border border-slate-800 h-7">
+                    <TabsTrigger 
+                      value="chat" 
+                      className="flex items-center justify-center gap-1.5 text-xs py-1 px-3 rounded-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-300"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5" />
+                      <span className="font-medium">Chat</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="tasks" 
+                      className="flex items-center justify-center gap-1.5 text-xs py-1 px-3 rounded-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-300"
+                    >
+                      <ListChecks className="h-3.5 w-3.5" />
+                      <span className="font-medium">Tasks</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="settings" 
+                      className="flex items-center justify-center gap-1.5 text-xs py-1 px-3 rounded-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-300"
+                    >
+                      <Settings className="h-3.5 w-3.5" />
+                      <span className="font-medium">Settings</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
                 
-                <div className="flex items-center">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px] px-2 py-0 h-5 bg-slate-900 border-slate-700 text-slate-400 flex items-center gap-1">
+                    <Cpu className="h-3 w-3 text-blue-400" />
+                    <span>v1.2</span>
+                  </Badge>
+                  
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-6 w-6 p-0.5 hover:bg-slate-800 rounded-full">
-                        <InfoIcon className="h-3 w-3 text-slate-400" />
+                        <InfoIcon className="h-3.5 w-3.5 text-slate-400" />
                       </Button>
                     </HoverCardTrigger>
-                    <HoverCardContent className="w-60 p-2 bg-slate-900 border-slate-700 text-slate-300">
-                      <div className="space-y-1">
-                        <h4 className="text-[11px] font-semibold text-slate-200">AI Agent Features</h4>
-                        <div className="grid grid-cols-2 gap-0.5 pt-0.5">
-                          <div className="flex items-center gap-1 text-[10px] text-slate-400">
-                            <CheckCircle className="h-2 w-2 text-green-500" />
+                    <HoverCardContent className="w-64 p-3 bg-slate-900 border-slate-700 text-slate-300">
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                          <Sparkles className="h-3.5 w-3.5 text-blue-400" />
+                          AI Agent Capabilities
+                        </h4>
+                        <div className="grid grid-cols-2 gap-1.5 pt-1">
+                          <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                            <CheckCircle className="h-3 w-3 text-green-500" />
                             <span>Power Analysis</span>
                           </div>
-                          <div className="flex items-center gap-1 text-[10px] text-slate-400">
-                            <CheckCircle className="h-2 w-2 text-green-500" />
+                          <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                            <CheckCircle className="h-3 w-3 text-green-500" />
                             <span>Environmental</span>
                           </div>
-                          <div className="flex items-center gap-1 text-[10px] text-slate-400">
-                            <CheckCircle className="h-2 w-2 text-green-500" />
+                          <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                            <CheckCircle className="h-3 w-3 text-green-500" />
                             <span>Equipment</span>
                           </div>
-                          <div className="flex items-center gap-1 text-[10px] text-slate-400">
-                            <CheckCircle className="h-2 w-2 text-green-500" />
+                          <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                            <CheckCircle className="h-3 w-3 text-green-500" />
                             <span>Forecasting</span>
                           </div>
                         </div>
@@ -1378,31 +1393,31 @@ export default function AgentPage() {
                 </div>
               </div>
               
-              {/* Content Area with Improved Containment */}
-              <div className="bg-slate-900">
+              {/* Content Area with Enhanced Styling */}
+              <div className="bg-gradient-to-b from-slate-900 to-slate-950 flex-1 overflow-auto">
                 <TabsContent 
                   value="chat" 
-                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
+                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0 h-full"
                 >
-                  <div className="p-1">
+                  <div className="p-3 h-full">
                     <ChatInterface />
                   </div>
                 </TabsContent>
                 
                 <TabsContent 
                   value="tasks" 
-                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
+                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0 h-full"
                 >
-                  <div className="p-1">
+                  <div className="p-3 h-full">
                     <TasksInterface />
                   </div>
                 </TabsContent>
                 
                 <TabsContent 
                   value="settings" 
-                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
+                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0 h-full"
                 >
-                  <div className="p-1">
+                  <div className="p-3 h-full">
                     <AgentSettingsInterface />
                   </div>
                 </TabsContent>
@@ -1410,41 +1425,57 @@ export default function AgentPage() {
             </Tabs>
           </div>
           
-          {/* Streamlined Footer */}
-          <div className="flex items-center justify-between bg-slate-950 py-1.5 px-2 rounded-md text-[10px] mt-1">
+          {/* Enhanced Footer with Status Information */}
+          <div className="flex items-center justify-between bg-gradient-to-r from-slate-950 to-slate-900 py-2 px-3 rounded-md mt-2 shadow-inner">
             <div className="flex items-center">
-              <div className="text-slate-400 flex items-center gap-1">
+              <div className="text-slate-400 flex items-center gap-2 text-xs">
                 {activeTab === "chat" && (
                   <>
-                    <MessageSquare className="h-3 w-3 text-blue-500/80" />
+                    <div className="bg-blue-900/20 p-1 rounded">
+                      <MessageSquare className="h-3.5 w-3.5 text-blue-400" />
+                    </div>
                     <span>Ask questions about energy data and receive AI-powered insights</span>
                   </>
                 )}
                 {activeTab === "tasks" && (
                   <>
-                    <ListChecks className="h-3 w-3 text-blue-500/80" />
+                    <div className="bg-blue-900/20 p-1 rounded">
+                      <ListChecks className="h-3.5 w-3.5 text-blue-400" />
+                    </div>
                     <span>Schedule automated analysis tasks for periodic energy reports</span>
                   </>
                 )}
                 {activeTab === "settings" && (
                   <>
-                    <Settings className="h-3 w-3 text-blue-500/80" />
+                    <div className="bg-blue-900/20 p-1 rounded">
+                      <Settings className="h-3.5 w-3.5 text-blue-400" />
+                    </div>
                     <span>Adjust model parameters to focus on specific data analysis priorities</span>
                   </>
                 )}
               </div>
             </div>
             
-            <div className="flex items-center pl-2 ml-2 border-l border-slate-800">
-              <a 
-                href="https://docs.openai.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300 flex items-center gap-0.5"
-              >
-                <ExternalLink className="h-2.5 w-2.5" />
-                <span>Learn</span>
-              </a>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+                <span className="text-xs text-slate-400">Agent Online</span>
+              </div>
+              
+              <div className="border-l border-slate-800 pl-3">
+                <a 
+                  href="https://docs.openai.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 flex items-center gap-1.5 text-xs"
+                >
+                  <BookOpen className="h-3.5 w-3.5" />
+                  <span>Documentation</span>
+                </a>
+              </div>
             </div>
           </div>
         </TooltipProvider>
