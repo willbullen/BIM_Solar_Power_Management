@@ -107,19 +107,33 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     // Check if user has manually set protocol preference
     const userProtocolPreference = localStorage.getItem('websocket-protocol');
     
-    // Determine protocol based on page security and user preference
-    let protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    // Determine protocol based on page security, environment, and user preference
     
-    // If user explicitly set a protocol, use that instead
+    // Default protocol selection
+    let protocol: string;
+    
+    // For Replit environment, default to non-secure WebSocket (ws://)
+    // This is due to a known limitation in Replit's environment with secure WebSockets
+    if (isReplitEnvironment) {
+      protocol = 'ws:';
+      console.log(`Replit environment detected, defaulting to non-secure WebSocket protocol (ws://)`);
+    } else {
+      // Normal protocol selection based on page security for non-Replit environments
+      protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    }
+    
+    // If user explicitly set a protocol through the debugger UI, honor that choice
     if (userProtocolPreference === 'ws' || userProtocolPreference === 'wss') {
       protocol = `${userProtocolPreference}:`;
       console.log(`Using user-specified WebSocket protocol: ${protocol}`);
-    } else if (isReplitEnvironment) {
-      // For Replit environment, try non-secure WS first (known compatibility issue)
-      if (reconnectCount > 2 && protocol === 'wss:') {
-        console.log(`Replit environment detected with connection issues, trying non-secure WebSocket instead`);
-        protocol = 'ws:';
-      }
+    }
+    
+    // If we're encountering repeated connection errors with the current protocol
+    // Try the alternative protocol as a fallback mechanism
+    if (reconnectCount > 1) {
+      const alternativeProtocol = protocol === 'wss:' ? 'ws:' : 'wss:';
+      console.log(`Connection attempts (${reconnectCount}) failed with ${protocol}, trying ${alternativeProtocol} instead`);
+      protocol = alternativeProtocol;
     }
     
     // Save the chosen protocol for debugging

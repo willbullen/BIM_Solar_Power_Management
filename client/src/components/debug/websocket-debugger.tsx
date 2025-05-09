@@ -2,9 +2,23 @@ import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Maximize2, Minimize2, RefreshCw, WifiOff, Wifi } from "lucide-react";
+import { 
+  AlertCircle, 
+  Maximize2, 
+  Minimize2, 
+  RefreshCw, 
+  WifiOff, 
+  Wifi, 
+  Globe, 
+  Shield, 
+  ShieldAlert,
+  Info,
+  Clock
+} from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function WebSocketDebugger() {
   // Only show in development mode or if in debug mode explicitly
@@ -12,21 +26,38 @@ export function WebSocketDebugger() {
     return null;
   }
   
-  const { isConnected, reconnectCount, reconnect } = useWebSocket();
+  const { isConnected, reconnectCount, reconnect, lastMessage } = useWebSocket();
   const { toast } = useToast();
   const [attempts, setAttempts] = useState(0);
   const [expanded, setExpanded] = useState(true);
   const [protocol, setProtocol] = useState('');
   const [wsProtocol, setWsProtocol] = useState('');
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [activeTab, setActiveTab] = useState('status');
+  const [isReplitEnvironment, setIsReplitEnvironment] = useState(false);
+  const [preferredProtocol, setPreferredProtocol] = useState('');
   
   // Track connection attempts, protocols, and last update time
   useEffect(() => {
     setAttempts(reconnectCount);
     setProtocol(window.location.protocol);
-    setWsProtocol(window.location.protocol === 'https:' ? 'wss:' : 'ws:');
+    
+    // Check if user has manually set a preference
+    const userPreferred = localStorage.getItem('websocket-protocol');
+    setPreferredProtocol(userPreferred || 'auto');
+    
+    // Check if we're in Replit environment
+    const isReplit = window.location.host.includes('.replit.dev') || 
+                    window.location.host.includes('.repl.co');
+    setIsReplitEnvironment(isReplit);
+    
+    // Get actual WebSocket protocol
+    const actualProtocol = localStorage.getItem('websocket-protocol') || 
+                          (window.location.protocol === 'https:' ? 'wss' : 'ws');
+    setWsProtocol(`${actualProtocol}:`);
+    
     setLastUpdate(new Date());
-  }, [reconnectCount, isConnected]);
+  }, [reconnectCount, isConnected, lastMessage]);
   
   // Manual reconnect handler
   const handleReconnect = () => {
@@ -54,6 +85,16 @@ export function WebSocketDebugger() {
     window.location.reload();
   };
 
+  // Clear protocol override
+  const clearProtocolOverride = () => {
+    localStorage.removeItem('websocket-protocol');
+    toast({
+      title: "Protocol Setting Cleared",
+      description: "WebSocket will use the default protocol selection logic"
+    });
+    window.location.reload();
+  };
+
   // If minimized, show just the connection status indicator
   if (!expanded) {
     return (
@@ -71,133 +112,166 @@ export function WebSocketDebugger() {
   
   return (
     <TooltipProvider>
-      <div className="fixed bottom-4 right-4 z-50 p-3 bg-background border rounded-md shadow-md flex flex-col gap-2 text-xs max-w-xs">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold">WebSocket Debugger</span>
+      <Card className="fixed bottom-4 right-4 z-50 w-72 shadow-md">
+        <CardHeader className="py-2 px-3 flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Globe size={14} />
+            WebSocket Debugger
             {isConnected ? (
-              <Badge className="bg-green-500"><Wifi size={10} className="mr-1" /> Connected</Badge>
+              <Badge className="bg-green-500 text-[10px]"><Wifi size={10} className="mr-1" /> Connected</Badge>
             ) : (
-              <Badge variant="destructive"><WifiOff size={10} className="mr-1" /> Disconnected</Badge>
+              <Badge variant="destructive" className="text-[10px]"><WifiOff size={10} className="mr-1" /> Disconnected</Badge>
             )}
-          </div>
+          </CardTitle>
           <Minimize2 
             size={14} 
             className="cursor-pointer text-muted-foreground" 
             onClick={toggleExpanded} 
             aria-label="Minimize"
           />
-        </div>
+        </CardHeader>
         
-        <div className="space-y-1 text-xs">
-          <div className="flex items-center justify-between">
-            <span className="font-medium">Page Protocol:</span>
-            <span>{protocol}</span>
-          </div>
+        <Tabs defaultValue="status" value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-2 w-full">
+            <TabsTrigger value="status">Status</TabsTrigger>
+            <TabsTrigger value="actions">Actions</TabsTrigger>
+          </TabsList>
           
-          <div className="flex items-center justify-between">
-            <span className="font-medium">WebSocket Protocol:</span>
-            <span>{wsProtocol}</span>
-          </div>
+          <TabsContent value="status" className="pt-2 pb-0 px-3">
+            <div className="space-y-1 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-medium flex items-center gap-1">
+                  <Globe size={12} /> Page Protocol:
+                </span>
+                <Badge variant="outline">{protocol}</Badge>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="font-medium flex items-center gap-1">
+                  {wsProtocol === 'wss:' ? <Shield size={12} /> : <ShieldAlert size={12} />} WS Protocol:
+                </span>
+                <Badge 
+                  variant={wsProtocol === 'wss:' ? "secondary" : "outline"}
+                  className={wsProtocol === 'wss:' ? "" : "text-amber-500"}
+                >
+                  {wsProtocol}
+                </Badge>
+              </div>
+              
+              {isReplitEnvironment && (
+                <div className="flex items-center justify-between">
+                  <span className="font-medium flex items-center gap-1">
+                    <Info size={12} /> Environment:
+                  </span>
+                  <Badge variant="secondary" className="bg-blue-50">Replit</Badge>
+                </div>
+              )}
+              
+              {preferredProtocol !== 'auto' && (
+                <div className="flex items-center justify-between">
+                  <span className="font-medium flex items-center gap-1">
+                    <Info size={12} /> User Override:
+                  </span>
+                  <Badge variant="secondary" className="bg-purple-50">
+                    {preferredProtocol}
+                  </Badge>
+                </div>
+              )}
+              
+              <div className="flex items-center justify-between">
+                <span className="font-medium flex items-center gap-1">
+                  <Clock size={12} /> Last Update:
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  {lastUpdate.toLocaleTimeString()}
+                </span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="font-medium flex items-center gap-1">
+                  <RefreshCw size={12} /> Reconnect Attempts:
+                </span>
+                <Badge variant={attempts > 0 ? "destructive" : "outline"}>
+                  {attempts}
+                </Badge>
+              </div>
+            </div>
+            
+            {!isConnected && attempts > 1 && (
+              <Alert className="py-2 mt-2 bg-amber-50 mb-2">
+                <AlertCircle size={12} className="mr-1" />
+                <AlertDescription className="text-[10px]">
+                  Protocol mismatch detected. {isReplitEnvironment ? "For Replit, try the 'Force WS Protocol' option." : "Try matching protocols."}
+                </AlertDescription>
+              </Alert>
+            )}
+          </TabsContent>
           
-          <div className="flex items-center justify-between">
-            <span className="font-medium">Host:</span>
-            <span className="truncate">{window.location.host}</span>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <span className="font-medium">Reconnect Attempts:</span>
-            <span>{attempts}</span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="font-medium">Last Update:</span>
-            <span className="truncate">{lastUpdate.toLocaleTimeString()}</span>
-          </div>
-        </div>
-        
-        {!isConnected && attempts > 2 && (
-          <Alert className="py-2 mt-1 bg-amber-50">
-            <AlertDescription className="text-[10px]">
-              Security restrictions may be preventing WebSocket connections. Try the "Match Page Protocol" button.
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        <div className="grid grid-cols-2 gap-1 mt-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
+          <TabsContent value="actions" className="pt-2 pb-0 px-3">
+            <div className="grid grid-cols-1 gap-2">
               <button 
                 onClick={handleReconnect}
                 className="bg-primary hover:bg-primary/90 text-white px-2 py-1 rounded-sm text-xs flex items-center justify-center"
               >
-                <RefreshCw size={12} className="mr-1" /> Reconnect
+                <RefreshCw size={12} className="mr-1" /> Manual Reconnect
               </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Manually reconnect WebSocket</p>
-            </TooltipContent>
-          </Tooltip>
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
+              
               <button 
                 onClick={forceMatchProtocol}
                 className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-sm text-xs"
               >
-                Match Page Protocol
+                Match Page Protocol ({window.location.protocol === 'https:' ? 'wss://' : 'ws://'})
               </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Use {window.location.protocol === 'https:' ? 'wss://' : 'ws://'} protocol for WebSocket</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
+              
               <button 
                 onClick={() => {
                   localStorage.setItem('websocket-protocol', 'ws');
                   localStorage.setItem('debug-websockets', 'true');
                   window.location.reload();
                 }}
-                className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded-sm text-xs"
+                className="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-sm text-xs flex items-center"
               >
-                Force WS Protocol
+                <ShieldAlert size={12} className="mr-1" /> Force WS Protocol (Non-Secure)
               </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Force use non-secure ws:// protocol</p>
-            </TooltipContent>
-          </Tooltip>
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
+              
               <button 
                 onClick={() => {
                   localStorage.setItem('websocket-protocol', 'wss');
                   localStorage.setItem('debug-websockets', 'true');
                   window.location.reload();
                 }}
+                className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded-sm text-xs flex items-center"
+              >
+                <Shield size={12} className="mr-1" /> Force WSS Protocol (Secure)
+              </button>
+              
+              <button 
+                onClick={clearProtocolOverride}
                 className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded-sm text-xs"
               >
-                Force WSS Protocol
+                Clear Protocol Override
               </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Force use secure wss:// protocol</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
+            </div>
+            
+            {isReplitEnvironment && (
+              <Alert className="py-2 mt-2 bg-blue-50 mb-2">
+                <Info size={12} className="mr-1" />
+                <AlertDescription className="text-[10px]">
+                  In Replit environment, non-secure WebSocket (ws://) often works better.
+                </AlertDescription>
+              </Alert>
+            )}
+          </TabsContent>
+        </Tabs>
         
-        {reconnectCount > 0 && (
-          <div className="text-xs text-gray-500 mt-1">
-            <p>Browser security requires protocol matching between page and WebSocket connection</p>
-          </div>
-        )}
-      </div>
+        <CardFooter className="p-2 text-[10px] text-muted-foreground border-t">
+          <p>
+            {isConnected 
+              ? "WebSocket connection active. Receiving live updates."
+              : "Connection inactive. Using REST API fallback."}
+          </p>
+        </CardFooter>
+      </Card>
     </TooltipProvider>
   );
 }
