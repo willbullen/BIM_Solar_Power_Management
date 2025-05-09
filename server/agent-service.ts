@@ -6,6 +6,7 @@ import { AIService } from "./ai-service";
 import { DbUtils } from "./utils/db-utils";
 import { FunctionRegistry } from "./utils/function-registry";
 import { eq, and, or, asc, desc, sql } from "drizzle-orm";
+import { webSocketService } from "./websocket-service";
 
 // Define the core agent capabilities and functions
 export class AgentService {
@@ -78,6 +79,15 @@ export class AgentService {
         metadata: {}
       })
       .returning();
+    
+    // Broadcast the new user message via WebSocket
+    webSocketService.broadcastAgentMessage({
+      id: message.id,
+      conversationId: message.conversationId,
+      role: message.role,
+      content: message.content,
+      timestamp: message.timestamp
+    });
     
     return message;
   }
@@ -175,7 +185,7 @@ export class AgentService {
             .where(eq(schema.agentMessages.id, functionCallMessage.id));
           
           // Add the function result as a new message
-          await db.insert(schema.agentMessages).values({
+          const [functionMessage] = await db.insert(schema.agentMessages).values({
             conversationId,
             role: "function",
             content: JSON.stringify(functionResult),
@@ -183,6 +193,15 @@ export class AgentService {
               functionName,
               executedAt: new Date()
             }
+          }).returning();
+          
+          // Broadcast the function result message
+          webSocketService.broadcastAgentMessage({
+            id: functionMessage.id,
+            conversationId: functionMessage.conversationId,
+            role: functionMessage.role,
+            content: functionMessage.content,
+            timestamp: functionMessage.timestamp
           });
           
           return functionCallMessage;
@@ -212,6 +231,15 @@ export class AgentService {
             metadata: { completionId: response.id }
           })
           .returning();
+        
+        // Broadcast the new message via WebSocket
+        webSocketService.broadcastAgentMessage({
+          id: assistantMessage.id,
+          conversationId: assistantMessage.conversationId,
+          role: assistantMessage.role,
+          content: assistantMessage.content,
+          timestamp: assistantMessage.timestamp
+        });
 
         return assistantMessage;
       }
@@ -227,6 +255,15 @@ export class AgentService {
           metadata: { error: String(error) }
         })
         .returning();
+      
+      // Broadcast the error message
+      webSocketService.broadcastAgentMessage({
+        id: errorMessage.id,
+        conversationId: errorMessage.conversationId,
+        role: errorMessage.role,
+        content: errorMessage.content,
+        timestamp: errorMessage.timestamp
+      });
 
       return errorMessage;
     }
@@ -367,6 +404,15 @@ export class AgentService {
       })
       .where(sql`id = ${notification.id}`)
       .returning();
+    
+    // Broadcast notification via WebSocket
+    webSocketService.broadcastAgentNotification({
+      id: sentNotification.id,
+      message: sentNotification.message,
+      type: sentNotification.type,
+      sentAt: sentNotification.sentAt,
+      recipientNumber: sentNotification.recipientNumber
+    });
     
     return sentNotification;
   }

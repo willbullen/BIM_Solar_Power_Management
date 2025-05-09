@@ -4,6 +4,7 @@ import { AgentService } from './agent-service';
 import * as schema from '@shared/schema';
 import { db } from './db';
 import session from 'express-session';
+import { webSocketService } from './websocket-service';
 
 // Extend Express.Session to include user properties
 declare module 'express-session' {

@@ -82,14 +82,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Track subscriptions and clients
-  const subscriptions = new Map<string, Set<WebSocket>>();
-  
-  // Initialize subscription channels
-  subscriptions.set('power-data', new Set<WebSocket>());
-  subscriptions.set('environmental-data', new Set<WebSocket>());
-  subscriptions.set('agent-notifications', new Set<WebSocket>());
-  subscriptions.set('agent-messages', new Set<WebSocket>());
+  // We're now using the WebSocketService for managing subscriptions
+  // The service is automatically initialized and provides subscription channels
   
   // Log WebSocket server errors
   wss.on('error', (error) => {
@@ -216,14 +210,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ws.on('close', () => {
       console.log('WebSocket connection closed');
       
-      // Remove from all subscriptions
-      // Convert to array to avoid TypeScript iteration issues with Set
-      Array.from(subscribedChannels).forEach(channel => {
-        const subscribers = subscriptions.get(channel);
-        if (subscribers) {
-          subscribers.delete(ws);
-        }
-      });
+      // Remove from all subscriptions using WebSocketService
+      webSocketService.removeClient(ws);
       subscribedChannels.clear();
     });
     
@@ -261,49 +249,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   function broadcastData(data: any) {
     // Get the channel name from the data type
     const channelName = data.type;
-    const subscribers = subscriptions.get(channelName);
     
-    if (subscribers && subscribers.size > 0) {
-      // Send to subscribed clients
-      subscribers.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          try {
-            client.send(JSON.stringify(data));
-          } catch (error) {
-            console.error(`Error broadcasting to client: ${error}`);
-          }
-        }
-      });
-      console.log(`Broadcast ${channelName} to ${subscribers.size} subscribers`);
-    } else {
-      // Fallback to broadcasting to all clients if no specific subscribers
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          try {
-            client.send(JSON.stringify(data));
-          } catch (error) {
-            console.error(`Error broadcasting to client: ${error}`);
-          }
-        }
-      });
-    }
+    // Use the WebSocketService to handle broadcasting
+    webSocketService.broadcast(channelName, data.data);
   }
   
   // Handle subscription requests
   function handleSubscription(ws: WebSocket, data: any, subscribedChannels: Set<string>) {
-    // Valid subscription channels
-    const validChannels = [
-      'power-data', 
-      'environmental-data', 
-      'agent-notifications', 
-      'agent-messages'
-    ];
+    // Get valid channels from WebSocketService
+    const validChannels = webSocketService.getValidChannels();
     
     if (validChannels.includes(data.channel)) {
-      // Add client to subscription list for the channel
-      const subscribers = subscriptions.get(data.channel);
-      if (subscribers) {
-        subscribers.add(ws);
+      // Add client to subscription using WebSocketService
+      if (webSocketService.addSubscription(data.channel, ws)) {
         subscribedChannels.add(data.channel);
         console.log(`Client subscribed to ${data.channel}`);
       }
@@ -325,19 +283,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Handle unsubscription requests
   function handleUnsubscription(ws: WebSocket, data: any, subscribedChannels: Set<string>) {
-    // Valid subscription channels
-    const validChannels = [
-      'power-data', 
-      'environmental-data', 
-      'agent-notifications', 
-      'agent-messages'
-    ];
+    // Get valid channels from WebSocketService
+    const validChannels = webSocketService.getValidChannels();
     
     if (validChannels.includes(data.channel)) {
-      // Remove client from subscription list for the channel
-      const subscribers = subscriptions.get(data.channel);
-      if (subscribers) {
-        subscribers.delete(ws);
+      // Remove client from subscription using WebSocketService
+      if (webSocketService.removeSubscription(data.channel, ws)) {
         subscribedChannels.delete(data.channel);
         console.log(`Client unsubscribed from ${data.channel}`);
       }

@@ -97,12 +97,22 @@ export class WebSocketService {
   
   // Broadcast an agent notification to all subscribed clients
   public broadcastAgentNotification(notification: any): void {
-    this.broadcast('agent-notifications', notification);
+    const formattedPayload = {
+      type: 'agent-notification',
+      payload: notification,
+      timestamp: new Date().toISOString()
+    };
+    this.broadcast('agent-notifications', formattedPayload);
   }
   
   // Broadcast an agent message to all subscribed clients
   public broadcastAgentMessage(message: any): void {
-    this.broadcast('agent-messages', message);
+    const formattedPayload = {
+      type: 'agent-message',
+      payload: message,
+      timestamp: new Date().toISOString()
+    };
+    this.broadcast('agent-messages', formattedPayload);
   }
 }
 

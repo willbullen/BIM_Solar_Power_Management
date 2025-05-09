@@ -14,7 +14,7 @@ import ForecastingPage from "@/pages/forecasting-page";
 import EquipmentPage from "@/pages/equipment-page";
 import OperationalPlanningPage from "@/pages/operational-planning-page";
 import FeedbackPage from "@/pages/feedback-page";
-import AgentPage from "@/pages/agent-page";
+import { AgentPage } from "@/pages/agent-page";
 import NotFound from "@/pages/not-found";
 import { WebSocketDebugger } from "@/components/debug/websocket-debugger";
 
