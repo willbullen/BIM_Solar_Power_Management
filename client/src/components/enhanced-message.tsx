@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Bot, User, Clock, Pin, Database, ArrowUpRight } from "lucide-react";
+import { Bot, User, Clock, Pin, Database, ArrowUpRight, Trash2 } from "lucide-react";
 
 // Define interfaces used by ReactMarkdown for type safety
 interface CodeProps {

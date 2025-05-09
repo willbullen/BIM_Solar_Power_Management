@@ -340,6 +340,25 @@ export function registerAgentRoutes(app: Express) {
       res.status(500).json({ message: 'Failed to process message' });
     }
   });
+  
+  // Delete a message from a conversation
+  app.delete('/api/agent/conversations/:conversationId/messages/:messageId', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const messageId = parseInt(req.params.messageId);
+      const userId = req.session!.userId;
+      
+      const success = await agentService.deleteMessage(messageId, userId);
+      
+      if (success) {
+        res.status(200).json({ success: true, message: 'Message deleted successfully' });
+      } else {
+        res.status(404).json({ success: false, message: 'Message not found or you do not have permission to delete it' });
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      res.status(500).json({ success: false, message: 'Failed to delete message', error: String(error) });
+    }
+  });
 
   // Execute a function
   app.post('/api/agent/functions/execute', requireAuth, async (req: Request, res: Response) => {

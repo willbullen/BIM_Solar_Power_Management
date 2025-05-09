@@ -81,6 +81,48 @@ export class AgentService {
     
     return message;
   }
+  
+  /**
+   * Delete a message from a conversation
+   * @param messageId ID of the message to delete
+   * @param userId User requesting the deletion, for authorization
+   * @returns Success boolean
+   */
+  async deleteMessage(messageId: number, userId: number): Promise<boolean> {
+    try {
+      // First check if the message belongs to this user's conversation
+      const message = await db.query.agentMessages.findFirst({
+        where: (fields, { eq }) => eq(fields.id, messageId),
+        with: {
+          conversation: true
+        }
+      });
+      
+      if (!message) {
+        return false;
+      }
+      
+      // Verify the conversation belongs to the user
+      if (message.conversation.userId !== userId) {
+        return false;
+      }
+      
+      // Delete the message
+      const result = await db.delete(schema.agentMessages)
+        .where(eq(schema.agentMessages.id, messageId))
+        .returning();
+      
+      // Update the conversation's updatedAt timestamp
+      await db.update(schema.agentConversations)
+        .set({ updatedAt: new Date() })
+        .where(eq(schema.agentConversations.id, message.conversationId));
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      return false;
+    }
+  }
 
   /**
    * Generate a response from the agent
