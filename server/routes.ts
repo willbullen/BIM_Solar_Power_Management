@@ -17,6 +17,7 @@ import { SolcastService } from './solcast-service';
 import { AIService } from './ai-service';
 import { registerAgentRoutes } from './agent-routes';
 import { WebSocketServer, WebSocket } from 'ws';
+import { webSocketService } from './websocket-service';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize the database
