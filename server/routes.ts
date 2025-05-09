@@ -52,8 +52,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('[WebSocket] Replit environment detected, applying special protocol handling');
       }
       
-      // Accept any protocol, but use the first one if available
-      return protocols && protocols.length > 0 ? protocols[0] : '';
+      // Convert Set to Array if needed and accept the first available protocol
+      // This handles both Array and Set protocol types safely
+      if (!protocols) return '';
+      
+      // If it's already an array, use it directly
+      if (Array.isArray(protocols)) {
+        return protocols.length > 0 ? protocols[0] : '';
+      }
+      
+      // If it's a Set, convert to Array first
+      const protocolArray = Array.from(protocols);
+      return protocolArray.length > 0 ? protocolArray[0] : '';
     }
   });
   

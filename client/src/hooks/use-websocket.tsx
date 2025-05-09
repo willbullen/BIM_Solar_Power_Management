@@ -112,20 +112,22 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     // Default protocol selection
     let protocol: string;
     
-    // For Replit environment, default to non-secure WebSocket (ws://)
-    // This is due to a known limitation in Replit's environment with secure WebSockets
-    if (isReplitEnvironment) {
-      protocol = 'ws:';
-      console.log(`Replit environment detected, defaulting to non-secure WebSocket protocol (ws://)`);
-    } else {
-      // Normal protocol selection based on page security for non-Replit environments
-      protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    }
-    
-    // If user explicitly set a protocol through the debugger UI, honor that choice
+    // First check if user has manually set a preference through the UI
+    // This takes highest precedence
     if (userProtocolPreference === 'ws' || userProtocolPreference === 'wss') {
       protocol = `${userProtocolPreference}:`;
       console.log(`Using user-specified WebSocket protocol: ${protocol}`);
+    } 
+    // For Replit environment, default to non-secure WebSocket (ws://)
+    // This is due to a known limitation in Replit's environment with secure WebSockets
+    else if (isReplitEnvironment) {
+      protocol = 'ws:';
+      console.log(`Replit environment detected, defaulting to non-secure WebSocket protocol (ws://)`);
+    } 
+    // Normal protocol selection based on page security for non-Replit environments
+    else {
+      protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      console.log(`Standard environment, using protocol matching page: ${protocol}`);
     }
     
     // If we're encountering repeated connection errors with the current protocol
