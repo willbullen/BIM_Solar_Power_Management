@@ -15,7 +15,7 @@ export function useAIAnalytics(options: AIAnalyticsOptions = {}) {
   // Get the mutation function for analytics API
   const analyticsQuery = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('POST', '/api/ai/analytics', data);
+      return apiRequest('/api/ai/analytics', 'POST', data);
     },
     onSuccess: (data) => {
       setIsGenerating(false);
@@ -34,7 +34,7 @@ export function useAIAnalytics(options: AIAnalyticsOptions = {}) {
   // Get the mutation function for report API
   const reportQuery = useMutation({
     mutationFn: async ({ data, reportType }: { data: any, reportType: string }) => {
-      return apiRequest('POST', '/api/ai/report', { data, reportType });
+      return apiRequest('/api/ai/report', 'POST', { data, reportType });
     },
     onSuccess: (data) => {
       setIsGenerating(false);
@@ -53,7 +53,7 @@ export function useAIAnalytics(options: AIAnalyticsOptions = {}) {
   // Get the mutation function for predictions API
   const predictionsQuery = useMutation({
     mutationFn: async ({ data, forecastHorizon }: { data: any, forecastHorizon: string }) => {
-      return apiRequest('POST', '/api/ai/predictions', { data, forecastHorizon });
+      return apiRequest('/api/ai/predictions', 'POST', { data, forecastHorizon });
     },
     onSuccess: (data) => {
       setIsGenerating(false);

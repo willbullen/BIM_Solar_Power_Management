@@ -55,15 +55,20 @@ class AgentNotificationService {
    */
   async getUnreadCount(userId: number): Promise<number> {
     try {
-      const result = await db.select({ count: db.fn.count() })
+      const result = await db.select({ count: sql`count(*)` })
         .from(schema.agentNotifications)
         .where(eq(schema.agentNotifications.userId, userId))
         .where(eq(schema.agentNotifications.read, false));
       
-      return Number(result[0].count);
+      // Make sure we handle cases where result[0] could be undefined
+      if (result && result[0] && result[0].count !== undefined) {
+        return Number(result[0].count);
+      }
+      return 0; // Return 0 if no results or count is undefined
     } catch (error) {
       console.error("Error getting unread count:", error);
-      throw error;
+      // Return 0 instead of throwing to avoid breaking the client
+      return 0;
     }
   }
 

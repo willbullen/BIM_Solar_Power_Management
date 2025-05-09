@@ -134,9 +134,9 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
       
       // Use the apiRequest function with Promise.all for concurrent requests
       const [powerData, environmentalData, settings] = await Promise.all([
-        apiRequest('GET', '/api/power-data/latest'),
-        apiRequest('GET', '/api/environmental-data/latest'),
-        apiRequest('GET', '/api/settings')
+        apiRequest('/api/power-data/latest', 'GET'),
+        apiRequest('/api/environmental-data/latest', 'GET'),
+        apiRequest('/api/settings', 'GET')
       ]);
       
       // Update state with fetched data
