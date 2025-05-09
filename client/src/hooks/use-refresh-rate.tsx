@@ -26,12 +26,35 @@ export const REFRESH_RATES: RefreshRateOption[] = [
 export function RefreshRateProvider({ children }: { children: ReactNode }) {
   // Default to 10s refresh interval
   const defaultInterval = 10000;
-  const [refreshInterval, setRefreshInterval] = useState<number>(defaultInterval);
+  
+  // Initialize from localStorage if available
+  const [refreshInterval, setRefreshInterval] = useState<number>(() => {
+    try {
+      const savedInterval = localStorage.getItem('refreshRate');
+      if (savedInterval) {
+        const parsed = parseInt(savedInterval, 10);
+        if (!isNaN(parsed) && REFRESH_RATES.some(rate => rate.value === parsed)) {
+          console.log(`Loaded saved refresh rate from localStorage: ${parsed}ms`);
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load refresh rate from localStorage:', e);
+    }
+    return defaultInterval;
+  });
   
   // Handle refresh rate changes
   const handleRefreshRateChange = (newInterval: number) => {
     console.log(`Changing refresh rate from ${refreshInterval}ms to ${newInterval}ms`);
     setRefreshInterval(newInterval);
+    
+    // Store the selected refresh rate in localStorage for persistence
+    try {
+      localStorage.setItem('refreshRate', String(newInterval));
+    } catch (e) {
+      console.error('Failed to save refresh rate to localStorage:', e);
+    }
   };
   
   // Find the label for the current refresh interval

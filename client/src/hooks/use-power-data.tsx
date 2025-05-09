@@ -185,6 +185,11 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     
     console.log(`Starting power data polling with interval: ${refreshInterval}ms`);
     
+    // Clear previous interval if it exists before setting a new one
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+    
     // Set up polling interval based on the selected refresh rate
     pollingInterval = setInterval(fetchLatestData, refreshInterval);
     
