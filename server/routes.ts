@@ -33,9 +33,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up WebSocket server (on a different path than Vite's HMR websocket)
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
+  // Track subscriptions and clients
+  const subscriptions = new Map<string, Set<WebSocket>>();
+  
+  // Initialize subscription channels
+  subscriptions.set('power-data', new Set<WebSocket>());
+  subscriptions.set('environmental-data', new Set<WebSocket>());
+  
+  // Set up ping interval to check for stale connections
+  const pingInterval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        // Send ping
+        try {
+          ws.send(JSON.stringify({
+            type: 'ping',
+            data: { timestamp: new Date().toISOString() }
+          }));
+        } catch (err) {
+          console.error('Error sending ping:', err);
+          try {
+            ws.terminate();
+          } catch (termErr) {
+            console.error('Error terminating socket after ping error:', termErr);
+          }
+        }
+      }
+    });
+  }, 30000); // Every 30 seconds
+  
+  // Cleanup interval on server shutdown
+  process.on('SIGINT', () => {
+    clearInterval(pingInterval);
+    process.exit(0);
+  });
+  
   // Handle WebSocket connections
   wss.on('connection', (ws) => {
     console.log('New WebSocket connection established');
+    
+    // Track last activity time for this connection
+    let lastActivity = Date.now();
+    
+    // Function to update last activity timestamp
+    const updateActivity = () => {
+      lastActivity = Date.now();
+    };
+    
+    // Set a property to track subscribed channels
+    const subscribedChannels = new Set<string>();
+    (ws as any).subscribedChannels = subscribedChannels;
     
     // Send welcome message
     ws.send(JSON.stringify({
@@ -46,6 +93,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Handle messages from client
     ws.on('message', (message) => {
       try {
+        updateActivity(); // Update activity timestamp on each message
+        
         const parsedMessage = JSON.parse(message.toString());
         console.log('Received message:', parsedMessage);
         
@@ -53,7 +102,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         switch (parsedMessage.type) {
           case 'subscribe':
             // Handle subscription request
-            handleSubscription(ws, parsedMessage.data);
+            handleSubscription(ws, parsedMessage.data, subscribedChannels);
+            break;
+          case 'unsubscribe':
+            // Handle unsubscription request
+            handleUnsubscription(ws, parsedMessage.data, subscribedChannels);
+            break;
+          case 'ping': 
+            // Respond to ping with pong
+            ws.send(JSON.stringify({
+              type: 'pong',
+              data: { timestamp: new Date().toISOString() }
+            }));
             break;
           default:
             console.log('Unknown message type:', parsedMessage.type);
@@ -66,22 +126,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Handle client disconnection
     ws.on('close', () => {
       console.log('WebSocket connection closed');
+      
+      // Remove from all subscriptions
+      // Convert to array to avoid TypeScript iteration issues with Set
+      Array.from(subscribedChannels).forEach(channel => {
+        const subscribers = subscriptions.get(channel);
+        if (subscribers) {
+          subscribers.delete(ws);
+        }
+      });
+      subscribedChannels.clear();
+    });
+    
+    // Handle errors
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+      try {
+        ws.terminate();
+      } catch (err) {
+        console.error('Error terminating socket after error:', err);
+      }
+    });
+    
+    // Set up timeout check for inactive connections (2 minutes)
+    const checkInterval = setInterval(() => {
+      const now = Date.now();
+      if (now - lastActivity > 120000) { // 2 minutes without activity
+        console.log('Closing inactive WebSocket connection');
+        clearInterval(checkInterval);
+        try {
+          ws.terminate();
+        } catch (err) {
+          console.error('Error terminating inactive socket:', err);
+        }
+      }
+    }, 30000); // Check every 30 seconds
+    
+    // Clear interval when connection closes
+    ws.on('close', () => {
+      clearInterval(checkInterval);
     });
   });
   
-  // Broadcast data to all connected WebSocket clients
+  // Broadcast data to subscribed WebSocket clients
   function broadcastData(data: any) {
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(data));
-      }
-    });
+    // Get the channel name from the data type
+    const channelName = data.type;
+    const subscribers = subscriptions.get(channelName);
+    
+    if (subscribers && subscribers.size > 0) {
+      // Send to subscribed clients
+      subscribers.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          try {
+            client.send(JSON.stringify(data));
+          } catch (error) {
+            console.error(`Error broadcasting to client: ${error}`);
+          }
+        }
+      });
+      console.log(`Broadcast ${channelName} to ${subscribers.size} subscribers`);
+    } else {
+      // Fallback to broadcasting to all clients if no specific subscribers
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          try {
+            client.send(JSON.stringify(data));
+          } catch (error) {
+            console.error(`Error broadcasting to client: ${error}`);
+          }
+        }
+      });
+    }
   }
   
   // Handle subscription requests
-  function handleSubscription(ws: WebSocket, data: any) {
+  function handleSubscription(ws: WebSocket, data: any, subscribedChannels: Set<string>) {
     // Currently only supports power and environmental data subscriptions
     if (data.channel === 'power-data' || data.channel === 'environmental-data') {
+      // Add client to subscription list for the channel
+      const subscribers = subscriptions.get(data.channel);
+      if (subscribers) {
+        subscribers.add(ws);
+        subscribedChannels.add(data.channel);
+        console.log(`Client subscribed to ${data.channel}`);
+      }
+      
       ws.send(JSON.stringify({
         type: 'subscription-success',
         data: { channel: data.channel }
@@ -89,6 +219,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } else {
       ws.send(JSON.stringify({
         type: 'subscription-failed',
+        data: { message: `Unknown channel: ${data.channel}` }
+      }));
+    }
+  }
+  
+  // Handle unsubscription requests
+  function handleUnsubscription(ws: WebSocket, data: any, subscribedChannels: Set<string>) {
+    if (data.channel === 'power-data' || data.channel === 'environmental-data') {
+      // Remove client from subscription list for the channel
+      const subscribers = subscriptions.get(data.channel);
+      if (subscribers) {
+        subscribers.delete(ws);
+        subscribedChannels.delete(data.channel);
+        console.log(`Client unsubscribed from ${data.channel}`);
+      }
+      
+      ws.send(JSON.stringify({
+        type: 'unsubscription-success',
+        data: { channel: data.channel }
+      }));
+    } else {
+      ws.send(JSON.stringify({
+        type: 'unsubscription-failed',
         data: { message: `Unknown channel: ${data.channel}` }
       }));
     }
