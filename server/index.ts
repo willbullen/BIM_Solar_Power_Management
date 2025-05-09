@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { migrate as migrateTelegram } from "./migrate-telegram";
 import cors from 'cors';
 
 const app = express();
@@ -56,6 +57,15 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  try {
+    // Run Telegram database migration
+    await migrateTelegram();
+    console.log('Telegram database migration completed successfully');
+  } catch (error) {
+    console.error('Error during Telegram database migration:', error);
+    // Continue with server startup even if migration fails
+  }
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

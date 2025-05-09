@@ -5,6 +5,8 @@
 import { db } from './db';
 import { sql } from 'drizzle-orm';
 import { telegramSettings, telegramUsers, telegramMessages } from '../shared/schema';
+// Import for ES module main detection
+import { fileURLToPath } from 'url';
 
 export async function migrate() {
   try {
@@ -130,7 +132,12 @@ async function createDefaultSettings() {
 }
 
 // Run the migration if this script is executed directly
-if (require.main === module) {
+// Using ES modules approach instead of CommonJS
+
+// Check if this file is being run directly
+const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
+
+if (isMainModule) {
   migrate()
     .then(() => {
       console.log('Telegram integration migration completed successfully.');

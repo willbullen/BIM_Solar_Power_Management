@@ -4,6 +4,7 @@
  */
 
 import TelegramBot from 'node-telegram-bot-api';
+import type { Message, SendMessageOptions } from 'node-telegram-bot-api';
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
 import { telegramUsers, telegramMessages, telegramSettings, agentConversations, agentMessages } from '../../shared/schema';
@@ -112,7 +113,7 @@ export class TelegramService {
   /**
    * Handle the /start command
    */
-  private async handleStartCommand(msg: TelegramBot.Message): Promise<void> {
+  private async handleStartCommand(msg: Message): Promise<void> {
     const chatId = msg.chat.id;
     const telegramId = msg.from?.id.toString() || '';
     
@@ -152,7 +153,7 @@ To get started, you need to verify your account. Please ask your system administ
   /**
    * Handle account verification process
    */
-  private async handleVerification(msg: TelegramBot.Message, verificationCode: string): Promise<void> {
+  private async handleVerification(msg: Message, verificationCode: string): Promise<void> {
     const chatId = msg.chat.id;
     const telegramId = msg.from?.id.toString() || '';
     const username = msg.from?.username || '';
@@ -210,7 +211,7 @@ Try asking questions about power usage, environmental data, or request reports.`
   /**
    * Handle incoming messages from Telegram users
    */
-  private async handleIncomingMessage(msg: TelegramBot.Message): Promise<void> {
+  private async handleIncomingMessage(msg: Message): Promise<void> {
     const chatId = msg.chat.id;
     const telegramId = msg.from?.id.toString() || '';
     const messageText = msg.text || '';
