@@ -281,7 +281,9 @@ Try asking questions about power usage, environmental data, or request reports.`
       // Generate AI response
       const aiResponse = await this.agentService.generateResponse(
         conversationId,
-        userMessage.id
+        user[0].userId,
+        'user',  // Default user role
+        1000     // Default max tokens
       );
       
       // Store outbound message
@@ -527,7 +529,13 @@ Try asking questions about power usage, environmental data, or request reports.`
   /**
    * Update Telegram bot settings
    */
-  async updateSettings(settings: { botToken?: string, botUsername?: string, webhookUrl?: string, isEnabled?: boolean }): Promise<void> {
+  async updateSettings(settings: { 
+    botToken?: string, 
+    botUsername?: string, 
+    webhookUrl?: string | null, 
+    isEnabled?: boolean,
+    updatedBy?: number
+  }): Promise<void> {
     try {
       // Get current settings
       const currentSettings = await db.select().from(telegramSettings).limit(1);
@@ -543,6 +551,7 @@ Try asking questions about power usage, environmental data, or request reports.`
           botUsername: settings.botUsername || currentSettings[0].botUsername,
           webhookUrl: settings.webhookUrl !== undefined ? settings.webhookUrl : currentSettings[0].webhookUrl,
           isEnabled: settings.isEnabled !== undefined ? settings.isEnabled : currentSettings[0].isEnabled,
+          updatedBy: settings.updatedBy || currentSettings[0].updatedBy,
           updatedAt: new Date()
         })
         .where(eq(telegramSettings.id, currentSettings[0].id));
