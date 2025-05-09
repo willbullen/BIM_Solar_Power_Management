@@ -1,400 +1,404 @@
-/**
- * MCP Routes
- * 
- * API routes for the Multi-Capability Planning (MCP) framework
- */
-
-import express from 'express';
-import { MCPService, TaskStatus, TaskPriority } from './services/mcp-service';
-import { requireAuthentication } from './auth';
+import express from "express";
+import { mcpService } from "./services/mcp-service";
+import { z } from "zod";
+import { insertMcpTaskSchema } from "../shared/schema";
 
 const router = express.Router();
-const mcpService = MCPService.getInstance();
-
-// Require authentication for all MCP routes
-router.use(requireAuthentication);
 
 /**
- * Get all capabilities
+ * Get all available capabilities
  */
-router.get('/capabilities', (req, res) => {
-  const capabilities = mcpService.getSupportedCapabilities();
-  res.json(capabilities);
-});
-
-/**
- * Get all tasks
- */
-router.get('/tasks', async (req, res) => {
+router.get("/capabilities", async (req, res) => {
   try {
-    const tasks = await mcpService.getAllTasks();
-    res.json(tasks);
+    // Get user role from session if authenticated
+    const userRole = req.session.user?.role;
+    
+    const capabilities = mcpService.getAvailableCapabilities(userRole);
+    
+    return res.json({
+      success: true,
+      capabilities: capabilities.map(cap => ({
+        name: cap.name,
+        description: cap.description,
+        category: cap.category,
+        parameters: cap.parameters || {}
+      }))
+    });
   } catch (error) {
-    console.error('Error fetching tasks:', error);
-    res.status(500).json({ error: 'Failed to fetch tasks' });
+    console.error("Error fetching capabilities:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch capabilities"
+    });
   }
 });
 
 /**
- * Get task by ID
+ * Get a specific capability by name
  */
-router.get('/tasks/:id', async (req, res) => {
+router.get("/capabilities/:name", async (req, res) => {
   try {
-    const taskId = parseInt(req.params.id);
-    if (isNaN(taskId)) {
-      return res.status(400).json({ error: 'Invalid task ID' });
-    }
+    const { name } = req.params;
+    const capability = mcpService.getCapability(name);
     
-    const task = await mcpService.getTaskById(taskId);
-    if (!task) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
-    
-    res.json(task);
-  } catch (error) {
-    console.error('Error fetching task:', error);
-    res.status(500).json({ error: 'Failed to fetch task' });
-  }
-});
-
-/**
- * Get tasks by status
- */
-router.get('/tasks/status/:status', async (req, res) => {
-  try {
-    const status = req.params.status as TaskStatus;
-    const validStatuses = ['pending', 'scheduled', 'in-progress', 'completed', 'failed', 'cancelled'];
-    
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' });
-    }
-    
-    const tasks = await mcpService.getTasksByStatus(status);
-    res.json(tasks);
-  } catch (error) {
-    console.error('Error fetching tasks by status:', error);
-    res.status(500).json({ error: 'Failed to fetch tasks' });
-  }
-});
-
-/**
- * Get tasks by user ID
- */
-router.get('/user-tasks', async (req, res) => {
-  try {
-    const userId = (req.user as any).id;
-    const tasks = await mcpService.getTasksByUserId(userId);
-    res.json(tasks);
-  } catch (error) {
-    console.error('Error fetching user tasks:', error);
-    res.status(500).json({ error: 'Failed to fetch user tasks' });
-  }
-});
-
-/**
- * Create a new task
- */
-router.post('/tasks', async (req, res) => {
-  try {
-    const userId = (req.user as any).id;
-    const { 
-      name, 
-      description, 
-      capability, 
-      provider, 
-      parameters, 
-      status, 
-      priority, 
-      scheduledFor,
-      parentTaskId,
-      metadata
-    } = req.body;
-    
-    // Validate required fields
-    if (!name || !description || !capability || !provider || !parameters) {
-      return res.status(400).json({ 
-        error: 'Missing required fields', 
-        required: ['name', 'description', 'capability', 'provider', 'parameters'] 
+    if (!capability) {
+      return res.status(404).json({
+        success: false,
+        error: `Capability '${name}' not found`
       });
     }
     
-    // Check if capability is supported
-    if (!mcpService.isCapabilitySupported(provider, capability)) {
-      return res.status(400).json({ 
-        error: `Capability ${capability} not supported by provider ${provider}`,
-        supportedCapabilities: mcpService.getSupportedCapabilities()
+    // Check if user has access to this capability
+    const userRole = req.session.user?.role;
+    if (capability.requiresAuth && !req.session.user) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required to access this capability"
       });
     }
     
-    // Create task
-    const task = await mcpService.createTask({
-      name,
-      description,
-      capability,
-      provider,
-      parameters,
-      status: status || TaskStatus.PENDING,
-      priority: priority || TaskPriority.MEDIUM,
-      createdBy: userId,
-      scheduledFor: scheduledFor ? new Date(scheduledFor) : undefined,
-      parentTaskId,
-      metadata
-    });
-    
-    res.status(201).json(task);
-  } catch (error) {
-    console.error('Error creating task:', error);
-    res.status(500).json({ error: 'Failed to create task' });
-  }
-});
-
-/**
- * Update task
- */
-router.patch('/tasks/:id', async (req, res) => {
-  try {
-    const taskId = parseInt(req.params.id);
-    if (isNaN(taskId)) {
-      return res.status(400).json({ error: 'Invalid task ID' });
-    }
-    
-    const task = await mcpService.getTaskById(taskId);
-    if (!task) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
-    
-    // Update task
-    const updatedTask = await mcpService.updateTask(taskId, req.body);
-    res.json(updatedTask);
-  } catch (error) {
-    console.error('Error updating task:', error);
-    res.status(500).json({ error: 'Failed to update task' });
-  }
-});
-
-/**
- * Cancel task
- */
-router.post('/tasks/:id/cancel', async (req, res) => {
-  try {
-    const taskId = parseInt(req.params.id);
-    if (isNaN(taskId)) {
-      return res.status(400).json({ error: 'Invalid task ID' });
-    }
-    
-    const task = await mcpService.getTaskById(taskId);
-    if (!task) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
-    
-    // Cancel task
-    const cancelledTask = await mcpService.cancelTask(taskId);
-    res.json(cancelledTask);
-  } catch (error) {
-    console.error('Error cancelling task:', error);
-    res.status(500).json({ error: 'Failed to cancel task' });
-  }
-});
-
-/**
- * Execute task manually
- */
-router.post('/tasks/:id/execute', async (req, res) => {
-  try {
-    const taskId = parseInt(req.params.id);
-    if (isNaN(taskId)) {
-      return res.status(400).json({ error: 'Invalid task ID' });
-    }
-    
-    const task = await mcpService.getTaskById(taskId);
-    if (!task) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
-    
-    // Execute task
-    const executedTask = await mcpService.executeTask(taskId);
-    res.json(executedTask);
-  } catch (error) {
-    console.error('Error executing task:', error);
-    res.status(500).json({ error: 'Failed to execute task' });
-  }
-});
-
-/**
- * Delete task
- */
-router.delete('/tasks/:id', async (req, res) => {
-  try {
-    const taskId = parseInt(req.params.id);
-    if (isNaN(taskId)) {
-      return res.status(400).json({ error: 'Invalid task ID' });
-    }
-    
-    const task = await mcpService.getTaskById(taskId);
-    if (!task) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
-    
-    // Delete task
-    await mcpService.deleteTask(taskId);
-    res.status(204).end();
-  } catch (error) {
-    console.error('Error deleting task:', error);
-    res.status(500).json({ error: 'Failed to delete task' });
-  }
-});
-
-/**
- * Execute sentiment analysis on text
- */
-router.post('/analyze/sentiment', async (req, res) => {
-  try {
-    const { text, conversationId, detailed } = req.body;
-    
-    if (!text) {
-      return res.status(400).json({ error: 'Text is required for sentiment analysis' });
-    }
-    
-    const userId = (req.user as any).id;
-    
-    // Execute sentiment analysis capability directly
-    const result = await mcpService.executeCapability('analysis', 'sentiment_analysis', {
-      text,
-      userId,
-      conversationId,
-      detailed: detailed || false
-    });
-    
-    res.json(result);
-  } catch (error) {
-    console.error('Error performing sentiment analysis:', error);
-    res.status(500).json({ error: 'Failed to perform sentiment analysis' });
-  }
-});
-
-/**
- * Summarize data
- */
-router.post('/analyze/summarize', async (req, res) => {
-  try {
-    const { data, format, maxLength, focusAreas } = req.body;
-    
-    if (!data) {
-      return res.status(400).json({ error: 'Data is required for summarization' });
-    }
-    
-    // Execute data summarization capability directly
-    const result = await mcpService.executeCapability('analysis', 'data_summarization', {
-      data,
-      format: format || 'text',
-      maxLength,
-      focusAreas
-    });
-    
-    res.json(result);
-  } catch (error) {
-    console.error('Error performing data summarization:', error);
-    res.status(500).json({ error: 'Failed to perform data summarization' });
-  }
-});
-
-/**
- * Detect anomalies in data
- */
-router.post('/analyze/anomalies', async (req, res) => {
-  try {
-    const { data, timeField, valueField, method, threshold } = req.body;
-    
-    if (!data || !timeField || !valueField) {
-      return res.status(400).json({ 
-        error: 'Missing required fields for anomaly detection',
-        required: ['data', 'timeField', 'valueField']
+    if (capability.requiredRole && userRole && 
+        !capability.requiredRole.includes(userRole) && 
+        userRole !== 'Admin') {
+      return res.status(403).json({
+        success: false,
+        error: "Insufficient permissions to access this capability"
       });
     }
     
-    // Execute anomaly detection capability directly
-    const result = await mcpService.executeCapability('analysis', 'anomaly_detection', {
-      data,
-      timeField,
-      valueField,
-      method,
-      threshold
+    return res.json({
+      success: true,
+      capability: {
+        name: capability.name,
+        description: capability.description,
+        category: capability.category,
+        parameters: capability.parameters || {}
+      }
     });
-    
-    res.json(result);
   } catch (error) {
-    console.error('Error performing anomaly detection:', error);
-    res.status(500).json({ error: 'Failed to perform anomaly detection' });
+    console.error(`Error fetching capability:`, error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch capability"
+    });
   }
 });
 
 /**
- * Analyze trends in data
+ * Create a new MCP task
  */
-router.post('/analyze/trends', async (req, res) => {
+router.post("/tasks", async (req, res) => {
   try {
-    const { data, timeField, valueFields, windowSize } = req.body;
+    // Validate request body against schema
+    const validationResult = insertMcpTaskSchema.safeParse(req.body);
     
-    if (!data || !timeField || !valueFields) {
-      return res.status(400).json({ 
-        error: 'Missing required fields for trend analysis',
-        required: ['data', 'timeField', 'valueFields']
+    if (!validationResult.success) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid request data",
+        details: validationResult.error.errors
       });
     }
     
-    // Execute trend analysis capability directly
-    const result = await mcpService.executeCapability('analysis', 'trend_analysis', {
-      data,
-      timeField,
-      valueFields,
-      windowSize
-    });
-    
-    res.json(result);
-  } catch (error) {
-    console.error('Error performing trend analysis:', error);
-    res.status(500).json({ error: 'Failed to perform trend analysis' });
-  }
-});
-
-/**
- * Decompose a task into subtasks
- */
-router.post('/plan/decompose', async (req, res) => {
-  try {
-    const { task } = req.body;
-    
-    if (!task) {
-      return res.status(400).json({ error: 'Task description is required for decomposition' });
+    // Ensure user is authenticated
+    if (!req.session.user) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required to create tasks"
+      });
     }
     
-    const userId = (req.user as any).id;
+    // Set the creator to the current user
+    const taskData = {
+      ...validationResult.data,
+      createdBy: req.session.user.id
+    };
     
-    // Execute task decomposition capability directly
-    const result = await mcpService.executeCapability('planning', 'task_decomposition', {
-      task,
-      userId
+    const task = await mcpService.createTask(taskData);
+    
+    return res.status(201).json({
+      success: true,
+      task
     });
-    
-    res.json(result);
   } catch (error) {
-    console.error('Error performing task decomposition:', error);
-    res.status(500).json({ error: 'Failed to perform task decomposition' });
+    console.error("Error creating MCP task:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to create task"
+    });
   }
 });
 
 /**
- * Error handler for MCP routes
+ * Get all MCP tasks with optional filtering
  */
-router.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('MCP Route Error:', err);
-  res.status(500).json({ error: 'Internal server error in MCP service' });
+router.get("/tasks", async (req, res) => {
+  try {
+    const { status, capability, userId } = req.query;
+    
+    // If user is not an admin, they can only see their own tasks
+    const userRole = req.session.user?.role;
+    const userIdFilter = 
+      userRole === 'Admin' 
+        ? userId ? Number(userId) : undefined
+        : req.session.user?.id;
+    
+    const filter = {
+      status: status as string | undefined,
+      capability: capability as string | undefined,
+      userId: userIdFilter
+    };
+    
+    const tasks = await mcpService.getAllTasks(filter);
+    
+    return res.json({
+      success: true,
+      tasks
+    });
+  } catch (error) {
+    console.error("Error fetching MCP tasks:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch tasks"
+    });
+  }
 });
 
 /**
- * Register MCP routes with the application
+ * Get a specific MCP task by ID
  */
-export function registerMcpRoutes(app: express.Express) {
-  app.use('/api/mcp', router);
-  console.log('MCP routes registered');
-}
+router.get("/tasks/:id", async (req, res) => {
+  try {
+    const taskId = Number(req.params.id);
+    
+    if (isNaN(taskId)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid task ID"
+      });
+    }
+    
+    const task = await mcpService.getTaskById(taskId);
+    
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        error: `Task with ID ${taskId} not found`
+      });
+    }
+    
+    // If user is not an admin, they can only see their own tasks
+    const userRole = req.session.user?.role;
+    if (userRole !== 'Admin' && task.createdBy !== req.session.user?.id) {
+      return res.status(403).json({
+        success: false,
+        error: "You do not have permission to access this task"
+      });
+    }
+    
+    return res.json({
+      success: true,
+      task
+    });
+  } catch (error) {
+    console.error(`Error fetching MCP task:`, error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch task"
+    });
+  }
+});
+
+/**
+ * Update task status
+ */
+router.patch("/tasks/:id/status", async (req, res) => {
+  try {
+    const taskId = Number(req.params.id);
+    
+    if (isNaN(taskId)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid task ID"
+      });
+    }
+    
+    // Validate request body
+    const schema = z.object({
+      status: z.enum(['pending', 'in-progress', 'completed', 'failed', 'canceled']),
+      result: z.any().optional()
+    });
+    
+    const validationResult = schema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid request data",
+        details: validationResult.error.errors
+      });
+    }
+    
+    const { status, result } = validationResult.data;
+    
+    // Get the task to check permissions
+    const task = await mcpService.getTaskById(taskId);
+    
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        error: `Task with ID ${taskId} not found`
+      });
+    }
+    
+    // Check permissions - only admin or task creator can update status
+    const userRole = req.session.user?.role;
+    if (userRole !== 'Admin' && task.createdBy !== req.session.user?.id) {
+      return res.status(403).json({
+        success: false,
+        error: "You do not have permission to update this task"
+      });
+    }
+    
+    const updatedTask = await mcpService.updateTaskStatus(taskId, status, result);
+    
+    return res.json({
+      success: true,
+      task: updatedTask
+    });
+  } catch (error) {
+    console.error(`Error updating MCP task status:`, error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to update task status"
+    });
+  }
+});
+
+/**
+ * Delete a task
+ */
+router.delete("/tasks/:id", async (req, res) => {
+  try {
+    const taskId = Number(req.params.id);
+    
+    if (isNaN(taskId)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid task ID"
+      });
+    }
+    
+    // Get the task to check permissions
+    const task = await mcpService.getTaskById(taskId);
+    
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        error: `Task with ID ${taskId} not found`
+      });
+    }
+    
+    // Check permissions - only admin or task creator can delete
+    const userRole = req.session.user?.role;
+    if (userRole !== 'Admin' && task.createdBy !== req.session.user?.id) {
+      return res.status(403).json({
+        success: false,
+        error: "You do not have permission to delete this task"
+      });
+    }
+    
+    const success = await mcpService.deleteTask(taskId);
+    
+    return res.json({
+      success
+    });
+  } catch (error) {
+    console.error(`Error deleting MCP task:`, error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to delete task"
+    });
+  }
+});
+
+/**
+ * Execute a task manually
+ */
+router.post("/tasks/:id/execute", async (req, res) => {
+  try {
+    const taskId = Number(req.params.id);
+    
+    if (isNaN(taskId)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid task ID"
+      });
+    }
+    
+    // Get the task to check permissions
+    const task = await mcpService.getTaskById(taskId);
+    
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        error: `Task with ID ${taskId} not found`
+      });
+    }
+    
+    // Check permissions - only admin or task creator can execute
+    const userRole = req.session.user?.role;
+    if (userRole !== 'Admin' && task.createdBy !== req.session.user?.id) {
+      return res.status(403).json({
+        success: false,
+        error: "You do not have permission to execute this task"
+      });
+    }
+    
+    // Execute the task
+    const result = await mcpService.executeTask(taskId);
+    
+    return res.json({
+      success: true,
+      result
+    });
+  } catch (error) {
+    console.error(`Error executing MCP task:`, error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to execute task",
+      message: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+/**
+ * Process all pending tasks (admin only)
+ */
+router.post("/tasks/process-pending", async (req, res) => {
+  try {
+    // Check if user is admin
+    const userRole = req.session.user?.role;
+    if (userRole !== 'Admin') {
+      return res.status(403).json({
+        success: false,
+        error: "Only administrators can process pending tasks"
+      });
+    }
+    
+    const result = await mcpService.processPendingTasks();
+    
+    return res.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    console.error("Error processing pending MCP tasks:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to process pending tasks"
+    });
+  }
+});
+
+export default router;

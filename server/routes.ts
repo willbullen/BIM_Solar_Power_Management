@@ -17,6 +17,7 @@ import { SolcastService } from './solcast-service';
 import { AIService } from './ai-service';
 import { registerAgentRoutes } from './agent-routes';
 import { registerNotificationRoutes } from './agent-notification-routes';
+import mcpRoutes from './mcp-routes';
 import { WebSocketServer, WebSocket } from 'ws';
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1446,6 +1447,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register agent notification routes for API-based notifications
   registerNotificationRoutes(app);
+  
+  // Register MCP routes for Multi-Capability Planning
+  app.use('/api/mcp', mcpRoutes);
 
   return httpServer;
 }

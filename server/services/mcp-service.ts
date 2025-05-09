@@ -1,1184 +1,974 @@
+import { db } from "../db";
+import * as schema from "../../shared/schema";
+import { eq, and, desc } from "drizzle-orm";
+import { AIService } from "../ai-service";
+import { agentNotificationService } from "./agent-notification-service";
+
+// Interface for capability providers
+export interface CapabilityProvider {
+  execute: (input: any, params?: any) => Promise<any>;
+  name: string;
+  description: string;
+  category: string;
+  parameters?: Record<string, any>;
+  requiresAuth?: boolean;
+  requiredRole?: string[];
+}
+
 /**
  * Multi-Capability Planning (MCP) Service
- * 
- * This service orchestrates multiple AI capabilities and enables advanced
- * planning and execution of complex agent tasks. It provides a framework
- * for managing multiple capability providers, scheduling tasks,
- * and implementing advanced features like sentiment analysis,
- * summarization, and proactive insights generation.
- */
-
-import { db } from '../db';
-import { schema } from '../../shared/schema';
-import { AgentService } from '../agent-service';
-import { AIService } from '../ai-service';
-import { AgentNotificationService } from './agent-notification-service';
-import { ScheduledReportingService } from './scheduled-reporting-service';
-import OpenAI from 'openai';
-
-// Define capability provider interface
-export interface CapabilityProvider {
-  name: string;
-  description: string;
-  capabilities: string[];
-  execute(capability: string, params: any): Promise<any>;
-  isAvailable(): Promise<boolean>;
-}
-
-// Task status options
-export enum TaskStatus {
-  PENDING = 'pending',
-  SCHEDULED = 'scheduled',
-  IN_PROGRESS = 'in-progress',
-  COMPLETED = 'completed',
-  FAILED = 'failed',
-  CANCELLED = 'cancelled'
-}
-
-// Task priority options
-export enum TaskPriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  CRITICAL = 'critical'
-}
-
-// Define task interface
-export interface MCPTask {
-  id?: number;
-  name: string;
-  description: string;
-  capability: string;
-  provider: string;
-  parameters: Record<string, any>;
-  status: TaskStatus;
-  priority: TaskPriority;
-  createdBy: number;
-  scheduledFor?: Date;
-  startedAt?: Date;
-  completedAt?: Date;
-  result?: Record<string, any>;
-  parentTaskId?: number;
-  metadata?: Record<string, any>;
-}
-
-/**
- * Multi-Capability Planning Service
+ * Provides a framework for integrating and orchestrating multiple AI capabilities
  */
 export class MCPService {
-  private static instance: MCPService;
-  private providers: Map<string, CapabilityProvider> = new Map();
-  private agentService: AgentService;
   private aiService: AIService;
-  private notificationService: AgentNotificationService;
-  private scheduledReportingService: ScheduledReportingService;
-  private openai: OpenAI;
-  private taskScheduler: NodeJS.Timeout | null = null;
-  private isProcessing: boolean = false;
+  private capabilityProviders: Map<string, CapabilityProvider>;
   
-  /**
-   * Get singleton instance
-   */
-  public static getInstance(): MCPService {
-    if (!MCPService.instance) {
-      MCPService.instance = new MCPService();
-    }
-    return MCPService.instance;
-  }
-  
-  /**
-   * Private constructor for singleton
-   */
-  private constructor() {
-    this.agentService = new AgentService();
+  constructor() {
     this.aiService = new AIService();
-    this.notificationService = new AgentNotificationService();
-    this.scheduledReportingService = new ScheduledReportingService();
+    this.capabilityProviders = new Map();
     
-    // Initialize OpenAI
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      console.warn('OPENAI_API_KEY not set, MCP Service will have limited functionality');
-    }
-    this.openai = new OpenAI({ apiKey: apiKey || 'dummy-key' });
-    
-    // Register built-in providers
-    this.registerBuiltInProviders();
-    
-    // Start task scheduler
-    this.startTaskScheduler();
-    
-    console.log('MCP Service initialized');
+    // Register default capabilities
+    this.registerDefaultCapabilities();
   }
   
   /**
-   * Register built-in capability providers
+   * Register default capability providers
    */
-  private registerBuiltInProviders() {
-    // Register Core Provider
-    this.registerProvider({
-      name: 'core',
-      description: 'Core system capabilities',
-      capabilities: [
-        'task_scheduling',
-        'notification_management',
-        'report_generation'
-      ],
-      async execute(capability: string, params: any): Promise<any> {
-        // Implementation will be added in a separate method
-        throw new Error('Not implemented');
-      },
-      async isAvailable(): Promise<boolean> {
-        return true; // Core provider is always available
+  private registerDefaultCapabilities() {
+    // Text analysis capabilities
+    this.registerCapability({
+      name: 'sentiment-analysis',
+      description: 'Analyze sentiment in text',
+      category: 'text-analysis',
+      execute: this.analyzeSentiment.bind(this),
+      parameters: {
+        text: { type: 'string', required: true },
+        detailed: { type: 'boolean', default: false },
       }
     });
     
-    // Register Analysis Provider
-    this.registerProvider({
-      name: 'analysis',
-      description: 'Data analysis and insight generation',
-      capabilities: [
-        'sentiment_analysis',
-        'data_summarization',
-        'trend_analysis',
-        'anomaly_detection'
-      ],
-      async execute(capability: string, params: any): Promise<any> {
-        // Implementation will be added in a separate method
-        throw new Error('Not implemented');
-      },
-      async isAvailable(): Promise<boolean> {
-        return !!process.env.OPENAI_API_KEY;
+    this.registerCapability({
+      name: 'text-summarization',
+      description: 'Generate summaries from text',
+      category: 'text-analysis',
+      execute: this.summarizeText.bind(this),
+      parameters: {
+        text: { type: 'string', required: true },
+        maxLength: { type: 'number', default: 200 },
+        format: { type: 'string', default: 'paragraph', enum: ['paragraph', 'bullets'] },
       }
     });
     
-    // Register Planning Provider
-    this.registerProvider({
-      name: 'planning',
-      description: 'Task planning and optimization',
-      capabilities: [
-        'task_decomposition',
-        'resource_optimization',
-        'scheduling_optimization',
-        'proactive_planning'
-      ],
-      async execute(capability: string, params: any): Promise<any> {
-        // Implementation will be added in a separate method
-        throw new Error('Not implemented');
-      },
-      async isAvailable(): Promise<boolean> {
-        return !!process.env.OPENAI_API_KEY;
+    // Data analysis capabilities
+    this.registerCapability({
+      name: 'anomaly-detection',
+      description: 'Detect anomalies in power and environmental data',
+      category: 'data-analysis',
+      execute: this.detectAnomalies.bind(this),
+      parameters: {
+        dataType: { type: 'string', required: true, enum: ['power', 'environmental', 'both'] },
+        threshold: { type: 'number', default: 2.5 },
+        timeRange: { type: 'string', default: '24h' },
       }
     });
-  }
-  
-  /**
-   * Start the task scheduler
-   */
-  private startTaskScheduler() {
-    if (this.taskScheduler) {
-      clearInterval(this.taskScheduler);
-    }
     
-    // Check for tasks every 30 seconds
-    this.taskScheduler = setInterval(() => {
-      this.processScheduledTasks();
-    }, 30000);
-    
-    console.log('MCP Task Scheduler started');
-  }
-  
-  /**
-   * Process scheduled tasks
-   */
-  private async processScheduledTasks() {
-    if (this.isProcessing) {
-      return; // Already processing
-    }
-    
-    try {
-      this.isProcessing = true;
-      
-      // Get tasks that are scheduled and due to run
-      const now = new Date();
-      const tasks = await db.select().from(schema.mcpTasks)
-        .where(schema.mcpTasks.status.equals(TaskStatus.SCHEDULED))
-        .where(schema.mcpTasks.scheduledFor.lte(now));
-      
-      if (tasks.length === 0) {
-        return;
+    this.registerCapability({
+      name: 'trend-analysis',
+      description: 'Analyze trends in time-series data',
+      category: 'data-analysis',
+      execute: this.analyzeTrends.bind(this),
+      parameters: {
+        dataType: { type: 'string', required: true, enum: ['power', 'environmental', 'efficiency', 'both'] },
+        timeRange: { type: 'string', default: '7d' },
+        granularity: { type: 'string', default: '1h', enum: ['15m', '1h', '6h', '1d'] },
       }
-      
-      console.log(`Found ${tasks.length} scheduled tasks ready to execute`);
-      
-      // Process each task
-      for (const task of tasks) {
-        await this.executeTask(task.id);
+    });
+    
+    // Task management capabilities
+    this.registerCapability({
+      name: 'task-decomposition',
+      description: 'Break down complex tasks into smaller subtasks',
+      category: 'task-management',
+      execute: this.decomposeTask.bind(this),
+      parameters: {
+        task: { type: 'string', required: true },
+        maxSubtasks: { type: 'number', default: 5 },
+        assignee: { type: 'string' },
       }
-    } catch (error) {
-      console.error('Error processing scheduled tasks:', error);
-    } finally {
-      this.isProcessing = false;
-    }
+    });
+    
+    // Insights generation
+    this.registerCapability({
+      name: 'energy-insights',
+      description: 'Generate insights about energy usage patterns',
+      category: 'insights',
+      execute: this.generateEnergyInsights.bind(this),
+      parameters: {
+        timeRange: { type: 'string', default: '7d' },
+        includeRecommendations: { type: 'boolean', default: true },
+      }
+    });
   }
   
   /**
    * Register a new capability provider
    */
-  public registerProvider(provider: CapabilityProvider): void {
-    if (this.providers.has(provider.name)) {
-      console.warn(`Provider ${provider.name} already registered, replacing`);
-    }
-    this.providers.set(provider.name, provider);
-    console.log(`Registered capability provider: ${provider.name}`);
+  registerCapability(provider: CapabilityProvider) {
+    this.capabilityProviders.set(provider.name, provider);
   }
   
   /**
-   * Get a list of all registered providers
+   * Get all available capabilities
    */
-  public getProviders(): CapabilityProvider[] {
-    return Array.from(this.providers.values());
-  }
-  
-  /**
-   * Get a provider by name
-   */
-  public getProvider(name: string): CapabilityProvider | undefined {
-    return this.providers.get(name);
-  }
-  
-  /**
-   * Create a new task
-   */
-  public async createTask(task: Omit<MCPTask, 'id'>): Promise<MCPTask> {
-    // Validate task
-    const provider = this.providers.get(task.provider);
-    if (!provider) {
-      throw new Error(`Provider not found: ${task.provider}`);
-    }
+  getAvailableCapabilities(userRole?: string): CapabilityProvider[] {
+    const capabilities: CapabilityProvider[] = [];
     
-    if (!provider.capabilities.includes(task.capability)) {
-      throw new Error(`Capability ${task.capability} not supported by provider ${task.provider}`);
-    }
-    
-    // Create task in database
-    const [createdTask] = await db.insert(schema.mcpTasks).values({
-      name: task.name,
-      description: task.description,
-      capability: task.capability,
-      provider: task.provider,
-      parameters: task.parameters,
-      status: task.status,
-      priority: task.priority,
-      createdBy: task.createdBy,
-      scheduledFor: task.scheduledFor,
-      parentTaskId: task.parentTaskId,
-      metadata: task.metadata
-    }).returning();
-    
-    console.log(`Created MCP task: ${createdTask.id} - ${createdTask.name}`);
-    
-    // If task is scheduled for future, do nothing else
-    if (task.status === TaskStatus.SCHEDULED && task.scheduledFor && task.scheduledFor > new Date()) {
-      return createdTask;
-    }
-    
-    // If task is pending or scheduled for now, execute it
-    if (task.status === TaskStatus.PENDING || task.status === TaskStatus.SCHEDULED) {
-      // Execute asynchronously
-      this.executeTask(createdTask.id).catch(error => {
-        console.error(`Error executing task ${createdTask.id}:`, error);
-      });
-    }
-    
-    return createdTask;
-  }
-  
-  /**
-   * Execute a task by ID
-   */
-  public async executeTask(taskId: number): Promise<MCPTask> {
-    // Get task from database
-    const tasks = await db.select().from(schema.mcpTasks)
-      .where(schema.mcpTasks.id.equals(taskId));
-    
-    if (tasks.length === 0) {
-      throw new Error(`Task not found: ${taskId}`);
-    }
-    
-    const task = tasks[0];
-    
-    // Update task status to in-progress
-    const [updatedTask] = await db.update(schema.mcpTasks)
-      .set({
-        status: TaskStatus.IN_PROGRESS,
-        startedAt: new Date()
-      })
-      .where(schema.mcpTasks.id.equals(taskId))
-      .returning();
-    
-    try {
-      // Get provider
-      const provider = this.providers.get(task.provider);
-      if (!provider) {
-        throw new Error(`Provider not found: ${task.provider}`);
+    // Convert Map to array for safer iteration
+    Array.from(this.capabilityProviders.entries()).forEach(([_, provider]) => {
+      // Skip capabilities that require authentication if no user role is provided
+      if (provider.requiresAuth && !userRole) {
+        return;
       }
       
-      // Check if provider is available
-      const isAvailable = await provider.isAvailable();
-      if (!isAvailable) {
-        throw new Error(`Provider ${task.provider} is not available`);
+      // Skip capabilities that require specific roles if user doesn't have them
+      if (provider.requiredRole && userRole && 
+          !provider.requiredRole.includes(userRole) && 
+          userRole !== 'Admin') {
+        return;
       }
       
-      // Execute task using provider
-      const result = await this.executeCapability(
-        task.provider,
-        task.capability,
-        task.parameters
-      );
-      
-      // Update task with result
-      const [completedTask] = await db.update(schema.mcpTasks)
-        .set({
-          status: TaskStatus.COMPLETED,
-          completedAt: new Date(),
-          result
-        })
-        .where(schema.mcpTasks.id.equals(taskId))
-        .returning();
-      
-      console.log(`Completed MCP task: ${taskId} - ${task.name}`);
-      
-      // If this task has children tasks, check if they should be executed
-      await this.processChildTasks(taskId, result);
-      
-      return completedTask;
-    } catch (error) {
-      // Update task with error
-      const [failedTask] = await db.update(schema.mcpTasks)
-        .set({
-          status: TaskStatus.FAILED,
-          completedAt: new Date(),
-          result: { error: error instanceof Error ? error.message : String(error) }
-        })
-        .where(schema.mcpTasks.id.equals(taskId))
-        .returning();
-      
-      console.error(`Failed MCP task: ${taskId} - ${task.name}:`, error);
-      
-      return failedTask;
-    }
-  }
-  
-  /**
-   * Process child tasks after parent completion
-   */
-  private async processChildTasks(parentTaskId: number, parentResult: any): Promise<void> {
-    // Get child tasks
-    const childTasks = await db.select().from(schema.mcpTasks)
-      .where(schema.mcpTasks.parentTaskId.equals(parentTaskId))
-      .where(schema.mcpTasks.status.equals(TaskStatus.PENDING));
-    
-    if (childTasks.length === 0) {
-      return;
-    }
-    
-    console.log(`Processing ${childTasks.length} child tasks for parent ${parentTaskId}`);
-    
-    // Process each child task
-    for (const childTask of childTasks) {
-      // Update parameters with parent result if specified in metadata
-      if (childTask.metadata?.inheritParentResult) {
-        const updatedParams = { ...childTask.parameters, parentResult };
-        await db.update(schema.mcpTasks)
-          .set({ parameters: updatedParams })
-          .where(schema.mcpTasks.id.equals(childTask.id));
-      }
-      
-      // Execute child task
-      this.executeTask(childTask.id).catch(error => {
-        console.error(`Error executing child task ${childTask.id}:`, error);
-      });
-    }
-  }
-  
-  /**
-   * Execute a capability using a provider
-   */
-  private async executeCapability(
-    providerName: string,
-    capability: string,
-    params: any
-  ): Promise<any> {
-    // Get provider
-    const provider = this.providers.get(providerName);
-    if (!provider) {
-      throw new Error(`Provider not found: ${providerName}`);
-    }
-    
-    // Check if provider is available
-    const isAvailable = await provider.isAvailable();
-    if (!isAvailable) {
-      throw new Error(`Provider ${providerName} is not available`);
-    }
-    
-    // Core provider is handled directly in this service
-    if (providerName === 'core') {
-      return this.executeCoreCapability(capability, params);
-    }
-    
-    // Analysis provider is handled directly in this service
-    if (providerName === 'analysis') {
-      return this.executeAnalysisCapability(capability, params);
-    }
-    
-    // Planning provider is handled directly in this service
-    if (providerName === 'planning') {
-      return this.executePlanningCapability(capability, params);
-    }
-    
-    // For external providers, delegate to their execute method
-    return provider.execute(capability, params);
-  }
-  
-  /**
-   * Execute a core capability
-   */
-  private async executeCoreCapability(capability: string, params: any): Promise<any> {
-    switch (capability) {
-      case 'task_scheduling':
-        return this.executeTaskSchedulingCapability(params);
-      
-      case 'notification_management':
-        return this.executeNotificationManagementCapability(params);
-      
-      case 'report_generation':
-        return this.executeReportGenerationCapability(params);
-      
-      default:
-        throw new Error(`Unknown core capability: ${capability}`);
-    }
-  }
-  
-  /**
-   * Execute an analysis capability
-   */
-  private async executeAnalysisCapability(capability: string, params: any): Promise<any> {
-    switch (capability) {
-      case 'sentiment_analysis':
-        return this.executeSentimentAnalysisCapability(params);
-      
-      case 'data_summarization':
-        return this.executeDataSummarizationCapability(params);
-      
-      case 'trend_analysis':
-        return this.executeTrendAnalysisCapability(params);
-      
-      case 'anomaly_detection':
-        return this.executeAnomalyDetectionCapability(params);
-      
-      default:
-        throw new Error(`Unknown analysis capability: ${capability}`);
-    }
-  }
-  
-  /**
-   * Execute a planning capability
-   */
-  private async executePlanningCapability(capability: string, params: any): Promise<any> {
-    switch (capability) {
-      case 'task_decomposition':
-        return this.executeTaskDecompositionCapability(params);
-      
-      case 'resource_optimization':
-        return this.executeResourceOptimizationCapability(params);
-      
-      case 'scheduling_optimization':
-        return this.executeSchedulingOptimizationCapability(params);
-      
-      case 'proactive_planning':
-        return this.executeProactivePlanningCapability(params);
-      
-      default:
-        throw new Error(`Unknown planning capability: ${capability}`);
-    }
-  }
-  
-  /**
-   * Execute task scheduling capability
-   */
-  private async executeTaskSchedulingCapability(params: any): Promise<any> {
-    const { action, taskId, scheduledFor } = params;
-    
-    switch (action) {
-      case 'schedule':
-        if (!taskId) {
-          throw new Error('taskId is required for schedule action');
-        }
-        
-        if (!scheduledFor) {
-          throw new Error('scheduledFor is required for schedule action');
-        }
-        
-        // Update task schedule
-        const [updatedTask] = await db.update(schema.mcpTasks)
-          .set({
-            status: TaskStatus.SCHEDULED,
-            scheduledFor: new Date(scheduledFor)
-          })
-          .where(schema.mcpTasks.id.equals(taskId))
-          .returning();
-        
-        return { success: true, task: updatedTask };
-      
-      case 'cancel':
-        if (!taskId) {
-          throw new Error('taskId is required for cancel action');
-        }
-        
-        // Cancel scheduled task
-        const [cancelledTask] = await db.update(schema.mcpTasks)
-          .set({
-            status: TaskStatus.CANCELLED
-          })
-          .where(schema.mcpTasks.id.equals(taskId))
-          .returning();
-        
-        return { success: true, task: cancelledTask };
-      
-      case 'list_scheduled':
-        // Get all scheduled tasks
-        const scheduledTasks = await db.select().from(schema.mcpTasks)
-          .where(schema.mcpTasks.status.equals(TaskStatus.SCHEDULED));
-        
-        return { tasks: scheduledTasks };
-      
-      default:
-        throw new Error(`Unknown task scheduling action: ${action}`);
-    }
-  }
-  
-  /**
-   * Execute notification management capability
-   */
-  private async executeNotificationManagementCapability(params: any): Promise<any> {
-    const { action, userId, title, message, type, priority, metadata } = params;
-    
-    switch (action) {
-      case 'send':
-        if (!userId) {
-          throw new Error('userId is required for send action');
-        }
-        
-        if (!title || !message) {
-          throw new Error('title and message are required for send action');
-        }
-        
-        // Create notification
-        const notification = await this.notificationService.createNotification({
-          userId,
-          title,
-          message,
-          type: type || 'mcp',
-          priority: priority || 'normal',
-          metadata: metadata || {}
-        });
-        
-        return { success: true, notification };
-      
-      case 'list':
-        if (!userId) {
-          throw new Error('userId is required for list action');
-        }
-        
-        // Get notifications for user
-        const notifications = await this.notificationService.getNotificationsByUserId(userId);
-        
-        return { notifications };
-      
-      default:
-        throw new Error(`Unknown notification action: ${action}`);
-    }
-  }
-  
-  /**
-   * Execute report generation capability
-   */
-  private async executeReportGenerationCapability(params: any): Promise<any> {
-    const { action, reportId, reportData } = params;
-    
-    switch (action) {
-      case 'generate':
-        if (!reportId) {
-          throw new Error('reportId is required for generate action');
-        }
-        
-        // Execute report manually
-        await this.scheduledReportingService.executeReportManually(reportId);
-        
-        return { success: true };
-      
-      case 'create':
-        if (!reportData) {
-          throw new Error('reportData is required for create action');
-        }
-        
-        // Create new report
-        const report = await this.scheduledReportingService.createScheduledReport(reportData);
-        
-        return { success: true, report };
-      
-      default:
-        throw new Error(`Unknown report action: ${action}`);
-    }
-  }
-  
-  /**
-   * Execute sentiment analysis capability
-   */
-  private async executeSentimentAnalysisCapability(params: any): Promise<any> {
-    const { text, userId, conversationId, detailed } = params;
-    
-    if (!text) {
-      throw new Error('text is required for sentiment analysis');
-    }
-    
-    try {
-      // Analyze sentiment using OpenAI
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: detailed 
-              ? 'Analyze the sentiment in the following text. Provide a detailed analysis including sentiment (positive, negative, neutral), emotional tone, key themes, and any notable language patterns.'
-              : 'Analyze the sentiment in the following text. Return a JSON object with sentiment (positive, negative, or neutral), confidence (0-1), and a brief explanation.'
-          },
-          {
-            role: 'user',
-            content: text
-          }
-        ],
-        response_format: detailed ? undefined : { type: 'json_object' }
-      });
-      
-      const content = response.choices[0]?.message?.content;
-      
-      if (!content) {
-        throw new Error('No content in response');
-      }
-      
-      // If the result is requested for a specific conversation, store it
-      if (conversationId && userId) {
-        await this.storeSentimentAnalysis(userId, conversationId, content);
-      }
-      
-      // Return sentiment analysis result
-      return detailed 
-        ? { analysis: content }
-        : { analysis: JSON.parse(content) };
-    } catch (error) {
-      console.error('Error performing sentiment analysis:', error);
-      throw new Error(`Sentiment analysis failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * Store sentiment analysis results for a conversation
-   */
-  private async storeSentimentAnalysis(
-    userId: number,
-    conversationId: number,
-    analysis: string
-  ): Promise<void> {
-    try {
-      // Store sentiment analysis as a system message
-      await this.agentService.addMessage(conversationId, {
-        role: 'system',
-        content: `Sentiment Analysis:\n${analysis}`,
-        metadata: {
-          type: 'sentiment_analysis',
-          visible_to_user: false
-        }
-      });
-    } catch (error) {
-      console.error('Error storing sentiment analysis:', error);
-    }
-  }
-  
-  /**
-   * Execute data summarization capability
-   */
-  private async executeDataSummarizationCapability(params: any): Promise<any> {
-    const { data, format, maxLength, focusAreas } = params;
-    
-    if (!data) {
-      throw new Error('data is required for summarization');
-    }
-    
-    let dataString = '';
-    
-    if (typeof data === 'string') {
-      dataString = data;
-    } else {
-      try {
-        dataString = JSON.stringify(data, null, 2);
-      } catch (error) {
-        throw new Error('Failed to stringify data for summarization');
-      }
-    }
-    
-    try {
-      // Generate summary using OpenAI
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `Summarize the following data${focusAreas ? ` with focus on ${focusAreas}` : ''}.${
-              maxLength ? ` Keep the summary within ${maxLength} words.` : ''
-            }${
-              format === 'bullets' ? ' Format the summary as bullet points.' :
-              format === 'json' ? ' Return the summary as a JSON object.' :
-              ''
-            }`
-          },
-          {
-            role: 'user',
-            content: dataString
-          }
-        ],
-        response_format: format === 'json' ? { type: 'json_object' } : undefined
-      });
-      
-      const content = response.choices[0]?.message?.content;
-      
-      if (!content) {
-        throw new Error('No content in response');
-      }
-      
-      // Return summary
-      return format === 'json' 
-        ? { summary: JSON.parse(content) }
-        : { summary: content };
-    } catch (error) {
-      console.error('Error performing data summarization:', error);
-      throw new Error(`Data summarization failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * Execute trend analysis capability
-   */
-  private async executeTrendAnalysisCapability(params: any): Promise<any> {
-    const { data, timeField, valueFields, windowSize } = params;
-    
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      throw new Error('data array is required for trend analysis');
-    }
-    
-    if (!timeField) {
-      throw new Error('timeField is required for trend analysis');
-    }
-    
-    if (!valueFields || !Array.isArray(valueFields) || valueFields.length === 0) {
-      throw new Error('valueFields array is required for trend analysis');
-    }
-    
-    try {
-      // Sort data by time field
-      const sortedData = [...data].sort((a, b) => {
-        const aTime = new Date(a[timeField]).getTime();
-        const bTime = new Date(b[timeField]).getTime();
-        return aTime - bTime;
-      });
-      
-      // Calculate trends for each value field
-      const trends: Record<string, any> = {};
-      
-      for (const field of valueFields) {
-        if (typeof sortedData[0][field] !== 'number') {
-          trends[field] = { error: `Field ${field} is not numeric` };
-          continue;
-        }
-        
-        // Extract values
-        const values = sortedData.map(item => item[field]);
-        
-        // Calculate moving average if windowSize provided
-        let movingAverages: number[] = [];
-        if (windowSize && windowSize > 1 && windowSize < values.length) {
-          for (let i = 0; i <= values.length - windowSize; i++) {
-            const sum = values.slice(i, i + windowSize).reduce((a, b) => a + b, 0);
-            movingAverages.push(sum / windowSize);
-          }
-        }
-        
-        // Calculate trend direction
-        const firstValue = values[0];
-        const lastValue = values[values.length - 1];
-        const changePercent = ((lastValue - firstValue) / firstValue) * 100;
-        
-        // Calculate rate of change
-        const timeDiff = (new Date(sortedData[sortedData.length - 1][timeField]).getTime() - 
-                          new Date(sortedData[0][timeField]).getTime()) / (1000 * 60 * 60); // hours
-        const rateOfChange = timeDiff > 0 ? changePercent / timeDiff : 0;
-        
-        // Determine trend direction
-        let direction = 'stable';
-        if (changePercent > 5) direction = 'increasing';
-        if (changePercent < -5) direction = 'decreasing';
-        
-        // Calculate variance
-        const mean = values.reduce((a, b) => a + b, 0) / values.length;
-        const variance = values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length;
-        
-        trends[field] = {
-          direction,
-          changePercent,
-          rateOfChange,
-          mean,
-          variance,
-          volatility: Math.sqrt(variance) / mean, // Coefficient of variation
-          start: firstValue,
-          end: lastValue,
-          movingAverage: movingAverages.length > 0 ? movingAverages : undefined
-        };
-      }
-      
-      return {
-        trends,
-        period: {
-          start: sortedData[0][timeField],
-          end: sortedData[sortedData.length - 1][timeField],
-          dataPoints: sortedData.length
-        }
-      };
-    } catch (error) {
-      console.error('Error performing trend analysis:', error);
-      throw new Error(`Trend analysis failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * Execute anomaly detection capability
-   */
-  private async executeAnomalyDetectionCapability(params: any): Promise<any> {
-    const { data, timeField, valueField, method, threshold } = params;
-    
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      throw new Error('data array is required for anomaly detection');
-    }
-    
-    if (!timeField) {
-      throw new Error('timeField is required for anomaly detection');
-    }
-    
-    if (!valueField) {
-      throw new Error('valueField is required for anomaly detection');
-    }
-    
-    try {
-      // Sort data by time field
-      const sortedData = [...data].sort((a, b) => {
-        const aTime = new Date(a[timeField]).getTime();
-        const bTime = new Date(b[timeField]).getTime();
-        return aTime - bTime;
-      });
-      
-      // Extract values
-      const values = sortedData.map(item => item[valueField]);
-      
-      // Determine method to use
-      const detectionMethod = method || 'std_dev';
-      const detectionThreshold = threshold || 2.0;
-      
-      // Find anomalies based on method
-      const anomalies = [];
-      
-      if (detectionMethod === 'std_dev') {
-        // Standard deviation method
-        const mean = values.reduce((a, b) => a + b, 0) / values.length;
-        const variance = values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length;
-        const stdDev = Math.sqrt(variance);
-        
-        const upperBound = mean + (stdDev * detectionThreshold);
-        const lowerBound = mean - (stdDev * detectionThreshold);
-        
-        // Find values outside bounds
-        for (let i = 0; i < values.length; i++) {
-          const value = values[i];
-          if (value > upperBound || value < lowerBound) {
-            anomalies.push({
-              index: i,
-              time: sortedData[i][timeField],
-              value: value,
-              expected: mean,
-              deviation: (value - mean) / stdDev,
-              type: value > upperBound ? 'high' : 'low'
-            });
-          }
-        }
-      } else if (detectionMethod === 'iqr') {
-        // Interquartile Range method
-        const sortedValues = [...values].sort((a, b) => a - b);
-        const q1Index = Math.floor(sortedValues.length * 0.25);
-        const q3Index = Math.floor(sortedValues.length * 0.75);
-        const q1 = sortedValues[q1Index];
-        const q3 = sortedValues[q3Index];
-        const iqr = q3 - q1;
-        
-        const upperBound = q3 + (iqr * detectionThreshold);
-        const lowerBound = q1 - (iqr * detectionThreshold);
-        
-        // Find values outside bounds
-        for (let i = 0; i < values.length; i++) {
-          const value = values[i];
-          if (value > upperBound || value < lowerBound) {
-            anomalies.push({
-              index: i,
-              time: sortedData[i][timeField],
-              value: value,
-              expected: (q1 + q3) / 2,
-              deviation: value > upperBound ? (value - upperBound) / iqr : (lowerBound - value) / iqr,
-              type: value > upperBound ? 'high' : 'low'
-            });
-          }
-        }
-      }
-      
-      return {
-        anomalies,
-        method: detectionMethod,
-        threshold: detectionThreshold,
-        anomalyCount: anomalies.length,
-        dataPoints: values.length,
-        anomalyPercentage: (anomalies.length / values.length) * 100
-      };
-    } catch (error) {
-      console.error('Error performing anomaly detection:', error);
-      throw new Error(`Anomaly detection failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * Execute task decomposition capability
-   */
-  private async executeTaskDecompositionCapability(params: any): Promise<any> {
-    const { task, userId } = params;
-    
-    if (!task) {
-      throw new Error('task description is required for task decomposition');
-    }
-    
-    if (!userId) {
-      throw new Error('userId is required for task decomposition');
-    }
-    
-    try {
-      // Generate task decomposition using OpenAI
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `Decompose the following task into smaller subtasks. Return a JSON object with an array of subtasks, each with name, description, and estimated effort level (low, medium, high). Include dependencies between tasks if applicable.`
-          },
-          {
-            role: 'user',
-            content: task
-          }
-        ],
-        response_format: { type: 'json_object' }
-      });
-      
-      const content = response.choices[0]?.message?.content;
-      
-      if (!content) {
-        throw new Error('No content in response');
-      }
-      
-      const decomposition = JSON.parse(content);
-      
-      // Create subtasks in the database
-      const createdTasks = [];
-      
-      for (const subtask of decomposition.subtasks) {
-        // Create the MCP task
-        const createdTask = await this.createTask({
-          name: subtask.name,
-          description: subtask.description,
-          capability: 'task_scheduling', // Default to scheduling capability
-          provider: 'core', // Default to core provider
-          parameters: {
-            action: 'schedule',
-            scheduledFor: new Date(Date.now() + 3600000) // Default to 1 hour from now
-          },
-          status: TaskStatus.PENDING,
-          priority: this.mapEffortToPriority(subtask.effort),
-          createdBy: userId,
-          metadata: {
-            originalTask: task,
-            effort: subtask.effort,
-            dependencies: subtask.dependencies
-          }
-        });
-        
-        createdTasks.push(createdTask);
-      }
-      
-      return {
-        decomposition,
-        createdTasks
-      };
-    } catch (error) {
-      console.error('Error performing task decomposition:', error);
-      throw new Error(`Task decomposition failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * Map effort level to task priority
-   */
-  private mapEffortToPriority(effort: string): TaskPriority {
-    switch (effort.toLowerCase()) {
-      case 'low':
-        return TaskPriority.LOW;
-      case 'medium':
-        return TaskPriority.MEDIUM;
-      case 'high':
-        return TaskPriority.HIGH;
-      default:
-        return TaskPriority.MEDIUM;
-    }
-  }
-  
-  /**
-   * Execute resource optimization capability
-   */
-  private async executeResourceOptimizationCapability(params: any): Promise<any> {
-    // This is a placeholder for resource optimization capability
-    // In a real implementation, this would use advanced optimization algorithms
-    return {
-      message: 'Resource optimization capability not fully implemented',
-      optimizationPerformed: false
-    };
-  }
-  
-  /**
-   * Execute scheduling optimization capability
-   */
-  private async executeSchedulingOptimizationCapability(params: any): Promise<any> {
-    // This is a placeholder for scheduling optimization capability
-    // In a real implementation, this would use advanced scheduling algorithms
-    return {
-      message: 'Scheduling optimization capability not fully implemented',
-      optimizationPerformed: false
-    };
-  }
-  
-  /**
-   * Execute proactive planning capability
-   */
-  private async executeProactivePlanningCapability(params: any): Promise<any> {
-    // This is a placeholder for proactive planning capability
-    // In a real implementation, this would use advanced planning algorithms
-    return {
-      message: 'Proactive planning capability not fully implemented',
-      planningPerformed: false
-    };
-  }
-  
-  /**
-   * Get all tasks
-   */
-  public async getAllTasks(): Promise<MCPTask[]> {
-    return await db.select().from(schema.mcpTasks);
-  }
-  
-  /**
-   * Get task by ID
-   */
-  public async getTaskById(taskId: number): Promise<MCPTask | null> {
-    const tasks = await db.select().from(schema.mcpTasks)
-      .where(schema.mcpTasks.id.equals(taskId))
-      .limit(1);
-    
-    return tasks.length > 0 ? tasks[0] : null;
-  }
-  
-  /**
-   * Get tasks by user ID
-   */
-  public async getTasksByUserId(userId: number): Promise<MCPTask[]> {
-    return await db.select().from(schema.mcpTasks)
-      .where(schema.mcpTasks.createdBy.equals(userId));
-  }
-  
-  /**
-   * Get tasks by status
-   */
-  public async getTasksByStatus(status: TaskStatus): Promise<MCPTask[]> {
-    return await db.select().from(schema.mcpTasks)
-      .where(schema.mcpTasks.status.equals(status));
-  }
-  
-  /**
-   * Cancel task by ID
-   */
-  public async cancelTask(taskId: number): Promise<MCPTask> {
-    const [cancelledTask] = await db.update(schema.mcpTasks)
-      .set({
-        status: TaskStatus.CANCELLED
-      })
-      .where(schema.mcpTasks.id.equals(taskId))
-      .returning();
-    
-    return cancelledTask;
-  }
-  
-  /**
-   * Update task by ID
-   */
-  public async updateTask(taskId: number, updates: Partial<MCPTask>): Promise<MCPTask> {
-    const [updatedTask] = await db.update(schema.mcpTasks)
-      .set(updates)
-      .where(schema.mcpTasks.id.equals(taskId))
-      .returning();
-    
-    return updatedTask;
-  }
-  
-  /**
-   * Delete task by ID
-   */
-  public async deleteTask(taskId: number): Promise<void> {
-    await db.delete(schema.mcpTasks)
-      .where(schema.mcpTasks.id.equals(taskId));
-  }
-  
-  /**
-   * Get supported capabilities
-   */
-  public getSupportedCapabilities(): Record<string, string[]> {
-    const capabilities: Record<string, string[]> = {};
-    
-    for (const [name, provider] of this.providers.entries()) {
-      capabilities[name] = provider.capabilities;
-    }
+      capabilities.push(provider);
+    });
     
     return capabilities;
   }
   
   /**
-   * Check if a capability is supported
+   * Get capability provider by name
    */
-  public isCapabilitySupported(providerName: string, capability: string): boolean {
-    const provider = this.providers.get(providerName);
+  getCapability(name: string): CapabilityProvider | undefined {
+    return this.capabilityProviders.get(name);
+  }
+  
+  /**
+   * Execute a capability
+   */
+  private async executeCapability(
+    capabilityName: string, 
+    input: any, 
+    params?: any,
+    userRole?: string
+  ): Promise<any> {
+    const provider = this.capabilityProviders.get(capabilityName);
+    
     if (!provider) {
-      return false;
+      throw new Error(`Capability "${capabilityName}" not found`);
     }
     
-    return provider.capabilities.includes(capability);
+    // Check permissions
+    if (provider.requiresAuth && !userRole) {
+      throw new Error(`Authentication required to use capability "${capabilityName}"`);
+    }
+    
+    if (provider.requiredRole && userRole && 
+        !provider.requiredRole.includes(userRole) && 
+        userRole !== 'Admin') {
+      throw new Error(`Insufficient permissions to use capability "${capabilityName}"`);
+    }
+    
+    // Execute the capability
+    return await provider.execute(input, params);
+  }
+  
+  /**
+   * Create a new MCP task
+   */
+  async createTask(taskData: schema.InsertMcpTask): Promise<schema.McpTask> {
+    try {
+      // Handle input formatting and defaults
+      const taskValues = {
+        name: taskData.name,
+        description: taskData.description,
+        capability: taskData.capability,
+        provider: taskData.provider,
+        createdBy: taskData.createdBy,
+        status: taskData.status || 'pending',
+        priority: taskData.priority || 'medium',
+        input: JSON.stringify(taskData.input || {}),
+        parameters: JSON.stringify(taskData.parameters || {}),
+        scheduledFor: taskData.scheduledFor,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      const result = await db.insert(schema.mcpTasks).values(taskValues).returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error("Error creating MCP task:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get all MCP tasks
+   */
+  async getAllTasks(filter?: { 
+    status?: string, 
+    capability?: string,
+    userId?: number
+  }): Promise<schema.McpTask[]> {
+    try {
+      let query = db.select().from(schema.mcpTasks);
+      
+      // Apply filters
+      if (filter) {
+        if (filter.status) {
+          query = query.where(eq(schema.mcpTasks.status, filter.status));
+        }
+        
+        if (filter.capability) {
+          query = query.where(eq(schema.mcpTasks.capability, filter.capability));
+        }
+        
+        if (filter.userId) {
+          query = query.where(eq(schema.mcpTasks.createdBy, filter.userId));
+        }
+      }
+      
+      return await query.orderBy(desc(schema.mcpTasks.createdAt));
+    } catch (error) {
+      console.error("Error fetching MCP tasks:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get task by ID
+   */
+  async getTaskById(taskId: number): Promise<schema.McpTask | null> {
+    try {
+      const result = await db.select().from(schema.mcpTasks)
+        .where(eq(schema.mcpTasks.id, taskId))
+        .limit(1);
+      
+      return result.length > 0 ? result[0] : null;
+    } catch (error) {
+      console.error(`Error fetching MCP task with ID ${taskId}:`, error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Update task status
+   */
+  async updateTaskStatus(
+    taskId: number, 
+    status: string, 
+    result?: any
+  ): Promise<schema.McpTask> {
+    try {
+      const updateData: any = {
+        status,
+        updatedAt: new Date().toISOString()
+      };
+      
+      // Set appropriate timestamps based on status
+      if (status === 'in-progress' && !result?.startedAt) {
+        updateData.startedAt = new Date().toISOString();
+      } else if (['completed', 'failed', 'canceled'].includes(status)) {
+        updateData.completedAt = new Date().toISOString();
+      }
+      
+      // If result is provided, store it
+      if (result !== undefined) {
+        updateData.result = JSON.stringify(result);
+      }
+      
+      const updated = await db.update(schema.mcpTasks)
+        .set(updateData)
+        .where(eq(schema.mcpTasks.id, taskId))
+        .returning();
+      
+      // If we got results, create a notification
+      if (result && (status === 'completed' || status === 'failed')) {
+        const task = updated[0];
+        
+        await agentNotificationService.createNotification({
+          userId: task.createdBy,
+          title: `Task ${status}: ${task.name}`,
+          message: status === 'completed' 
+            ? `Your task "${task.name}" has been completed successfully.` 
+            : `Your task "${task.name}" has failed: ${result.error || 'Unknown error'}`,
+          type: status === 'completed' ? 'success' : 'alert',
+          priority: 'medium',
+          source: 'mcp',
+          category: 'task',
+          data: JSON.stringify({
+            taskId: task.id,
+            capability: task.capability,
+            result: result
+          }),
+          read: false
+        });
+      }
+      
+      return updated[0];
+    } catch (error) {
+      console.error(`Error updating MCP task ${taskId} status:`, error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Delete task
+   */
+  async deleteTask(taskId: number): Promise<boolean> {
+    try {
+      const result = await db.delete(schema.mcpTasks)
+        .where(eq(schema.mcpTasks.id, taskId));
+      
+      return !!result.rowCount;
+    } catch (error) {
+      console.error(`Error deleting MCP task ${taskId}:`, error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Process pending tasks
+   * This would typically be called by a scheduler/cron job
+   */
+  async processPendingTasks(): Promise<{ processed: number, errors: number }> {
+    try {
+      const pendingTasks = await db.select().from(schema.mcpTasks)
+        .where(eq(schema.mcpTasks.status, 'pending'));
+      
+      console.log(`Processing ${pendingTasks.length} pending MCP tasks`);
+      
+      let processed = 0;
+      let errors = 0;
+      
+      for (const task of pendingTasks) {
+        try {
+          // Mark task as in-progress
+          await this.updateTaskStatus(task.id, 'in-progress');
+          
+          // Parse parameters safely
+          let inputData = {};
+          let paramsData = {};
+          
+          if (typeof task.input === 'string' && task.input) {
+            try {
+              inputData = JSON.parse(task.input);
+            } catch (parseError) {
+              console.warn(`Failed to parse input JSON for task ${task.id}:`, parseError);
+              // Use the string as-is if parsing fails
+              inputData = { text: task.input };
+            }
+          } else if (task.input) {
+            // Already an object
+            inputData = task.input;
+          }
+          
+          if (typeof task.parameters === 'string' && task.parameters) {
+            try {
+              paramsData = JSON.parse(task.parameters);
+            } catch (parseError) {
+              console.warn(`Failed to parse parameters JSON for task ${task.id}:`, parseError);
+            }
+          } else if (task.parameters) {
+            // Already an object
+            paramsData = task.parameters;
+          }
+          
+          // Execute the capability
+          const result = await this.executeCapability(
+            task.capability,
+            inputData,
+            paramsData
+          );
+          
+          // Mark task as completed with result
+          await this.updateTaskStatus(task.id, 'completed', result);
+          
+          processed++;
+        } catch (error) {
+          console.error(`Error processing MCP task ${task.id}:`, error);
+          
+          // Mark task as failed with error
+          await this.updateTaskStatus(task.id, 'failed', { 
+            error: error instanceof Error ? error.message : String(error) 
+          });
+          
+          errors++;
+        }
+      }
+      
+      return { processed, errors };
+    } catch (error) {
+      console.error("Error processing pending MCP tasks:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Execute a task manually
+   */
+  async executeTask(taskId: number): Promise<any> {
+    try {
+      const task = await this.getTaskById(taskId);
+      
+      if (!task) {
+        throw new Error(`Task with ID ${taskId} not found`);
+      }
+      
+      // Mark task as in-progress
+      await this.updateTaskStatus(task.id, 'in-progress');
+      
+      try {
+        // Parse parameters safely
+        let inputData = {};
+        let paramsData = {};
+        
+        if (typeof task.input === 'string' && task.input) {
+          try {
+            inputData = JSON.parse(task.input);
+          } catch (parseError) {
+            console.warn(`Failed to parse input JSON for task ${task.id}:`, parseError);
+            // Use the string as-is if parsing fails
+            inputData = { text: task.input };
+          }
+        } else if (task.input) {
+          // Already an object
+          inputData = task.input;
+        }
+        
+        if (typeof task.parameters === 'string' && task.parameters) {
+          try {
+            paramsData = JSON.parse(task.parameters);
+          } catch (parseError) {
+            console.warn(`Failed to parse parameters JSON for task ${task.id}:`, parseError);
+          }
+        } else if (task.parameters) {
+          // Already an object
+          paramsData = task.parameters;
+        }
+        
+        // Execute the capability
+        const result = await this.executeCapability(
+          task.capability,
+          inputData,
+          paramsData
+        );
+        
+        // Mark task as completed with result
+        await this.updateTaskStatus(task.id, 'completed', result);
+        
+        return result;
+      } catch (error) {
+        console.error(`Error executing MCP task ${task.id}:`, error);
+        
+        // Mark task as failed with error
+        await this.updateTaskStatus(task.id, 'failed', { 
+          error: error instanceof Error ? error.message : String(error) 
+        });
+        
+        throw error;
+      }
+    } catch (error) {
+      console.error(`Error executing MCP task ${taskId}:`, error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Analyze sentiment in text
+   */
+  private async analyzeSentiment(input: { text: string }, params: { detailed?: boolean } = {}): Promise<any> {
+    try {
+      // Use AI service to analyze sentiment
+      const text = input.text;
+      const detailed = params.detailed || false;
+      
+      // Simple keyword-based sentiment analysis as fallback
+      const positiveWords = ['good', 'great', 'excellent', 'amazing', 'wonderful', 'happy', 'positive', 'love', 'like', 'enjoy'];
+      const negativeWords = ['bad', 'terrible', 'awful', 'horrible', 'sad', 'negative', 'hate', 'dislike', 'poor', 'worst'];
+      
+      const words = text.toLowerCase().split(/\W+/);
+      let positiveScore = 0;
+      let negativeScore = 0;
+      
+      words.forEach(word => {
+        if (positiveWords.includes(word)) positiveScore++;
+        if (negativeWords.includes(word)) negativeScore++;
+      });
+      
+      const totalScore = positiveScore - negativeScore;
+      const normalizedScore = Math.max(-1, Math.min(1, totalScore / 5)); // Normalize to [-1, 1]
+      
+      let sentiment: string;
+      if (normalizedScore > 0.3) sentiment = 'positive';
+      else if (normalizedScore < -0.3) sentiment = 'negative';
+      else sentiment = 'neutral';
+      
+      // Use AI service for more detailed analysis if requested
+      let detailedAnalysis = null;
+      if (detailed) {
+        detailedAnalysis = await this.aiService.generateDataAnalytics({
+          text,
+          task: 'sentiment_analysis'
+        });
+      }
+      
+      return {
+        text,
+        sentiment,
+        score: normalizedScore,
+        confidence: Math.abs(normalizedScore),
+        metrics: {
+          positiveScore,
+          negativeScore,
+          wordCount: words.length
+        },
+        ...(detailed && detailedAnalysis ? { detailed: detailedAnalysis } : {})
+      };
+    } catch (error) {
+      console.error("Error analyzing sentiment:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Generate summaries from text
+   */
+  private async summarizeText(
+    input: { text: string }, 
+    params: { maxLength?: number, format?: string } = {}
+  ): Promise<any> {
+    try {
+      const text = input.text;
+      const maxLength = params.maxLength || 200;
+      const format = params.format || 'paragraph';
+      
+      // Call AI service for summarization
+      const summary = await this.aiService.generateDataAnalytics({
+        text,
+        task: 'summarization',
+        maxLength,
+        format
+      });
+      
+      return {
+        originalText: text,
+        originalLength: text.length,
+        summary: summary.content,
+        summaryLength: summary.content.length,
+        compressionRatio: Math.round((summary.content.length / text.length) * 100),
+        format
+      };
+    } catch (error) {
+      console.error("Error summarizing text:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Detect anomalies in power and environmental data
+   */
+  private async detectAnomalies(
+    input: any, 
+    params: { dataType?: string, threshold?: number, timeRange?: string } = {}
+  ): Promise<any> {
+    try {
+      const dataType = params.dataType || 'both';
+      const threshold = params.threshold || 2.5; // Standard deviations
+      const timeRange = params.timeRange || '24h';
+      
+      // Get data based on type
+      let powerData: any[] = [];
+      let environmentalData: any[] = [];
+      
+      if (dataType === 'power' || dataType === 'both') {
+        powerData = await db.select().from(schema.powerData)
+          .orderBy(desc(schema.powerData.timestamp))
+          .limit(100);
+      }
+      
+      if (dataType === 'environmental' || dataType === 'both') {
+        environmentalData = await db.select().from(schema.environmentalData)
+          .orderBy(desc(schema.environmentalData.timestamp))
+          .limit(100);
+      }
+      
+      // Simple anomaly detection using z-scores
+      const anomalies: any = {
+        power: [],
+        environmental: []
+      };
+      
+      if (powerData.length > 0) {
+        // Calculate mean and standard deviation for each power metric
+        const metrics = ['mainGridPower', 'solarOutput', 'totalLoad', 'unaccountedLoad'];
+        
+        for (const metric of metrics) {
+          const values = powerData.map(d => d[metric as keyof typeof d] as number);
+          const mean = values.reduce((a, b) => a + b, 0) / values.length;
+          const stdDev = Math.sqrt(values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length);
+          
+          // Find anomalies
+          powerData.forEach((data, index) => {
+            const value = data[metric as keyof typeof data] as number;
+            const zScore = Math.abs((value - mean) / stdDev);
+            
+            if (zScore > threshold) {
+              anomalies.power.push({
+                timestamp: data.timestamp,
+                metric,
+                value,
+                zScore,
+                mean,
+                stdDev,
+                direction: value > mean ? 'high' : 'low'
+              });
+            }
+          });
+        }
+      }
+      
+      if (environmentalData.length > 0) {
+        // Calculate mean and standard deviation for each environmental metric
+        const metrics = ['air_temp', 'ghi', 'dni'];
+        
+        for (const metric of metrics) {
+          const values = environmentalData.map(d => d[metric as keyof typeof d] as number);
+          const mean = values.reduce((a, b) => a + b, 0) / values.length;
+          const stdDev = Math.sqrt(values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length);
+          
+          // Find anomalies
+          environmentalData.forEach((data, index) => {
+            const value = data[metric as keyof typeof data] as number;
+            const zScore = Math.abs((value - mean) / stdDev);
+            
+            if (zScore > threshold) {
+              anomalies.environmental.push({
+                timestamp: data.timestamp,
+                metric,
+                value,
+                zScore,
+                mean,
+                stdDev,
+                direction: value > mean ? 'high' : 'low'
+              });
+            }
+          });
+        }
+      }
+      
+      // Group anomalies by timestamp
+      const anomalyGroups: any = {};
+      
+      [...anomalies.power, ...anomalies.environmental].forEach(anomaly => {
+        const ts = new Date(anomaly.timestamp).toISOString();
+        if (!anomalyGroups[ts]) {
+          anomalyGroups[ts] = [];
+        }
+        anomalyGroups[ts].push(anomaly);
+      });
+      
+      return {
+        dataType,
+        threshold,
+        timeRange,
+        anomalyCount: anomalies.power.length + anomalies.environmental.length,
+        anomalies: {
+          power: anomalies.power,
+          environmental: anomalies.environmental
+        },
+        anomalyGroups,
+        analysisTime: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error("Error detecting anomalies:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Analyze trends in time-series data
+   */
+  private async analyzeTrends(
+    input: any, 
+    params: { dataType?: string, timeRange?: string, granularity?: string } = {}
+  ): Promise<any> {
+    try {
+      const dataType = params.dataType || 'both';
+      const timeRange = params.timeRange || '7d';
+      const granularity = params.granularity || '1h';
+      
+      // Get data based on type
+      let powerData: any[] = [];
+      let environmentalData: any[] = [];
+      
+      if (dataType === 'power' || dataType === 'both') {
+        powerData = await db.select().from(schema.powerData)
+          .orderBy(desc(schema.powerData.timestamp))
+          .limit(168); // Up to 7 days of hourly data
+      }
+      
+      if (dataType === 'environmental' || dataType === 'both') {
+        environmentalData = await db.select().from(schema.environmentalData)
+          .orderBy(desc(schema.environmentalData.timestamp))
+          .limit(168);
+      }
+      
+      // Analyze trends using simple linear regression
+      const trends: any = {};
+      
+      if (powerData.length > 0) {
+        // Calculate trends for power metrics
+        const metrics = ['mainGridPower', 'solarOutput', 'totalLoad'];
+        
+        for (const metric of metrics) {
+          const values = powerData.map((d, i) => ({ 
+            x: i, // Use index as x since we're looking at trends over intervals
+            y: d[metric as keyof typeof d] as number,
+            timestamp: d.timestamp
+          }));
+          
+          // Calculate simple linear regression
+          const n = values.length;
+          const sumX = values.reduce((a, b) => a + b.x, 0);
+          const sumY = values.reduce((a, b) => a + b.y, 0);
+          const sumXY = values.reduce((a, b) => a + (b.x * b.y), 0);
+          const sumXX = values.reduce((a, b) => a + (b.x * b.x), 0);
+          
+          const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+          const intercept = (sumY - slope * sumX) / n;
+          
+          // Calculate min, max, avg
+          const min = Math.min(...values.map(v => v.y));
+          const max = Math.max(...values.map(v => v.y));
+          const avg = sumY / n;
+          
+          // Store trend data
+          trends[metric] = {
+            slope,
+            intercept,
+            direction: slope > 0.001 ? 'increasing' : slope < -0.001 ? 'decreasing' : 'stable',
+            strengthAbs: Math.abs(slope),
+            min,
+            max,
+            avg,
+            range: max - min,
+            variance: values.reduce((a, b) => a + Math.pow(b.y - avg, 2), 0) / n,
+            startValue: values[values.length - 1].y,
+            endValue: values[0].y,
+            changePercent: ((values[0].y - values[values.length - 1].y) / values[values.length - 1].y) * 100
+          };
+        }
+      }
+      
+      if (environmentalData.length > 0) {
+        // Calculate trends for environmental metrics
+        const metrics = ['air_temp', 'ghi', 'dni'];
+        
+        for (const metric of metrics) {
+          const values = environmentalData.map((d, i) => ({ 
+            x: i,
+            y: d[metric as keyof typeof d] as number,
+            timestamp: d.timestamp
+          }));
+          
+          // Skip if insufficient data
+          if (values.length < 3) continue;
+          
+          // Calculate simple linear regression
+          const n = values.length;
+          const sumX = values.reduce((a, b) => a + b.x, 0);
+          const sumY = values.reduce((a, b) => a + b.y, 0);
+          const sumXY = values.reduce((a, b) => a + (b.x * b.y), 0);
+          const sumXX = values.reduce((a, b) => a + (b.x * b.x), 0);
+          
+          const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+          const intercept = (sumY - slope * sumX) / n;
+          
+          // Calculate min, max, avg
+          const min = Math.min(...values.map(v => v.y));
+          const max = Math.max(...values.map(v => v.y));
+          const avg = sumY / n;
+          
+          // Store trend data
+          trends[metric] = {
+            slope,
+            intercept,
+            direction: slope > 0.001 ? 'increasing' : slope < -0.001 ? 'decreasing' : 'stable',
+            strengthAbs: Math.abs(slope),
+            min,
+            max,
+            avg,
+            range: max - min,
+            variance: values.reduce((a, b) => a + Math.pow(b.y - avg, 2), 0) / n,
+            startValue: values[values.length - 1].y,
+            endValue: values[0].y,
+            changePercent: ((values[0].y - values[values.length - 1].y) / values[values.length - 1].y) * 100
+          };
+        }
+      }
+      
+      // Generate insights based on trends
+      let insights: string[] = [];
+      
+      // Power insights
+      if (trends.totalLoad) {
+        if (trends.totalLoad.direction === 'increasing' && trends.totalLoad.strengthAbs > 0.01) {
+          insights.push(`Total power load is increasing significantly (${trends.totalLoad.changePercent.toFixed(1)}% change).`);
+        } else if (trends.totalLoad.direction === 'decreasing' && trends.totalLoad.strengthAbs > 0.01) {
+          insights.push(`Total power load is decreasing significantly (${Math.abs(trends.totalLoad.changePercent).toFixed(1)}% change).`);
+        }
+      }
+      
+      if (trends.solarOutput && trends.mainGridPower) {
+        if (trends.solarOutput.direction === 'increasing' && trends.mainGridPower.direction === 'decreasing') {
+          insights.push(`Solar output is increasing while grid power usage is decreasing, indicating effective solar utilization.`);
+        } else if (trends.solarOutput.direction === 'decreasing' && trends.mainGridPower.direction === 'increasing') {
+          insights.push(`Solar output is decreasing while grid power usage is increasing, possibly due to weather conditions or system issues.`);
+        }
+      }
+      
+      // Environmental insights
+      if (trends.air_temp && trends.ghi) {
+        if (trends.air_temp.direction === 'increasing' && trends.ghi.direction === 'increasing') {
+          insights.push(`Both temperature and solar irradiance are increasing, typical of clear weather conditions.`);
+        } else if (trends.air_temp.direction === 'decreasing' && trends.ghi.direction === 'decreasing') {
+          insights.push(`Both temperature and solar irradiance are decreasing, indicating potential cloud cover or weather changes.`);
+        }
+      }
+      
+      return {
+        dataType,
+        timeRange,
+        granularity,
+        datapointCount: {
+          power: powerData.length,
+          environmental: environmentalData.length
+        },
+        trends,
+        insights,
+        analysisTime: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error("Error analyzing trends:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Break down complex tasks into smaller subtasks
+   */
+  private async decomposeTask(
+    input: { task: string }, 
+    params: { maxSubtasks?: number, assignee?: string } = {}
+  ): Promise<any> {
+    try {
+      const taskDescription = input.task;
+      const maxSubtasks = params.maxSubtasks || 5;
+      const assignee = params.assignee;
+      
+      // Use AI service to decompose the task
+      const decompositionResult = await this.aiService.generateDataAnalytics({
+        task: 'task_decomposition',
+        description: taskDescription,
+        maxSubtasks
+      });
+      
+      // Parse the AI-generated subtasks
+      let subtasks: any[] = [];
+      
+      if (decompositionResult && decompositionResult.subtasks) {
+        subtasks = decompositionResult.subtasks.map((st: any, index: number) => ({
+          id: index + 1,
+          name: st.title || `Subtask ${index + 1}`,
+          description: st.description || '',
+          priority: st.priority || 'medium',
+          estimatedEffort: st.estimatedEffort || 'medium',
+          prerequisites: st.prerequisites || [],
+          assignee: assignee || null
+        }));
+      } else {
+        // Fallback to simple decomposition if AI service fails
+        const words = taskDescription.split(/\s+/);
+        const subtaskCount = Math.min(maxSubtasks, Math.max(2, Math.ceil(words.length / 15)));
+        
+        for (let i = 0; i < subtaskCount; i++) {
+          subtasks.push({
+            id: i + 1,
+            name: `Subtask ${i + 1}`,
+            description: `Part ${i + 1} of ${taskDescription}`,
+            priority: 'medium',
+            estimatedEffort: 'medium',
+            prerequisites: i > 0 ? [i] : [],
+            assignee: assignee || null
+          });
+        }
+      }
+      
+      return {
+        originalTask: taskDescription,
+        subtaskCount: subtasks.length,
+        subtasks,
+        workflow: {
+          sequential: subtasks.every((st, i) => i === 0 || st.prerequisites.includes(i)),
+          parallel: subtasks.every(st => st.prerequisites.length === 0)
+        }
+      };
+    } catch (error) {
+      console.error("Error decomposing task:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Generate insights about energy usage patterns
+   */
+  private async generateEnergyInsights(
+    input: any, 
+    params: { timeRange?: string, includeRecommendations?: boolean } = {}
+  ): Promise<any> {
+    try {
+      const timeRange = params.timeRange || '7d';
+      const includeRecommendations = params.includeRecommendations !== false;
+      
+      // Get power and environmental data
+      const powerData = await db.select().from(schema.powerData)
+        .orderBy(desc(schema.powerData.timestamp))
+        .limit(168);
+      
+      const environmentalData = await db.select().from(schema.environmentalData)
+        .orderBy(desc(schema.environmentalData.timestamp))
+        .limit(168);
+      
+      // Use AI service to generate insights
+      const insights = await this.aiService.generateEnergyRecommendations({
+        powerData,
+        environmentalData,
+        timeRange,
+        includeRecommendations
+      });
+      
+      return {
+        timeRange,
+        insights: insights.insights || [],
+        recommendations: includeRecommendations ? (insights.recommendations || []) : [],
+        metrics: insights.metrics || {},
+        generatedAt: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error("Error generating energy insights:", error);
+      throw error;
+    }
   }
 }
+
+// Export service as a singleton
+export const mcpService = new MCPService();
