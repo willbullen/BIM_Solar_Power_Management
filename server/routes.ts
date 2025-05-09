@@ -37,10 +37,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // The following options improve connection reliability:
     perMessageDeflate: false, // Disable per-message-deflate to reduce overhead
     clientTracking: true,     // Track clients automatically
-    maxPayload: 65536         // Set reasonable max payload size (64KB)
+    maxPayload: 65536,        // Set reasonable max payload size (64KB)
+    // Add more debugging info
+    handleProtocols: (protocols, request) => {
+      console.log('WebSocket handshake protocols:', protocols);
+      return protocols[0]; // Accept the first protocol
+    }
   });
   
-  console.log('WebSocket server initialized and waiting for connections at /ws');
+  console.log(`[WebSocket] Server initialized and waiting for connections at ${httpServer.address()?.toString() || 'unknown address'} with path /ws`);
+  
+  // Log information about the server for debugging
+  httpServer.on('listening', () => {
+    const address = httpServer.address();
+    if (address && typeof address !== 'string') {
+      console.log(`[WebSocket] HTTP Server is listening on ${address.address}:${address.port}`);
+    } else {
+      console.log(`[WebSocket] HTTP Server is listening on ${address}`);
+    }
+  });
   
   // Track subscriptions and clients
   const subscriptions = new Map<string, Set<WebSocket>>();
@@ -91,8 +106,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Handle WebSocket connections
-  wss.on('connection', (ws) => {
-    console.log('New WebSocket connection established');
+  wss.on('connection', (ws, request) => {
+    // Get client information
+    const clientIp = request.socket.remoteAddress;
+    const url = request.url;
+    const headers = request.headers;
+    
+    console.log(`[WebSocket] New connection established from ${clientIp} on ${url}`);
+    console.log(`[WebSocket] Client headers: Origin: ${headers.origin}, Host: ${headers.host}`);
     
     // Track last activity time for this connection
     let lastActivity = Date.now();

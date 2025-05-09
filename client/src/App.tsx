@@ -16,6 +16,7 @@ import OperationalPlanningPage from "@/pages/operational-planning-page";
 import FeedbackPage from "@/pages/feedback-page";
 import AgentPage from "@/pages/agent-page";
 import NotFound from "@/pages/not-found";
+import { WebSocketDebugger } from "@/components/debug/websocket-debugger";
 
 function App() {
   return (

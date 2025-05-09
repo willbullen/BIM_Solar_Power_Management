@@ -163,8 +163,23 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
       };
       wsRef.current.addEventListener('error', (event: Event) => {
         console.error('Error during WebSocket connection setup:', event);
+        
+        // Log detailed connection information for troubleshooting
+        console.log('WebSocket connection details:', {
+          readyState: wsRef.current?.readyState,
+          protocol: wsRef.current?.protocol,
+          url: wsUrl,
+          host: window.location.host,
+          origin: window.location.origin
+        });
+        
+        // Handle proxy or gateway errors specifically
+        if (window.location.protocol === 'https:') {
+          console.warn('Using secure connection (HTTPS). Make sure WSS is properly configured on the server.');
+        }
+        
         onError?.(event);
-      }, { once: true }); // Only handle the initial connection error once
+      });
       
       wsRef.current.onclose = (event: CloseEvent) => {
         console.log(`WebSocket connection closed: ${event.code} ${event.reason}`);
