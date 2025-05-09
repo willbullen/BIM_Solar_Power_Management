@@ -199,6 +199,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
               data: { timestamp: new Date().toISOString() }
             }));
             break;
+          case 'message':
+            // Handle direct message broadcasting
+            if (parsedMessage.channel && typeof parsedMessage.channel === 'string') {
+              // For agent-message channel, use the WebSocketService broadcast
+              if (parsedMessage.channel === 'agent-message') {
+                webSocketService.broadcastAgentMessage(parsedMessage.data);
+                console.log('Broadcasted direct message to agent-message channel');
+              } 
+              // For agent-notification channel, use the notification broadcast
+              else if (parsedMessage.channel === 'agent-notification') {
+                webSocketService.broadcastAgentNotification(parsedMessage.data);
+                console.log('Broadcasted direct message to agent-notification channel');
+              }
+              else {
+                console.log(`Broadcasting to channel: ${parsedMessage.channel}`);
+                webSocketService.broadcast(parsedMessage.channel, parsedMessage.data);
+              }
+            } else {
+              console.log('Invalid message format: missing or invalid channel');
+            }
+            break;
           default:
             console.log('Unknown message type:', parsedMessage.type);
         }

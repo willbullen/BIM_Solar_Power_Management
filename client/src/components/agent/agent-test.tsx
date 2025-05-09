@@ -147,10 +147,10 @@ export function AgentTestPanel() {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between bg-muted/50 px-6 py-4">
-        <div className="flex gap-2">
-          <Button onClick={handleTestNotification} variant="default">
-            Send Test Notification
+      <CardFooter className="flex flex-col gap-4 bg-muted/50 px-6 py-4">
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={handleTestNotification} variant="default" size="sm">
+            Send API Notification
           </Button>
           <Button 
             onClick={() => sendMessage({
@@ -158,8 +158,9 @@ export function AgentTestPanel() {
               data: { channel: 'agent-message' }
             })} 
             variant="default"
+            size="sm"
           >
-            Test Subscribe
+            Subscribe
           </Button>
           <Button 
             onClick={() => sendMessage({
@@ -172,16 +173,36 @@ export function AgentTestPanel() {
               }
             })} 
             variant="secondary"
+            size="sm"
           >
-            Test Direct Message
+            Test Message
           </Button>
-          <Button onClick={reconnect} variant="outline">
+          <Button 
+            onClick={() => sendMessage({
+              type: 'message',
+              channel: 'agent-notification',
+              data: { 
+                type: 'info',
+                message: 'Test direct notification',
+                sentAt: new Date().toISOString()
+              }
+            })} 
+            variant="secondary"
+            size="sm"
+          >
+            Test Notification
+          </Button>
+          <Button onClick={reconnect} variant="outline" size="sm">
             Reconnect
           </Button>
+          <Button onClick={handleClear} variant="ghost" size="sm">
+            Clear
+          </Button>
         </div>
-        <Button onClick={handleClear} variant="ghost">
-          Clear
-        </Button>
+        
+        <div className="text-xs text-muted-foreground">
+          <p>Note: Use these buttons to test WebSocket connectivity and message broadcasting. "Subscribe" must be clicked first before messages will be received.</p>
+        </div>
       </CardFooter>
     </Card>
   );
