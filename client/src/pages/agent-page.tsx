@@ -650,11 +650,11 @@ function ChatInterface() {
                       >
                         <EnhancedMessage
                           role={message.role}
-                          content={message.content}
+                          content={message.content || ""}
                           timestamp={message.createdAt}
                           isPinned={pinnedMessages.has(message.id)}
                           onPin={() => togglePinMessage(message.id)}
-                          hasReference={typeof message.content === 'string' && (message.content.includes('data reference') || message.content.includes('power data'))}
+                          hasReference={typeof message.content === 'string' && message.content !== null && message.content !== undefined && (message.content.includes('data reference') || message.content.includes('power data'))}
                         />
                       </div>
                     ))}
