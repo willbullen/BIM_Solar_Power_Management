@@ -13,10 +13,10 @@ function getBaseUrl() {
   return window.location.origin;
 }
 
-// New apiRequest format with explicit method, url, and data parameters
+// New apiRequest format with explicit url, method, and data parameters
 export async function apiRequest(
-  method: string,
   url: string,
+  method: string,
   data?: unknown
 ): Promise<any> {
   // Ensure we have valid values

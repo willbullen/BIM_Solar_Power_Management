@@ -182,7 +182,8 @@ Current Progress:
 2. Added notification dropdown UI in the application header
 3. Created test notification functionality in Advanced settings tab
 4. Connected all notification components with context-based architecture
-5. Optimized notification polling with efficient API requests
+5. Fixed WebSocket vs REST API parameter ordering inconsistencies for better reliability
+6. Standardized apiRequest interface across all components
 
 ## Next Steps
 1. Create database query helper utility with parameterized query support
