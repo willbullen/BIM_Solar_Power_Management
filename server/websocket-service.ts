@@ -11,8 +11,8 @@ export class WebSocketService {
     // Initialize default subscription channels
     this.subscriptions.set('power-data', new Set<WebSocket>());
     this.subscriptions.set('environmental-data', new Set<WebSocket>());
-    this.subscriptions.set('agent-notifications', new Set<WebSocket>());
-    this.subscriptions.set('agent-messages', new Set<WebSocket>());
+    this.subscriptions.set('agent-notification', new Set<WebSocket>());
+    this.subscriptions.set('agent-message', new Set<WebSocket>());
   }
   
   // Singleton pattern to ensure one instance across the application
@@ -57,11 +57,20 @@ export class WebSocketService {
     const subscribers = this.subscriptions.get(channelName);
     
     if (subscribers && subscribers.size > 0) {
-      // Prepare the message
-      const message = JSON.stringify({
-        type: channelName,
-        data: data
-      });
+      // Prepare the message - ensure it's in a standardized format
+      let message: string;
+      
+      // Check if the data is already in the correct format with 'type', 'channel', and 'data' fields
+      if (data && data.type === 'data' && data.channel === channelName && data.data !== undefined) {
+        message = JSON.stringify(data);
+      } else {
+        // Format the message in the standard structure
+        message = JSON.stringify({
+          type: 'data',
+          channel: channelName,
+          data: data
+        });
+      }
       
       // Send to all subscribed clients
       let activeClients = 0;
@@ -97,22 +106,24 @@ export class WebSocketService {
   
   // Broadcast an agent notification to all subscribed clients
   public broadcastAgentNotification(notification: any): void {
-    const formattedPayload = {
-      type: 'agent-notification',
-      payload: notification,
+    const formattedData = {
+      type: 'data',
+      channel: 'agent-notification',
+      data: notification,
       timestamp: new Date().toISOString()
     };
-    this.broadcast('agent-notifications', formattedPayload);
+    this.broadcast('agent-notification', formattedData);
   }
   
   // Broadcast an agent message to all subscribed clients
   public broadcastAgentMessage(message: any): void {
-    const formattedPayload = {
-      type: 'agent-message',
-      payload: message,
+    const formattedData = {
+      type: 'data',
+      channel: 'agent-message',
+      data: message,
       timestamp: new Date().toISOString()
     };
-    this.broadcast('agent-messages', formattedPayload);
+    this.broadcast('agent-message', formattedData);
   }
 }
 

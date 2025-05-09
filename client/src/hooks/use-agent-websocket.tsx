@@ -47,21 +47,32 @@ export function useAgentWebSocket(config: AgentWebSocketConfig = {}) {
         setReconnectAttempt(0);
         
         // Subscribe to agent channels
+        // First subscribe to agent-message channel
         socket.send(JSON.stringify({
           type: 'subscribe',
-          channels: ['agent-notifications', 'agent-messages']
+          data: { channel: 'agent-message' }
+        }));
+        
+        // Then subscribe to agent-notification channel
+        socket.send(JSON.stringify({
+          type: 'subscribe',
+          data: { channel: 'agent-notification' }
         }));
       });
       
       socket.addEventListener('message', (event) => {
         try {
           const data = JSON.parse(event.data);
+          console.log('WebSocket message received:', data);
           
           // Handle different message types
-          if (data.type === 'agent-message' && config.onMessage) {
-            config.onMessage(data.payload);
-          } else if (data.type === 'agent-notification' && config.onNotification) {
-            config.onNotification(data.payload);
+          if (data.type === 'data') {
+            const channel = data.channel;
+            if (channel === 'agent-message' && config.onMessage) {
+              config.onMessage(data.data);
+            } else if (channel === 'agent-notification' && config.onNotification) {
+              config.onNotification(data.data);
+            }
           }
         } catch (err) {
           console.error('Error parsing WebSocket message:', err);
@@ -130,9 +141,16 @@ export function useAgentWebSocket(config: AgentWebSocketConfig = {}) {
         // Unsubscribe from channels
         try {
           if (socketRef.current.readyState === WebSocket.OPEN) {
+            // Unsubscribe from agent-message channel
             socketRef.current.send(JSON.stringify({
               type: 'unsubscribe',
-              channels: ['agent-notifications', 'agent-messages']
+              data: { channel: 'agent-message' }
+            }));
+            
+            // Unsubscribe from agent-notification channel
+            socketRef.current.send(JSON.stringify({
+              type: 'unsubscribe',
+              data: { channel: 'agent-notification' }
             }));
           }
         } catch (err) {
