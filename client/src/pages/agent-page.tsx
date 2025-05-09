@@ -375,7 +375,7 @@ function ChatInterface() {
       </Card>
 
       {/* Chat area */}
-      <Card className="md:col-span-3 h-[calc(80vh-7rem)] flex flex-col overflow-hidden bg-slate-900 border border-slate-800 shadow-md">
+      <Card className="md:col-span-3 h-full flex flex-col overflow-hidden bg-slate-900 border border-slate-800 shadow-md">
         <CardHeader className="pb-3 border-b border-slate-800">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2">
