@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Save, Settings, Users, Zap, CloudSun, Palette, Globe, BugPlay, MessageSquare, MessageCircle, Check } from "lucide-react";
+import { Loader2, Save, Send, Settings, Users, Zap, CloudSun, Palette, Globe, BugPlay, MessageSquare, MessageCircle, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
