@@ -654,7 +654,7 @@ function ChatInterface() {
                           timestamp={message.createdAt}
                           isPinned={pinnedMessages.has(message.id)}
                           onPin={() => togglePinMessage(message.id)}
-                          hasReference={message.content.includes('data reference') || message.content.includes('power data')}
+                          hasReference={typeof message.content === 'string' && (message.content.includes('data reference') || message.content.includes('power data'))}
                         />
                       </div>
                     ))}
