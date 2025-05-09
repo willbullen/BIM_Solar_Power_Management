@@ -104,14 +104,15 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     const isReplitEnvironment = window.location.host.includes('.replit.dev') || 
                                 window.location.host.includes('.repl.co');
     
-    // Force set the protocol to non-secure in Replit environments unless user overrode
-    // Since we're seeing persistent issues with secure WebSockets in Replit
+    // Match the protocol to the current page protocol
+    // Browser security prevents ws:// connections from https:// pages
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     
-    // Save the default choice for easier debugging
-    localStorage.setItem('websocket-protocol', 'ws');
+    // Save the chosen protocol for debugging
+    localStorage.setItem('websocket-protocol', protocol.replace(':', ''));
     
-    console.log('Replit environment detected, forcing non-secure WebSocket');
-    wsUrl = `ws://${window.location.host}/ws`;
+    console.log(`Setting WebSocket protocol to match page protocol: ${protocol}`);
+    wsUrl = `${protocol}//${window.location.host}/ws`;
     
     // Log the configuration choices
     console.log(`WebSocket URL: ${wsUrl}`);

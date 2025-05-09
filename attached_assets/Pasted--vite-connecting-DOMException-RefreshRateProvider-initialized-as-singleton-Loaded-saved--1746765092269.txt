@@ -1,0 +1,78 @@
+[vite] connecting...
+DOMException {}
+
+RefreshRateProvider initialized as singleton
+Loaded saved refresh rate from localStorage: 10000ms
+Replit environment detected, forcing non-secure WebSocket
+WebSocket URL: ws://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws
+Window protocol: https:
+Window host: 0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev
+Configured WebSocket URL: ws://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws
+Connecting to WebSocket at ws://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws (attempt 1)
+Creating new WebSocket connection as singleton
+Error creating WebSocket connection: 
+DOMException {}
+
+WebSocket creation failed. Scheduling reconnect in 4500ms (attempt 2/15)
+Replit environment detected, forcing non-secure WebSocket
+WebSocket URL: ws://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws
+Window protocol: https:
+Window host: 0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev
+Configured WebSocket URL: ws://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws
+Connecting to WebSocket at ws://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws (attempt 1)
+Creating new WebSocket connection as singleton
+Error creating WebSocket connection: 
+DOMException {}
+
+WebSocket error: 
+DOMException {}
+
+WebSocket creation failed. Scheduling reconnect in 3000ms (attempt 2/15)
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+Fetching latest data via REST API...
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+⏰ Fetching data (refresh rate: 10000ms)
+Fetching latest data via REST API...
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+Setting up periodic WebSocket reconnection attempts
+*** REFRESH RATE PROVIDER INITIALIZED: 10000ms ***
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/user
+Replit environment detected, forcing non-secure WebSocket
+WebSocket URL: ws://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws
+Window protocol: https:
+Window host: 0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev
+Configured WebSocket URL: ws://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws
+Connecting to WebSocket at ws://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws (attempt 2)
+Creating new WebSocket connection as singleton
+Error creating WebSocket connection: 
+DOMException {}
+
+WebSocket creation failed. Scheduling reconnect in 6750ms (attempt 3/15)
+Replit environment detected, forcing non-secure WebSocket
+WebSocket URL: ws://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws
+Window protocol: https:
+Window host: 0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev
+Configured WebSocket URL: ws://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws
+Connecting to WebSocket at ws://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws (attempt 2)
+Creating new WebSocket connection as singleton
+Error creating WebSocket connection: 
+DOMException {}
+
+WebSocket error: 
+DOMException {}
+
+WebSocket creation failed. Scheduling reconnect in 4500ms (attempt 3/15)
+⏰ Fetching data (refresh rate: 10000ms)
+Fetching latest data via REST API...
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+Replit environment detected, forcing non-secure WebSocket
+WebSocket URL: ws://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws
