@@ -1197,10 +1197,22 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-muted px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Send className="h-5 w-5 text-blue-500" />
+                    <h3 className="text-lg font-medium">Telegram Integration</h3>
+                  </div>
+                  {user?.role === 'Admin' && telegramSettings ? (
+                    <Badge variant={telegramSettings.isEnabled ? "success" : "secondary"}>
+                      {telegramSettings.isEnabled ? "Enabled" : "Disabled"}
+                    </Badge>
+                  ) : null}
+                </div>
                 
                 {user?.role === 'Admin' && (
                   <>
-                    <Card className="bg-muted/50 mb-6">
+                    <Card className="bg-muted/50 m-4">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-base">
                           Bot Configuration
