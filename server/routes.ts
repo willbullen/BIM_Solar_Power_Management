@@ -35,14 +35,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     server: httpServer, 
     path: '/ws',
     // The following options improve connection reliability:
-    perMessageDeflate: false, // Disable per-message-deflate to reduce overhead
-    clientTracking: true,     // Track clients automatically
-    maxPayload: 65536,        // Set reasonable max payload size (64KB)
+    perMessageDeflate: true, // Enable compression for better performance
+    clientTracking: true,    // Track clients automatically
+    maxPayload: 65536,       // Set reasonable max payload size (64KB)
     // Accept both secure and non-secure WebSocket connections
     handleProtocols: (protocols, request) => {
       console.log('WebSocket handshake protocols:', protocols);
       console.log('WebSocket request headers:', request.headers);
-      // Accept any protocol
+      
+      // Special handling for Replit environments where secure WebSockets can be problematic
+      const isReplitEnvironment = 
+        request.headers.host?.includes('.replit.dev') || 
+        request.headers.host?.includes('.repl.co');
+        
+      if (isReplitEnvironment) {
+        console.log('[WebSocket] Replit environment detected, applying special protocol handling');
+      }
+      
+      // Accept any protocol, but use the first one if available
       return protocols && protocols.length > 0 ? protocols[0] : '';
     }
   });

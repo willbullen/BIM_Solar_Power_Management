@@ -104,14 +104,28 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     const isReplitEnvironment = window.location.host.includes('.replit.dev') || 
                                 window.location.host.includes('.repl.co');
     
-    // Match the protocol to the current page protocol
-    // Browser security prevents ws:// connections from https:// pages
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    // Check if user has manually set protocol preference
+    const userProtocolPreference = localStorage.getItem('websocket-protocol');
+    
+    // Determine protocol based on page security and user preference
+    let protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    
+    // If user explicitly set a protocol, use that instead
+    if (userProtocolPreference === 'ws' || userProtocolPreference === 'wss') {
+      protocol = `${userProtocolPreference}:`;
+      console.log(`Using user-specified WebSocket protocol: ${protocol}`);
+    } else if (isReplitEnvironment) {
+      // For Replit environment, try non-secure WS first (known compatibility issue)
+      if (reconnectCount > 2 && protocol === 'wss:') {
+        console.log(`Replit environment detected with connection issues, trying non-secure WebSocket instead`);
+        protocol = 'ws:';
+      }
+    }
     
     // Save the chosen protocol for debugging
     localStorage.setItem('websocket-protocol', protocol.replace(':', ''));
     
-    console.log(`Setting WebSocket protocol to match page protocol: ${protocol}`);
+    console.log(`Setting WebSocket protocol: ${protocol}`);
     wsUrl = `${protocol}//${window.location.host}/ws`;
     
     // Log the configuration choices

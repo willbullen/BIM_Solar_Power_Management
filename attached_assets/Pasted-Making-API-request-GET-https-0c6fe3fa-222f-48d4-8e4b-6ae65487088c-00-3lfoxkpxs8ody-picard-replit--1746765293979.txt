@@ -1,0 +1,83 @@
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+⏰ Fetching data (refresh rate: 10000ms)
+Fetching latest data via REST API...
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+API response status: 200 OK
+Error during WebSocket connection setup: 
+Event {isTrusted: true}
+
+WebSocket connection details: 
+Object {readyState: 0, protocol: "", url: "wss://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws", host: "0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev", origin: "https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev"}
+Using secure connection (HTTPS). Make sure WSS is properly configured on the server.
+WebSocket error: 
+Event {isTrusted: true}
+
+WebSocket error: 
+Event {isTrusted: true}
+
+WebSocket error: 
+Event {isTrusted: true}
+
+API response status: 200 OK
+Latest data fetched successfully
+*** DEBUG: Loading dashboard-page-NEW.tsx - UPDATED VERSION ***
+WebSocket singleton already initialized - ignoring additional connection attempt
+Setting WebSocket protocol to match page protocol: wss:
+WebSocket URL: wss://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws
+Window protocol: https:
+Window host: 0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev
+Configured WebSocket URL: wss://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws
+Connecting to WebSocket at wss://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws (attempt 1)
+Creating new WebSocket connection as singleton
+Fetching latest data via REST API...
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+⏰ Fetching data (refresh rate: 10000ms)
+Fetching latest data via REST API...
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+Error during WebSocket connection setup: 
+Event {isTrusted: true}
+
+WebSocket connection details: 
+Object {readyState: 0, protocol: "", url: "wss://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws", host: "0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev", origin: "https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev"}
+Using secure connection (HTTPS). Make sure WSS is properly configured on the server.
+WebSocket error: 
+Event {isTrusted: true}
+
+WebSocket error: 
+Event {isTrusted: true}
+
+WebSocket error: 
+Event {isTrusted: true}
+
+API response status: 200 OK
+Latest data fetched successfully
+*** DEBUG: Loading dashboard-page-NEW.tsx - UPDATED VERSION ***
+WebSocket singleton already initialized - ignoring additional connection attempt
+Setting WebSocket protocol to match page protocol: wss:
+WebSocket URL: wss://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws
+Window protocol: https:
+Window host: 0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev
+Configured WebSocket URL: wss://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws
+Connecting to WebSocket at wss://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws (attempt 1)
+Creating new WebSocket connection as singleton
+Fetching latest data via REST API...
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+⏰ Fetching data (refresh rate: 10000ms)
+Fetching latest data via REST API...
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+Error during WebSocket connection setup: 
+Event {isTrusted: true}
+
+WebSocket connection details: 
+Object {readyState: 0, protocol: "", url: "wss://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws", host: "0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev", origin: "https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev"}
