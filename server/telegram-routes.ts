@@ -124,6 +124,25 @@ export function registerTelegramRoutes(app: Express) {
       res.status(500).json({ error: 'Failed to generate verification code' });
     }
   });
+  
+  /**
+   * Generate verification code for Telegram integration (alternate endpoint)
+   * This endpoint exists to match the client-side API call
+   */
+  app.post('/api/telegram/verify', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId!;
+      const verificationCode = await telegramService.createVerificationCode(userId);
+      
+      res.json({ 
+        verificationCode,
+        instructions: `To connect Telegram to your account, send the following message to our Telegram bot:\n\n/verify ${verificationCode}`
+      });
+    } catch (error) {
+      console.error('Error generating verification code:', error);
+      res.status(500).json({ error: 'Failed to generate verification code' });
+    }
+  });
 
   /**
    * Get user's Telegram connection status
