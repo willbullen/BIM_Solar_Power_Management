@@ -532,4 +532,73 @@ export const insertAgentNotificationSchema = createInsertSchema(agentNotificatio
 export type InsertAgentNotification = z.infer<typeof insertAgentNotificationSchema>;
 export type AgentNotification = typeof agentNotifications.$inferSelect;
 
+// Scheduled reports table for recurring report generation
+export const scheduledReports = pgTable('scheduled_reports', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  schedule: text('schedule').notNull(), // cron-like schedule string
+  recipients: text('recipients').array().notNull(), // array of recipient identifiers
+  reportType: text('report_type').notNull(), // type of report to generate
+  lastRun: timestamp('last_run'), // last time the report was run
+  nextRun: timestamp('next_run'), // next scheduled run time
+  createdBy: integer('created_by').notNull().references(() => users.id),
+  isActive: boolean('is_active').notNull().default(true),
+  templateId: integer('template_id'), // reference to report_templates
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
+// Report templates table for customizing report formats
+export const reportTemplates = pgTable('report_templates', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  content: text('content').notNull(), // template content with placeholders
+  parameters: jsonb('parameters'), // optional parameters for customizing the template
+  createdBy: integer('created_by').notNull().references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
+// Set up relations
+export const scheduledReportsRelations = relations(scheduledReports, ({ one }) => ({
+  creator: one(users, {
+    fields: [scheduledReports.createdBy],
+    references: [users.id],
+  }),
+  template: one(reportTemplates, {
+    fields: [scheduledReports.templateId],
+    references: [reportTemplates.id],
+  }),
+}));
+
+export const reportTemplatesRelations = relations(reportTemplates, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [reportTemplates.createdBy],
+    references: [users.id],
+  }),
+  reports: many(scheduledReports),
+}));
+
+// Create Zod schemas for insert operations
+export const insertScheduledReportSchema = createInsertSchema(scheduledReports).omit({
+  id: true,
+  lastRun: true,
+  nextRun: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertReportTemplateSchema = createInsertSchema(reportTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertScheduledReport = z.infer<typeof insertScheduledReportSchema>;
+export type ScheduledReport = typeof scheduledReports.$inferSelect;
+export type InsertReportTemplate = z.infer<typeof insertReportTemplateSchema>;
+export type ReportTemplate = typeof reportTemplates.$inferSelect;
+
 // Update user relations to include AI agent related entities
