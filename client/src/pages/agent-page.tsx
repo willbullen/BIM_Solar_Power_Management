@@ -1234,14 +1234,14 @@ export default function AgentPage() {
             </div>
           </div>
 
-          {/* Tabs Section */}
-          <div className="bg-slate-900 rounded-xl p-1 shadow-sm mb-4">
+          {/* Tabs Section - Reduced Height */}
+          <div className="bg-slate-900 rounded-xl p-1 shadow-sm mb-4 h-[50vh]">
             <Tabs 
               defaultValue="chat" 
-              className="w-full"
+              className="w-full h-full flex flex-col"
               onValueChange={(value) => setActiveTab(value)}
             >
-              <div className="flex justify-between items-center px-4 py-2">
+              <div className="flex justify-between items-center px-4 py-1">
                 <TabsList className="grid w-full max-w-md grid-cols-3 p-1 bg-slate-800 rounded-lg shadow-sm">
                   <TabsTrigger 
                     value="chat" 
@@ -1303,16 +1303,16 @@ export default function AgentPage() {
                 </div>
               </div>
               
-              <div className="bg-slate-900 rounded-lg border border-slate-800 p-4 shadow-md">
-                <TabsContent value="chat" className="mt-0 focus-visible:outline-none focus-visible:ring-0 space-y-4">
+              <div className="bg-slate-900 rounded-lg border border-slate-800 p-2 shadow-md flex-1 overflow-auto">
+                <TabsContent value="chat" className="mt-0 focus-visible:outline-none focus-visible:ring-0 h-full">
                   <ChatInterface />
                 </TabsContent>
                 
-                <TabsContent value="tasks" className="mt-0 focus-visible:outline-none focus-visible:ring-0 space-y-4">
+                <TabsContent value="tasks" className="mt-0 focus-visible:outline-none focus-visible:ring-0 h-full">
                   <TasksInterface />
                 </TabsContent>
                 
-                <TabsContent value="settings" className="mt-0 focus-visible:outline-none focus-visible:ring-0 space-y-4">
+                <TabsContent value="settings" className="mt-0 focus-visible:outline-none focus-visible:ring-0 h-full">
                   <AgentSettingsInterface />
                 </TabsContent>
               </div>
