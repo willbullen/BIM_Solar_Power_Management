@@ -84,6 +84,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // We're now using the WebSocketService for managing subscriptions
   // The service is automatically initialized and provides subscription channels
+  // Available channels: 'power-data', 'environmental-data', 'agent-message', 'agent-notification'
   
   // Log WebSocket server errors
   wss.on('error', (error) => {

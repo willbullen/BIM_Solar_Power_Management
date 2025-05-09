@@ -220,6 +220,9 @@ export function registerAgentRoutes(app: Express) {
       // Add the user message
       const userMessage = await agentService.addUserMessage(conversationId, validatedData.content);
       
+      // Broadcast the user message via WebSocket
+      webSocketService.broadcastAgentMessage(userMessage);
+      
       // Generate a response with user role for proper permissions
       const assistantMessage = await agentService.generateResponse(
         conversationId,
@@ -227,6 +230,9 @@ export function registerAgentRoutes(app: Express) {
         userRole,
         1000 // default max tokens
       );
+      
+      // Broadcast the assistant message via WebSocket
+      webSocketService.broadcastAgentMessage(assistantMessage);
       
       res.status(201).json({ userMessage, assistantMessage });
     } catch (error) {
@@ -311,6 +317,15 @@ export function registerAgentRoutes(app: Express) {
       
       const task = await agentService.createTask(taskData);
       
+      // Broadcast task creation via WebSocket
+      webSocketService.broadcastAgentNotification({
+        message: `New task created: ${task.title}`,
+        type: 'info',
+        sentAt: new Date().toISOString(),
+        recipientNumber: 'system',
+        id: Date.now()
+      });
+      
       res.status(201).json(task);
     } catch (error) {
       console.error('Error creating task:', error);
@@ -362,6 +377,15 @@ export function registerAgentRoutes(app: Express) {
       }
       
       const updatedTask = await agentService.updateTaskStatus(taskId, status, result);
+      
+      // Broadcast task status update via WebSocket
+      webSocketService.broadcastAgentNotification({
+        message: `Task #${taskId} updated to ${status}`,
+        type: status === 'completed' ? 'success' : (status === 'failed' ? 'error' : 'info'),
+        sentAt: new Date().toISOString(),
+        recipientNumber: 'system',
+        id: Date.now()
+      });
       
       res.json(updatedTask);
     } catch (error) {
@@ -429,6 +453,15 @@ export function registerAgentRoutes(app: Express) {
       const { recipient, message, type } = notificationSchema.parse(req.body);
       
       const notification = await agentService.sendNotification(recipient, message, type);
+      
+      // Broadcast the notification via WebSocket
+      webSocketService.broadcastAgentNotification({
+        message,
+        type,
+        sentAt: new Date().toISOString(),
+        recipientNumber: recipient,
+        id: notification.id
+      });
       
       res.status(201).json(notification);
     } catch (error) {
