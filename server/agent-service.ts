@@ -166,16 +166,27 @@ export class AgentService {
 
     try {
       // Call the OpenAI API with function calling capability
-      const response = await this.openai.chat.completions.create({
-        model: "gpt-4o", // The newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        messages: openaiMessages,
-        max_tokens: maxTokens,
-        tools: functions.length > 0 ? functions.map(func => ({
-          type: "function",
-          function: func
-        })) : undefined,
-        tool_choice: functions.length > 0 ? "auto" : "none",
+      const modelToUse = "gpt-4o"; // Fallback to older model if needed
+      
+      // Set a timeout for the API call
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("OpenAI API call timed out after 30 seconds")), 30000);
       });
+      
+      // Make the API call with a timeout
+      const response = await Promise.race([
+        this.openai.chat.completions.create({
+          model: modelToUse, // The newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+          messages: openaiMessages,
+          max_tokens: maxTokens,
+          tools: functions.length > 0 ? functions.map(func => ({
+            type: "function",
+            function: func
+          })) : undefined,
+          tool_choice: functions.length > 0 ? "auto" : "none",
+        }),
+        timeoutPromise
+      ]) as OpenAI.ChatCompletion;
 
       const assistantResponse = response.choices[0]?.message;
       
@@ -334,17 +345,30 @@ export class AgentService {
     } catch (error) {
       console.error("Error generating agent response:", error);
       
+      // Prepare a user-friendly error message
+      let errorMessage = "I'm sorry, but I encountered an error while processing your request. Please try again later.";
+      
+      // In development mode, include more details about the error
+      if (process.env.NODE_ENV === 'development') {
+        const errorDetails = error instanceof Error ? error.message : String(error);
+        errorMessage += `\n\nError details (development mode): ${errorDetails}`;
+      }
+      
       // Save error response to the database
-      const [errorMessage] = await db.insert(schema.agentMessages)
+      const [savedErrorMessage] = await db.insert(schema.agentMessages)
         .values({
           conversationId,
           role: "assistant",
-          content: "I'm sorry, but I encountered an error while processing your request. Please try again later.",
-          metadata: { error: String(error) }
+          content: errorMessage,
+          metadata: { 
+            error: String(error),
+            errorType: error instanceof Error ? error.name : 'Unknown',
+            timestamp: new Date().toISOString()
+          }
         })
         .returning();
 
-      return errorMessage;
+      return savedErrorMessage;
     }
   }
 
