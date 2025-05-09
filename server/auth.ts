@@ -219,19 +219,64 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Get current user endpoint
-  app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) {
-      // Debug: Log session information when authentication fails
-      console.log('Auth check - Session:', req.session ? 'exists' : 'none');
-      console.log('Auth check - UserId:', req.session?.userId || 'none');
-      console.log('Auth check - IsAuthenticated:', req.isAuthenticated() ? 'yes' : 'no');
-      
-      return res.status(401).json({ message: "Not authenticated" });
+  // Get current user endpoint with header-based fallback auth
+  app.get("/api/user", async (req, res) => {
+    // First try standard session-based authentication
+    if (req.isAuthenticated()) {
+      // Return user without password
+      const { password, ...userWithoutPassword } = req.user as SelectUser;
+      return res.json(userWithoutPassword);
     }
     
-    // Return user without password
-    const { password, ...userWithoutPassword } = req.user as SelectUser;
-    res.json(userWithoutPassword);
+    // Debug: Log session information
+    console.log('Auth check - Session:', req.session ? 'exists' : 'none');
+    console.log('Auth check - UserId:', req.session?.userId || 'none');
+    console.log('Auth check - IsAuthenticated:', req.isAuthenticated() ? 'yes' : 'no');
+    
+    // If not authenticated via session, check for header-based auth
+    const headerUserId = req.header('X-Auth-User-Id');
+    const headerUsername = req.header('X-Auth-Username');
+    
+    if (headerUserId && headerUsername) {
+      console.log('Auth check - Using header-based authentication for /api/user');
+      
+      try {
+        // Validate the header credentials
+        const userId = parseInt(headerUserId, 10);
+        if (isNaN(userId)) {
+          return res.status(401).json({ message: 'Invalid user ID in header' });
+        }
+        
+        // Verify user exists
+        const user = await storage.getUser(userId);
+        if (!user || user.username !== headerUsername) {
+          return res.status(401).json({ message: 'Invalid authentication credentials' });
+        }
+        
+        // If valid, store in session for future requests
+        if (req.session) {
+          req.session.userId = userId;
+          req.session.userRole = user.role;
+          
+          // Save session immediately
+          req.session.save((err) => {
+            if (err) {
+              console.error('Error saving session from header auth in /api/user:', err);
+            } else {
+              console.log('Session restored from header auth for user:', userId);
+            }
+          });
+        }
+        
+        // Return user without password
+        const { password, ...userWithoutPassword } = user;
+        return res.json(userWithoutPassword);
+      } catch (error) {
+        console.error('Header auth validation error in /api/user:', error);
+      }
+    }
+    
+    // If we get here, neither session nor header auth was successful
+    return res.status(401).json({ message: "Not authenticated" });
   });
 }

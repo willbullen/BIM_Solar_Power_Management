@@ -1,19 +1,68 @@
 import { Express, Request, Response } from 'express';
 import { agentNotificationService } from './services/agent-notification-service';
+import { storage } from './storage';
 
-// Authentication middleware
-function requireAuth(req: Request, res: Response, next: any) {
+// Authentication middleware with header-based fallback
+async function requireAuth(req: Request, res: Response, next: any) {
   const session = req.session as any;
-  if (!session || !session.userId) {
-    console.log('Auth check - Session:', session ? 'exists' : 'none');
-    console.log('Auth check - UserId:', session?.userId || 'none');
-    console.log('Auth check - IsAuthenticated: no');
-    return res.status(401).json({ error: 'Not authenticated' });
+  
+  // First check session-based auth
+  if (session && session.userId) {
+    console.log('Auth check - Session:', 'exists');
+    console.log('Auth check - UserId:', session.userId);
+    console.log('Auth check - IsAuthenticated: yes (session)');
+    return next();
   }
-  console.log('Auth check - Session:', 'exists');
-  console.log('Auth check - UserId:', session.userId);
-  console.log('Auth check - IsAuthenticated: yes');
-  next();
+  
+  // If session auth fails, try header-based auth
+  const headerUserId = req.header('X-Auth-User-Id');
+  const headerUsername = req.header('X-Auth-Username');
+  
+  if (headerUserId && headerUsername) {
+    console.log('Auth check - Using header-based authentication');
+    
+    try {
+      // Validate the header credentials
+      const userId = parseInt(headerUserId, 10);
+      if (isNaN(userId)) {
+        return res.status(401).json({ error: 'Invalid user ID in header' });
+      }
+      
+      // Verify user exists
+      const user = await storage.getUser(userId);
+      if (!user || user.username !== headerUsername) {
+        return res.status(401).json({ error: 'Invalid authentication credentials' });
+      }
+      
+      // If valid, store in session for future requests
+      if (req.session) {
+        req.session.userId = userId;
+        req.session.userRole = user.role;
+        
+        // Save session immediately
+        req.session.save((err) => {
+          if (err) {
+            console.error('Error saving session from header auth:', err);
+          } else {
+            console.log('Session restored from header auth for user:', userId);
+          }
+        });
+      }
+      
+      // Continue to the next middleware/route handler
+      console.log('Auth check - IsAuthenticated: yes (header)');
+      return next();
+    } catch (error) {
+      console.error('Header auth validation error:', error);
+      // Continue with other auth methods
+    }
+  }
+  
+  // If all auth methods fail
+  console.log('Auth check - Session:', session ? 'exists' : 'none');
+  console.log('Auth check - UserId:', session?.userId || 'none');
+  console.log('Auth check - IsAuthenticated: no');
+  return res.status(401).json({ error: 'Not authenticated' });
 }
 
 export function registerNotificationRoutes(app: Express) {
