@@ -5,7 +5,8 @@ import { AgentChat } from '@/components/agent/agent-chat';
 import { AgentTasks } from '@/components/agent/agent-tasks';
 import { AgentSettings } from '@/components/agent/agent-settings';
 import { AgentNotifications } from '@/components/agent/agent-notifications';
-import { Bot, Calendar, Settings, Bell } from 'lucide-react';
+import { AgentTestPanel } from '@/components/agent/agent-test';
+import { Bot, Calendar, Settings, Bell, Bug } from 'lucide-react';
 
 export function AgentPage() {
   const [activeTab, setActiveTab] = useState('chat');
@@ -34,7 +35,7 @@ export function AgentPage() {
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="chat" className="flex items-center gap-1">
                 <Bot className="h-4 w-4" />
                 <span>Chat</span>
@@ -46,6 +47,10 @@ export function AgentPage() {
               <TabsTrigger value="settings" className="flex items-center gap-1">
                 <Settings className="h-4 w-4" />
                 <span>Settings</span>
+              </TabsTrigger>
+              <TabsTrigger value="debug" className="flex items-center gap-1">
+                <Bug className="h-4 w-4" />
+                <span>Debug</span>
               </TabsTrigger>
             </TabsList>
             
@@ -59,6 +64,10 @@ export function AgentPage() {
             
             <TabsContent value="settings" className="pt-4">
               <AgentSettings />
+            </TabsContent>
+            
+            <TabsContent value="debug" className="pt-4">
+              <AgentTestPanel />
             </TabsContent>
           </Tabs>
         </div>
