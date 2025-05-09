@@ -132,7 +132,7 @@ export class AgentService {
     userId: number,
     userRole: string,
     maxTokens: number = 1000
-  ): Promise<schema.AgentMessage> {
+  ): Promise<schema.AgentMessage | null> {
     // Get the conversation history
     const messages = await db.query.agentMessages.findMany({
       where: (fields, { eq }) => eq(fields.conversationId, conversationId),
@@ -179,8 +179,79 @@ export class AgentService {
 
       const assistantResponse = response.choices[0]?.message;
       
-      // Check if the model wants to call a function
-      if (assistantResponse?.function_call) {
+      // Check if the model wants to call a function (handling both legacy and new format)
+      if (assistantResponse?.tool_calls && assistantResponse.tool_calls.length > 0) {
+        // New format with tool_calls
+        const toolCall = assistantResponse.tool_calls[0];
+        if (toolCall.type !== 'function') {
+          throw new Error(`Unsupported tool type: ${toolCall.type}`);
+        }
+        
+        const functionName = toolCall.function.name;
+        let functionArgs = {};
+        
+        try {
+          functionArgs = JSON.parse(toolCall.function.arguments);
+        } catch (e) {
+          console.error("Failed to parse function arguments:", e);
+        }
+        
+        // Save the function call to the database
+        const [functionCallMessage] = await db.insert(schema.agentMessages)
+          .values({
+            conversationId,
+            role: "assistant",
+            content: assistantResponse.content || "",
+            functionCall: {
+              name: functionName,
+              arguments: functionArgs
+            },
+            metadata: { completionId: response.id, toolCallId: toolCall.id }
+          })
+          .returning();
+        
+        // Execute the function
+        try {
+          const functionResult = await FunctionRegistry.executeFunction(
+            functionName,
+            functionArgs,
+            { userId, userRole }
+          );
+          
+          // Save the function result
+          await db.update(schema.agentMessages)
+            .set({
+              functionResponse: functionResult
+            })
+            .where(eq(schema.agentMessages.id, functionCallMessage.id));
+          
+          // Add the function result as a new message
+          await db.insert(schema.agentMessages).values({
+            conversationId,
+            role: "function",
+            content: JSON.stringify(functionResult),
+            metadata: { 
+              functionName,
+              executedAt: new Date(),
+              toolCallId: toolCall.id
+            }
+          });
+          
+          return functionCallMessage;
+        } catch (funcError) {
+          console.error(`Function execution error (${functionName}):`, funcError);
+          
+          // Update the message with the error
+          await db.update(schema.agentMessages)
+            .set({
+              functionResponse: { error: String(funcError) }
+            })
+            .where(eq(schema.agentMessages.id, functionCallMessage.id));
+          
+          return functionCallMessage;
+        }
+      } else if (assistantResponse?.function_call) {
+        // Legacy format with function_call
         const functionName = assistantResponse.function_call.name;
         let functionArgs = {};
         
