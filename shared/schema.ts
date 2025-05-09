@@ -733,4 +733,61 @@ export const insertMcpToolSchema = createInsertSchema(mcpTools).omit({
 export type InsertMcpTool = z.infer<typeof insertMcpToolSchema>;
 export type McpTool = typeof mcpTools.$inferSelect;
 
+// File attachments for agent conversations
+export const fileAttachments = pgTable("file_attachments", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").references(() => agentConversations.id, { onDelete: "cascade" }),
+  messageId: integer("message_id").references(() => agentMessages.id, { onDelete: "cascade" }),
+  filename: text("filename").notNull(),
+  originalFilename: text("original_filename").notNull(),
+  fileType: text("file_type").notNull(),
+  filePath: text("file_path").notNull(),
+  fileSize: integer("file_size").notNull(),
+  isPublic: boolean("is_public").notNull().default(false),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+  metadata: jsonb("metadata").default({}),
+});
+
+export const fileAttachmentsRelations = relations(fileAttachments, ({ one }) => ({
+  conversation: one(agentConversations, {
+    fields: [fileAttachments.conversationId],
+    references: [agentConversations.id],
+  }),
+  message: one(agentMessages, {
+    fields: [fileAttachments.messageId],
+    references: [agentMessages.id],
+  }),
+  creator: one(users, {
+    fields: [fileAttachments.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const insertFileAttachmentSchema = createInsertSchema(fileAttachments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertFileAttachment = z.infer<typeof insertFileAttachmentSchema>;
+export type FileAttachment = typeof fileAttachments.$inferSelect;
+
+// Update relations to include file attachments
+export const agentMessagesRelationsWithFiles = relations(agentMessages, ({ one, many }) => ({
+  conversation: one(agentConversations, {
+    fields: [agentMessages.conversationId],
+    references: [agentConversations.id],
+  }),
+  files: many(fileAttachments),
+}));
+
+export const agentConversationsRelationsWithFiles = relations(agentConversations, ({ one, many }) => ({
+  user: one(users, {
+    fields: [agentConversations.userId],
+    references: [users.id],
+  }),
+  messages: many(agentMessages),
+  files: many(fileAttachments),
+}));
+
 // Update user relations to include AI agent related entities
