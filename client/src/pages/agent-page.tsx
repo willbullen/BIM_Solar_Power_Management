@@ -507,91 +507,91 @@ function ChatInterface() {
           </div>
         </CardHeader>
         <CardContent className="flex-1 p-4">
-            {activeConversation ? (
-              loadingMessages ? (
-                <div className="flex items-center justify-center h-full">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
-              ) : messages && messages.length > 0 ? (
-                <div className="h-full flex flex-col">
-                  {/* Conversation toolbar with search and actions */}
-                  <div className="border-b border-slate-700 p-2 flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className={cn(
-                          "h-8 w-8 rounded-full",
-                          isSearchOpen && "bg-blue-900/30 text-blue-400"
-                        )}
-                        onClick={() => setIsSearchOpen(!isSearchOpen)}
-                      >
-                        <Search className="h-4 w-4" />
-                      </Button>
+          {activeConversation ? (
+            loadingMessages ? (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : messages && messages.length > 0 ? (
+              <div className="h-full flex flex-col">
+                {/* Conversation toolbar with search and actions */}
+                <div className="border-b border-slate-700 p-2 flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className={cn(
+                        "h-8 w-8 rounded-full",
+                        isSearchOpen && "bg-blue-900/30 text-blue-400"
+                      )}
+                      onClick={() => setIsSearchOpen(!isSearchOpen)}
+                    >
+                      <Search className="h-4 w-4" />
+                    </Button>
                       
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 rounded-full"
-                            onClick={() => setIsVoiceInputActive(!isVoiceInputActive)}
-                            disabled={true} // Implement voice input later
-                          >
-                            {isVoiceInputActive ? 
-                              <MicOff className="h-4 w-4 text-red-400" /> : 
-                              <Mic className="h-4 w-4" />
-                            }
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Voice input (coming soon)</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className={cn(
-                              "h-8 w-8 rounded-full",
-                              showPowerDataInput && "bg-blue-900/30 text-blue-400"
-                            )}
-                            onClick={() => setShowPowerDataInput(!showPowerDataInput)}
-                          >
-                            <LineChart className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Query power data</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                          <AlignJustify className="h-4 w-4" />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-full"
+                          onClick={() => setIsVoiceInputActive(!isVoiceInputActive)}
+                          disabled={true} // Implement voice input later
+                        >
+                          {isVoiceInputActive ? 
+                            <MicOff className="h-4 w-4 text-red-400" /> : 
+                            <Mic className="h-4 w-4" />
+                          }
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-slate-900 border-slate-700">
-                        <DropdownMenuLabel>Conversation</DropdownMenuLabel>
-                        <DropdownMenuSeparator className="bg-slate-700" />
-                        <DropdownMenuItem className="focus:bg-slate-800 focus:text-slate-100 cursor-pointer">
-                          <Pin className="h-4 w-4 mr-2" />
-                          <span>Pinned Messages</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="focus:bg-slate-800 focus:text-slate-100 cursor-pointer">
-                          <Clock className="h-4 w-4 mr-2" />
-                          <span>Conversation History</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="focus:bg-slate-800 focus:text-slate-100 cursor-pointer">
-                          <LineChart className="h-4 w-4 mr-2" />
-                          <span>Data Visualization</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Voice input (coming soon)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                      
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className={cn(
+                            "h-8 w-8 rounded-full",
+                            showPowerDataInput && "bg-blue-900/30 text-blue-400"
+                          )}
+                          onClick={() => setShowPowerDataInput(!showPowerDataInput)}
+                        >
+                          <LineChart className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Query power data</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                        <AlignJustify className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-slate-900 border-slate-700">
+                      <DropdownMenuLabel>Conversation</DropdownMenuLabel>
+                      <DropdownMenuSeparator className="bg-slate-700" />
+                      <DropdownMenuItem className="focus:bg-slate-800 focus:text-slate-100 cursor-pointer">
+                        <Pin className="h-4 w-4 mr-2" />
+                        <span>Pinned Messages</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="focus:bg-slate-800 focus:text-slate-100 cursor-pointer">
+                        <Clock className="h-4 w-4 mr-2" />
+                        <span>Conversation History</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="focus:bg-slate-800 focus:text-slate-100 cursor-pointer">
+                        <LineChart className="h-4 w-4 mr-2" />
+                        <span>Data Visualization</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   </div>
                   
                   {/* Message content area */}
@@ -677,7 +677,8 @@ function ChatInterface() {
                         </div>
                       </div>
                     )}
-                  <div ref={messagesEndRef} />
+                    <div ref={messagesEndRef} />
+                  </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
