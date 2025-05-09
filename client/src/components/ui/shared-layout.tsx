@@ -39,6 +39,7 @@ import { Separator } from '@/components/ui/separator';
 import { User } from '@shared/schema';
 import logoImage from '@assets/icononly_transparent_nobuffer.png';
 import { SideNavMetrics } from '@/components/side-nav-metrics';
+import { ConnectionStatus } from '@/components/ui/connection-status';
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -196,6 +197,10 @@ export function SharedLayout({ children, user }: LayoutProps) {
                 <Bell className="h-4 w-4" />
                 <span className="sr-only">Notifications</span>
               </Button>
+              
+              {/* Connection status indicator */}
+              <ConnectionStatus />
+              
               <Separator orientation="vertical" className="h-8" />
               
               {/* Refresh Rate Dropdown */}
