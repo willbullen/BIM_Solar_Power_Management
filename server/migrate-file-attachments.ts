@@ -48,15 +48,13 @@ export async function migrate() {
   }
 }
 
-// Run the migration directly if this file is executed directly
-if (require.main === module) {
-  migrate()
-    .then(() => {
-      console.log("File attachments migration completed successfully");
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error("File attachments migration failed:", error);
-      process.exit(1);
-    });
-}
+// Run the migration directly
+migrate()
+  .then(() => {
+    console.log("File attachments migration completed successfully");
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error("File attachments migration failed:", error);
+    process.exit(1);
+  });
