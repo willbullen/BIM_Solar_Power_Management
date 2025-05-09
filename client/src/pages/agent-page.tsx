@@ -160,7 +160,10 @@ function ChatInterface() {
   // Create a new conversation
   const createConversation = useMutation({
     mutationFn: (title: string) => 
-      apiRequest('POST', '/api/agent/conversations', { title }),
+      apiRequest('/api/agent/conversations', {
+        method: 'POST',
+        data: { title }
+      }),
     onSuccess: (data) => {
       refetchConversations();
       setActiveConversation(data.id);
@@ -194,7 +197,10 @@ function ChatInterface() {
   // Send a message
   const sendMessage = useMutation({
     mutationFn: (content: string) => 
-      apiRequest('POST', `/api/agent/conversations/${activeConversation}/messages`, { content }),
+      apiRequest(`/api/agent/conversations/${activeConversation}/messages`, {
+        method: 'POST',
+        data: { content }
+      }),
     onSuccess: () => {
       setInput("");
       refetchMessages();
