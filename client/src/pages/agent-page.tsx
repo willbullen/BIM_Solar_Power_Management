@@ -1311,11 +1311,11 @@ export default function AgentPage() {
             </div>
           </div>
 
-          {/* Enhanced Agent Interface Section */}
-          <div className="bg-slate-950 rounded-xl shadow-lg mb-3 h-[40vh] min-h-[280px] max-h-[450px] overflow-hidden flex flex-col">
+          {/* Enhanced Agent Interface Section with Proper Sizing */}
+          <div className="bg-slate-950 rounded-xl shadow-lg mb-3 overflow-visible flex flex-col">
             <Tabs 
               defaultValue="chat" 
-              className="flex flex-col h-full"
+              className="flex flex-col"
               onValueChange={(value) => setActiveTab(value)}
             >
               {/* Modern Navigation Bar with Improved Visual Hierarchy */}
@@ -1393,31 +1393,31 @@ export default function AgentPage() {
                 </div>
               </div>
               
-              {/* Content Area with Enhanced Styling */}
-              <div className="bg-gradient-to-b from-slate-900 to-slate-950 flex-1 overflow-auto">
+              {/* Improved Content Area without Restrictive Scrollbars */}
+              <div className="bg-gradient-to-b from-slate-900 to-slate-950 flex-1">
                 <TabsContent 
                   value="chat" 
-                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0 h-full"
+                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
                 >
-                  <div className="p-3 h-full">
+                  <div className="p-3">
                     <ChatInterface />
                   </div>
                 </TabsContent>
                 
                 <TabsContent 
                   value="tasks" 
-                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0 h-full"
+                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
                 >
-                  <div className="p-3 h-full">
+                  <div className="p-3">
                     <TasksInterface />
                   </div>
                 </TabsContent>
                 
                 <TabsContent 
                   value="settings" 
-                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0 h-full"
+                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
                 >
-                  <div className="p-3 h-full">
+                  <div className="p-3">
                     <AgentSettingsInterface />
                   </div>
                 </TabsContent>
