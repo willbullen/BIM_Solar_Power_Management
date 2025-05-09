@@ -20,7 +20,7 @@ export class AgentService {
     
     this.model = new ChatOpenAI({
       openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: "gpt-4", // Default model, can be configured via agent settings
+      modelName: "gpt-4o", // Using the latest GPT-4o model for better performance
       temperature: 0.7,    // Default temperature, can be configured via agent settings
     });
     
@@ -125,7 +125,7 @@ export class AgentService {
     try {
       // Call the OpenAI API with function calling capability
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4",
+        model: "gpt-4o", // The newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: openaiMessages,
         max_tokens: maxTokens,
         functions: functions.length > 0 ? functions : undefined,
