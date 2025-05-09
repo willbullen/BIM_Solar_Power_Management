@@ -240,13 +240,33 @@ export function WebSocketDebugger() {
               
               <button 
                 onClick={() => {
+                  // Force non-secure protocol for Replit
                   localStorage.setItem('websocket-protocol', 'ws');
                   localStorage.setItem('debug-websockets', 'true');
+                  localStorage.setItem('forcedProtocolForReplit', 'true');
+                  localStorage.setItem('hasBeenWarnedAboutReplit', 'true');
+                  
+                  // Clear any existing connection data
+                  if (window._activeWebSocketInstance) {
+                    try {
+                      window._activeWebSocketInstance.close();
+                    } catch (err) {
+                      console.error('Error closing existing WebSocket:', err);
+                    }
+                    window._activeWebSocketInstance = null;
+                    window._webSocketInitialized = false;
+                  }
+                  
+                  // Add a flag to prevent caching of previous connection details
+                  localStorage.setItem('ws_force_reconnect_time', Date.now().toString());
+                  
+                  // Reload the page to apply changes
                   window.location.reload();
                 }}
-                className="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-sm text-xs flex items-center"
+                className="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-sm text-xs flex items-center font-semibold"
               >
-                <ShieldAlert size={12} className="mr-1" /> Force WS Protocol (Non-Secure)
+                <ShieldAlert size={12} className="mr-1" /> 
+                {isReplitEnvironment ? '🔧 ENABLE REPLIT FIX (RECOMMENDED)' : 'Force WS Protocol (Non-Secure)'}
               </button>
               
               <button 

@@ -112,28 +112,31 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     // Default protocol selection
     let protocol: string;
     
-    // CRITICAL: For Replit environment, ALWAYS use non-secure WebSocket (ws://)
-    // due to a confirmed limitation in Replit's environment with secure WebSockets
+    // CRITICAL FIX: ALWAYS force non-secure WebSocket (ws://) in Replit environment
+    // This is the only way to get reliable WebSocket connections in Replit
     if (isReplitEnvironment) {
-      // In Replit, ALWAYS use ws:// regardless of user settings
-      // Only override this if user explicitly set ws or wss after seeing this warning
+      // FORCEFULLY override ALL settings to ensure ws:// protocol in Replit
+      // This is necessary because wss:// is proven to fail consistently in Replit
       
-      // Check if the user has manually set a preference AND they've seen the warning
-      // (indicated by localStorage.hasBeenWarnedAboutReplit)
-      if (userProtocolPreference && localStorage.getItem('hasBeenWarnedAboutReplit') === 'true') {
-        protocol = `${userProtocolPreference}:`;
-        console.log(`Using user-specified WebSocket protocol on Replit: ${protocol} (explicit override)`);
-      } else {
-        // Force ws:// on Replit environment
-        protocol = 'ws:';
-        console.log(`[IMPORTANT] Replit environment detected, forcing non-secure WebSocket protocol (ws://)`);
-        console.log(`Secure WebSockets (wss://) typically fail in Replit environments`);
-        
-        // Set a flag to remember we've warned the user
-        localStorage.setItem('hasBeenWarnedAboutReplit', 'true');
-        
-        // Force protocol to ws:// in localStorage
-        localStorage.setItem('websocket-protocol', 'ws');
+      // Force the protocol to ws:// regardless of any other settings
+      protocol = 'ws:';
+      
+      // Clear any user preference and set it to ws
+      localStorage.setItem('websocket-protocol', 'ws');
+      
+      // Add warning flags
+      localStorage.setItem('hasBeenWarnedAboutReplit', 'true');
+      localStorage.setItem('forcedProtocolForReplit', 'true');
+      
+      // Log clear warning messages
+      console.log(`⚠️ CRITICAL: Replit environment detected. Forcing non-secure WebSocket protocol (ws://)`);
+      console.log(`⚠️ Secure WebSockets (wss://) consistently fail in Replit environments`);
+      console.log(`⚠️ Your protocol settings have been forcefully changed to ensure connectivity`);
+      
+      // If the user tried to set wss explicitly, warn them it won't work
+      if (userProtocolPreference === 'wss') {
+        console.error(`⛔ You tried to use wss:// in Replit, but this causes connection failures`);
+        console.error(`⛔ We've overridden your setting to ensure connectivity`);
       }
     }
     // For non-Replit, respect user preference first
@@ -148,11 +151,20 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     }
     
     // If we're encountering repeated connection errors with the current protocol
-    // Try the alternative protocol as a fallback mechanism
-    if (reconnectCount > 1) {
+    // Try the alternative protocol as a fallback mechanism, except in Replit where we ALWAYS use ws://
+    if (reconnectCount > 1 && !isReplitEnvironment) {
       const alternativeProtocol = protocol === 'wss:' ? 'ws:' : 'wss:';
       console.log(`Connection attempts (${reconnectCount}) failed with ${protocol}, trying ${alternativeProtocol} instead`);
       protocol = alternativeProtocol;
+    } 
+    // In Replit, if we're having connection issues, make extra sure we're using ws:// protocol
+    else if (reconnectCount > 1 && isReplitEnvironment) {
+      if (protocol !== 'ws:') {
+        console.log(`⚠️ CRITICAL: Connection failures detected. Forcing ws:// protocol in Replit environment.`);
+        protocol = 'ws:';
+      } else {
+        console.log(`⚠️ WARNING: Multiple connection failures with ws:// protocol in Replit. This may indicate server issues.`);
+      }
     }
     
     // Save the chosen protocol for debugging
