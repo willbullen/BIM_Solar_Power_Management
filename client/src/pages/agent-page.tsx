@@ -1273,7 +1273,7 @@ export default function AgentPage() {
           </CardContent>
           <CardFooter className="flex justify-center border-t border-slate-200 dark:border-slate-800 pt-5 text-center">
             <div className="text-sm text-slate-500 dark:text-slate-400 px-4">
-              Use username: <span className="font-medium text-slate-700 dark:text-slate-300">admin</span> and password: <span className="font-medium text-slate-700 dark:text-slate-300">emporium123</span>
+              Use username: <span className="font-medium text-slate-700 dark:text-slate-300">admin</span> and password: <span className="font-medium text-slate-700 dark:text-slate-300">admin123</span>
             </div>
           </CardFooter>
         </Card>

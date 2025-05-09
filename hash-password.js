@@ -19,23 +19,18 @@ async function comparePasswords(plainText, hashedPassword) {
 
 // Update this to change the test
 async function main() {
-  // Get the admin stored hash from the database
-  const storedHash = '$2b$10$RAGO3IZtg7H/BCrrrAMwF.nckZl0cAzDrfFRM.6iNn.v4DvHXvpgS';
+  // Get the admin stored hash from the database (updated in DB)
+  const storedHash = '$2b$10$./W3kCaxtP.Y7fwzjZd5J.Pv3EodIASshrZCkyo/2GdhA5./1SCIu';
   
-  // Test various common passwords
+  // Test admin123 against the new hash
   await comparePasswords('admin123', storedHash);
-  await comparePasswords('emporium123', storedHash);
-  await comparePasswords('Admin123', storedHash);
-  await comparePasswords('password', storedHash);
-  await comparePasswords('password123', storedHash);
-  await comparePasswords('admin', storedHash);
-  await comparePasswords('emporium', storedHash);
-  await comparePasswords('Admin', storedHash);
-  await comparePasswords('Emporium', storedHash);
-  await comparePasswords('Emporium123', storedHash);
   
-  // Create a new hash for admin123 (for resetting the password later if needed)
-  await hashPassword('admin123');
+  // Generate hashes for other accounts if needed
+  console.log('\nHash for empadmin user with password empadmin123:');
+  await hashPassword('empadmin123');
+  
+  console.log('\nHash for viewer user with password viewer123:');
+  await hashPassword('viewer123');
 }
 
 main();
