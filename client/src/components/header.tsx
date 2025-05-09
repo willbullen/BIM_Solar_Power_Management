@@ -6,9 +6,9 @@ import {
   Zap,
   ChevronDown,
   User,
-  Bell,
   Settings
 } from "lucide-react";
+import { NotificationDropdown } from "@/components/notification-dropdown";
 import { useState } from "react";
 import { 
   DropdownMenu,
@@ -72,11 +72,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
           )}
           
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <span className="sr-only">Notifications</span>
-            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary"></span>
-          </Button>
+          <NotificationDropdown />
           
           {/* User menu */}
           <DropdownMenu>

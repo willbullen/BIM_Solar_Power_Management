@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import { AuthProvider } from "@/hooks/use-auth";
 import { PowerDataProvider } from "@/hooks/use-power-data";
 import { RefreshRateProvider } from "@/hooks/use-refresh-rate";
+import { NotificationProvider } from "@/context/notification-context";
 import { ProtectedRoute, AdminRoute } from "@/lib/protected-route";
 import DashboardPage from "@/pages/dashboard-page";
 import AuthPage from "@/pages/auth-page";
@@ -24,21 +25,23 @@ function App() {
       <AuthProvider>
         <RefreshRateProvider>
           <PowerDataProvider>
-            <Switch>
-              <ProtectedRoute path="/" component={DashboardPage} />
-              <ProtectedRoute path="/dashboard" component={DashboardPage} />
-              <ProtectedRoute path="/reports" component={ReportsPage} />
-              <ProtectedRoute path="/forecasting" component={ForecastingPage} />
-              <ProtectedRoute path="/equipment" component={EquipmentPage} />
-              <ProtectedRoute path="/planning" component={OperationalPlanningPage} />
-              <ProtectedRoute path="/feedback" component={FeedbackPage} />
-              <ProtectedRoute path="/agent" component={AgentPage} />
-              <AdminRoute path="/settings" component={SettingsPage} />
-              <Route path="/auth" component={AuthPage} />
-              <Route component={NotFound} />
-            </Switch>
-            <Toaster />
-            <WebSocketDebugger />
+            <NotificationProvider>
+              <Switch>
+                <ProtectedRoute path="/" component={DashboardPage} />
+                <ProtectedRoute path="/dashboard" component={DashboardPage} />
+                <ProtectedRoute path="/reports" component={ReportsPage} />
+                <ProtectedRoute path="/forecasting" component={ForecastingPage} />
+                <ProtectedRoute path="/equipment" component={EquipmentPage} />
+                <ProtectedRoute path="/planning" component={OperationalPlanningPage} />
+                <ProtectedRoute path="/feedback" component={FeedbackPage} />
+                <ProtectedRoute path="/agent" component={AgentPage} />
+                <AdminRoute path="/settings" component={SettingsPage} />
+                <Route path="/auth" component={AuthPage} />
+                <Route component={NotFound} />
+              </Switch>
+              <Toaster />
+              <WebSocketDebugger />
+            </NotificationProvider>
           </PowerDataProvider>
         </RefreshRateProvider>
       </AuthProvider>
