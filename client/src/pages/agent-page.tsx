@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
+import { AgentMcpTasksPage } from "@/pages/agent-mcp-tasks";
 import { 
   Loader2, Send, Bot, MessageSquare, ListChecks, Settings, Plus, 
   CheckCircle, Database, MessageSquarePlus, ArrowRight, BarChart,
@@ -1468,11 +1469,7 @@ export default function AgentPage() {
                   className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
                 >
                   <div className="p-3">
-                    <div className="import-agentmcptasks">
-                      {/* Import the AgentMcpTasksPage component */}
-                      {/* @ts-ignore */}
-                      <AgentMcpTasksPage />
-                    </div>
+                    <AgentMcpTasksPage />
                   </div>
                 </TabsContent>
                 
