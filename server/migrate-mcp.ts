@@ -2,7 +2,7 @@
  * This script migrates the database to add MCP tasks table
  */
 import { db } from './db';
-import { schema } from '../shared/schema';
+import { mcpTasks } from '../shared/schema';
 import { MCPService, TaskStatus, TaskPriority } from './services/mcp-service';
 
 export async function migrate() {
@@ -30,7 +30,7 @@ export async function migrate() {
  */
 async function createMcpTasksTable() {
   await db.schema
-    .createTable(schema.mcpTasks)
+    .createTable(mcpTasks)
     .ifNotExists()
     .execute();
   
@@ -42,7 +42,7 @@ async function createMcpTasksTable() {
  */
 async function createInitialTasks() {
   // Check if any tasks already exist
-  const existingTasks = await db.select().from(schema.mcpTasks);
+  const existingTasks = await db.select().from(mcpTasks);
   
   if (existingTasks.length > 0) {
     console.log(`Found ${existingTasks.length} existing MCP tasks, skipping initial creation`);
@@ -52,7 +52,7 @@ async function createInitialTasks() {
   // Create initial sample tasks
   
   // Task 1: Daily power data analysis
-  await db.insert(schema.mcpTasks).values({
+  await db.insert(mcpTasks).values({
     name: 'Daily Power Data Analysis',
     description: 'Analyze power consumption data and generate insights',
     capability: 'data_summarization',
@@ -73,7 +73,7 @@ async function createInitialTasks() {
   });
   
   // Task 2: Anomaly detection for environmental data
-  await db.insert(schema.mcpTasks).values({
+  await db.insert(mcpTasks).values({
     name: 'Environmental Data Anomaly Detection',
     description: 'Detect anomalies in environmental data readings',
     capability: 'anomaly_detection',
@@ -95,7 +95,7 @@ async function createInitialTasks() {
   });
   
   // Task 3: Proactive planning for energy efficiency
-  await db.insert(schema.mcpTasks).values({
+  await db.insert(mcpTasks).values({
     name: 'Energy Efficiency Planning',
     description: 'Generate proactive plans for improving energy efficiency',
     capability: 'proactive_planning',

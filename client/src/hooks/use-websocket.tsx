@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { apiRequest } from '@/lib/queryClient';
 
 // Define a global variable to track if we have an active WebSocket connection
+// Keep this for compatibility with existing code
 declare global {
   interface Window {
     _webSocketInitialized?: boolean;
@@ -19,13 +21,20 @@ export interface WebSocketHookOptions {
   reconnectAttempts?: number;
   maxReconnectAttempts?: number;
   pingInterval?: number;
+  pollingInterval?: number;
   onMessage?: (message: WebSocketMessage) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
-  onError?: (error: Event) => void;
+  onError?: (error: Event | Error) => void;
 }
 
-export type WebSocketSendMessage = (message: WebSocketMessage) => void;
+export type WebSocketSendMessage = (message: WebSocketMessage) => Promise<void>;
+
+// Define subscription type for the REST API
+interface Subscription {
+  channel: string;
+  lastPolled: number;
+}
 
 export function useWebSocket(options: WebSocketHookOptions = {}) {
   const [isConnected, setIsConnected] = useState(false);
