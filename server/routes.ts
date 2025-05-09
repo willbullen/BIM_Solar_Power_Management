@@ -31,7 +31,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // Set up WebSocket server (on a different path than Vite's HMR websocket)
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws',
+    // The following options improve connection reliability:
+    perMessageDeflate: false, // Disable per-message-deflate to reduce overhead
+    clientTracking: true,     // Track clients automatically
+    maxPayload: 65536         // Set reasonable max payload size (64KB)
+  });
+  
+  console.log('WebSocket server initialized and waiting for connections at /ws');
   
   // Track subscriptions and clients
   const subscriptions = new Map<string, Set<WebSocket>>();
@@ -40,10 +49,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   subscriptions.set('power-data', new Set<WebSocket>());
   subscriptions.set('environmental-data', new Set<WebSocket>());
   
+  // Log WebSocket server errors
+  wss.on('error', (error) => {
+    console.error('WebSocket server error:', error);
+  });
+  
   // Set up ping interval to check for stale connections
   const pingInterval = setInterval(() => {
+    let activeConnections = 0;
+    
     wss.clients.forEach((ws) => {
       if (ws.readyState === WebSocket.OPEN) {
+        activeConnections++;
         // Send ping
         try {
           ws.send(JSON.stringify({
@@ -60,6 +77,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
     });
+    
+    // Log the number of active connections
+    if (activeConnections > 0) {
+      console.log(`WebSocket ping sent to ${activeConnections} active connections`);
+    }
   }, 30000); // Every 30 seconds
   
   // Cleanup interval on server shutdown

@@ -50,21 +50,24 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
   
   // Initialize WebSocket connection
   const connect = useCallback(() => {
-    // Don't attempt to reconnect if we've exceeded the maximum reconnection attempts
+    // If we've exceeded the maximum overall reconnection attempts, give up
     if (reconnectCount >= maxReconnectAttempts) {
       console.error(`Exceeded maximum reconnection attempts (${maxReconnectAttempts}), giving up`);
       return;
     }
     
-    // Determine the WebSocket URL based on the current protocol and host
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    
-    // Don't attempt to reconnect if we've already reached max attempts for this session
+    // If we've reached max attempts for this session, give up on this session
     if (reconnectCount >= reconnectAttempts) {
       console.error(`Maximum reconnection attempts reached for this session (${reconnectAttempts})`);
       return;
     }
+    
+    // Determine the WebSocket URL based on the current location
+    // Get the URL from the window location to ensure same-origin connection
+    // Note: We need to handle both http/https and development/production environments
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const wsUrl = `${protocol}//${host}/ws`;
     
     // Reset manual closure flag when attempting new connection
     manuallyClosedRef.current = false;
@@ -73,78 +76,111 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     
     // Clean up any existing socket before creating a new one
     if (wsRef.current) {
-      wsRef.current.onclose = null; // Remove event handler to prevent reconnection loop
-      wsRef.current.close();
+      // Remove event handlers to prevent any callbacks during transition
+      wsRef.current.onopen = null;
+      wsRef.current.onclose = null;
+      wsRef.current.onerror = null;
+      wsRef.current.onmessage = null;
+      
+      // Only close if it's not already closed
+      if (wsRef.current.readyState !== WebSocket.CLOSED && 
+          wsRef.current.readyState !== WebSocket.CLOSING) {
+        wsRef.current.close();
+      }
     }
     
-    // Create a new WebSocket connection
-    const socket = new WebSocket(wsUrl);
-    wsRef.current = socket;
+    try {
+      // Create a new WebSocket connection with explicit protocol
+      const socket = new WebSocket(wsUrl);
+      wsRef.current = socket;
+      
+      // Add error handling for the connection and setup process
+      socket.addEventListener('error', (event) => {
+        console.error('Error during WebSocket connection setup:', event);
+        onError?.(event);
+      }, { once: true }); // Only handle the initial connection error once
     
-    // Set up event handlers
-    socket.onopen = () => {
-      console.log('WebSocket connection established');
-      setIsConnected(true);
-      setReconnectCount(0); // Reset reconnect count on successful connection
-      
-      // Set up ping interval to keep connection alive
-      if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current);
-      }
-      pingIntervalRef.current = setInterval(sendPing, pingInterval);
-      
-      onConnect?.();
-    };
-    
-    socket.onclose = (event) => {
-      console.log(`WebSocket connection closed: ${event.code} ${event.reason}`);
-      setIsConnected(false);
-      
-      // Clear ping interval when connection closes
-      if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current);
-        pingIntervalRef.current = null;
-      }
-      
-      onDisconnect?.();
-      
-      // Only attempt to reconnect if the connection wasn't manually closed
-      if (!manuallyClosedRef.current) {
-        // Increment reconnect count
-        const newReconnectCount = reconnectCount + 1;
-        setReconnectCount(newReconnectCount);
+      // Set up event handlers
+      socket.onopen = () => {
+        console.log('WebSocket connection established');
+        setIsConnected(true);
+        setReconnectCount(0); // Reset reconnect count on successful connection
         
-        // Attempt to reconnect with exponential backoff
-        const delay = Math.min(reconnectDelay * Math.pow(1.5, newReconnectCount), 30000); // Max 30s
+        // Set up ping interval to keep connection alive
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current);
+        }
+        pingIntervalRef.current = setInterval(sendPing, pingInterval);
         
-        console.log(`Scheduling reconnect in ${delay}ms (attempt ${newReconnectCount + 1}/${reconnectAttempts})`);
+        onConnect?.();
+      };
+      
+      socket.onclose = (event) => {
+        console.log(`WebSocket connection closed: ${event.code} ${event.reason}`);
+        setIsConnected(false);
         
-        reconnectTimeoutRef.current = setTimeout(() => {
-          connect();
-        }, delay);
-      }
-    };
-    
-    socket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      onError?.(error);
-    };
-    
-    socket.onmessage = (event) => {
-      try {
-        const parsedMessage = JSON.parse(event.data) as WebSocketMessage;
-        
-        // Don't log pong messages to avoid console spam
-        if (parsedMessage.type !== 'pong') {
-          console.log('WebSocket message received:', parsedMessage);
+        // Clear ping interval when connection closes
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current);
+          pingIntervalRef.current = null;
         }
         
-        setLastMessage(parsedMessage);
-        onMessage?.(parsedMessage);
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
-      }
-    };
+        onDisconnect?.();
+        
+        // Only attempt to reconnect if the connection wasn't manually closed
+        if (!manuallyClosedRef.current) {
+          // Increment reconnect count
+          const newReconnectCount = reconnectCount + 1;
+          setReconnectCount(newReconnectCount);
+          
+          // Attempt to reconnect with exponential backoff
+          const delay = Math.min(reconnectDelay * Math.pow(1.5, newReconnectCount), 30000); // Max 30s
+          
+          console.log(`Scheduling reconnect in ${delay}ms (attempt ${newReconnectCount + 1}/${reconnectAttempts})`);
+          
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connect();
+          }, delay);
+        }
+      };
+      
+      socket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        onError?.(error);
+      };
+      
+      socket.onmessage = (event) => {
+        try {
+          const parsedMessage = JSON.parse(event.data) as WebSocketMessage;
+          
+          // Don't log pong messages to avoid console spam
+          if (parsedMessage.type !== 'pong') {
+            console.log('WebSocket message received:', parsedMessage);
+          }
+          
+          setLastMessage(parsedMessage);
+          onMessage?.(parsedMessage);
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+    } catch (error) {
+      console.error('Error creating WebSocket connection:', error);
+      onError?.(error as Event);
+      
+      // Schedule reconnection attempt after delay
+      const newReconnectCount = reconnectCount + 1;
+      setReconnectCount(newReconnectCount);
+      
+      // Use exponential backoff for reconnection
+      const delay = Math.min(reconnectDelay * Math.pow(1.5, newReconnectCount), 30000); // Max 30s
+      
+      console.log(`WebSocket creation failed. Scheduling reconnect in ${delay}ms (attempt ${newReconnectCount + 1}/${reconnectAttempts})`);
+      
+      reconnectTimeoutRef.current = setTimeout(() => {
+        connect();
+      }, delay);
+    }
   }, [
     reconnectCount, 
     reconnectAttempts, 
