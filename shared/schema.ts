@@ -454,30 +454,6 @@ export const insertAgentSettingSchema = createInsertSchema(agentSettings).omit({
 export type InsertAgentSetting = z.infer<typeof insertAgentSettingSchema>;
 export type AgentSetting = typeof agentSettings.$inferSelect;
 
-// MCP (Multi-Capability Planning) Tasks schema
-export const mcpTasks = pgTable("mcp_tasks", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  provider: text("provider").notNull(), // Service provider (e.g., 'openai', 'local', 'custom')
-  endpoint: text("endpoint").notNull(), // API endpoint or local function reference
-  parameters: jsonb("parameters").notNull(), // Task parameters in JSON format
-  capabilities: text("capabilities").array(), // Array of capabilities this task provides
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  enabled: boolean("enabled").notNull().default(true),
-  authType: text("auth_type").notNull().default("none"), // 'none', 'api_key', 'oauth', 'custom'
-  responseFormat: text("response_format"), // Expected response format
-});
-
-export const insertMcpTaskSchema = createInsertSchema(mcpTasks).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type InsertMcpTask = z.infer<typeof insertMcpTaskSchema>;
-export type McpTask = typeof mcpTasks.$inferSelect;
-
 // Signal Notifications schema
 export const signalNotifications = pgTable("signal_notifications", {
   id: serial("id").primaryKey(),
@@ -600,5 +576,54 @@ export type InsertScheduledReport = z.infer<typeof insertScheduledReportSchema>;
 export type ScheduledReport = typeof scheduledReports.$inferSelect;
 export type InsertReportTemplate = z.infer<typeof insertReportTemplateSchema>;
 export type ReportTemplate = typeof reportTemplates.$inferSelect;
+
+// Multi-Capability Planning (MCP) tasks table
+export const mcpTasks = pgTable('mcp_tasks', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description').notNull(),
+  capability: text('capability').notNull(), // Which capability should handle the task
+  provider: text('provider').notNull(), // Which provider should execute the capability
+  parameters: jsonb('parameters').notNull(), // Parameters for the capability
+  status: text('status').notNull().default('pending'), // pending, scheduled, in-progress, completed, failed, cancelled
+  priority: text('priority').notNull().default('medium'), // low, medium, high, critical
+  createdBy: integer('created_by').notNull().references(() => users.id),
+  scheduledFor: timestamp('scheduled_for'), // For scheduled tasks
+  startedAt: timestamp('started_at'), // When task execution began
+  completedAt: timestamp('completed_at'), // When task execution finished
+  result: jsonb('result'), // Result of the task execution
+  parentTaskId: integer('parent_task_id'), // For subtasks of a larger task
+  metadata: jsonb('metadata'), // Additional task data
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
+// Set up relations
+export const mcpTasksRelations = relations(mcpTasks, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [mcpTasks.createdBy],
+    references: [users.id],
+  }),
+  parentTask: one(mcpTasks, {
+    fields: [mcpTasks.parentTaskId],
+    references: [mcpTasks.id],
+  }),
+  childTasks: many(mcpTasks, {
+    relationName: 'parent_child'
+  })
+}));
+
+// Create Zod schemas for insert operations
+export const insertMcpTaskSchema = createInsertSchema(mcpTasks).omit({
+  id: true,
+  startedAt: true,
+  completedAt: true,
+  result: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type InsertMcpTask = z.infer<typeof insertMcpTaskSchema>;
+export type McpTask = typeof mcpTasks.$inferSelect;
 
 // Update user relations to include AI agent related entities

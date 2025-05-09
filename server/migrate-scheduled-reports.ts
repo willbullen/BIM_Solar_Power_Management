@@ -2,7 +2,7 @@
  * This script migrates the database to add scheduled reports and report templates tables
  */
 import { db } from './db';
-import { schema } from '../shared/schema';
+import { scheduledReports, reportTemplates } from '../shared/schema';
 
 export async function migrate() {
   console.log('Starting scheduled reports tables migration...');
@@ -26,7 +26,7 @@ export async function migrate() {
 async function createScheduledReportsTables() {
   // Create report templates table
   await db.schema
-    .createTable(schema.reportTemplates)
+    .createTable(reportTemplates)
     .ifNotExists()
     .execute();
   
@@ -34,7 +34,7 @@ async function createScheduledReportsTables() {
   
   // Create scheduled reports table
   await db.schema
-    .createTable(schema.scheduledReports)
+    .createTable(scheduledReports)
     .ifNotExists()
     .execute();
   
