@@ -106,13 +106,68 @@ function ChatInterface() {
   const [newConversationTitle, setNewConversationTitle] = useState("");
   const [isCreatingNewConversation, setIsCreatingNewConversation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [pinnedMessages, setPinnedMessages] = useState<Set<number>>(new Set());
+  const [isVoiceInputActive, setIsVoiceInputActive] = useState(false);
+  const [showPowerDataInput, setShowPowerDataInput] = useState(false);
+  const [activeMessageId, setActiveMessageId] = useState<number | null>(null);
+  
   // Scroll to the bottom of the messages
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, []);
+  
+  // Scroll to a specific message by ID
+  const scrollToMessage = useCallback((messageId: number) => {
+    const messageElement = document.getElementById(`message-${messageId}`);
+    if (messageElement) {
+      messageElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      setActiveMessageId(messageId);
+      // Clear active message highlight after 2 seconds
+      setTimeout(() => setActiveMessageId(null), 2000);
+    }
+  }, []);
+
+  // Toggle pin status for a message
+  const togglePinMessage = useCallback((messageId: number) => {
+    setPinnedMessages(prev => {
+      const updated = new Set(prev);
+      if (updated.has(messageId)) {
+        updated.delete(messageId);
+      } else {
+        updated.add(messageId);
+      }
+      return updated;
+    });
+    
+    // Save pinned messages to localStorage for persistence
+    try {
+      const pinnedMessagesArray = Array.from(pinnedMessages);
+      localStorage.setItem(`pinnedMessages-${activeConversation}`, JSON.stringify(pinnedMessagesArray));
+    } catch (error) {
+      console.error("Failed to save pinned messages to localStorage:", error);
+    }
+  }, [pinnedMessages, activeConversation]);
+  
+  // Load pinned messages when conversation changes
+  useEffect(() => {
+    if (activeConversation) {
+      try {
+        const saved = localStorage.getItem(`pinnedMessages-${activeConversation}`);
+        if (saved) {
+          const savedPinned = JSON.parse(saved) as number[];
+          setPinnedMessages(new Set(savedPinned));
+        } else {
+          setPinnedMessages(new Set());
+        }
+      } catch (error) {
+        console.error("Failed to load pinned messages from localStorage:", error);
+        setPinnedMessages(new Set());
+      }
+    }
+  }, [activeConversation]);
 
   // Fetch conversations - only enable if user is authenticated
   const { data: conversations, isLoading: loadingConversations, refetch: refetchConversations, error: conversationsError } = useQuery<any[]>({
