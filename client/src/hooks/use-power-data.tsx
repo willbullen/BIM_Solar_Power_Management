@@ -179,8 +179,8 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Turn off WebSocket connection attempts when we're debugging
     // This will force the use of polling which is more reliable for testing refresh rates
-    const debugMode = true; // Set to true to force polling for testing
-
+    const debugMode = false; // Set to false to use WebSockets when available
+    
     // Skip polling if WebSocket is connected and we're not in debug mode
     if (wsConnected && wsEnabled && !debugMode) {
       console.log('WebSocket connected, skipping polling');
