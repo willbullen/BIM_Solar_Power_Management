@@ -622,4 +622,115 @@ export const insertMcpTaskSchema = createInsertSchema(mcpTasks).omit({
 export type InsertMcpTask = z.infer<typeof insertMcpTaskSchema>;
 export type McpTask = typeof mcpTasks.$inferSelect;
 
+// Telegram integration schema
+export const telegramUsers = pgTable("telegram_users", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  telegramId: text("telegram_id").notNull().unique(),
+  telegramUsername: text("telegram_username"),
+  telegramFirstName: text("telegram_first_name"),
+  telegramLastName: text("telegram_last_name"),
+  chatId: text("chat_id").notNull(),
+  notificationsEnabled: boolean("notifications_enabled").notNull().default(true),
+  receiveAlerts: boolean("receive_alerts").notNull().default(true),
+  receiveReports: boolean("receive_reports").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  lastAccessed: timestamp("last_accessed"),
+  verificationCode: text("verification_code"),
+  verificationExpires: timestamp("verification_expires"),
+  isVerified: boolean("is_verified").notNull().default(false),
+});
+
+export const telegramUserRelations = relations(telegramUsers, ({ one }) => ({
+  user: one(users, {
+    fields: [telegramUsers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const insertTelegramUserSchema = createInsertSchema(telegramUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertTelegramUser = z.infer<typeof insertTelegramUserSchema>;
+export type TelegramUser = typeof telegramUsers.$inferSelect;
+
+// Telegram message history
+export const telegramMessages = pgTable("telegram_messages", {
+  id: serial("id").primaryKey(),
+  telegramUserId: integer("telegram_user_id").notNull().references(() => telegramUsers.id),
+  direction: text("direction").notNull(), // "inbound" or "outbound"
+  messageText: text("message_text").notNull(),
+  messageId: text("message_id"), // Telegram's message ID
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  isProcessed: boolean("is_processed").notNull().default(false),
+  conversationId: integer("conversation_id").references(() => agentConversations.id),
+});
+
+export const telegramMessageRelations = relations(telegramMessages, ({ one }) => ({
+  telegramUser: one(telegramUsers, {
+    fields: [telegramMessages.telegramUserId],
+    references: [telegramUsers.id],
+  }),
+  conversation: one(agentConversations, {
+    fields: [telegramMessages.conversationId],
+    references: [agentConversations.id],
+  }),
+}));
+
+export const insertTelegramMessageSchema = createInsertSchema(telegramMessages).omit({
+  id: true,
+});
+
+export type InsertTelegramMessage = z.infer<typeof insertTelegramMessageSchema>;
+export type TelegramMessage = typeof telegramMessages.$inferSelect;
+
+// Telegram settings for the system
+export const telegramSettings = pgTable("telegram_settings", {
+  id: serial("id").primaryKey(),
+  botToken: text("bot_token").notNull(),
+  botUsername: text("bot_username").notNull(),
+  webhookUrl: text("webhook_url"),
+  isEnabled: boolean("is_enabled").notNull().default(true),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  updatedBy: integer("updated_by").references(() => users.id),
+});
+
+export const insertTelegramSettingsSchema = createInsertSchema(telegramSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertTelegramSettings = z.infer<typeof insertTelegramSettingsSchema>;
+export type TelegramSettings = typeof telegramSettings.$inferSelect;
+
+// Model Context Protocol (MCP) tool definitions
+export const mcpTools = pgTable("mcp_tools", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description").notNull(),
+  apiEndpoint: text("api_endpoint").notNull(),
+  apiType: text("api_type").notNull(), // REST, GraphQL, gRPC, etc.
+  authType: text("auth_type").notNull(), // API Key, OAuth, None, etc.
+  parameters: jsonb("parameters").notNull(),
+  responseFormat: text("response_format").notNull(), // JSON, XML, etc.
+  category: text("category").notNull(), // Data Source, Processing Tool, etc.
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  isEnabled: boolean("is_enabled").notNull().default(true),
+  createdBy: integer("created_by").references(() => users.id),
+});
+
+export const insertMcpToolSchema = createInsertSchema(mcpTools).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertMcpTool = z.infer<typeof insertMcpToolSchema>;
+export type McpTool = typeof mcpTools.$inferSelect;
+
 // Update user relations to include AI agent related entities

@@ -1,18 +1,18 @@
-# Multi-Capability Planning (MCP) Guide
+# Model Context Protocol (MCP) Guide
 
 ## Overview
 
-The Multi-Capability Planning (MCP) system is an advanced component of the AI Agent Architect that coordinates complex, multi-step tasks across different AI capabilities. This guide explains how to use and benefit from the MCP system.
+The Model Context Protocol (MCP) is an open standard that enables the AI Agent Architect to access external tools and data using a common interface. This guide explains how to use and benefit from the MCP system.
 
 ## What is MCP?
 
-MCP stands for Multi-Capability Planning, a framework that allows the AI Agent to:
+MCP stands for Model Context Protocol, an open standard that enables AI applications to:
 
-1. **Orchestrate Complex Tasks**: Break down large tasks into manageable subtasks
-2. **Leverage Multiple Capabilities**: Combine different AI capabilities (analytics, prediction, summarization)
-3. **Schedule Automated Tasks**: Plan and execute tasks at optimal times
-4. **Manage Task Dependencies**: Handle tasks that depend on the completion of other tasks
-5. **Aggregate Results**: Combine results from multiple subtasks into cohesive outputs
+1. **Access External Tools**: Connect to external systems, APIs, and data sources
+2. **Interact with Real-World Data**: Go beyond static knowledge to work with real-time information
+3. **Execute Complex Functions**: Perform actions like data analysis, web searches, or sending messages
+4. **Maintain Contextual Understanding**: Keep track of context across different interactions
+5. **Process and Transform Data**: Handle various data formats and transform them as needed
 
 ## Key Capabilities
 
@@ -265,6 +265,6 @@ Configure custom notifications for task events:
 
 ## Conclusion
 
-The Multi-Capability Planning system provides powerful tools for automating complex analytical tasks. By leveraging multiple AI capabilities and coordinating them effectively, MCP enables deeper insights, more accurate forecasts, and more valuable recommendations than would be possible with simpler approaches.
+The Model Context Protocol (MCP) provides a powerful standard for enabling AI applications to interact with external tools and data sources. By implementing this open standard, our AI Agent can access real-time information, execute complex functions, and provide more valuable insights than would be possible with static knowledge alone.
 
-As you become familiar with the MCP system, you'll discover numerous ways to streamline your analytical workflows and extract maximum value from your energy and environmental data.
+As you become familiar with the MCP system, you'll discover numerous ways for the AI Agent to enhance its capabilities by connecting to external systems and leveraging real-world data in its analyses and recommendations.
