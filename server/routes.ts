@@ -1449,7 +1449,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register agent notification routes for API-based notifications
   registerNotificationRoutes(app);
   
-  // Register MCP routes for Multi-Capability Planning
+  // Register Telegram integration routes
+  registerTelegramRoutes(app);
+  
+  // Register MCP routes for Model Context Protocol
   app.use('/api/mcp', mcpRoutes);
 
   return httpServer;
