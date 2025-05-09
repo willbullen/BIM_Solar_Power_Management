@@ -176,6 +176,9 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
   const { shouldFetch, setFetchComplete } = useRefreshRate();
   
   // This effect runs ONLY when the shouldFetch flag changes
+  // Use a ref to track if a fetch is already in progress to prevent duplicate requests
+  const isFetchingRef = useRef<boolean>(false);
+  
   useEffect(() => {
     // Turn off WebSocket connection attempts when we're debugging
     // This will force the use of polling which is more reliable for testing refresh rates
@@ -184,22 +187,33 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     // Skip polling if WebSocket is connected and we're not in debug mode
     if (wsConnected && wsEnabled && !debugMode) {
       console.log('WebSocket connected, skipping polling');
+      // Still complete the fetch cycle to maintain the timer
+      if (shouldFetch) {
+        setFetchComplete();
+      }
       return;
     }
     
-    // Only fetch when the shouldFetch flag is true
-    if (shouldFetch) {
+    // Only fetch when the shouldFetch flag is true and we're not already fetching
+    if (shouldFetch && !isFetchingRef.current) {
+      // Set the fetching flag to prevent duplicate requests
+      isFetchingRef.current = true;
+      
       console.log(`⏰ Fetching data (refresh rate: ${refreshInterval}ms)`);
       
       // Perform the fetch
       fetchLatestData()
         .then(() => {
           console.log('Fetch completed successfully');
+          // Reset the fetching flag
+          isFetchingRef.current = false;
           // Let the rate controller know we're done
           setFetchComplete();
         })
         .catch((err) => {
           console.error('Error during fetch:', err);
+          // Reset the fetching flag even on error
+          isFetchingRef.current = false;
           // Even on error, let the rate controller know we're done
           setFetchComplete();
         });

@@ -69,11 +69,14 @@ export function RefreshRateProvider({ children }: { children: ReactNode }) {
     return defaultInterval;
   });
   
-  // State to indicate when data should be fetched
+  // State to indicate when data should be fetched (initialized to true to trigger first fetch)
   const [shouldFetch, setShouldFetch] = useState<boolean>(isInitialized);
   
   // Timer reference
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Guards against concurrent fetch requests with proper initialization
+  const pendingFetchCountRef = useRef<number>(isInitialized ? 1 : 0);
   
   // NEW: Handle refresh rate changes
   const setRefreshInterval = (newInterval: number) => {
@@ -99,25 +102,39 @@ export function RefreshRateProvider({ children }: { children: ReactNode }) {
     setShouldFetch(true);
   };
   
-  // NEW: Signal that fetch is complete and schedule next one
+  // The pendingFetchCountRef is already initialized above (line 79)
+  
+  // Improved version: Signal that fetch is complete and schedule next one
   const setFetchComplete = () => {
-    // Clear previous timeout
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
+    // Decrement pending fetch counter
+    if (pendingFetchCountRef.current > 0) {
+      pendingFetchCountRef.current--;
     }
     
-    // Mark current fetch as complete
-    setShouldFetch(false);
-    
-    // Schedule next fetch - only if WebSocket is not connected
-    // The delay should be the refresh interval minus a small buffer to avoid drift
-    timerRef.current = setTimeout(() => {
-      console.log(`Refresh timer triggered after ${refreshInterval}ms`);
-      setShouldFetch(true);
-    }, refreshInterval - 100); // Small buffer to avoid drift
-    
-    console.log(`Next fetch scheduled in ${refreshInterval}ms (rate: ${refreshRateLabel})`);
+    // Only proceed if all fetches are complete
+    if (pendingFetchCountRef.current === 0) {
+      // Clear previous timeout
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      
+      // Mark current fetch as complete
+      setShouldFetch(false);
+      
+      // Schedule next fetch with precise timing
+      const exactInterval = Math.max(refreshInterval, 1000); // Minimum 1 second to avoid overloading
+      
+      console.log(`Scheduling next fetch in ${exactInterval}ms (rate: ${refreshRateLabel})`);
+      
+      timerRef.current = setTimeout(() => {
+        console.log(`Refresh timer triggered after ${exactInterval}ms`);
+        pendingFetchCountRef.current++; // Increment counter before triggering fetch
+        setShouldFetch(true);
+      }, exactInterval);
+    } else {
+      console.log(`Fetch complete but ${pendingFetchCountRef.current} fetches still pending`);
+    }
   };
   
   // Clean up timer on unmount
