@@ -7,6 +7,7 @@ declare global {
   interface Window {
     _webSocketInitialized?: boolean;
     _activeWebSocketInstance?: WebSocket | null;
+    _activePollingInstance?: any;
   }
 }
 
@@ -37,423 +38,234 @@ interface Subscription {
 }
 
 export function useWebSocket(options: WebSocketHookOptions = {}) {
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(true); // Default to true for REST API
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const [reconnectCount, setReconnectCount] = useState(0);
   
-  const wsRef = useRef<WebSocket | null>(null);
+  // Store subscriptions for polling
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  
+  // Refs for polling and intervals
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const manuallyClosedRef = useRef(false);
+  const isFetchingRef = useRef<boolean>(false);
   
   const {
-    reconnectDelay = 2000,      // Decreased to speed up reconnection attempts
-    reconnectAttempts = 5,      // Reduced to avoid excessive logging
-    maxReconnectAttempts = 6,   // Reduced to avoid excessive reconnection attempts
-    pingInterval = 15000,       // Send a ping every 15 seconds to keep connection alive
+    reconnectDelay = 2000,        // Keep for compatibility
+    reconnectAttempts = 5,        // Keep for compatibility
+    maxReconnectAttempts = 6,     // Keep for compatibility
+    pingInterval = 15000,         // Now used for data refresh rate
+    pollingInterval = 10000,      // Default polling interval
     onMessage,
     onConnect,
     onDisconnect,
     onError
   } = options;
   
-  // Ping function to keep connection alive
-  const sendPing = useCallback(() => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      try {
-        console.log('Sending WebSocket ping');
-        wsRef.current.send(JSON.stringify({ type: 'ping', data: { timestamp: new Date().toISOString() } }));
-      } catch (err) {
-        console.error('Error sending WebSocket ping:', err);
-        // If ping fails, the connection might be dead but not detected yet
-        // Force close and reconnect
-        try {
-          wsRef.current.close();
-        } catch (closeErr) {
-          console.error('Error closing WebSocket after ping failure:', closeErr);
-        }
-      }
-    }
-  }, []);
-  
-  // Initialize WebSocket connection
-  const connect = useCallback(() => {
-    // Check if we already have an active WebSocket connection globally
-    if (typeof window !== 'undefined' && window._webSocketInitialized) {
-      console.warn('WebSocket singleton already initialized - ignoring additional connection attempt');
-      
-      // If there's an existing global socket, use it instead of creating a new one
-      if (window._activeWebSocketInstance &&
-          window._activeWebSocketInstance.readyState === WebSocket.OPEN) {
-        console.log('Reusing existing WebSocket connection');
-        wsRef.current = window._activeWebSocketInstance;
-        setIsConnected(true);
-        return;
-      }
+  // Function to poll data based on subscriptions
+  const pollSubscriptions = useCallback(async () => {
+    if (subscriptions.length === 0) {
+      return; // No subscriptions to poll
     }
     
-    // If we've exceeded the maximum overall reconnection attempts, give up
-    if (reconnectCount >= maxReconnectAttempts) {
-      console.error(`Exceeded maximum reconnection attempts (${maxReconnectAttempts}), giving up`);
+    if (isFetchingRef.current) {
+      console.log('Already fetching data, skipping this poll cycle');
       return;
     }
     
-    // We'll keep trying even if we've reached max attempts for this session
-  // But we'll log a warning to help with debugging
-  if (reconnectCount >= reconnectAttempts) {
-    console.warn(`High number of reconnection attempts for this session (${reconnectCount}/${reconnectAttempts}), but will keep trying`);
-  }
-    
-    // Determine the WebSocket URL based on the current location
-    // Get the URL from the window location to ensure same-origin connection
-    // Note: We need to handle both http/https and development/production environments
-    let wsUrl = '';
-    
-    // Special handling for Replit environment
-    const isReplitEnvironment = window.location.host.includes('.replit.dev') || 
-                                window.location.host.includes('.repl.co');
-    
-    // Check if user has manually set protocol preference
-    const userProtocolPreference = localStorage.getItem('websocket-protocol');
-    
-    // Determine protocol based on page security, environment, and user preference
-    
-    // Default protocol selection
-    let protocol: string;
-    
-    // CRITICAL FIX: ALWAYS force non-secure WebSocket (ws://) in Replit environment
-    // This is the only way to get reliable WebSocket connections in Replit
-    if (isReplitEnvironment) {
-      // FORCEFULLY override ALL settings to ensure ws:// protocol in Replit
-      // This is necessary because wss:// is proven to fail consistently in Replit
-      
-      // Force the protocol to ws:// regardless of any other settings
-      protocol = 'ws:';
-      
-      // Clear any user preference and set it to ws
-      localStorage.setItem('websocket-protocol', 'ws');
-      
-      // Add warning flags
-      localStorage.setItem('hasBeenWarnedAboutReplit', 'true');
-      localStorage.setItem('forcedProtocolForReplit', 'true');
-      
-      // Log clear warning messages
-      console.log(`⚠️ CRITICAL: Replit environment detected. Forcing non-secure WebSocket protocol (ws://)`);
-      console.log(`⚠️ Secure WebSockets (wss://) consistently fail in Replit environments`);
-      console.log(`⚠️ Your protocol settings have been forcefully changed to ensure connectivity`);
-      
-      // If the user tried to set wss explicitly, warn them it won't work
-      if (userProtocolPreference === 'wss') {
-        console.error(`⛔ You tried to use wss:// in Replit, but this causes connection failures`);
-        console.error(`⛔ We've overridden your setting to ensure connectivity`);
-      }
-    }
-    // For non-Replit, respect user preference first
-    else if (userProtocolPreference === 'ws' || userProtocolPreference === 'wss') {
-      protocol = `${userProtocolPreference}:`;
-      console.log(`Using user-specified WebSocket protocol: ${protocol}`);
-    }
-    // Normal protocol selection based on page security for non-Replit environments
-    else {
-      protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      console.log(`Standard environment, using protocol matching page: ${protocol}`);
-    }
-    
-    // If we're encountering repeated connection errors with the current protocol
-    // Try the alternative protocol as a fallback mechanism, except in Replit where we ALWAYS use ws://
-    if (reconnectCount > 1 && !isReplitEnvironment) {
-      const alternativeProtocol = protocol === 'wss:' ? 'ws:' : 'wss:';
-      console.log(`Connection attempts (${reconnectCount}) failed with ${protocol}, trying ${alternativeProtocol} instead`);
-      protocol = alternativeProtocol;
-    } 
-    // In Replit, if we're having connection issues, make extra sure we're using ws:// protocol
-    else if (reconnectCount > 1 && isReplitEnvironment) {
-      if (protocol !== 'ws:') {
-        console.log(`⚠️ CRITICAL: Connection failures detected. Forcing ws:// protocol in Replit environment.`);
-        protocol = 'ws:';
-      } else {
-        console.log(`⚠️ WARNING: Multiple connection failures with ws:// protocol in Replit. This may indicate server issues.`);
-      }
-    }
-    
-    // Save the chosen protocol for debugging
-    localStorage.setItem('websocket-protocol', protocol.replace(':', ''));
-    
-    console.log(`Setting WebSocket protocol: ${protocol}`);
-    wsUrl = `${protocol}//${window.location.host}/ws`;
-    
-    // Log the configuration choices
-    console.log(`WebSocket URL: ${wsUrl}`);
-    console.log(`Window protocol: ${window.location.protocol}`);
-    console.log(`Window host: ${window.location.host}`);
-    
-    console.log(`Configured WebSocket URL: ${wsUrl}`);
-    
-    // Reset manual closure flag when attempting new connection
-    manuallyClosedRef.current = false;
-    
-    console.log(`Connecting to WebSocket at ${wsUrl} (attempt ${reconnectCount + 1})`);
-    
-    // Clean up any existing socket before creating a new one
-    if (wsRef.current) {
-      // Remove event handlers to prevent any callbacks during transition
-      wsRef.current.onopen = null;
-      wsRef.current.onclose = null;
-      wsRef.current.onerror = null;
-      wsRef.current.onmessage = null;
-      
-      // Only close if it's not already closed
-      if (wsRef.current.readyState !== WebSocket.CLOSED && 
-          wsRef.current.readyState !== WebSocket.CLOSING) {
-        wsRef.current.close();
-      }
-    }
+    isFetchingRef.current = true;
     
     try {
-      // Check if we can reuse the global WebSocket instance
-      if (typeof window !== 'undefined' && 
-          window._activeWebSocketInstance && 
-          window._activeWebSocketInstance.readyState === WebSocket.OPEN) {
-        console.log('Reusing existing global WebSocket instance');
-        wsRef.current = window._activeWebSocketInstance;
-      } else {
-        // REPLIT FIX: Try to detect the "Access has been blocked" error
-        // This happens in Replit when the browser blocks mixed content
-        if (isReplitEnvironment && window.location.protocol === 'https:') {
-          console.log('⚠️ REPLIT MIXED CONTENT WARNING: Trying to create WebSocket from HTTPS page');
-          console.log('⚠️ Browser will likely block this connection attempt');
-        }
+      // Poll each subscription
+      for (const subscription of subscriptions) {
+        const now = Date.now();
+        const timeSinceLastPoll = now - subscription.lastPolled;
         
-        // Create a new WebSocket connection with try/catch around constructor
-        try {
-          console.log('Creating new WebSocket connection as singleton');
-          const socket = new WebSocket(wsUrl);
-          wsRef.current = socket;
+        // Only poll if it's been at least half the polling interval since the last poll
+        if (subscription.lastPolled === 0 || timeSinceLastPoll >= pollingInterval / 2) {
+          console.log(`Polling channel: ${subscription.channel}`);
           
-          // Set global instance
-          if (typeof window !== 'undefined') {
-            window._webSocketInitialized = true;
-            window._activeWebSocketInstance = socket;
-          }
-        } catch (constructError) {
-          console.error('WebSocket constructor error:', constructError);
-          throw new Error('Failed to create WebSocket object: ' + (constructError as Error).message);
-        }
-      }
-      
-      // Set up event handlers for the WebSocket instance
-      wsRef.current.onopen = () => {
-        console.log('WebSocket connection established');
-        setIsConnected(true);
-        setReconnectCount(0); // Reset reconnect count on successful connection
-        
-        // Set up ping interval to keep connection alive
-        if (pingIntervalRef.current) {
-          clearInterval(pingIntervalRef.current);
-        }
-        pingIntervalRef.current = setInterval(sendPing, pingInterval);
-        
-        onConnect?.();
-      };
-      wsRef.current.addEventListener('error', (event: Event) => {
-        console.error('Error during WebSocket connection setup:', event);
-        
-        // Log detailed connection information for troubleshooting
-        console.log('WebSocket connection details:', {
-          readyState: wsRef.current?.readyState,
-          protocol: wsRef.current?.protocol,
-          url: wsUrl,
-          host: window.location.host,
-          origin: window.location.origin
-        });
-        
-        // Handle proxy or gateway errors specifically
-        if (window.location.protocol === 'https:') {
-          console.warn('Using secure connection (HTTPS). Make sure WSS is properly configured on the server.');
-        }
-        
-        onError?.(event);
-      });
-      
-      wsRef.current.onclose = (event: CloseEvent) => {
-        console.log(`WebSocket connection closed: ${event.code} ${event.reason}`);
-        setIsConnected(false);
-        
-        // Clear ping interval when connection closes
-        if (pingIntervalRef.current) {
-          clearInterval(pingIntervalRef.current);
-          pingIntervalRef.current = null;
-        }
-        
-        onDisconnect?.();
-        
-        // Only attempt to reconnect if the connection wasn't manually closed
-        if (!manuallyClosedRef.current) {
-          // Increment reconnect count
-          const newReconnectCount = reconnectCount + 1;
-          setReconnectCount(newReconnectCount);
-          
-          // Attempt to reconnect with exponential backoff
-          const delay = Math.min(reconnectDelay * Math.pow(1.5, newReconnectCount), 30000); // Max 30s
-          
-          console.log(`Scheduling reconnect in ${delay}ms (attempt ${newReconnectCount + 1}/${reconnectAttempts})`);
-          
-          reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
-          }, delay);
-        }
-      };
-      
-      wsRef.current.onerror = (error: Event) => {
-        console.error('WebSocket error:', error);
-        onError?.(error);
-      };
-      
-      wsRef.current.onmessage = (event: MessageEvent) => {
-        try {
-          const parsedMessage = JSON.parse(event.data) as WebSocketMessage;
-          
-          // Don't log pong messages to avoid console spam
-          if (parsedMessage.type !== 'pong') {
-            console.log('WebSocket message received:', parsedMessage);
-          }
-          
-          setLastMessage(parsedMessage);
-          onMessage?.(parsedMessage);
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
-        }
-      };
-    } catch (error) {
-      console.error('Error creating WebSocket connection:', error);
-      onError?.(error as Event);
-      
-      // Schedule reconnection attempt after delay
-      const newReconnectCount = reconnectCount + 1;
-      setReconnectCount(newReconnectCount);
-      
-      // Use exponential backoff for reconnection
-      const delay = Math.min(reconnectDelay * Math.pow(1.5, newReconnectCount), 30000); // Max 30s
-      
-      console.log(`WebSocket creation failed. Scheduling reconnect in ${delay}ms (attempt ${newReconnectCount + 1}/${reconnectAttempts})`);
-      
-      reconnectTimeoutRef.current = setTimeout(() => {
-        connect();
-      }, delay);
-    }
-  }, [
-    reconnectCount, 
-    reconnectAttempts, 
-    maxReconnectAttempts,
-    reconnectDelay, 
-    pingInterval,
-    sendPing,
-    onConnect, 
-    onDisconnect, 
-    onError, 
-    onMessage
-  ]);
-  
-  // Send a message through the WebSocket
-  const sendMessage: WebSocketSendMessage = useCallback((message) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      try {
-        wsRef.current.send(JSON.stringify(message));
-      } catch (err) {
-        console.error('Error sending WebSocket message:', err);
-        
-        // The connection might be dead but not detected yet
-        if (wsRef.current) {
           try {
-            wsRef.current.close();
-          } catch (closeErr) {
-            console.error('Error closing WebSocket after send failure:', closeErr);
+            // Make API request based on channel type
+            let data;
+            switch (subscription.channel) {
+              case 'power-data':
+                data = await apiRequest('GET', '/api/power-data/latest');
+                break;
+              case 'environmental-data':
+                data = await apiRequest('GET', '/api/environmental-data/latest');
+                break;
+              case 'settings':
+                data = await apiRequest('GET', '/api/settings');
+                break;
+              case 'agent-notifications':
+                data = await apiRequest('GET', '/api/agent/notifications');
+                break;
+              case 'agent-tasks':
+                data = await apiRequest('GET', '/api/agent/tasks');
+                break;
+              default:
+                // Try a generic endpoint based on channel name
+                data = await apiRequest('GET', `/api/${subscription.channel}/latest`);
+            }
+            
+            // Update subscription's last polled time
+            const updatedSubscriptions = subscriptions.map(sub => 
+              sub.channel === subscription.channel 
+                ? { ...sub, lastPolled: now } 
+                : sub
+            );
+            setSubscriptions(updatedSubscriptions);
+            
+            // Send the data to handlers
+            const message: WebSocketMessage = {
+              type: subscription.channel,
+              data: data
+            };
+            
+            setLastMessage(message);
+            onMessage?.(message);
+          } catch (error) {
+            console.error(`Error polling channel ${subscription.channel}:`, error);
+            if (onError) {
+              onError(error as Error);
+            }
           }
         }
-        
-        // Attempt to reconnect
-        if (reconnectCount < maxReconnectAttempts && !reconnectTimeoutRef.current) {
-          console.log('Attempting to reconnect WebSocket after send failure');
-          setTimeout(connect, 1000); // Short delay before reconnecting
-        }
       }
-    } else {
-      console.warn(`WebSocket is not connected (readyState: ${wsRef.current ? wsRef.current.readyState : 'no socket'}), cannot send message`);
-      
-      // Attempt to reconnect if we're not already in the process
-      if (!isConnected && reconnectCount < maxReconnectAttempts && !reconnectTimeoutRef.current) {
-        console.log('Attempting to reconnect WebSocket before sending message');
-        connect();
-      }
+    } finally {
+      isFetchingRef.current = false;
     }
-  }, [isConnected, reconnectCount, maxReconnectAttempts, connect]);
+  }, [subscriptions, pollingInterval, onMessage, onError]);
+  
+  // Send a message through REST API
+  const sendMessage: WebSocketSendMessage = useCallback(async (message) => {
+    try {
+      console.log('Sending message via REST API:', message);
+      
+      // Handle different message types
+      switch (message.type) {
+        case 'subscribe':
+          // Handle subscription request (processed in subscribe method)
+          break;
+        case 'unsubscribe':
+          // Handle unsubscription request (processed in unsubscribe method)
+          break;
+        case 'ping':
+          // No need to handle ping in REST implementation
+          break;
+        default:
+          // For any other message type, send to appropriate API endpoint
+          const endpoint = `/api/${message.type}`;
+          await apiRequest('POST', endpoint, message.data);
+      }
+      
+      return Promise.resolve();
+    } catch (err) {
+      console.error('Error sending message via REST API:', err);
+      if (onError) {
+        onError(err as Error);
+      }
+      return Promise.reject(err);
+    }
+  }, [onError]);
   
   // Subscribe to a specific data channel
   const subscribe = useCallback((channel: string) => {
-    console.log(`Subscribing to ${channel} channel`);
-    sendMessage({
-      type: 'subscribe',
-      data: { channel }
-    });
-  }, [sendMessage]);
+    console.log(`Subscribing to ${channel} channel via REST polling`);
+    
+    // Check if already subscribed
+    const existing = subscriptions.find(sub => sub.channel === channel);
+    if (!existing) {
+      setSubscriptions(prev => [...prev, { channel, lastPolled: 0 }]);
+    }
+  }, [subscriptions]);
   
   // Unsubscribe from a specific data channel
   const unsubscribe = useCallback((channel: string) => {
     console.log(`Unsubscribing from ${channel} channel`);
-    sendMessage({
-      type: 'unsubscribe',
-      data: { channel }
-    });
-  }, [sendMessage]);
+    setSubscriptions(prev => prev.filter(sub => sub.channel !== channel));
+  }, []);
   
-  // Manually close the connection
+  // Start or stop polling
   const disconnect = useCallback(() => {
-    console.log('Manually closing WebSocket connection');
-    manuallyClosedRef.current = true;
+    console.log('Stopping REST API polling');
     
-    if (pingIntervalRef.current) {
-      clearInterval(pingIntervalRef.current);
-      pingIntervalRef.current = null;
-    }
-    
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-    
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
     }
     
     setIsConnected(false);
-  }, []);
-  
-  // Connect when the component mounts and disconnect when it unmounts
-  useEffect(() => {
-    connect();
     
+    if (onDisconnect) {
+      onDisconnect();
+    }
+  }, [onDisconnect]);
+  
+  // Manually reconnect the polling
+  const reconnect = useCallback(() => {
+    console.log('Starting REST API polling');
+    
+    // Clear any existing interval
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+    
+    // Start new polling interval
+    pollingIntervalRef.current = setInterval(pollSubscriptions, pollingInterval);
+    
+    // Immediately poll once
+    pollSubscriptions();
+    
+    setIsConnected(true);
+    
+    if (onConnect) {
+      onConnect();
+    }
+  }, [pollSubscriptions, pollingInterval, onConnect]);
+  
+  // Initialize polling on component mount or when subscriptions change
+  useEffect(() => {
+    // Only start polling if we have subscriptions
+    if (subscriptions.length > 0 && !pollingIntervalRef.current) {
+      console.log(`Starting polling for ${subscriptions.length} channels`);
+      reconnect();
+    }
+    
+    // Clean up when component unmounts
     return () => {
-      // Clean up WebSocket connection and any timers
-      manuallyClosedRef.current = true;
-      
-      if (wsRef.current) {
-        wsRef.current.onclose = null; // Remove event handler to prevent reconnection
-        wsRef.current.close();
-        wsRef.current = null;
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
       }
       
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
       }
-      
-      if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current);
-        pingIntervalRef.current = null;
+    };
+  }, [subscriptions, reconnect]);
+  
+  useEffect(() => {
+    // Set a global reference that can be checked by other components
+    if (typeof window !== 'undefined') {
+      window._webSocketInitialized = true;
+      window._activePollingInstance = {
+        subscriptions,
+        isConnected,
+        pollingInterval
+      };
+    }
+    
+    return () => {
+      // Clean up global reference
+      if (typeof window !== 'undefined') {
+        window._webSocketInitialized = false;
+        window._activePollingInstance = null;
       }
     };
-  }, [connect]);
+  }, [subscriptions, isConnected, pollingInterval]);
   
   return {
     isConnected,
@@ -461,8 +273,8 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     sendMessage,
     subscribe,
     unsubscribe,
-    reconnect: connect,
     disconnect,
+    reconnect,
     reconnectCount
   };
 }
