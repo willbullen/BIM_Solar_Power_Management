@@ -142,14 +142,8 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
         }
       }
       
-      // Add error handling for the connection and setup process
-      socket.addEventListener('error', (event) => {
-        console.error('Error during WebSocket connection setup:', event);
-        onError?.(event);
-      }, { once: true }); // Only handle the initial connection error once
-    
-      // Set up event handlers
-      socket.onopen = () => {
+      // Set up event handlers for the WebSocket instance
+      wsRef.current.onopen = () => {
         console.log('WebSocket connection established');
         setIsConnected(true);
         setReconnectCount(0); // Reset reconnect count on successful connection
@@ -162,8 +156,12 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
         
         onConnect?.();
       };
+      wsRef.current.addEventListener('error', (event: Event) => {
+        console.error('Error during WebSocket connection setup:', event);
+        onError?.(event);
+      }, { once: true }); // Only handle the initial connection error once
       
-      socket.onclose = (event) => {
+      wsRef.current.onclose = (event: CloseEvent) => {
         console.log(`WebSocket connection closed: ${event.code} ${event.reason}`);
         setIsConnected(false);
         
@@ -192,12 +190,12 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
         }
       };
       
-      socket.onerror = (error) => {
+      wsRef.current.onerror = (error: Event) => {
         console.error('WebSocket error:', error);
         onError?.(error);
       };
       
-      socket.onmessage = (event) => {
+      wsRef.current.onmessage = (event: MessageEvent) => {
         try {
           const parsedMessage = JSON.parse(event.data) as WebSocketMessage;
           
