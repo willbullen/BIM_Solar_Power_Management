@@ -37,18 +37,31 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     isConnected: wsConnected,
     subscribe,
     lastMessage,
-    reconnectCount
+    reconnectCount,
+    reconnect
   } = useWebSocket({
+    maxReconnectAttempts: 15, // Increase max reconnection attempts
+    reconnectDelay: 2000,     // Shorter initial delay between reconnect attempts
     onConnect: () => {
       console.log('WebSocket connected, subscribing to data channels');
+      
+      // Re-enable WebSocket if it was disabled due to previous connection issues
+      if (!wsEnabled) {
+        setWsEnabled(true);
+      }
+      
       // Subscribe to power and environmental data channels
       subscribe('power-data');
       subscribe('environmental-data');
-      toast({
-        title: "Real-time data enabled",
-        description: "You are now receiving real-time data updates.",
-        variant: "default",
-      });
+      
+      // Only show toast if we're reconnecting after a failure
+      if (reconnectCount > 0) {
+        toast({
+          title: "Real-time data enabled",
+          description: "You are now receiving real-time data updates.",
+          variant: "default",
+        });
+      }
     },
     onMessage: (message: WebSocketMessage) => {
       // Handle incoming WebSocket messages by data type
@@ -58,14 +71,27 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
       } else if (message.type === 'environmental-data') {
         setEnvironmentalData(message.data);
         setLastUpdated(new Date());
+      } else if (message.type === 'settings') {
+        setSettings(message.data);
+        setDataStatus(message.data.dataSource === 'synthetic' ? 'synthetic' : 'live');
       }
     },
     onDisconnect: () => {
       console.log('WebSocket disconnected, falling back to polling');
       // If we disconnected, enable polling as fallback
       setWsEnabled(false);
+      
+      // Show toast only on first disconnection
+      if (wsEnabled) {
+        toast({
+          title: "Switched to polling mode",
+          description: "Connection to real-time data unavailable. Using automatic refresh instead.",
+          variant: "default",
+        });
+      }
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('WebSocket error:', error);
       // On error, fall back to polling
       setWsEnabled(false);
     }
@@ -172,6 +198,27 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     
     // Dependencies ensure this effect runs again when relevant states change
   }, [wsConnected, wsEnabled, refreshInterval, fetchLatestData]);
+  
+  // Periodically attempt to reconnect WebSocket if it's disconnected but enabled
+  useEffect(() => {
+    let reconnectTimer: NodeJS.Timeout | null = null;
+    
+    // If WebSocket is enabled but not connected, try to reconnect periodically
+    if (wsEnabled && !wsConnected && reconnect) {
+      console.log('Setting up periodic WebSocket reconnection attempts');
+      
+      reconnectTimer = setInterval(() => {
+        console.log('Attempting to reconnect WebSocket');
+        reconnect();
+      }, 60000); // Try to reconnect every minute
+    }
+    
+    return () => {
+      if (reconnectTimer) {
+        clearInterval(reconnectTimer);
+      }
+    };
+  }, [wsEnabled, wsConnected, reconnect]);
   
   // Update settings when they change from the query
   useEffect(() => {

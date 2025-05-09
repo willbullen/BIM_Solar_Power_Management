@@ -42,9 +42,20 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
   
   // Ping function to keep connection alive
   const sendPing = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      console.log('Sending WebSocket ping');
-      wsRef.current.send(JSON.stringify({ type: 'ping', data: { timestamp: new Date().toISOString() } }));
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      try {
+        console.log('Sending WebSocket ping');
+        wsRef.current.send(JSON.stringify({ type: 'ping', data: { timestamp: new Date().toISOString() } }));
+      } catch (err) {
+        console.error('Error sending WebSocket ping:', err);
+        // If ping fails, the connection might be dead but not detected yet
+        // Force close and reconnect
+        try {
+          wsRef.current.close();
+        } catch (closeErr) {
+          console.error('Error closing WebSocket after ping failure:', closeErr);
+        }
+      }
     }
   }, []);
   
@@ -196,17 +207,37 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
   
   // Send a message through the WebSocket
   const sendMessage: WebSocketSendMessage = useCallback((message) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(message));
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      try {
+        wsRef.current.send(JSON.stringify(message));
+      } catch (err) {
+        console.error('Error sending WebSocket message:', err);
+        
+        // The connection might be dead but not detected yet
+        if (wsRef.current) {
+          try {
+            wsRef.current.close();
+          } catch (closeErr) {
+            console.error('Error closing WebSocket after send failure:', closeErr);
+          }
+        }
+        
+        // Attempt to reconnect
+        if (reconnectCount < maxReconnectAttempts && !reconnectTimeoutRef.current) {
+          console.log('Attempting to reconnect WebSocket after send failure');
+          setTimeout(connect, 1000); // Short delay before reconnecting
+        }
+      }
     } else {
-      console.warn('WebSocket is not connected, cannot send message');
+      console.warn(`WebSocket is not connected (readyState: ${wsRef.current ? wsRef.current.readyState : 'no socket'}), cannot send message`);
+      
       // Attempt to reconnect if we're not already in the process
-      if (!isConnected && reconnectCount < reconnectAttempts && !reconnectTimeoutRef.current) {
+      if (!isConnected && reconnectCount < maxReconnectAttempts && !reconnectTimeoutRef.current) {
         console.log('Attempting to reconnect WebSocket before sending message');
         connect();
       }
     }
-  }, [isConnected, reconnectCount, reconnectAttempts, connect]);
+  }, [isConnected, reconnectCount, maxReconnectAttempts, connect]);
   
   // Subscribe to a specific data channel
   const subscribe = useCallback((channel: string) => {
