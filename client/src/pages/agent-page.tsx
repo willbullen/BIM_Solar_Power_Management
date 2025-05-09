@@ -1234,67 +1234,65 @@ export default function AgentPage() {
             </div>
           </div>
 
-          {/* Tabs Section - Compact Height */}
-          <div className="bg-slate-900 rounded-xl p-1 shadow-sm mb-4 h-[40vh] min-h-[300px] max-h-[500px]">
+          {/* Streamlined Tabs Section */}
+          <div className="bg-slate-950 rounded-xl shadow-sm mb-3 h-[40vh] min-h-[280px] max-h-[450px] overflow-hidden flex flex-col">
             <Tabs 
               defaultValue="chat" 
-              className="w-full h-full flex flex-col"
+              className="flex flex-col h-full"
               onValueChange={(value) => setActiveTab(value)}
             >
-              <div className="flex justify-between items-center px-3 py-1 mb-1">
-                <TabsList className="grid w-full max-w-md grid-cols-3 p-0.5 bg-slate-800 rounded-lg shadow-sm">
+              {/* Top Navigation Bar with Improved Layout */}
+              <div className="flex justify-between items-center px-2 py-0.5 bg-slate-900/70 border-b border-slate-800">
+                <TabsList className="flex p-0 bg-transparent space-x-1">
                   <TabsTrigger 
                     value="chat" 
-                    className="flex items-center justify-center gap-1 text-xs rounded-md py-1 text-gray-300 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                    className="flex items-center justify-center gap-1 text-xs py-1 px-2 rounded data-[state=active]:bg-blue-600/90 data-[state=active]:text-white text-slate-300"
                   >
-                    <MessageSquare className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Chat</span>
+                    <MessageSquare className="h-3 w-3" />
+                    <span className="font-medium">Chat</span>
                   </TabsTrigger>
                   <TabsTrigger 
                     value="tasks" 
-                    className="flex items-center justify-center gap-1 text-xs rounded-md py-1 text-gray-300 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                    className="flex items-center justify-center gap-1 text-xs py-1 px-2 rounded data-[state=active]:bg-blue-600/90 data-[state=active]:text-white text-slate-300"
                   >
-                    <ListChecks className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Tasks</span>
+                    <ListChecks className="h-3 w-3" />
+                    <span className="font-medium">Tasks</span>
                   </TabsTrigger>
                   <TabsTrigger 
                     value="settings" 
-                    className="flex items-center justify-center gap-1 text-xs rounded-md py-1 text-gray-300 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                    className="flex items-center justify-center gap-1 text-xs py-1 px-2 rounded data-[state=active]:bg-blue-600/90 data-[state=active]:text-white text-slate-300"
                   >
-                    <Settings className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Settings</span>
+                    <Settings className="h-3 w-3" />
+                    <span className="font-medium">Settings</span>
                   </TabsTrigger>
                 </TabsList>
                 
-                <div className="md:hidden flex items-center">
+                <div className="flex items-center">
                   <HoverCard>
                     <HoverCardTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 p-1">
-                        <InfoIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Button variant="ghost" size="icon" className="h-6 w-6 p-0.5 hover:bg-slate-800 rounded-full">
+                        <InfoIcon className="h-3 w-3 text-slate-400" />
                       </Button>
                     </HoverCardTrigger>
-                    <HoverCardContent className="w-64">
-                      <div className="space-y-1.5">
-                        <h4 className="text-xs font-semibold">AI Agent Capabilities</h4>
-                        <p className="text-xs text-muted-foreground">
-                          Energy data analysis, forecasting, and recommendations
-                        </p>
-                        <div className="grid grid-cols-2 gap-1 pt-1">
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <CheckCircle className="h-2.5 w-2.5 text-green-500" />
-                            <span className="text-[10px]">Power Analysis</span>
+                    <HoverCardContent className="w-60 p-2 bg-slate-900 border-slate-700 text-slate-300">
+                      <div className="space-y-1">
+                        <h4 className="text-[11px] font-semibold text-slate-200">AI Agent Features</h4>
+                        <div className="grid grid-cols-2 gap-0.5 pt-0.5">
+                          <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                            <CheckCircle className="h-2 w-2 text-green-500" />
+                            <span>Power Analysis</span>
                           </div>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <CheckCircle className="h-2.5 w-2.5 text-green-500" />
-                            <span className="text-[10px]">Environmental</span>
+                          <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                            <CheckCircle className="h-2 w-2 text-green-500" />
+                            <span>Environmental</span>
                           </div>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <CheckCircle className="h-2.5 w-2.5 text-green-500" />
-                            <span className="text-[10px]">Equipment</span>
+                          <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                            <CheckCircle className="h-2 w-2 text-green-500" />
+                            <span>Equipment</span>
                           </div>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <CheckCircle className="h-2.5 w-2.5 text-green-500" />
-                            <span className="text-[10px]">Forecasting</span>
+                          <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                            <CheckCircle className="h-2 w-2 text-green-500" />
+                            <span>Forecasting</span>
                           </div>
                         </div>
                       </div>
@@ -1303,57 +1301,72 @@ export default function AgentPage() {
                 </div>
               </div>
               
-              <div className="bg-slate-900 rounded-lg border border-slate-800 p-1.5 shadow-md flex-1 overflow-auto">
-                <TabsContent value="chat" className="mt-0 focus-visible:outline-none focus-visible:ring-0 h-full">
-                  <ChatInterface />
+              {/* Content Area with Improved Containment */}
+              <div className="flex-1 overflow-hidden bg-slate-900">
+                <TabsContent 
+                  value="chat" 
+                  className="m-0 p-0 h-full overflow-auto focus-visible:outline-none focus-visible:ring-0 border-0"
+                >
+                  <div className="p-1 h-full">
+                    <ChatInterface />
+                  </div>
                 </TabsContent>
                 
-                <TabsContent value="tasks" className="mt-0 focus-visible:outline-none focus-visible:ring-0 h-full">
-                  <TasksInterface />
+                <TabsContent 
+                  value="tasks" 
+                  className="m-0 p-0 h-full overflow-auto focus-visible:outline-none focus-visible:ring-0 border-0"
+                >
+                  <div className="p-1 h-full">
+                    <TasksInterface />
+                  </div>
                 </TabsContent>
                 
-                <TabsContent value="settings" className="mt-0 focus-visible:outline-none focus-visible:ring-0 h-full">
-                  <AgentSettingsInterface />
+                <TabsContent 
+                  value="settings" 
+                  className="m-0 p-0 h-full overflow-auto focus-visible:outline-none focus-visible:ring-0 border-0"
+                >
+                  <div className="p-1 h-full">
+                    <AgentSettingsInterface />
+                  </div>
                 </TabsContent>
               </div>
             </Tabs>
           </div>
           
-          {/* Compact Footer */}
-          <div className="flex items-center justify-between bg-slate-900 p-2.5 rounded-lg border border-slate-800 text-xs">
-            <div className="flex items-center gap-2">
-              <div className="text-gray-400 flex items-center gap-1.5">
+          {/* Streamlined Footer */}
+          <div className="flex items-center justify-between bg-slate-950 py-1.5 px-2 rounded-md text-[10px] mt-1">
+            <div className="flex items-center">
+              <div className="text-slate-400 flex items-center gap-1">
                 {activeTab === "chat" && (
                   <>
-                    <MessageSquare className="h-3.5 w-3.5 text-blue-400" />
-                    <span>Chat with AI about your energy data</span>
+                    <MessageSquare className="h-3 w-3 text-blue-500/80" />
+                    <span>Ask questions about energy data and receive AI-powered insights</span>
                   </>
                 )}
                 {activeTab === "tasks" && (
                   <>
-                    <ListChecks className="h-3.5 w-3.5 text-blue-400" />
-                    <span>Manage automated AI tasks for analysis</span>
+                    <ListChecks className="h-3 w-3 text-blue-500/80" />
+                    <span>Schedule automated analysis tasks for periodic energy reports</span>
                   </>
                 )}
                 {activeTab === "settings" && (
                   <>
-                    <Settings className="h-3.5 w-3.5 text-blue-400" />
-                    <span>Configure AI model settings</span>
+                    <Settings className="h-3 w-3 text-blue-500/80" />
+                    <span>Adjust model parameters to focus on specific data analysis priorities</span>
                   </>
                 )}
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
-              <div className="h-4 w-px bg-slate-700"></div>
+            <div className="flex items-center pl-2 ml-2 border-l border-slate-800">
               <a 
                 href="https://docs.openai.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                className="text-blue-400 hover:text-blue-300 flex items-center gap-0.5"
               >
-                <ExternalLink className="h-3 w-3" />
-                <span>Learn more</span>
+                <ExternalLink className="h-2.5 w-2.5" />
+                <span>Learn</span>
               </a>
             </div>
           </div>
