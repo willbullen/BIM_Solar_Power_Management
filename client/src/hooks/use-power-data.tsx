@@ -124,8 +124,8 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/settings"],
   });
   
-  // Define the fetch function with useCallback to properly handle dependencies
-  const fetchLatestData = useCallback(async () => {
+  // Define the fetch function with useCallback to properly handle dependencies and return a Promise
+  const fetchLatestData = useCallback(async (): Promise<boolean> => {
     try {
       console.log('Fetching latest data via REST API...');
       
@@ -144,6 +144,7 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
       setLastUpdated(new Date());
       
       console.log('Latest data fetched successfully');
+      return true; // Success
     } catch (error) {
       console.error('Error fetching latest data:', error);
       // Only show toast error every 30 seconds to avoid spamming
@@ -160,6 +161,9 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
       if (!lastUpdated) {
         setDataStatus('offline');
       }
+      
+      // Re-throw the error to properly handle it in promise chains
+      return false; // Failure
     }
   }, [toast, lastUpdated]);
   
@@ -168,44 +172,117 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     fetchLatestData();
   }, [fetchLatestData]);
   
-  // Create a persistent ref for tracking intervals
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Use refs to track the polling state
+  const lastFetchTimeRef = useRef<number>(Date.now());
+  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
+  const currentRateRef = useRef<number>(refreshInterval);
+  const isPendingFetchRef = useRef<boolean>(false);
   
-  // Set up fallback polling mechanism when WebSocket is not connected or disabled
+  // Completely reimagined polling mechanism using setTimeout for better control
   useEffect(() => {
-    console.log(`⏰ Refresh rate changed to: ${refreshInterval}ms`);
+    // Update the current rate in the ref
+    currentRateRef.current = refreshInterval;
     
-    // Helper function to clean up any existing intervals
-    const cleanupExistingInterval = () => {
-      if (pollingIntervalRef.current) {
-        console.log(`Cleaning up existing interval (${refreshInterval}ms)`);
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
+    console.log(`⏰ REFRESH RATE CHANGED TO: ${refreshInterval}ms`);
+    
+    // Function to schedule the next data fetch
+    const scheduleNextFetch = () => {
+      // Skip if a fetch is already pending
+      if (isPendingFetchRef.current) {
+        console.log('Skipping schedule - fetch already pending');
+        return;
       }
+      
+      // Clear any existing timeout first
+      if (timeoutIdRef.current) {
+        console.log('Clearing existing timeout');
+        clearTimeout(timeoutIdRef.current);
+        timeoutIdRef.current = null;
+      }
+      
+      // Calculate time until next fetch
+      const now = Date.now();
+      const timeSinceLastFetch = now - lastFetchTimeRef.current;
+      const timeUntilNextFetch = Math.max(10, refreshInterval - timeSinceLastFetch);
+      
+      console.log(`Next data fetch scheduled in ${timeUntilNextFetch}ms (rate: ${refreshInterval}ms)`);
+      
+      // Schedule next fetch with a clean timeout
+      timeoutIdRef.current = setTimeout(() => {
+        console.log(`Executing scheduled fetch after ${timeUntilNextFetch}ms delay`);
+        
+        // Set the pending flag
+        isPendingFetchRef.current = true;
+        
+        // Update the last fetch time
+        lastFetchTimeRef.current = Date.now();
+        
+        // Fetch the data
+        fetchLatestData()
+          .then(() => {
+            console.log('Scheduled fetch completed successfully');
+            // Clear the pending flag
+            isPendingFetchRef.current = false;
+            
+            // Only schedule next fetch if we're still using polling
+            if ((!wsConnected || !wsEnabled) && !timeoutIdRef.current) {
+              scheduleNextFetch();
+            }
+          })
+          .catch((err) => {
+            console.error('Error in scheduled fetch:', err);
+            // Clear the pending flag even on error
+            isPendingFetchRef.current = false;
+            
+            // Schedule next fetch despite the error
+            if ((!wsConnected || !wsEnabled) && !timeoutIdRef.current) {
+              scheduleNextFetch();
+            }
+          });
+      }, timeUntilNextFetch);
     };
     
     // Skip polling if WebSocket is connected
     if (wsConnected && wsEnabled) {
       console.log('WebSocket connected, skipping polling');
-      cleanupExistingInterval();
-      return;
+      
+      // Clear existing timeout
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
+        timeoutIdRef.current = null;
+      }
+      
+      return () => {
+        if (timeoutIdRef.current) {
+          clearTimeout(timeoutIdRef.current);
+          timeoutIdRef.current = null;
+        }
+      };
     }
     
-    // Always clean up before setting new interval
-    cleanupExistingInterval();
+    // If refresh rate just changed or we're starting fresh, fetch immediately
+    console.log('Immediate fetch due to refresh rate change');
+    isPendingFetchRef.current = true;
     
-    console.log(`Starting power data polling with interval: ${refreshInterval}ms`);
-    
-    // Immediately fetch data when interval changes
-    fetchLatestData();
-    
-    // Set up polling interval based on the selected refresh rate
-    pollingIntervalRef.current = setInterval(fetchLatestData, refreshInterval);
+    fetchLatestData()
+      .then(() => {
+        lastFetchTimeRef.current = Date.now();
+        isPendingFetchRef.current = false;
+        scheduleNextFetch();
+      })
+      .catch((err) => {
+        console.error('Error in immediate fetch:', err);
+        isPendingFetchRef.current = false;
+        scheduleNextFetch();
+      });
     
     // Clean up on unmount or when dependencies change
-    return cleanupExistingInterval;
-    
-    // Dependencies ensure this effect runs again when relevant states change
+    return () => {
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
+        timeoutIdRef.current = null;
+      }
+    };
   }, [wsConnected, wsEnabled, refreshInterval, fetchLatestData]);
   
   // Create a persistent ref for tracking reconnection timer
