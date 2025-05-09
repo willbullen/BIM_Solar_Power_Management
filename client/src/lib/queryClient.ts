@@ -73,18 +73,28 @@ export async function apiRequest(
   // Add some logging to help debug the API calls
   console.log(`Making API request: ${method} ${fullUrl}`);
   
-  // Setup request options
+  // Get auth headers from local storage
+  const authHeaders = getAuthHeaders();
+  
+  // Setup request options with proper headers
   const requestOptions: RequestInit = {
     method,
     headers: {
       ...(requestData && method !== 'GET' ? { "Content-Type": "application/json" } : {}),
       'Accept': 'application/json',
-      ...getAuthHeaders(), // Add auth headers from local storage
+      ...authHeaders,
     },
     credentials: "include", // Important for sending cookies with request
     mode: "cors",
     cache: "no-cache", // Prevent caching of requests
   };
+  
+  // Log authentication information for debug (don't log in production)
+  if (Object.keys(authHeaders).length > 0) {
+    console.log(`Request has auth headers: ${Object.keys(authHeaders).join(', ')}`);
+  } else {
+    console.log('No auth headers present in request');
+  }
   
   // Only add body for non-GET requests
   if (requestData && method !== 'GET') {
@@ -98,12 +108,27 @@ export async function apiRequest(
     // Handle authentication errors
     if (res.status === 401) {
       console.error('Authentication error detected in API request');
-      // Invalidate the user query to force a refresh of auth state
-      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-      throw new Error(`401: Authentication required. Please login again.`);
+      
+      // Check if this is a login/register endpoint
+      const isAuthEndpoint = url.includes('/login') || url.includes('/register');
+      
+      if (!isAuthEndpoint) {
+        // Invalidate the user query to force a refresh of auth state
+        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+        throw new Error(`401: Authentication required. Please login again.`);
+      }
+      
+      // For auth endpoints, let the specific error come through
+      const errorText = await res.text();
+      throw new Error(errorText || 'Authentication failed');
     }
     
-    await throwIfResNotOk(res);
+    // For non-401 errors
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`Error response (${res.status}):`, errorText);
+      throw new Error(errorText || res.statusText || `Error: ${res.status}`);
+    }
     
     // Parse JSON response
     try {
@@ -132,14 +157,24 @@ export const getQueryFn: <T>(options: {
     
     console.log(`Making query request: GET ${fullUrl}`);
     
+    // Get auth headers from local storage
+    const authHeaders = getAuthHeaders();
+    
+    // Log authentication information for debug (don't log in production)
+    if (Object.keys(authHeaders).length > 0) {
+      console.log(`Query has auth headers: ${Object.keys(authHeaders).join(', ')}`);
+    } else {
+      console.log('No auth headers present in query');
+    }
+    
     try {
       const res = await fetch(fullUrl, {
-        credentials: "include",
+        credentials: "include", // Include cookies for session auth
         mode: "cors",
         cache: "no-cache", // Prevent caching of requests
         headers: {
           'Accept': 'application/json',
-          ...getAuthHeaders(), // Add auth headers from local storage
+          ...authHeaders, // Add auth headers from local storage
         },
       });
       
@@ -155,10 +190,24 @@ export const getQueryFn: <T>(options: {
         
         // For throw behavior, throw a clear authentication error
         console.error('Authentication error detected in query request');
-        throw new Error(`401: Authentication required. Please login again.`);
+        
+        // Try to parse the error message
+        try {
+          const errorText = await res.text();
+          throw new Error(errorText || `401: Authentication required. Please login again.`);
+        } catch (e) {
+          throw new Error(`401: Authentication required. Please login again.`);
+        }
       }
   
-      await throwIfResNotOk(res);
+      // For non-401 errors
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`Error response (${res.status}) for query:`, errorText);
+        throw new Error(errorText || res.statusText || `Error: ${res.status}`);
+      }
+      
+      // Parse JSON response
       return await res.json();
     } catch (error) {
       console.error('Query request error:', error);
