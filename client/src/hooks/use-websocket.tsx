@@ -99,14 +99,33 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
                 data = await apiRequest('GET', '/api/settings');
                 break;
               case 'agent-notifications':
-                data = await apiRequest('GET', '/api/agent/notifications');
+                try {
+                  // Fix: Use correct format for API request
+                  data = await fetch('/api/agent/notifications')
+                    .then(response => {
+                      if (!response.ok) {
+                        throw new Error(`HTTP error ${response.status}`);
+                      }
+                      return response.json();
+                    });
+                } catch (err) {
+                  console.error('Error fetching notifications:', err);
+                }
                 break;
               case 'agent-tasks':
-                data = await apiRequest('GET', '/api/agent/tasks');
+                try {
+                  data = await apiRequest('GET', '/api/agent/tasks');
+                } catch (err) {
+                  console.error('Error fetching agent tasks:', err);
+                }
                 break;
               default:
                 // Try a generic endpoint based on channel name
-                data = await apiRequest('GET', `/api/${subscription.channel}/latest`);
+                try {
+                  data = await apiRequest('GET', `/api/${subscription.channel}/latest`);
+                } catch (err) {
+                  console.error(`Error fetching data from generic endpoint for ${subscription.channel}:`, err);
+                }
             }
             
             // Update subscription's last polled time

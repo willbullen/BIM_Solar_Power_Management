@@ -32,7 +32,7 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
   const [dataStatus, setDataStatus] = useState<'live' | 'synthetic' | 'offline'>('offline');
   const [wsEnabled, setWsEnabled] = useState<boolean>(true);
   
-  // Set up WebSocket connection for real-time data
+  // Set up REST API polling for real-time data (using the WebSocket compatible interface)
   const { 
     isConnected: wsConnected,
     subscribe,
@@ -40,12 +40,13 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     reconnectCount,
     reconnect
   } = useWebSocket({
+    pollingInterval: refreshInterval, // Use the global refresh interval for polling
     maxReconnectAttempts: 15, // Increase max reconnection attempts
     reconnectDelay: 2000,     // Shorter initial delay between reconnect attempts
     onConnect: () => {
-      console.log('WebSocket connected, subscribing to data channels');
+      console.log('REST API polling started, subscribing to data channels');
       
-      // Re-enable WebSocket if it was disabled due to previous connection issues
+      // Re-enable connection if it was disabled due to previous connection issues
       if (!wsEnabled) {
         setWsEnabled(true);
       }
@@ -53,46 +54,48 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
       // Subscribe to power and environmental data channels
       subscribe('power-data');
       subscribe('environmental-data');
+      subscribe('settings');
       
       // Only show toast if we're reconnecting after a failure
       if (reconnectCount > 0) {
         toast({
-          title: "Real-time data enabled",
-          description: "You are now receiving real-time data updates.",
+          title: "Data polling enabled",
+          description: "You are now receiving data updates via polling.",
           variant: "default",
         });
       }
     },
     onMessage: (message: WebSocketMessage) => {
-      // Handle incoming WebSocket messages by data type
-      if (message.type === 'power-data') {
+      // Handle incoming messages by data type
+      if (message.type === 'power-data' && message.data) {
         setPowerData(message.data);
         setLastUpdated(new Date());
-      } else if (message.type === 'environmental-data') {
+      } else if (message.type === 'environmental-data' && message.data) {
         setEnvironmentalData(message.data);
         setLastUpdated(new Date());
-      } else if (message.type === 'settings') {
+      } else if (message.type === 'settings' && message.data) {
         setSettings(message.data);
         setDataStatus(message.data.dataSource === 'synthetic' ? 'synthetic' : 'live');
       }
     },
     onDisconnect: () => {
-      console.log('WebSocket disconnected, falling back to polling');
-      // If we disconnected, enable polling as fallback
+      console.log('REST API polling stopped, will retry');
+      
+      // If we disconnected, this means something went wrong with polling
       setWsEnabled(false);
       
       // Show toast only on first disconnection
       if (wsEnabled) {
         toast({
-          title: "Switched to polling mode",
-          description: "Connection to real-time data unavailable. Using automatic refresh instead.",
+          title: "Polling connection lost",
+          description: "Connection to data service unavailable. Will continue retrying.",
           variant: "default",
         });
       }
     },
     onError: (error) => {
-      console.error('WebSocket error:', error);
-      // On error, fall back to polling
+      console.error('REST API polling error:', error);
+      // On error, try to use more aggressive polling strategy
       setWsEnabled(false);
     }
   });
@@ -184,9 +187,9 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
       pollingTimerRef.current = null;
     }
     
-    // Only start polling if WebSocket is not connected or disabled
+    // Only start direct polling if REST API polling is not already enabled
     if (wsConnected && wsEnabled) {
-      console.log('WebSocket connected, not starting polling');
+      console.log('REST API polling already active, not starting additional polling');
       return;
     }
     
@@ -239,9 +242,9 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     pollData();
   }, [refreshInterval, wsConnected, wsEnabled, fetchLatestData]);
   
-  // Start or restart polling when refresh interval changes or websocket status changes
+  // Start or restart polling when refresh interval changes or connection status changes
   useEffect(() => {
-    console.log('Refresh interval or WebSocket status changed, updating polling');
+    console.log('Refresh interval or connection status changed, updating polling');
     startPolling();
     
     // Initial data fetch on mount, regardless of polling
@@ -263,7 +266,7 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
   // Create a persistent ref for tracking reconnection timer
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Periodically attempt to reconnect WebSocket if it's disconnected but enabled
+  // Periodically attempt to reconnect polling if it's disconnected but enabled
   useEffect(() => {
     // Helper function to clean up existing timer
     const cleanupReconnectTimer = () => {
@@ -276,12 +279,12 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     // Clean up existing timer first
     cleanupReconnectTimer();
     
-    // If WebSocket is enabled but not connected, try to reconnect periodically
+    // If polling is enabled but not connected, try to reconnect periodically
     if (wsEnabled && !wsConnected && reconnect) {
-      console.log('Setting up periodic WebSocket reconnection attempts');
+      console.log('Setting up periodic REST API polling reconnection attempts');
       
       reconnectTimerRef.current = setInterval(() => {
-        console.log('Attempting to reconnect WebSocket');
+        console.log('Attempting to restart REST API polling');
         reconnect();
       }, 60000); // Try to reconnect every minute
     }
@@ -301,7 +304,8 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
   const error = powerDataError || environmentalDataError || settingsError || null;
   
   // Determine the current connection type and status
-  const connectionType = wsConnected && wsEnabled ? 'websocket' : 'polling';
+  // Even though it's all REST API now, maintain the interface for compatibility
+  const connectionType = wsConnected && wsEnabled ? 'polling' : 'polling';
   const isConnected = (wsConnected && wsEnabled) || lastUpdated !== null;
 
   return (
