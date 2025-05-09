@@ -100,7 +100,12 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     // Note: We need to handle both http/https and development/production environments
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
+    
+    // Make sure we're using the correct WebSocket URL format
+    // Use the same origin as the page and the correct path
     const wsUrl = `${protocol}//${host}/ws`;
+    
+    console.log(`Configured WebSocket URL: ${wsUrl}`);
     
     // Reset manual closure flag when attempting new connection
     manuallyClosedRef.current = false;
