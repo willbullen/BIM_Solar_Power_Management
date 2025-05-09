@@ -107,7 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (credentials: LoginData) => {
       try {
         console.log('Login attempt for user:', credentials.username);
-        const response = await apiRequest('POST', "/api/login", credentials);
+        // Fix the parameter order - apiRequest(url, method, data)
+        const response = await apiRequest("/api/login", "POST", credentials);
         console.log('Login response:', response);
         return response;
       } catch (error) {
@@ -144,7 +145,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (credentials: InsertUser) => {
       try {
         console.log('Registration attempt for user:', credentials.username);
-        const response = await apiRequest("POST", "/api/register", credentials);
+        // Fix the parameter order - apiRequest(url, method, data)
+        const response = await apiRequest("/api/register", "POST", credentials);
         console.log('Registration response:', response);
         return response;
       } catch (error) {
@@ -179,7 +181,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/logout");
+      // Fix the parameter order - apiRequest(url, method, data)
+      return apiRequest("/api/logout", "POST");
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
