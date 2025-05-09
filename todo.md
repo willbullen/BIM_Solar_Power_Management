@@ -141,13 +141,13 @@ This section outlines the implementation strategy for adding an intelligent AI a
   - [ ] Implement proactive insights generation
 
 ### Stage 6: Advanced Features & Documentation
-- [ ] Implement advanced real-time features:
-  - [ ] Improve WebSocket connection stability and reconnection logic
-  - [ ] Add robust error handling for WebSocket messages
-  - [ ] Implement proper WebSocket channel management
-  - [ ] Add intelligent fallback to REST polling when WebSockets fail
-  - [ ] Implement streaming response display
-  - [ ] Add typing indicators
+- [ ] Implement advanced communication features:
+  - [ ] Replace WebSocket communication with robust REST API polling
+  - [ ] Implement efficient API-based notification system
+  - [ ] Create optimized API endpoints for agent message delivery
+  - [ ] Add API-based real-time updates via polling with exponential backoff
+  - [ ] Implement response streaming via chunked API responses
+  - [ ] Add typing indicators through API status endpoints
   - [ ] Create visualization capabilities for insights
 - [ ] Create comprehensive documentation:
   - [ ] Document function registry in AI_AGENT.md
@@ -171,7 +171,7 @@ Current Progress:
 2. Implementing a secure database access layer with parameterized queries
 3. Adding RBAC for database operations with proper user permission checks
 4. Creating the framework for Multi-Capability Planning (MCP)
-5. Addressing WebSocket connectivity issues and improving real-time data updates
+5. Replacing WebSocket communication with REST API polling for improved stability
 
 ## Completed Recently (May 9, 2025)
 1. Optimized dark theme support across the entire AI Agent interface
@@ -185,4 +185,4 @@ Current Progress:
 2. Update AgentService to support function registration with permission levels
 3. Enhance function execution with input validation and error handling
 4. Begin implementation of MCP framework for task scheduling and execution
-5. Fix WebSocket reconnection logic issues to ensure stable real-time updates
+5. Implement REST API-based notification system to replace WebSocket communication

@@ -502,4 +502,34 @@ export const insertSignalNotificationSchema = createInsertSchema(signalNotificat
 export type InsertSignalNotification = z.infer<typeof insertSignalNotificationSchema>;
 export type SignalNotification = typeof signalNotifications.$inferSelect;
 
+// Agent Notifications schema
+export const agentNotifications = pgTable("agent_notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(), // Foreign key to users
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull(), // 'info', 'warning', 'error', 'success', 'task', 'conversation'
+  source: text("source").notNull(), // 'system', 'task', 'conversation', 'agent'
+  read: boolean("read").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  readAt: timestamp("read_at"),
+  data: jsonb("data").notNull().default({}), // Additional notification data
+});
+
+export const agentNotificationsRelations = relations(agentNotifications, ({ one }) => ({
+  user: one(users, {
+    fields: [agentNotifications.userId],
+    references: [users.id],
+  }),
+}));
+
+export const insertAgentNotificationSchema = createInsertSchema(agentNotifications).omit({
+  id: true,
+  createdAt: true,
+  readAt: true,
+});
+
+export type InsertAgentNotification = z.infer<typeof insertAgentNotificationSchema>;
+export type AgentNotification = typeof agentNotifications.$inferSelect;
+
 // Update user relations to include AI agent related entities
