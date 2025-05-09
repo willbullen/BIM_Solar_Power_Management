@@ -1185,33 +1185,36 @@ export default function AgentPage() {
   // If user is not authenticated, show login form
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <Bot className="h-8 w-8 text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 bg-gradient-to-b dark:from-slate-950 dark:to-slate-900 px-4">
+        <Card className="w-full max-w-md border-slate-200 dark:border-slate-800 shadow-lg dark:shadow-slate-900/30">
+          <CardHeader className="text-center pb-6">
+            <div className="flex justify-center mb-5">
+              <div className="h-20 w-20 rounded-full bg-primary/10 dark:bg-blue-900/30 flex items-center justify-center ring-1 ring-primary/20 dark:ring-blue-700/30">
+                <Bot className="h-10 w-10 text-primary dark:text-blue-400" />
               </div>
             </div>
-            <CardTitle className="text-2xl">AI Agent Login</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+              AI Agent Login
+            </CardTitle>
+            <CardDescription className="text-slate-500 dark:text-slate-400 text-base mt-2">
               Sign in to access the AI Agent Architect
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username" className="text-slate-700 dark:text-slate-300">Username</Label>
                 <Input 
                   id="username" 
                   placeholder="admin" 
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
+                  className="border-slate-300 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300 focus:border-blue-500 dark:focus:border-blue-500 dark:focus-visible:ring-blue-500/30 dark:focus-visible:ring-offset-slate-900"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="text-slate-700 dark:text-slate-300">Password</Label>
                 <Input 
                   id="password" 
                   type="password" 
@@ -1219,9 +1222,14 @@ export default function AgentPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  className="border-slate-300 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300 focus:border-blue-500 dark:focus:border-blue-500 dark:focus-visible:ring-blue-500/30 dark:focus-visible:ring-offset-slate-900"
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
+              <Button 
+                type="submit" 
+                className="w-full mt-2 bg-blue-600 hover:bg-blue-500 dark:bg-blue-600 dark:hover:bg-blue-500 text-white shadow-sm"
+                disabled={loginMutation.isPending}
+              >
                 {loginMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1233,10 +1241,10 @@ export default function AgentPage() {
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="flex justify-center border-t pt-4">
-            <p className="text-sm text-muted-foreground">
-              Use username: <span className="font-medium">admin</span> and password: <span className="font-medium">password</span>
-            </p>
+          <CardFooter className="flex justify-center border-t border-slate-200 dark:border-slate-800 pt-5 text-center">
+            <div className="text-sm text-slate-500 dark:text-slate-400 px-4">
+              Use username: <span className="font-medium text-slate-700 dark:text-slate-300">admin</span> and password: <span className="font-medium text-slate-700 dark:text-slate-300">emporium123</span>
+            </div>
           </CardFooter>
         </Card>
       </div>
@@ -1247,16 +1255,16 @@ export default function AgentPage() {
     <SharedLayout user={user}>
       <div className="space-y-8">
         <TooltipProvider>
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          {/* Enhanced Header with Dark Mode Optimizations */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300">
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800/30 dark:hover:bg-blue-900/50 transition-colors">
                 AI Architect
               </Badge>
-              <Badge variant="default">
+              <Badge variant="default" className="bg-green-600 hover:bg-green-500 dark:bg-green-600/90 dark:hover:bg-green-500/90">
                 Active
               </Badge>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
                 Version 1.0
               </p>
             </div>
@@ -1264,22 +1272,26 @@ export default function AgentPage() {
             <div className="mt-2 sm:mt-0 flex items-center gap-2">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Database className="h-4 w-4 text-primary" />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2 border-slate-200 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
+                  >
+                    <Database className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                     <span>Database Access</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent className="w-80">
+                <TooltipContent className="w-80 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
                   <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
                       This AI agent has secure access to your energy and environmental data for providing insights and recommendations.
                     </p>
                     <div className="grid grid-cols-2 gap-2 pt-1">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                         <CheckCircle className="h-3 w-3 text-green-500" />
                         <span>Power Monitoring</span>
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                         <CheckCircle className="h-3 w-3 text-green-500" />
                         <span>Environmental Data</span>
                       </div>
@@ -1288,22 +1300,26 @@ export default function AgentPage() {
                 </TooltipContent>
               </Tooltip>
               
-              <Button variant="outline" size="sm">
-                <Sparkles className="mr-2 h-4 w-4" />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 border-slate-200 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
+              >
+                <Sparkles className="mr-1 h-4 w-4 text-amber-500 dark:text-amber-400" />
                 AI Settings
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-1 h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
               </Button>
             </div>
           </div>
           
-          {/* Title Section */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Bot className="h-6 w-6 text-primary" />
+          {/* Title Section with Enhanced Dark Mode Styling */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-14 w-14 rounded-full bg-blue-900/20 dark:bg-blue-900/30 flex items-center justify-center ring-1 ring-blue-500/20 dark:ring-blue-800/40">
+              <Bot className="h-7 w-7 text-blue-500 dark:text-blue-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">AI Agent Architect</h1>
-              <p className="text-sm text-gray-400">
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">AI Agent Architect</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
                 Your intelligent assistant for energy monitoring and optimization
               </p>
             </div>
@@ -1423,30 +1439,30 @@ export default function AgentPage() {
             </Tabs>
           </div>
           
-          {/* Enhanced Footer with Status Information */}
-          <div className="flex items-center justify-between bg-gradient-to-r from-slate-950 to-slate-900 py-2 px-3 rounded-md mt-2 shadow-inner">
+          {/* Enhanced Footer with Status Information - Dark Mode Optimized */}
+          <div className="flex items-center justify-between bg-gradient-to-r from-slate-900/80 to-slate-800/80 dark:from-slate-950 dark:to-slate-900 py-2.5 px-4 rounded-lg mt-2 shadow-inner border border-slate-200/10 dark:border-slate-800">
             <div className="flex items-center">
-              <div className="text-slate-400 flex items-center gap-2 text-xs">
+              <div className="text-slate-600 dark:text-slate-400 flex items-center gap-2 text-xs">
                 {activeTab === "chat" && (
                   <>
-                    <div className="bg-blue-900/20 p-1 rounded">
-                      <MessageSquare className="h-3.5 w-3.5 text-blue-400" />
+                    <div className="bg-blue-100/80 dark:bg-blue-900/30 p-1.5 rounded-md ring-1 ring-blue-200/50 dark:ring-blue-800/30">
+                      <MessageSquare className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
                     </div>
                     <span>Ask questions about energy data and receive AI-powered insights</span>
                   </>
                 )}
                 {activeTab === "tasks" && (
                   <>
-                    <div className="bg-blue-900/20 p-1 rounded">
-                      <ListChecks className="h-3.5 w-3.5 text-blue-400" />
+                    <div className="bg-amber-100/80 dark:bg-amber-900/20 p-1.5 rounded-md ring-1 ring-amber-200/50 dark:ring-amber-800/30">
+                      <ListChecks className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                     </div>
                     <span>Schedule automated analysis tasks for periodic energy reports</span>
                   </>
                 )}
                 {activeTab === "settings" && (
                   <>
-                    <div className="bg-blue-900/20 p-1 rounded">
-                      <Settings className="h-3.5 w-3.5 text-blue-400" />
+                    <div className="bg-indigo-100/80 dark:bg-indigo-900/20 p-1.5 rounded-md ring-1 ring-indigo-200/50 dark:ring-indigo-800/30">
+                      <Settings className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <span>Adjust model parameters to focus on specific data analysis priorities</span>
                   </>
@@ -1456,19 +1472,19 @@ export default function AgentPage() {
             
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5">
-                <span className="flex h-2 w-2 relative">
+                <div className="flex h-2.5 w-2.5 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                </span>
-                <span className="text-xs text-slate-400">Agent Online</span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                </div>
+                <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Agent Online</span>
               </div>
               
-              <div className="border-l border-slate-800 pl-3">
+              <div className="border-l border-slate-300/20 dark:border-slate-700 pl-3">
                 <a 
                   href="https://docs.openai.com" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-blue-400 hover:text-blue-300 flex items-center gap-1.5 text-xs"
+                  className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 flex items-center gap-1.5 text-xs font-medium transition-colors"
                 >
                   <BookOpen className="h-3.5 w-3.5" />
                   <span>Documentation</span>
