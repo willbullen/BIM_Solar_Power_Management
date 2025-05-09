@@ -1,0 +1,97 @@
+API response status: 200 OK
+Latest data fetched successfully
+WebSocket singleton already initialized - ignoring additional connection attempt
+Connecting to WebSocket at wss://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws (attempt 1)
+Creating new WebSocket connection as singleton
+Fetching latest data via REST API...
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+Error during WebSocket connection setup: 
+Event {isTrusted: true}
+
+WebSocket error: 
+Event {isTrusted: true}
+
+WebSocket error: 
+Event {isTrusted: true}
+
+WebSocket error: 
+Event {isTrusted: true}
+
+API response status: 200 OK
+Latest data fetched successfully
+Fetch completed successfully
+Next fetch scheduled in 5000ms (rate: 5s)
+WebSocket singleton already initialized - ignoring additional connection attempt
+Connecting to WebSocket at wss://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws (attempt 1)
+Creating new WebSocket connection as singleton
+Fetching latest data via REST API...
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+Error during WebSocket connection setup: 
+Event {isTrusted: true}
+
+WebSocket error: 
+Event {isTrusted: true}
+
+WebSocket error: 
+Event {isTrusted: true}
+
+WebSocket error: 
+Event {isTrusted: true}
+
+API response status: 200 OK
+Latest data fetched successfully
+WebSocket singleton already initialized - ignoring additional connection attempt
+Connecting to WebSocket at wss://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws (attempt 1)
+Creating new WebSocket connection as singleton
+Fetching latest data via REST API...
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+Error during WebSocket connection setup: 
+Event {isTrusted: true}
+
+WebSocket error: 
+Event {isTrusted: true}
+
+WebSocket error: 
+Event {isTrusted: true}
+
+WebSocket error: 
+Event {isTrusted: true}
+
+API response status: 200 OK
+Latest data fetched successfully
+Fetch completed successfully
+Next fetch scheduled in 5000ms (rate: 5s)
+WebSocket singleton already initialized - ignoring additional connection attempt
+Connecting to WebSocket at wss://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws (attempt 1)
+Creating new WebSocket connection as singleton
+Fetching latest data via REST API...
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+Error during WebSocket connection setup: 
+Event {isTrusted: true}
+
+WebSocket error: 
+Event {isTrusted: true}
+
+WebSocket error: 
+Event {isTrusted: true}
+
+WebSocket error: 
+Event {isTrusted: true}
+
+API response status: 200 OK
+Latest data fetched successfully
+WebSocket singleton already initialized - ignoring additional connection attempt
+Connecting to WebSocket at wss://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/ws (attempt 1)
+Creating new WebSocket connection as singleton
+Fetching latest data via REST API...
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
