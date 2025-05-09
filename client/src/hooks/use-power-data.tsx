@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PowerData, EnvironmentalData, Settings } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -168,61 +168,73 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     fetchLatestData();
   }, [fetchLatestData]);
   
+  // Create a persistent ref for tracking intervals
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
   // Set up fallback polling mechanism when WebSocket is not connected or disabled
   useEffect(() => {
-    let pollingInterval: NodeJS.Timeout | null = null;
+    console.log(`⏰ Refresh rate changed to: ${refreshInterval}ms`);
+    
+    // Helper function to clean up any existing intervals
+    const cleanupExistingInterval = () => {
+      if (pollingIntervalRef.current) {
+        console.log(`Cleaning up existing interval (${refreshInterval}ms)`);
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
     
     // Skip polling if WebSocket is connected
     if (wsConnected && wsEnabled) {
       console.log('WebSocket connected, skipping polling');
-      return () => {
-        if (pollingInterval) {
-          console.log(`Clearing polling interval (${refreshInterval}ms)`);
-          clearInterval(pollingInterval);
-        }
-      };
+      cleanupExistingInterval();
+      return;
     }
+    
+    // Always clean up before setting new interval
+    cleanupExistingInterval();
     
     console.log(`Starting power data polling with interval: ${refreshInterval}ms`);
     
-    // Clear previous interval if it exists before setting a new one
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-    }
+    // Immediately fetch data when interval changes
+    fetchLatestData();
     
     // Set up polling interval based on the selected refresh rate
-    pollingInterval = setInterval(fetchLatestData, refreshInterval);
+    pollingIntervalRef.current = setInterval(fetchLatestData, refreshInterval);
     
     // Clean up on unmount or when dependencies change
-    return () => {
-      if (pollingInterval) {
-        console.log(`Clearing polling interval (${refreshInterval}ms)`);
-        clearInterval(pollingInterval);
-      }
-    };
+    return cleanupExistingInterval;
     
     // Dependencies ensure this effect runs again when relevant states change
   }, [wsConnected, wsEnabled, refreshInterval, fetchLatestData]);
   
+  // Create a persistent ref for tracking reconnection timer
+  const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
   // Periodically attempt to reconnect WebSocket if it's disconnected but enabled
   useEffect(() => {
-    let reconnectTimer: NodeJS.Timeout | null = null;
+    // Helper function to clean up existing timer
+    const cleanupReconnectTimer = () => {
+      if (reconnectTimerRef.current) {
+        clearInterval(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+    };
+    
+    // Clean up existing timer first
+    cleanupReconnectTimer();
     
     // If WebSocket is enabled but not connected, try to reconnect periodically
     if (wsEnabled && !wsConnected && reconnect) {
       console.log('Setting up periodic WebSocket reconnection attempts');
       
-      reconnectTimer = setInterval(() => {
+      reconnectTimerRef.current = setInterval(() => {
         console.log('Attempting to reconnect WebSocket');
         reconnect();
       }, 60000); // Try to reconnect every minute
     }
     
-    return () => {
-      if (reconnectTimer) {
-        clearInterval(reconnectTimer);
-      }
-    };
+    return cleanupReconnectTimer;
   }, [wsEnabled, wsConnected, reconnect]);
   
   // Update settings when they change from the query

@@ -225,7 +225,18 @@ export function SharedLayout({ children, user }: LayoutProps) {
                     value={String(refreshInterval)} 
                     onValueChange={(value) => {
                       console.log(`Dropdown selection: changing refresh rate to ${value}ms`);
-                      setRefreshInterval(Number(value));
+                      const numValue = Number(value);
+                      if (!isNaN(numValue)) {
+                        // Clear existing intervals and set new one
+                        setRefreshInterval(numValue);
+                        
+                        // Store in localStorage
+                        try {
+                          localStorage.setItem('refreshRate', value);
+                        } catch (e) {
+                          console.error('Failed to save refresh rate:', e);
+                        }
+                      }
                     }}
                   >
                     {/* Import available refresh rates from the hook */}
