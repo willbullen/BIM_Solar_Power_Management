@@ -768,28 +768,28 @@ function ChatInterface() {
           
           <CardFooter className="border-t border-slate-800 p-4 bg-slate-900">
             <form onSubmit={handleSendMessage} className="flex w-full space-x-2">
-            <Input 
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={activeConversation ? "Type your message..." : "Select a conversation to start chatting"}
-              disabled={!activeConversation || sendMessage.isPending || createConversation.isPending}
-              className="flex-1 bg-slate-800 border-slate-700 text-white placeholder:text-gray-400 focus-visible:ring-blue-600"
-            />
-            <Button 
-              type="submit" 
-              disabled={!activeConversation || !input.trim() || sendMessage.isPending || createConversation.isPending}
-              className={!activeConversation || !input.trim() || sendMessage.isPending || createConversation.isPending ? "bg-slate-700" : "bg-blue-600 hover:bg-blue-700"}
-            >
-              {sendMessage.isPending || createConversation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
+              <Input 
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={activeConversation ? "Type your message..." : "Select a conversation to start chatting"}
+                disabled={!activeConversation || sendMessage.isPending || createConversation.isPending}
+                className="flex-1 bg-slate-800 border-slate-700 text-white placeholder:text-gray-400 focus-visible:ring-blue-600"
+              />
+              <Button 
+                type="submit" 
+                disabled={!activeConversation || !input.trim() || sendMessage.isPending || createConversation.isPending}
+                className={!activeConversation || !input.trim() || sendMessage.isPending || createConversation.isPending ? "bg-slate-700" : "bg-blue-600 hover:bg-blue-700"}
+              >
+                {sendMessage.isPending || createConversation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
             </form>
           </CardFooter>
-      </Card>
+        </Card>
     </div>
   );
 }
