@@ -164,6 +164,36 @@ function ChatInterface() {
     }
   }, [pinnedMessages, activeConversation]);
   
+  // Delete a message
+  const deleteMessage = useMutation({
+    mutationFn: ({ conversationId, messageId }: { conversationId: number; messageId: number }) => 
+      apiRequest('DELETE', `/api/agent/conversations/${conversationId}/messages/${messageId}`),
+    onSuccess: () => {
+      refetchMessages();
+      toast({
+        title: "Message deleted",
+        description: "The message has been successfully deleted."
+      });
+    },
+    onError: (error: Error) => {
+      console.error("Delete message error:", error);
+      
+      if (error.message.includes("401")) {
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Your session may have expired. Please log in and try again."
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to delete message: " + error.message
+        });
+      }
+    }
+  });
+  
   // Load pinned messages when conversation changes
   useEffect(() => {
     if (activeConversation) {
@@ -649,11 +679,20 @@ function ChatInterface() {
                         )}
                       >
                         <EnhancedMessage
+                          id={message.id}
                           role={message.role}
                           content={message.content || ""}
                           timestamp={message.createdAt}
                           isPinned={pinnedMessages.has(message.id)}
                           onPin={() => togglePinMessage(message.id)}
+                          onDelete={() => {
+                            if (activeConversation) {
+                              deleteMessage.mutate({
+                                conversationId: activeConversation,
+                                messageId: message.id
+                              });
+                            }
+                          }}
                           hasReference={typeof message.content === 'string' && message.content !== null && message.content !== undefined && (message.content.includes('data reference') || message.content.includes('power data'))}
                         />
                       </div>
