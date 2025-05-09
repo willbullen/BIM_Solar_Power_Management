@@ -49,15 +49,67 @@ const notificationSchema = z.object({
   type: z.enum(['alert', 'report', 'reminder', 'status']).optional().default('alert'),
 });
 
+// Import storage for user access
+import * as storage from './storage';
+
 // Authentication helper
 /**
  * Middleware to require authentication
+ * This middleware checks for authentication in the following order:
+ * 1. Session-based authentication (req.session.userId)
+ * 2. Passport authentication (req.isAuthenticated())
+ * 3. Header-based authentication (X-Auth-User-Id and X-Auth-Username)
  */
-function requireAuth(req: Request, res: Response, next: any) {
+async function requireAuth(req: Request, res: Response, next: any) {
   console.log('Auth check - Session:', req.session ? 'exists' : 'missing');
   console.log('Auth check - UserId:', req.session?.userId ? req.session.userId : 'missing');
   console.log('Auth check - IsAuthenticated:', req.isAuthenticated ? (req.isAuthenticated() ? 'yes' : 'no') : 'method missing');
   
+  // Check if headers contain auth info as fallback (from local storage)
+  const headerUserId = req.header('X-Auth-User-Id');
+  const headerUsername = req.header('X-Auth-Username');
+  
+  if (headerUserId && headerUsername) {
+    console.log('Auth check - Using header-based authentication');
+    
+    try {
+      // Validate the header credentials
+      const userId = parseInt(headerUserId, 10);
+      if (isNaN(userId)) {
+        return res.status(401).json({ error: 'Invalid user ID in header' });
+      }
+      
+      // Verify user exists
+      const user = await storage.getUser(userId);
+      if (!user || user.username !== headerUsername) {
+        return res.status(401).json({ error: 'Invalid authentication credentials' });
+      }
+      
+      // If valid, store in session for future requests
+      if (req.session) {
+        req.session.userId = userId;
+        req.session.userRole = user.role;
+        
+        // Save session immediately
+        req.session.save((err) => {
+          if (err) {
+            console.error('Error saving session from header auth:', err);
+          } else {
+            console.log('Session restored from header auth for user:', userId);
+          }
+        });
+      }
+      
+      // Continue to the next middleware/route handler
+      next();
+      return;
+    } catch (error) {
+      console.error('Header auth validation error:', error);
+      // Continue with other auth methods
+    }
+  }
+  
+  // Standard session-based authentication check
   if (!req.session || !req.session.userId) {
     // For better debugging, check passport authentication as well
     if (req.isAuthenticated && req.isAuthenticated()) {
@@ -70,24 +122,75 @@ function requireAuth(req: Request, res: Response, next: any) {
         return;
       }
     }
-    return res.status(401).json({ message: 'Not authenticated' });
+    return res.status(401).json({ error: 'Not authenticated' });
   }
   next();
 }
 
 /**
  * Middleware to require specific role
+ * Checks both session and header-based authentication
  * @param roles Array of allowed roles
  */
 function requireRole(roles: string[]) {
-  return (req: Request, res: Response, next: any) => {
+  return async (req: Request, res: Response, next: any) => {
+    // Check header auth first
+    const headerUserId = req.header('X-Auth-User-Id');
+    const headerUsername = req.header('X-Auth-Username');
+    
+    if (headerUserId && headerUsername) {
+      try {
+        // Validate the header credentials
+        const userId = parseInt(headerUserId, 10);
+        if (isNaN(userId)) {
+          return res.status(401).json({ error: 'Invalid user ID in header' });
+        }
+        
+        // Verify user exists and has the required role
+        const user = await storage.getUser(userId);
+        if (!user || user.username !== headerUsername) {
+          return res.status(401).json({ error: 'Invalid authentication credentials' });
+        }
+        
+        // Store in session for future requests
+        if (req.session) {
+          req.session.userId = userId;
+          req.session.userRole = user.role;
+          
+          // Save session immediately
+          req.session.save((err) => {
+            if (err) {
+              console.error('Error saving session from header auth in requireRole:', err);
+            }
+          });
+        }
+        
+        // Check if user has the required role
+        if (!roles.includes(user.role)) {
+          return res.status(403).json({ 
+            error: 'Access denied', 
+            required: roles,
+            current: user.role
+          });
+        }
+        
+        // Continue to the next middleware/route handler
+        next();
+        return;
+      } catch (error) {
+        console.error('Header auth validation error in requireRole:', error);
+        // Continue with standard session check
+      }
+    }
+    
+    // Standard session check
     if (!req.session || !req.session.userId || !req.session.userRole) {
-      return res.status(401).json({ message: 'Not authenticated' });
+      return res.status(401).json({ error: 'Not authenticated' });
     }
     
     if (!roles.includes(req.session.userRole)) {
       return res.status(403).json({ 
-        message: 'Access denied', 
+        error: 'Access denied', 
         required: roles,
         current: req.session.userRole
       });
