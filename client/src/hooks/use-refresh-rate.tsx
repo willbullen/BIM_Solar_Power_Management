@@ -1,11 +1,18 @@
 import { createContext, ReactNode, useContext, useState, useEffect, useRef } from "react";
 
+// Special flag to ensure we only have one provider instance
+declare global {
+  interface Window {
+    _refreshRateProviderInitialized?: boolean;
+  }
+}
+
 type RefreshRateContextType = {
   refreshInterval: number;
   setRefreshInterval: (interval: number) => void;
   refreshRateLabel: string;
-  shouldFetch: boolean; // NEW: Signal to trigger data fetch
-  setFetchComplete: () => void; // NEW: Signal that fetch is complete
+  shouldFetch: boolean; // Signal to trigger data fetch
+  setFetchComplete: () => void; // Signal that fetch is complete
 };
 
 const RefreshRateContext = createContext<RefreshRateContextType | undefined>(undefined);
@@ -26,6 +33,22 @@ export const REFRESH_RATES: RefreshRateOption[] = [
 ];
 
 export function RefreshRateProvider({ children }: { children: ReactNode }) {
+  // Check if we already have an initialized provider
+  const [isInitialized] = useState(() => {
+    const alreadyInitialized = typeof window !== 'undefined' && window._refreshRateProviderInitialized === true;
+    if (alreadyInitialized) {
+      console.warn('Multiple RefreshRateProvider instances detected. This may cause issues with polling.');
+      return false;
+    }
+    
+    // Mark as initialized
+    if (typeof window !== 'undefined') {
+      window._refreshRateProviderInitialized = true;
+      console.log('RefreshRateProvider initialized as singleton');
+    }
+    return true;
+  });
+  
   // Default to 10s refresh interval
   const defaultInterval = 10000;
   
@@ -46,8 +69,8 @@ export function RefreshRateProvider({ children }: { children: ReactNode }) {
     return defaultInterval;
   });
   
-  // NEW: State to indicate when data should be fetched
-  const [shouldFetch, setShouldFetch] = useState<boolean>(true);
+  // State to indicate when data should be fetched
+  const [shouldFetch, setShouldFetch] = useState<boolean>(isInitialized);
   
   // Timer reference
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -87,23 +110,48 @@ export function RefreshRateProvider({ children }: { children: ReactNode }) {
     // Mark current fetch as complete
     setShouldFetch(false);
     
-    // Schedule next fetch
+    // Schedule next fetch - only if WebSocket is not connected
+    // The delay should be the refresh interval minus a small buffer to avoid drift
     timerRef.current = setTimeout(() => {
+      console.log(`Refresh timer triggered after ${refreshInterval}ms`);
       setShouldFetch(true);
-    }, refreshInterval);
+    }, refreshInterval - 100); // Small buffer to avoid drift
     
-    console.log(`Next fetch scheduled in ${refreshInterval}ms`);
+    console.log(`Next fetch scheduled in ${refreshInterval}ms (rate: ${refreshRateLabel})`);
   };
   
   // Clean up timer on unmount
   useEffect(() => {
+    console.log(`*** REFRESH RATE PROVIDER INITIALIZED: ${refreshInterval}ms ***`);
+    
+    // Log the current state for debugging
+    const logState = () => {
+      console.log(`Current refresh state - Rate: ${refreshInterval}ms, Should fetch: ${shouldFetch}, Has timer: ${!!timerRef.current}`);
+    };
+    
+    // Log initial state
+    logState();
+    
+    // Set up periodic logging for debugging
+    const debugLogInterval = setInterval(logState, 10000);
+    
     return () => {
+      console.log(`*** REFRESH RATE PROVIDER CLEANUP ***`);
+      
+      // Clear our timers
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
+      clearInterval(debugLogInterval);
+      
+      // If we're the initialized instance, release the singleton when unmounted
+      if (isInitialized && typeof window !== 'undefined') {
+        console.log('Releasing RefreshRateProvider singleton');
+        window._refreshRateProviderInitialized = false;
+      }
     };
-  }, []);
+  }, [refreshInterval, shouldFetch]);
   
   // Find the label for the current refresh interval
   const refreshRateLabel = REFRESH_RATES.find(rate => rate.value === refreshInterval)?.label || "10s";

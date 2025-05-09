@@ -177,8 +177,12 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
   
   // This effect runs ONLY when the shouldFetch flag changes
   useEffect(() => {
-    // Skip polling if WebSocket is connected
-    if (wsConnected && wsEnabled) {
+    // Turn off WebSocket connection attempts when we're debugging
+    // This will force the use of polling which is more reliable for testing refresh rates
+    const debugMode = true; // Set to true to force polling for testing
+
+    // Skip polling if WebSocket is connected and we're not in debug mode
+    if (wsConnected && wsEnabled && !debugMode) {
       console.log('WebSocket connected, skipping polling');
       return;
     }

@@ -1,5 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+// Define a global variable to track if we have an active WebSocket connection
+declare global {
+  interface Window {
+    _webSocketInitialized?: boolean;
+    _activeWebSocketInstance?: WebSocket | null;
+  }
+}
+
 // Define message types for type safety
 export interface WebSocketMessage {
   type: string;
@@ -61,6 +69,20 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
   
   // Initialize WebSocket connection
   const connect = useCallback(() => {
+    // Check if we already have an active WebSocket connection globally
+    if (typeof window !== 'undefined' && window._webSocketInitialized) {
+      console.warn('WebSocket singleton already initialized - ignoring additional connection attempt');
+      
+      // If there's an existing global socket, use it instead of creating a new one
+      if (window._activeWebSocketInstance &&
+          window._activeWebSocketInstance.readyState === WebSocket.OPEN) {
+        console.log('Reusing existing WebSocket connection');
+        wsRef.current = window._activeWebSocketInstance;
+        setIsConnected(true);
+        return;
+      }
+    }
+    
     // If we've exceeded the maximum overall reconnection attempts, give up
     if (reconnectCount >= maxReconnectAttempts) {
       console.error(`Exceeded maximum reconnection attempts (${maxReconnectAttempts}), giving up`);
@@ -101,9 +123,24 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     }
     
     try {
-      // Create a new WebSocket connection with explicit protocol
-      const socket = new WebSocket(wsUrl);
-      wsRef.current = socket;
+      // Check if we can reuse the global WebSocket instance
+      if (typeof window !== 'undefined' && 
+          window._activeWebSocketInstance && 
+          window._activeWebSocketInstance.readyState === WebSocket.OPEN) {
+        console.log('Reusing existing global WebSocket instance');
+        wsRef.current = window._activeWebSocketInstance;
+      } else {
+        // Create a new WebSocket connection
+        console.log('Creating new WebSocket connection as singleton');
+        const socket = new WebSocket(wsUrl);
+        wsRef.current = socket;
+        
+        // Set global instance
+        if (typeof window !== 'undefined') {
+          window._webSocketInitialized = true;
+          window._activeWebSocketInstance = socket;
+        }
+      }
       
       // Add error handling for the connection and setup process
       socket.addEventListener('error', (event) => {
