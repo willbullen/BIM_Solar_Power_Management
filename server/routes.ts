@@ -17,7 +17,6 @@ import { SolcastService } from './solcast-service';
 import { AIService } from './ai-service';
 import { registerAgentRoutes } from './agent-routes';
 import { WebSocketServer, WebSocket } from 'ws';
-import { webSocketService } from './websocket-service';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize the database
@@ -82,9 +81,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // We're now using the WebSocketService for managing subscriptions
-  // The service is automatically initialized and provides subscription channels
-  // Available channels: 'power-data', 'environmental-data', 'agent-message', 'agent-notification'
+  // Track subscriptions and clients
+  const subscriptions = new Map<string, Set<WebSocket>>();
+  
+  // Initialize subscription channels
+  subscriptions.set('power-data', new Set<WebSocket>());
+  subscriptions.set('environmental-data', new Set<WebSocket>());
   
   // Log WebSocket server errors
   wss.on('error', (error) => {
@@ -199,27 +201,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               data: { timestamp: new Date().toISOString() }
             }));
             break;
-          case 'message':
-            // Handle direct message broadcasting
-            if (parsedMessage.channel && typeof parsedMessage.channel === 'string') {
-              // For agent-message channel, use the WebSocketService broadcast
-              if (parsedMessage.channel === 'agent-message') {
-                webSocketService.broadcastAgentMessage(parsedMessage.data);
-                console.log('Broadcasted direct message to agent-message channel');
-              } 
-              // For agent-notification channel, use the notification broadcast
-              else if (parsedMessage.channel === 'agent-notification') {
-                webSocketService.broadcastAgentNotification(parsedMessage.data);
-                console.log('Broadcasted direct message to agent-notification channel');
-              }
-              else {
-                console.log(`Broadcasting to channel: ${parsedMessage.channel}`);
-                webSocketService.broadcast(parsedMessage.channel, parsedMessage.data);
-              }
-            } else {
-              console.log('Invalid message format: missing or invalid channel');
-            }
-            break;
           default:
             console.log('Unknown message type:', parsedMessage.type);
         }
@@ -232,8 +213,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ws.on('close', () => {
       console.log('WebSocket connection closed');
       
-      // Remove from all subscriptions using WebSocketService
-      webSocketService.removeClient(ws);
+      // Remove from all subscriptions
+      // Convert to array to avoid TypeScript iteration issues with Set
+      Array.from(subscribedChannels).forEach(channel => {
+        const subscribers = subscriptions.get(channel);
+        if (subscribers) {
+          subscribers.delete(ws);
+        }
+      });
       subscribedChannels.clear();
     });
     
@@ -271,19 +258,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   function broadcastData(data: any) {
     // Get the channel name from the data type
     const channelName = data.type;
+    const subscribers = subscriptions.get(channelName);
     
-    // Use the WebSocketService to handle broadcasting
-    webSocketService.broadcast(channelName, data.data);
+    if (subscribers && subscribers.size > 0) {
+      // Send to subscribed clients
+      subscribers.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          try {
+            client.send(JSON.stringify(data));
+          } catch (error) {
+            console.error(`Error broadcasting to client: ${error}`);
+          }
+        }
+      });
+      console.log(`Broadcast ${channelName} to ${subscribers.size} subscribers`);
+    } else {
+      // Fallback to broadcasting to all clients if no specific subscribers
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          try {
+            client.send(JSON.stringify(data));
+          } catch (error) {
+            console.error(`Error broadcasting to client: ${error}`);
+          }
+        }
+      });
+    }
   }
   
   // Handle subscription requests
   function handleSubscription(ws: WebSocket, data: any, subscribedChannels: Set<string>) {
-    // Get valid channels from WebSocketService
-    const validChannels = webSocketService.getValidChannels();
-    
-    if (validChannels.includes(data.channel)) {
-      // Add client to subscription using WebSocketService
-      if (webSocketService.addSubscription(data.channel, ws)) {
+    // Currently only supports power and environmental data subscriptions
+    if (data.channel === 'power-data' || data.channel === 'environmental-data') {
+      // Add client to subscription list for the channel
+      const subscribers = subscriptions.get(data.channel);
+      if (subscribers) {
+        subscribers.add(ws);
         subscribedChannels.add(data.channel);
         console.log(`Client subscribed to ${data.channel}`);
       }
@@ -295,22 +305,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } else {
       ws.send(JSON.stringify({
         type: 'subscription-failed',
-        data: { 
-          message: `Unknown channel: ${data.channel}`,
-          validChannels: validChannels 
-        }
+        data: { message: `Unknown channel: ${data.channel}` }
       }));
     }
   }
   
   // Handle unsubscription requests
   function handleUnsubscription(ws: WebSocket, data: any, subscribedChannels: Set<string>) {
-    // Get valid channels from WebSocketService
-    const validChannels = webSocketService.getValidChannels();
-    
-    if (validChannels.includes(data.channel)) {
-      // Remove client from subscription using WebSocketService
-      if (webSocketService.removeSubscription(data.channel, ws)) {
+    if (data.channel === 'power-data' || data.channel === 'environmental-data') {
+      // Remove client from subscription list for the channel
+      const subscribers = subscriptions.get(data.channel);
+      if (subscribers) {
+        subscribers.delete(ws);
         subscribedChannels.delete(data.channel);
         console.log(`Client unsubscribed from ${data.channel}`);
       }
@@ -322,10 +328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } else {
       ws.send(JSON.stringify({
         type: 'unsubscription-failed',
-        data: { 
-          message: `Unknown channel: ${data.channel}`,
-          validChannels: validChannels 
-        }
+        data: { message: `Unknown channel: ${data.channel}` }
       }));
     }
   }
