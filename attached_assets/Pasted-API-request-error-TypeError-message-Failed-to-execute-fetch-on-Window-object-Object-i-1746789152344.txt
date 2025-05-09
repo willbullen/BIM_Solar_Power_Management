@@ -1,0 +1,24 @@
+API request error: 
+TypeError {message: "Failed to execute 'fetch' on 'Window': '[object Object]' is not a valid HTTP method."}
+message: "Failed to execute 'fetch' on 'Window': '[object Object]' is not a valid HTTP method."
+stack: "TypeError: '[object Object]' is not a valid HTTP method.↵ at window.fetch (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:218642)↵ at apiRequest (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/src/lib/queryClient.ts:34:23)↵ at Object.mutationFn (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/src/pages/settings-page.tsx?t=1746788986127:314:20)↵ at Object.fn (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=bc835951:1189:29)↵ at run (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=bc835951:494:49)↵ at Object.start (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=bc835951:536:9)↵ at _a6.execute (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=bc835951:1225:56)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+constructor: ƒ TypeError()
+message: "Failed to execute 'fetch' on 'Window': '[object Object]' is not a valid HTTP method."
+name: "TypeError"
+[[Prototype]]: Object
+
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Failed to execute 'fetch' on 'Window': '[object Object]' is not a valid HTTP method.
+at window.fetch (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:218642)
+at apiRequest (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/src/lib/queryClient.ts:34:23)
+at Object.mutationFn (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/src/pages/settings-page.tsx?t=1746788986127:314:20)
+at Object.fn (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=bc835951:1189:29)
+at run (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=bc835951:494:49)
+at Object.start (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=bc835951:536:9)
+at _a6.execute (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=bc835951:1225:56)

@@ -13,12 +13,26 @@ function getBaseUrl() {
   return window.location.origin;
 }
 
-// New apiRequest format with explicit url, method, and data parameters
+// New apiRequest format with options parameter
 export async function apiRequest(
   url: string,
-  method: string,
+  options: { method: string; data?: unknown } | string,
   data?: unknown
 ): Promise<any> {
+  // Handle both old and new formats
+  let method: string;
+  let requestData: unknown;
+  
+  if (typeof options === 'string') {
+    // Old format: apiRequest(url, method, data)
+    method = options;
+    requestData = data;
+  } else {
+    // New format: apiRequest(url, { method, data })
+    method = options.method;
+    requestData = options.data;
+  }
+  
   // Ensure we have valid values
   if (!method || !url) {
     throw new Error('Method and URL are required for API requests');
@@ -32,10 +46,10 @@ export async function apiRequest(
   console.log(`Making API request: ${method} ${fullUrl}`);
   
   // Setup request options
-  const options: RequestInit = {
+  const requestOptions: RequestInit = {
     method,
     headers: {
-      ...(data && method !== 'GET' ? { "Content-Type": "application/json" } : {}),
+      ...(requestData && method !== 'GET' ? { "Content-Type": "application/json" } : {}),
       'Accept': 'application/json',
     },
     credentials: "include", // Important for sending cookies with request
@@ -44,12 +58,12 @@ export async function apiRequest(
   };
   
   // Only add body for non-GET requests
-  if (data && method !== 'GET') {
-    options.body = JSON.stringify(data);
+  if (requestData && method !== 'GET') {
+    requestOptions.body = JSON.stringify(requestData);
   }
   
   try {
-    const res = await fetch(fullUrl, options);
+    const res = await fetch(fullUrl, requestOptions);
     console.log(`API response status: ${res.status} ${res.statusText}`);
     
     // Handle authentication errors
