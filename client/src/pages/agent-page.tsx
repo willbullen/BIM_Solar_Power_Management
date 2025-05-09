@@ -167,7 +167,9 @@ function ChatInterface() {
   // Delete a message
   const deleteMessage = useMutation({
     mutationFn: ({ conversationId, messageId }: { conversationId: number; messageId: number }) => 
-      apiRequest('DELETE', `/api/agent/conversations/${conversationId}/messages/${messageId}`),
+      apiRequest(`/api/agent/conversations/${conversationId}/messages/${messageId}`, {
+        method: 'DELETE'
+      }),
     onSuccess: () => {
       refetchMessages();
       toast({

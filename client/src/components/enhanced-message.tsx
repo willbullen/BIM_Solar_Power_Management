@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Bot, User, Clock, Pin, Database, ArrowUpRight, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 // Define interfaces used by ReactMarkdown for type safety
 interface CodeProps {
@@ -114,16 +115,31 @@ export function EnhancedMessage({
             </div>
             
             <div className="flex items-center gap-1.5">
-              {/* Delete button */}
+              {/* Delete button with confirmation dialog */}
               {onDelete && (
-                <button 
-                  onClick={onDelete}
-                  className="text-slate-400 hover:text-red-400 transition-colors p-1 rounded-full hover:bg-slate-800"
-                  title="Delete message"
-                  aria-label="Delete message"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button 
+                      className="text-slate-400 hover:text-red-400 transition-colors p-1 rounded-full hover:bg-slate-800"
+                      title="Delete message"
+                      aria-label="Delete message"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="bg-slate-900 border-slate-700">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-white">Delete Message</AlertDialogTitle>
+                      <AlertDialogDescription className="text-slate-300">
+                        Are you sure you want to delete this message? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="bg-slate-800 text-slate-200 hover:bg-slate-700 border-slate-700">Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
               
               {/* Pin button/indicator */}
