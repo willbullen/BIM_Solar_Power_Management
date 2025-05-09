@@ -112,18 +112,35 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     // Default protocol selection
     let protocol: string;
     
-    // First check if user has manually set a preference through the UI
-    // This takes highest precedence
-    if (userProtocolPreference === 'ws' || userProtocolPreference === 'wss') {
+    // CRITICAL: For Replit environment, ALWAYS use non-secure WebSocket (ws://)
+    // due to a confirmed limitation in Replit's environment with secure WebSockets
+    if (isReplitEnvironment) {
+      // In Replit, ALWAYS use ws:// regardless of user settings
+      // Only override this if user explicitly set ws or wss after seeing this warning
+      
+      // Check if the user has manually set a preference AND they've seen the warning
+      // (indicated by localStorage.hasBeenWarnedAboutReplit)
+      if (userProtocolPreference && localStorage.getItem('hasBeenWarnedAboutReplit') === 'true') {
+        protocol = `${userProtocolPreference}:`;
+        console.log(`Using user-specified WebSocket protocol on Replit: ${protocol} (explicit override)`);
+      } else {
+        // Force ws:// on Replit environment
+        protocol = 'ws:';
+        console.log(`[IMPORTANT] Replit environment detected, forcing non-secure WebSocket protocol (ws://)`);
+        console.log(`Secure WebSockets (wss://) typically fail in Replit environments`);
+        
+        // Set a flag to remember we've warned the user
+        localStorage.setItem('hasBeenWarnedAboutReplit', 'true');
+        
+        // Force protocol to ws:// in localStorage
+        localStorage.setItem('websocket-protocol', 'ws');
+      }
+    }
+    // For non-Replit, respect user preference first
+    else if (userProtocolPreference === 'ws' || userProtocolPreference === 'wss') {
       protocol = `${userProtocolPreference}:`;
       console.log(`Using user-specified WebSocket protocol: ${protocol}`);
-    } 
-    // For Replit environment, default to non-secure WebSocket (ws://)
-    // This is due to a known limitation in Replit's environment with secure WebSockets
-    else if (isReplitEnvironment) {
-      protocol = 'ws:';
-      console.log(`Replit environment detected, defaulting to non-secure WebSocket protocol (ws://)`);
-    } 
+    }
     // Normal protocol selection based on page security for non-Replit environments
     else {
       protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';

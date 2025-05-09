@@ -34,10 +34,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const wss = new WebSocketServer({ 
     server: httpServer, 
     path: '/ws',
-    // The following options improve connection reliability:
-    perMessageDeflate: true, // Enable compression for better performance
-    clientTracking: true,    // Track clients automatically
-    maxPayload: 65536,       // Set reasonable max payload size (64KB)
+    // The following options improve connection reliability in Replit:
+    perMessageDeflate: false, // CRITICAL: Disable compression for Replit compatibility
+    clientTracking: true,     // Track clients automatically
+    maxPayload: 32768,        // Reduced max payload size (32KB) for better Replit compatibility
     // Accept both secure and non-secure WebSocket connections
     handleProtocols: (protocols, request) => {
       console.log('WebSocket handshake protocols:', protocols);
@@ -49,7 +49,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         request.headers.host?.includes('.repl.co');
         
       if (isReplitEnvironment) {
-        console.log('[WebSocket] Replit environment detected, applying special protocol handling');
+        console.log('[WebSocket] REPLIT ENVIRONMENT DETECTED - Using special WebSocket configuration');
+        console.log('[WebSocket] Disabled compression and using reduced payload size');
+        console.log('[WebSocket] WebSocket clients should use ws:// (non-secure) protocol for reliable connections');
       }
       
       // Convert Set to Array if needed and accept the first available protocol
@@ -153,10 +155,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const subscribedChannels = new Set<string>();
     (ws as any).subscribedChannels = subscribedChannels;
     
-    // Send welcome message
+    // Detect if we're in a Replit environment
+    const isReplitEnvironment = 
+      request.headers.host?.includes('.replit.dev') || 
+      request.headers.host?.includes('.repl.co');
+      
+    // Detect protocol (secure vs non-secure)
+    const isSecureProtocol = request.headers['x-forwarded-proto'] === 'https';
+    const socketProtocol = ws.protocol || (isSecureProtocol ? 'wss' : 'ws');
+    
+    // Check if using secure WebSockets in Replit (potential issue)
+    const isRiskyCombination = isReplitEnvironment && socketProtocol.includes('wss');
+      
+    // Send welcome message with environment info and warnings if needed
     ws.send(JSON.stringify({
       type: 'connection',
-      data: { message: 'Connected to Emporium WebSocket Server' }
+      data: { 
+        message: 'Connected to Emporium WebSocket Server',
+        environment: isReplitEnvironment ? 'replit' : 'standard',
+        protocol: socketProtocol,
+        warning: isRiskyCombination ? 
+          'WARNING: Using secure WebSockets (wss://) in Replit may cause connection failures. Consider switching to ws:// protocol.' : 
+          null
+      }
     }));
     
     // Handle messages from client

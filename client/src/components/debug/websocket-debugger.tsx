@@ -138,6 +138,17 @@ export function WebSocketDebugger() {
           </TabsList>
           
           <TabsContent value="status" className="pt-2 pb-0 px-3">
+            {/* Top warning if the user is using WSS on Replit */}
+            {isReplitEnvironment && wsProtocol === 'wss:' && (
+              <Alert className="py-2 mb-3 bg-red-100 border border-red-400">
+                <AlertCircle size={12} className="mr-1 text-red-600" />
+                <AlertDescription className="text-[10px] font-semibold text-red-800">
+                  ⚠️ CRITICAL: You're using secure WebSockets (wss://) in Replit which causes connection failures.
+                  Click the "Actions" tab and use "Force WS Protocol" button!
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <div className="space-y-1 text-xs">
               <div className="flex items-center justify-between">
                 <span className="font-medium flex items-center gap-1">
@@ -152,7 +163,9 @@ export function WebSocketDebugger() {
                 </span>
                 <Badge 
                   variant={wsProtocol === 'wss:' ? "secondary" : "outline"}
-                  className={wsProtocol === 'wss:' ? "" : "text-amber-500"}
+                  className={wsProtocol === 'wss:' ? 
+                    (isReplitEnvironment ? "bg-red-100 text-red-700" : "") : 
+                    (isReplitEnvironment ? "bg-green-100 text-green-700" : "text-amber-500")}
                 >
                   {wsProtocol}
                 </Badge>
@@ -163,7 +176,7 @@ export function WebSocketDebugger() {
                   <span className="font-medium flex items-center gap-1">
                     <Info size={12} /> Environment:
                   </span>
-                  <Badge variant="secondary" className="bg-blue-50">Replit</Badge>
+                  <Badge variant="secondary" className="bg-amber-50 text-amber-800">Replit</Badge>
                 </div>
               )}
               
@@ -197,11 +210,13 @@ export function WebSocketDebugger() {
               </div>
             </div>
             
-            {!isConnected && attempts > 1 && (
-              <Alert className="py-2 mt-2 bg-amber-50 mb-2">
-                <AlertCircle size={12} className="mr-1" />
-                <AlertDescription className="text-[10px]">
-                  Protocol mismatch detected. {isReplitEnvironment ? "For Replit, try the 'Force WS Protocol' option." : "Try matching protocols."}
+            {!isConnected && (
+              <Alert variant="destructive">
+                <AlertCircle size={12} className="mr-2" />
+                <AlertDescription className="text-[10px] font-medium">
+                  {isReplitEnvironment ? 
+                    "Replit requires non-secure WebSocket (ws://) protocol. Go to Actions tab and click 'Force WS Protocol'." : 
+                    "Protocol mismatch detected. Try matching protocols."}
                 </AlertDescription>
               </Alert>
             )}
@@ -254,10 +269,11 @@ export function WebSocketDebugger() {
             </div>
             
             {isReplitEnvironment && (
-              <Alert className="py-2 mt-2 bg-blue-50 mb-2">
-                <Info size={12} className="mr-1" />
-                <AlertDescription className="text-[10px]">
-                  In Replit environment, non-secure WebSocket (ws://) often works better.
+              <Alert className="py-2 mt-2 bg-amber-100 mb-2 border border-amber-400">
+                <AlertCircle size={12} className="mr-1 text-amber-600" />
+                <AlertDescription className="text-[10px] font-medium text-amber-700">
+                  IMPORTANT: Replit environments require non-secure WebSocket (ws://) connections.
+                  Secure WebSockets (wss://) consistently fail in Replit.
                 </AlertDescription>
               </Alert>
             )}
