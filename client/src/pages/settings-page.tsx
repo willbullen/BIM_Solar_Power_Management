@@ -14,7 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Save, Send, Settings, Users, Zap, CloudSun, Palette, Globe, BugPlay, MessageSquare, MessageCircle, Check } from "lucide-react";
+import { Loader2, Save, Send, Settings, Users, Zap, CloudSun, Palette, Globe, BugPlay, MessageSquare, MessageCircle, Check, AlertTriangle, Info } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -1209,6 +1210,104 @@ export default function SettingsPage() {
                     </Badge>
                   ) : null}
                 </div>
+
+                {/* Setup Guide Accordion */}
+                <Accordion type="single" collapsible className="w-full border-b">
+                  <AccordionItem value="guide">
+                    <AccordionTrigger className="px-4 py-3 text-sm font-medium">
+                      How to Set Up Telegram Integration
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      <div className="space-y-4 text-sm">
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900 rounded-lg p-4">
+                          <h4 className="font-medium text-blue-800 dark:text-blue-300 flex items-center">
+                            <Info className="h-4 w-4 mr-2" />
+                            Telegram Integration Setup Guide
+                          </h4>
+                          <p className="mt-2 text-blue-700 dark:text-blue-400">
+                            Follow these steps to set up Telegram notifications for your Emporium Power Monitoring Dashboard.
+                          </p>
+                        </div>
+
+                        <div className="space-y-6">
+                          <div>
+                            <h5 className="font-medium mb-2">For Administrators:</h5>
+                            <ol className="list-decimal list-inside space-y-2 ml-2">
+                              <li className="pl-2">
+                                <span className="font-medium">Create a Telegram Bot:</span>
+                                <ul className="list-disc list-inside ml-6 mt-1 text-muted-foreground">
+                                  <li>Open Telegram and search for <code>@BotFather</code></li>
+                                  <li>Start a chat and send the command <code>/newbot</code></li>
+                                  <li>Follow the instructions to create a new bot</li>
+                                  <li>You'll receive a <strong>bot token</strong> - save this for the next step</li>
+                                </ul>
+                              </li>
+                              <li className="pl-2 mt-4">
+                                <span className="font-medium">Configure Bot in Dashboard:</span>
+                                <ul className="list-disc list-inside ml-6 mt-1 text-muted-foreground">
+                                  <li>Enter the <strong>Bot Token</strong> in the admin settings above</li>
+                                  <li>Enter the <strong>Bot Username</strong> (ends with "bot")</li>
+                                  <li>Enable the integration with the toggle switch</li>
+                                  <li>Click "Save Bot Settings"</li>
+                                </ul>
+                              </li>
+                              <li className="pl-2 mt-4">
+                                <span className="font-medium">Test Your Configuration:</span>
+                                <ul className="list-disc list-inside ml-6 mt-1 text-muted-foreground">
+                                  <li>After setting up your bot, connect your own account</li>
+                                  <li>Send a test message to verify everything is working</li>
+                                </ul>
+                              </li>
+                            </ol>
+                          </div>
+
+                          <div>
+                            <h5 className="font-medium mb-2">For All Users:</h5>
+                            <ol className="list-decimal list-inside space-y-2 ml-2">
+                              <li className="pl-2">
+                                <span className="font-medium">Generate Verification Code:</span>
+                                <ul className="list-disc list-inside ml-6 mt-1 text-muted-foreground">
+                                  <li>Click the "Connect with Telegram" button</li>
+                                  <li>A unique verification code will be generated</li>
+                                </ul>
+                              </li>
+                              <li className="pl-2 mt-4">
+                                <span className="font-medium">Connect Your Account:</span>
+                                <ul className="list-disc list-inside ml-6 mt-1 text-muted-foreground">
+                                  <li>Open Telegram and search for the bot by username</li>
+                                  <li>Start a conversation with the bot</li>
+                                  <li>Send your verification code as a message</li>
+                                  <li>The bot will confirm your connection</li>
+                                </ul>
+                              </li>
+                              <li className="pl-2 mt-4">
+                                <span className="font-medium">Configure Notifications:</span>
+                                <ul className="list-disc list-inside ml-6 mt-1 text-muted-foreground">
+                                  <li>Once connected, customize your notification preferences</li>
+                                  <li>Enable the types of alerts you want to receive</li>
+                                  <li>Send a test message to verify everything works</li>
+                                </ul>
+                              </li>
+                            </ol>
+                          </div>
+
+                          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900 rounded-lg p-4">
+                            <h5 className="font-medium text-yellow-800 dark:text-yellow-300 flex items-center">
+                              <AlertTriangle className="h-4 w-4 mr-2" />
+                              Important Notes
+                            </h5>
+                            <ul className="list-disc list-inside mt-2 text-yellow-700 dark:text-yellow-400 space-y-1">
+                              <li>The bot must be enabled by an administrator before users can connect</li>
+                              <li>Verification codes expire after 10 minutes</li>
+                              <li>You can disconnect your Telegram account at any time</li>
+                              <li>For security, the system only sends messages to verified accounts</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
                 
                 {(isLoadingTelegram || isLoadingTelegramStatus) ? (
                   <div className="flex justify-center items-center h-48">
