@@ -921,16 +921,16 @@ function AgentSettingsInterface() {
     setSettingValue(value);
   };
   
-  // Get setting icon based on name
+  // Get setting icon based on name with enhanced color handling for dark theme
   const getSettingIcon = (name: string) => {
-    if (name.includes('model')) return <Cpu className="h-5 w-5 text-purple-500" />;
-    if (name.includes('token')) return <Key className="h-5 w-5 text-amber-500" />;
-    if (name.includes('temperature')) return <Thermometer className="h-5 w-5 text-orange-500" />;
-    if (name.includes('context')) return <BookOpen className="h-5 w-5 text-blue-500" />;
-    if (name.includes('prompt')) return <FileText className="h-5 w-5 text-indigo-500" />;
-    if (name.includes('function')) return <Code2 className="h-5 w-5 text-emerald-500" />;
-    if (name.includes('notification')) return <BellRing className="h-5 w-5 text-rose-500" />;
-    return <Settings2 className="h-5 w-5 text-gray-500" />;
+    if (name.includes('model')) return <Cpu className="h-5 w-5 text-purple-400 dark:text-purple-300" />;
+    if (name.includes('token')) return <Key className="h-5 w-5 text-amber-400 dark:text-amber-300" />;
+    if (name.includes('temperature')) return <Thermometer className="h-5 w-5 text-orange-400 dark:text-orange-300" />;
+    if (name.includes('context')) return <BookOpen className="h-5 w-5 text-blue-400 dark:text-blue-300" />;
+    if (name.includes('prompt')) return <FileText className="h-5 w-5 text-indigo-400 dark:text-indigo-300" />;
+    if (name.includes('function')) return <Code2 className="h-5 w-5 text-emerald-400 dark:text-emerald-300" />;
+    if (name.includes('notification')) return <BellRing className="h-5 w-5 text-rose-400 dark:text-rose-300" />;
+    return <Settings2 className="h-5 w-5 text-slate-400 dark:text-slate-300" />;
   };
 
   // Get setting category based on name prefix
@@ -974,11 +974,13 @@ function AgentSettingsInterface() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center p-12 border rounded-lg bg-muted/10">
+        <div className="flex items-center justify-center p-12 border border-slate-200 dark:border-slate-700/50 rounded-lg bg-white/5 dark:bg-slate-900/20">
           <div className="flex flex-col items-center text-center">
-            <Loader2 className="h-10 w-10 animate-spin text-blue-500 mb-4" />
-            <h3 className="text-lg font-medium">Loading settings...</h3>
-            <p className="text-sm text-muted-foreground mt-1">
+            <div className="h-16 w-16 rounded-full bg-slate-100/10 dark:bg-slate-800/50 flex items-center justify-center mb-4 ring-1 ring-slate-200/20 dark:ring-slate-700/30">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-400 dark:text-blue-500" />
+            </div>
+            <h3 className="text-lg font-medium dark:text-slate-200">Loading settings...</h3>
+            <p className="text-sm text-muted-foreground dark:text-slate-400 mt-1 max-w-md">
               Retrieving AI agent configuration
             </p>
           </div>
@@ -1003,7 +1005,7 @@ function AgentSettingsInterface() {
                     {categorySettings.map((setting: any) => (
                       <div 
                         key={setting.name} 
-                        className="relative group p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 transition-all hover:shadow-md"
+                        className="relative group p-4 rounded-lg border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900/60 transition-all hover:shadow-md dark:hover:shadow-slate-900/40 dark:hover:border-slate-700/80"
                       >
                         <div className="absolute top-3 right-3">
                           {editingSetting === setting.name ? (
@@ -1011,16 +1013,16 @@ function AgentSettingsInterface() {
                               size="sm" 
                               variant="ghost" 
                               onClick={() => setEditingSetting(null)}
-                              className="h-7 px-2 text-muted-foreground"
+                              className="h-7 px-2 text-muted-foreground hover:text-white hover:bg-slate-800"
                             >
                               Cancel
                             </Button>
                           ) : (
                             <Button 
                               size="sm" 
-                              variant="outline" 
+                              variant="ghost" 
                               onClick={() => startEditing(setting.name, setting.value)}
-                              className="h-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="h-7 opacity-0 group-hover:opacity-100 transition-opacity text-blue-400 hover:text-blue-300 hover:bg-slate-800"
                             >
                               <PencilLine className="h-3.5 w-3.5 mr-1" />
                               Edit
@@ -1029,7 +1031,7 @@ function AgentSettingsInterface() {
                         </div>
                         
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="h-8 w-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                          <div className="h-9 w-9 rounded-full bg-slate-800/70 dark:bg-slate-800 flex items-center justify-center ring-1 ring-slate-700/30">
                             {getSettingIcon(setting.name)}
                           </div>
                           <label htmlFor={setting.name} className="font-medium text-slate-900 dark:text-slate-100">
@@ -1039,7 +1041,7 @@ function AgentSettingsInterface() {
                           </label>
                         </div>
                         
-                        <p className="text-sm text-muted-foreground mb-3 pl-11">{setting.description}</p>
+                        <p className="text-sm text-muted-foreground mb-3 pl-12">{setting.description}</p>
                         
                         {editingSetting === setting.name ? (
                           <form onSubmit={handleUpdateSetting} className="mt-3 flex gap-2">
@@ -1047,14 +1049,14 @@ function AgentSettingsInterface() {
                               id={setting.name}
                               value={settingValue}
                               onChange={(e) => setSettingValue(e.target.value)}
-                              className="flex-1"
+                              className="flex-1 bg-slate-800 border-slate-700 text-white focus-visible:ring-blue-500"
                               autoFocus
                             />
                             <Button 
                               type="submit" 
                               size="sm"
                               disabled={updateSetting.isPending}
-                              className="bg-blue-600 hover:bg-blue-700"
+                              className="bg-blue-600 hover:bg-blue-500 dark:bg-blue-600 dark:hover:bg-blue-500 text-white"
                             >
                               {updateSetting.isPending ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -1064,8 +1066,8 @@ function AgentSettingsInterface() {
                             </Button>
                           </form>
                         ) : (
-                          <div className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 border rounded-md p-3 mt-1">
-                            <code className="text-sm font-mono break-all">
+                          <div className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 border rounded-md p-3 mt-1">
+                            <code className="text-sm font-mono break-all dark:text-slate-300">
                               {setting.value}
                             </code>
                           </div>
@@ -1076,16 +1078,16 @@ function AgentSettingsInterface() {
                 ) : (
                   <div className="space-y-6">
                     {categorySettings.map((setting: any) => (
-                      <div key={setting.name} className="pb-5 border-b border-dashed border-slate-200 dark:border-slate-800 last:border-b-0 last:pb-0">
+                      <div key={setting.name} className="pb-5 border-b border-dashed border-slate-200 dark:border-slate-700/50 last:border-b-0 last:pb-0">
                         <div className="flex items-start gap-3">
-                          <div className="h-9 w-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mt-0.5">
+                          <div className="h-9 w-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mt-0.5 ring-1 ring-slate-200 dark:ring-slate-700/30">
                             {getSettingIcon(setting.name)}
                           </div>
                           
                           <div className="flex-1 space-y-3">
                             <div>
                               <div className="flex items-center justify-between">
-                                <label htmlFor={setting.name} className="font-medium">
+                                <label htmlFor={setting.name} className="font-medium text-slate-900 dark:text-slate-100">
                                   {setting.name.split('_').map((word: string) => 
                                     word.charAt(0).toUpperCase() + word.slice(1)
                                   ).join(' ')}
@@ -1095,7 +1097,7 @@ function AgentSettingsInterface() {
                                     size="sm" 
                                     variant="ghost" 
                                     onClick={() => setEditingSetting(null)}
-                                    className="h-7 px-2 text-muted-foreground"
+                                    className="h-7 px-2 text-muted-foreground hover:text-white hover:bg-slate-800"
                                   >
                                     Cancel
                                   </Button>
@@ -1104,7 +1106,7 @@ function AgentSettingsInterface() {
                                     size="sm" 
                                     variant="ghost" 
                                     onClick={() => startEditing(setting.name, setting.value)}
-                                    className="h-7 px-2 text-blue-600 hover:text-blue-700 dark:text-blue-500"
+                                    className="h-7 px-2 text-blue-400 hover:text-blue-300 hover:bg-slate-800 dark:text-blue-400"
                                   >
                                     <PencilLine className="h-3.5 w-3.5 mr-1" />
                                     Edit
@@ -1120,13 +1122,13 @@ function AgentSettingsInterface() {
                                   id={setting.name}
                                   value={settingValue}
                                   onChange={(e) => setSettingValue(e.target.value)}
-                                  className="flex-1"
+                                  className="flex-1 bg-slate-800 border-slate-700 text-white focus-visible:ring-blue-500"
                                 />
                                 <Button 
                                   type="submit" 
                                   size="sm"
                                   disabled={updateSetting.isPending}
-                                  className="bg-blue-600 hover:bg-blue-700"
+                                  className="bg-blue-600 hover:bg-blue-500 dark:bg-blue-600 dark:hover:bg-blue-500 text-white"
                                 >
                                   {updateSetting.isPending ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -1136,8 +1138,8 @@ function AgentSettingsInterface() {
                                 </Button>
                               </form>
                             ) : (
-                              <div className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 border rounded-md p-3">
-                                <code className="text-sm font-mono break-all">
+                              <div className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 border rounded-md p-3">
+                                <code className="text-sm font-mono break-all dark:text-slate-300">
                                   {setting.value}
                                 </code>
                               </div>
@@ -1153,12 +1155,12 @@ function AgentSettingsInterface() {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center p-12 border rounded-lg bg-muted/10 text-center">
-          <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center dark:bg-blue-900/30 mb-4">
+        <div className="flex flex-col items-center justify-center p-12 border border-slate-200 dark:border-slate-700/50 rounded-lg bg-muted/10 dark:bg-slate-900/20 text-center">
+          <div className="h-16 w-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4 ring-1 ring-blue-200 dark:ring-blue-800/30">
             <Settings className="h-8 w-8 text-blue-600 dark:text-blue-400" />
           </div>
-          <h3 className="text-lg font-semibold">No settings available</h3>
-          <p className="text-muted-foreground max-w-md mt-1">
+          <h3 className="text-lg font-semibold dark:text-slate-100">No settings available</h3>
+          <p className="text-muted-foreground dark:text-slate-400 max-w-md mt-1">
             The AI agent settings are not configured yet. Please contact an administrator to set up the agent configuration.
           </p>
         </div>
