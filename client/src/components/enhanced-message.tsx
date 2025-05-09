@@ -26,21 +26,25 @@ interface MarkdownComponentProps {
 }
 
 interface EnhancedMessageProps {
+  id?: number;
   role: 'user' | 'assistant' | 'system';
   content: string | ReactNode;
   timestamp: string;
   isPinned?: boolean;
   hasReference?: boolean;
   onPin?: () => void;
+  onDelete?: () => void;
 }
 
 export function EnhancedMessage({ 
+  id,
   role, 
   content, 
   timestamp, 
   isPinned = false, 
   hasReference = false,
-  onPin 
+  onPin,
+  onDelete
 }: EnhancedMessageProps) {
   // Format the timestamp
   const formattedTime = new Date(timestamp).toLocaleString();
@@ -110,6 +114,18 @@ export function EnhancedMessage({
             </div>
             
             <div className="flex items-center gap-1.5">
+              {/* Delete button */}
+              {onDelete && (
+                <button 
+                  onClick={onDelete}
+                  className="text-slate-400 hover:text-red-400 transition-colors p-1 rounded-full hover:bg-slate-800"
+                  title="Delete message"
+                  aria-label="Delete message"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+              
               {/* Pin button/indicator */}
               {isPinned ? (
                 <Badge variant="outline" className="px-1.5 py-0 text-xs bg-yellow-900/30 text-yellow-300 border-yellow-800/50">
@@ -120,6 +136,8 @@ export function EnhancedMessage({
                 <button 
                   onClick={onPin}
                   className="text-slate-400 hover:text-yellow-400 transition-colors p-1 rounded-full hover:bg-slate-800"
+                  title="Pin message"
+                  aria-label="Pin message"
                 >
                   <Pin className="h-3.5 w-3.5" />
                 </button>
