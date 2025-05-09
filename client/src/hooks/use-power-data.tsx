@@ -167,58 +167,98 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     }
   }, [toast, lastUpdated]);
   
-  // Initial data fetch when component mounts
-  useEffect(() => {
-    fetchLatestData();
-  }, [fetchLatestData]);
+  // CRITICAL FIX: Completely redesigned refresh rate control system
+  // We'll use our own timer instead of relying on the refresh rate provider
+  // This ensures we have complete control over the polling frequency
   
-  // New approach: Use the built-in rate controller from RefreshRateProvider
-  const { shouldFetch, setFetchComplete } = useRefreshRate();
-  
-  // This effect runs ONLY when the shouldFetch flag changes
-  // Use a ref to track if a fetch is already in progress to prevent duplicate requests
+  // References for our polling system
+  const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isFetchingRef = useRef<boolean>(false);
+  const lastFetchTimeRef = useRef<number>(0);
   
-  useEffect(() => {
-    // Turn off WebSocket connection attempts when we're debugging
-    // This will force the use of polling which is more reliable for testing refresh rates
-    const debugMode = false; // Set to false to use WebSockets when available
+  // A more controlled approach to fetching data with proper throttling
+  const startPolling = useCallback(() => {
+    // Clear any existing timer first
+    if (pollingTimerRef.current) {
+      clearTimeout(pollingTimerRef.current);
+      pollingTimerRef.current = null;
+    }
     
-    // Skip polling if WebSocket is connected and we're not in debug mode
-    if (wsConnected && wsEnabled && !debugMode) {
-      console.log('WebSocket connected, skipping polling');
-      // Still complete the fetch cycle to maintain the timer
-      if (shouldFetch) {
-        setFetchComplete();
-      }
+    // Only start polling if WebSocket is not connected or disabled
+    if (wsConnected && wsEnabled) {
+      console.log('WebSocket connected, not starting polling');
       return;
     }
     
-    // Only fetch when the shouldFetch flag is true and we're not already fetching
-    if (shouldFetch && !isFetchingRef.current) {
-      // Set the fetching flag to prevent duplicate requests
+    console.log(`🔄 Starting data polling with interval: ${refreshInterval}ms`);
+    
+    // Function to perform the data fetch with proper throttling
+    const pollData = () => {
+      // Calculate time since last fetch
+      const now = Date.now();
+      const timeSinceLastFetch = now - lastFetchTimeRef.current;
+      
+      // Don't fetch if we're already fetching or if it's been less than half the refresh interval
+      if (isFetchingRef.current || (lastFetchTimeRef.current > 0 && timeSinceLastFetch < refreshInterval / 2)) {
+        console.log(`Skipping fetch - already fetching: ${isFetchingRef.current}, time since last: ${timeSinceLastFetch}ms`);
+        
+        // Schedule next fetch respecting the minimum interval
+        const nextFetchDelay = Math.max(refreshInterval - timeSinceLastFetch, 1000);
+        console.log(`Next fetch scheduled in ${nextFetchDelay}ms`);
+        
+        pollingTimerRef.current = setTimeout(pollData, nextFetchDelay);
+        return;
+      }
+      
+      // Mark as fetching and update the last fetch time
       isFetchingRef.current = true;
       
       console.log(`⏰ Fetching data (refresh rate: ${refreshInterval}ms)`);
       
-      // Perform the fetch
+      // Perform the actual fetch
       fetchLatestData()
         .then(() => {
+          // Update the last fetch time on success
+          lastFetchTimeRef.current = Date.now();
           console.log('Fetch completed successfully');
-          // Reset the fetching flag
-          isFetchingRef.current = false;
-          // Let the rate controller know we're done
-          setFetchComplete();
         })
         .catch((err) => {
           console.error('Error during fetch:', err);
-          // Reset the fetching flag even on error
+        })
+        .finally(() => {
+          // Reset the fetching flag
           isFetchingRef.current = false;
-          // Even on error, let the rate controller know we're done
-          setFetchComplete();
+          
+          // Schedule the next fetch
+          pollingTimerRef.current = setTimeout(pollData, refreshInterval);
+          console.log(`Next fetch scheduled in ${refreshInterval}ms`);
         });
+    };
+    
+    // Start the polling
+    pollData();
+  }, [refreshInterval, wsConnected, wsEnabled, fetchLatestData]);
+  
+  // Start or restart polling when refresh interval changes or websocket status changes
+  useEffect(() => {
+    console.log('Refresh interval or WebSocket status changed, updating polling');
+    startPolling();
+    
+    // Initial data fetch on mount, regardless of polling
+    if (lastFetchTimeRef.current === 0) {
+      fetchLatestData().then(() => {
+        lastFetchTimeRef.current = Date.now();
+      });
     }
-  }, [shouldFetch, wsConnected, wsEnabled, refreshInterval, fetchLatestData, setFetchComplete]);
+    
+    // Clean up polling on unmount
+    return () => {
+      if (pollingTimerRef.current) {
+        clearTimeout(pollingTimerRef.current);
+        pollingTimerRef.current = null;
+      }
+    };
+  }, [refreshInterval, wsConnected, wsEnabled, startPolling, fetchLatestData]);
   
   // Create a persistent ref for tracking reconnection timer
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
