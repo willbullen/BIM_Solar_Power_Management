@@ -1001,80 +1001,157 @@ function AgentSettingsInterface() {
                   {category === 'General Settings' && 'General configuration options for the AI agent'}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-6">
-                  {categorySettings.map((setting: any) => (
-                    <div key={setting.name} className="pb-5 border-b border-dashed border-slate-200 dark:border-slate-800 last:border-b-0 last:pb-0">
-                      <div className="flex items-start gap-3">
-                        <div className="h-9 w-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mt-0.5">
-                          {getSettingIcon(setting.name)}
-                        </div>
-                        
-                        <div className="flex-1 space-y-3">
-                          <div>
-                            <div className="flex items-center justify-between">
-                              <label htmlFor={setting.name} className="font-medium">
-                                {setting.name.split('_').map((word: string) => 
-                                  word.charAt(0).toUpperCase() + word.slice(1)
-                                ).join(' ')}
-                              </label>
-                              {editingSetting === setting.name ? (
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  onClick={() => setEditingSetting(null)}
-                                  className="h-7 px-2 text-muted-foreground"
-                                >
-                                  Cancel
-                                </Button>
-                              ) : (
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  onClick={() => startEditing(setting.name, setting.value)}
-                                  className="h-7 px-2 text-blue-600 hover:text-blue-700 dark:text-blue-500"
-                                >
-                                  <PencilLine className="h-3.5 w-3.5 mr-1" />
-                                  Edit
-                                </Button>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground mt-1">{setting.description}</p>
-                          </div>
-                          
+              <CardContent className="pt-4">
+                {category === 'General Settings' ? (
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    {categorySettings.map((setting: any) => (
+                      <div 
+                        key={setting.name} 
+                        className="relative group p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 transition-all hover:shadow-md"
+                      >
+                        <div className="absolute top-3 right-3">
                           {editingSetting === setting.name ? (
-                            <form onSubmit={handleUpdateSetting} className="flex gap-2">
-                              <Input
-                                id={setting.name}
-                                value={settingValue}
-                                onChange={(e) => setSettingValue(e.target.value)}
-                                className="flex-1"
-                              />
-                              <Button 
-                                type="submit" 
-                                size="sm"
-                                disabled={updateSetting.isPending}
-                                className="bg-blue-600 hover:bg-blue-700"
-                              >
-                                {updateSetting.isPending ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  "Save"
-                                )}
-                              </Button>
-                            </form>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={() => setEditingSetting(null)}
+                              className="h-7 px-2 text-muted-foreground"
+                            >
+                              Cancel
+                            </Button>
                           ) : (
-                            <div className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 border rounded-md p-3">
-                              <code className="text-sm font-mono break-all">
-                                {setting.value}
-                              </code>
-                            </div>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => startEditing(setting.name, setting.value)}
+                              className="h-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <PencilLine className="h-3.5 w-3.5 mr-1" />
+                              Edit
+                            </Button>
                           )}
                         </div>
+                        
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="h-8 w-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                            {getSettingIcon(setting.name)}
+                          </div>
+                          <label htmlFor={setting.name} className="font-medium text-slate-900 dark:text-slate-100">
+                            {setting.name.split('_').map((word: string) => 
+                              word.charAt(0).toUpperCase() + word.slice(1)
+                            ).join(' ')}
+                          </label>
+                        </div>
+                        
+                        <p className="text-sm text-muted-foreground mb-3 pl-11">{setting.description}</p>
+                        
+                        {editingSetting === setting.name ? (
+                          <form onSubmit={handleUpdateSetting} className="mt-3 flex gap-2">
+                            <Input
+                              id={setting.name}
+                              value={settingValue}
+                              onChange={(e) => setSettingValue(e.target.value)}
+                              className="flex-1"
+                              autoFocus
+                            />
+                            <Button 
+                              type="submit" 
+                              size="sm"
+                              disabled={updateSetting.isPending}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              {updateSetting.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                "Save"
+                              )}
+                            </Button>
+                          </form>
+                        ) : (
+                          <div className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 border rounded-md p-3 mt-1">
+                            <code className="text-sm font-mono break-all">
+                              {setting.value}
+                            </code>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {categorySettings.map((setting: any) => (
+                      <div key={setting.name} className="pb-5 border-b border-dashed border-slate-200 dark:border-slate-800 last:border-b-0 last:pb-0">
+                        <div className="flex items-start gap-3">
+                          <div className="h-9 w-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mt-0.5">
+                            {getSettingIcon(setting.name)}
+                          </div>
+                          
+                          <div className="flex-1 space-y-3">
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <label htmlFor={setting.name} className="font-medium">
+                                  {setting.name.split('_').map((word: string) => 
+                                    word.charAt(0).toUpperCase() + word.slice(1)
+                                  ).join(' ')}
+                                </label>
+                                {editingSetting === setting.name ? (
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    onClick={() => setEditingSetting(null)}
+                                    className="h-7 px-2 text-muted-foreground"
+                                  >
+                                    Cancel
+                                  </Button>
+                                ) : (
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    onClick={() => startEditing(setting.name, setting.value)}
+                                    className="h-7 px-2 text-blue-600 hover:text-blue-700 dark:text-blue-500"
+                                  >
+                                    <PencilLine className="h-3.5 w-3.5 mr-1" />
+                                    Edit
+                                  </Button>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1">{setting.description}</p>
+                            </div>
+                            
+                            {editingSetting === setting.name ? (
+                              <form onSubmit={handleUpdateSetting} className="flex gap-2">
+                                <Input
+                                  id={setting.name}
+                                  value={settingValue}
+                                  onChange={(e) => setSettingValue(e.target.value)}
+                                  className="flex-1"
+                                />
+                                <Button 
+                                  type="submit" 
+                                  size="sm"
+                                  disabled={updateSetting.isPending}
+                                  className="bg-blue-600 hover:bg-blue-700"
+                                >
+                                  {updateSetting.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    "Save"
+                                  )}
+                                </Button>
+                              </form>
+                            ) : (
+                              <div className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 border rounded-md p-3">
+                                <code className="text-sm font-mono break-all">
+                                  {setting.value}
+                                </code>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
