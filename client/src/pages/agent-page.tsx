@@ -1385,6 +1385,13 @@ export default function AgentPage() {
                       <span className="font-medium">Tasks</span>
                     </TabsTrigger>
                     <TabsTrigger 
+                      value="mcp-tasks" 
+                      className="flex items-center justify-center gap-1.5 text-xs py-1 px-3 rounded-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-300"
+                    >
+                      <Cpu className="h-3.5 w-3.5" />
+                      <span className="font-medium">MCP</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
                       value="settings" 
                       className="flex items-center justify-center gap-1.5 text-xs py-1 px-3 rounded-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-300"
                     >
@@ -1457,6 +1464,19 @@ export default function AgentPage() {
                 </TabsContent>
                 
                 <TabsContent 
+                  value="mcp-tasks" 
+                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
+                >
+                  <div className="p-3">
+                    <div className="import-agentmcptasks">
+                      {/* Import the AgentMcpTasksPage component */}
+                      {/* @ts-ignore */}
+                      <AgentMcpTasksPage />
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent 
                   value="settings" 
                   className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
                 >
@@ -1486,6 +1506,14 @@ export default function AgentPage() {
                       <ListChecks className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                     </div>
                     <span>Schedule automated analysis tasks for periodic energy reports</span>
+                  </>
+                )}
+                {activeTab === "mcp-tasks" && (
+                  <>
+                    <div className="bg-cyan-100/80 dark:bg-cyan-900/20 p-1.5 rounded-md ring-1 ring-cyan-200/50 dark:ring-cyan-800/30">
+                      <Cpu className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                    </div>
+                    <span>Create and manage Model Context Protocol tasks for advanced AI processing</span>
                   </>
                 )}
                 {activeTab === "settings" && (
