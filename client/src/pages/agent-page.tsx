@@ -186,6 +186,14 @@ function ChatInterface() {
           title: "Authentication Error",
           description: "Your session may have expired. Please log in and try again."
         });
+      } else if (error.message.includes("Message not found")) {
+        // The message might have been already deleted
+        refetchMessages(); // Refresh the messages to get the current state
+        toast({
+          variant: "default",
+          title: "Message not found",
+          description: "The message may have already been deleted or doesn't exist."
+        });
       } else {
         toast({
           variant: "destructive",

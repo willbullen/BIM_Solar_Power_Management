@@ -1,0 +1,64 @@
+Query response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making API request: DELETE https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/conversations/5/messages/5
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+Found user in local storage
+API response status: 404 Not Found
+Error response (404): {"success":false,"message":"Message not found or you do not have permission to delete it"}
+API request error: 
+Error {}
+
+Delete message error: 
+Error {}
+
+Found user in local storage
+Making API request: DELETE https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/conversations/5/messages/2
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+API response status: 200 OK
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/conversations
+Query has auth headers: X-Auth-User-Id, X-Auth-Username
+Found user in local storage
+Query response status: 200 OK
+Found user in local storage
+Making API request: DELETE https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/conversations/5/messages/2
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+API response status: 404 Not Found
+Error response (404): {"success":false,"message":"Message not found or you do not have permission to delete it"}
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+API request error: 
+Error {}
+message: "{"success":false,"message":"Message not found or you do not have permission to delete it"}"
+stack: "Error: {"success":false,"message":"Message not found or you do not have permission to delete it"}↵ at apiRequest (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/src/lib/queryClient.ts:87:13)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Delete message error: 
+Error {}
+message: "{"success":false,"message":"Message not found or you do not have permission to delete it"}"
+stack: "Error: {"success":false,"message":"Message not found or you do not have permission to delete it"}↵ at apiRequest (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/src/lib/queryClient.ts:87:13)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+constructor: ƒ Error()
+message: "{"success":false,"message":"Message not found or you do not have permission to delete it"}"
+name: "Error"
+toString: ƒ toString()
+[[Prototype]]: Object
+
+Found user in local storage
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Found user in local storage
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications/unread/count
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+API response status: 200 OK
