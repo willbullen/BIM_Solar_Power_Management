@@ -172,118 +172,35 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
     fetchLatestData();
   }, [fetchLatestData]);
   
-  // Use refs to track the polling state
-  const lastFetchTimeRef = useRef<number>(Date.now());
-  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
-  const currentRateRef = useRef<number>(refreshInterval);
-  const isPendingFetchRef = useRef<boolean>(false);
+  // New approach: Use the built-in rate controller from RefreshRateProvider
+  const { shouldFetch, setFetchComplete } = useRefreshRate();
   
-  // Completely reimagined polling mechanism using setTimeout for better control
+  // This effect runs ONLY when the shouldFetch flag changes
   useEffect(() => {
-    // Update the current rate in the ref
-    currentRateRef.current = refreshInterval;
-    
-    console.log(`⏰ REFRESH RATE CHANGED TO: ${refreshInterval}ms`);
-    
-    // Function to schedule the next data fetch
-    const scheduleNextFetch = () => {
-      // Skip if a fetch is already pending
-      if (isPendingFetchRef.current) {
-        console.log('Skipping schedule - fetch already pending');
-        return;
-      }
-      
-      // Clear any existing timeout first
-      if (timeoutIdRef.current) {
-        console.log('Clearing existing timeout');
-        clearTimeout(timeoutIdRef.current);
-        timeoutIdRef.current = null;
-      }
-      
-      // Calculate time until next fetch
-      const now = Date.now();
-      const timeSinceLastFetch = now - lastFetchTimeRef.current;
-      const timeUntilNextFetch = Math.max(10, refreshInterval - timeSinceLastFetch);
-      
-      console.log(`Next data fetch scheduled in ${timeUntilNextFetch}ms (rate: ${refreshInterval}ms)`);
-      
-      // Schedule next fetch with a clean timeout
-      timeoutIdRef.current = setTimeout(() => {
-        console.log(`Executing scheduled fetch after ${timeUntilNextFetch}ms delay`);
-        
-        // Set the pending flag
-        isPendingFetchRef.current = true;
-        
-        // Update the last fetch time
-        lastFetchTimeRef.current = Date.now();
-        
-        // Fetch the data
-        fetchLatestData()
-          .then(() => {
-            console.log('Scheduled fetch completed successfully');
-            // Clear the pending flag
-            isPendingFetchRef.current = false;
-            
-            // Only schedule next fetch if we're still using polling
-            if ((!wsConnected || !wsEnabled) && !timeoutIdRef.current) {
-              scheduleNextFetch();
-            }
-          })
-          .catch((err) => {
-            console.error('Error in scheduled fetch:', err);
-            // Clear the pending flag even on error
-            isPendingFetchRef.current = false;
-            
-            // Schedule next fetch despite the error
-            if ((!wsConnected || !wsEnabled) && !timeoutIdRef.current) {
-              scheduleNextFetch();
-            }
-          });
-      }, timeUntilNextFetch);
-    };
-    
     // Skip polling if WebSocket is connected
     if (wsConnected && wsEnabled) {
       console.log('WebSocket connected, skipping polling');
-      
-      // Clear existing timeout
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current);
-        timeoutIdRef.current = null;
-      }
-      
-      return () => {
-        if (timeoutIdRef.current) {
-          clearTimeout(timeoutIdRef.current);
-          timeoutIdRef.current = null;
-        }
-      };
+      return;
     }
     
-    // If refresh rate just changed or we're starting fresh, fetch immediately
-    console.log('Immediate fetch due to refresh rate change');
-    isPendingFetchRef.current = true;
-    
-    fetchLatestData()
-      .then(() => {
-        lastFetchTimeRef.current = Date.now();
-        isPendingFetchRef.current = false;
-        scheduleNextFetch();
-      })
-      .catch((err) => {
-        console.error('Error in immediate fetch:', err);
-        isPendingFetchRef.current = false;
-        scheduleNextFetch();
-      });
-    
-    // Clean up on unmount or when dependencies change
-    return () => {
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current);
-        timeoutIdRef.current = null;
-      }
-    };
-  }, [wsConnected, wsEnabled, refreshInterval, fetchLatestData]);
+    // Only fetch when the shouldFetch flag is true
+    if (shouldFetch) {
+      console.log(`⏰ Fetching data (refresh rate: ${refreshInterval}ms)`);
+      
+      // Perform the fetch
+      fetchLatestData()
+        .then(() => {
+          console.log('Fetch completed successfully');
+          // Let the rate controller know we're done
+          setFetchComplete();
+        })
+        .catch((err) => {
+          console.error('Error during fetch:', err);
+          // Even on error, let the rate controller know we're done
+          setFetchComplete();
+        });
+    }
+  }, [shouldFetch, wsConnected, wsEnabled, refreshInterval, fetchLatestData, setFetchComplete]);
   
   // Create a persistent ref for tracking reconnection timer
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);

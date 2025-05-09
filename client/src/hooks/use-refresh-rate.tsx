@@ -1,9 +1,11 @@
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useContext, useState, useEffect, useRef } from "react";
 
 type RefreshRateContextType = {
   refreshInterval: number;
   setRefreshInterval: (interval: number) => void;
   refreshRateLabel: string;
+  shouldFetch: boolean; // NEW: Signal to trigger data fetch
+  setFetchComplete: () => void; // NEW: Signal that fetch is complete
 };
 
 const RefreshRateContext = createContext<RefreshRateContextType | undefined>(undefined);
@@ -28,7 +30,7 @@ export function RefreshRateProvider({ children }: { children: ReactNode }) {
   const defaultInterval = 10000;
   
   // Initialize from localStorage if available
-  const [refreshInterval, setRefreshInterval] = useState<number>(() => {
+  const [refreshInterval, setRefreshIntervalState] = useState<number>(() => {
     try {
       const savedInterval = localStorage.getItem('refreshRate');
       if (savedInterval) {
@@ -44,10 +46,15 @@ export function RefreshRateProvider({ children }: { children: ReactNode }) {
     return defaultInterval;
   });
   
-  // Handle refresh rate changes
-  const handleRefreshRateChange = (newInterval: number) => {
+  // NEW: State to indicate when data should be fetched
+  const [shouldFetch, setShouldFetch] = useState<boolean>(true);
+  
+  // Timer reference
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // NEW: Handle refresh rate changes
+  const setRefreshInterval = (newInterval: number) => {
     console.log(`Changing refresh rate from ${refreshInterval}ms to ${newInterval}ms`);
-    setRefreshInterval(newInterval);
     
     // Store the selected refresh rate in localStorage for persistence
     try {
@@ -55,7 +62,48 @@ export function RefreshRateProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.error('Failed to save refresh rate to localStorage:', e);
     }
+    
+    // Update state after localStorage is updated
+    setRefreshIntervalState(newInterval);
+    
+    // Reset timer and force immediate data fetch
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    
+    // Trigger an immediate fetch
+    setShouldFetch(true);
   };
+  
+  // NEW: Signal that fetch is complete and schedule next one
+  const setFetchComplete = () => {
+    // Clear previous timeout
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    
+    // Mark current fetch as complete
+    setShouldFetch(false);
+    
+    // Schedule next fetch
+    timerRef.current = setTimeout(() => {
+      setShouldFetch(true);
+    }, refreshInterval);
+    
+    console.log(`Next fetch scheduled in ${refreshInterval}ms`);
+  };
+  
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []);
   
   // Find the label for the current refresh interval
   const refreshRateLabel = REFRESH_RATES.find(rate => rate.value === refreshInterval)?.label || "10s";
@@ -66,6 +114,8 @@ export function RefreshRateProvider({ children }: { children: ReactNode }) {
         refreshInterval,
         setRefreshInterval,
         refreshRateLabel,
+        shouldFetch,
+        setFetchComplete
       }}
     >
       {children}
