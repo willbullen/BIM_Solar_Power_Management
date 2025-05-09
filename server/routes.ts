@@ -17,6 +17,7 @@ import { SolcastService } from './solcast-service';
 import { AIService } from './ai-service';
 import { registerAgentRoutes } from './agent-routes';
 import { registerNotificationRoutes } from './agent-notification-routes';
+import { registerTelegramRoutes } from './telegram-routes';
 import mcpRoutes from './mcp-routes';
 import { WebSocketServer, WebSocket } from 'ws';
 

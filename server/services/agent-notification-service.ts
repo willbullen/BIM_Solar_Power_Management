@@ -1,6 +1,7 @@
 import { db } from "../db";
 import * as schema from "../../shared/schema";
 import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 class AgentNotificationService {
   /**
