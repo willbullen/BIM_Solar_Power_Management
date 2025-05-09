@@ -90,31 +90,25 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
             let data;
             switch (subscription.channel) {
               case 'power-data':
-                data = await apiRequest('GET', '/api/power-data/latest');
+                data = await apiRequest('/api/power-data/latest', 'GET');
                 break;
               case 'environmental-data':
-                data = await apiRequest('GET', '/api/environmental-data/latest');
+                data = await apiRequest('/api/environmental-data/latest', 'GET');
                 break;
               case 'settings':
-                data = await apiRequest('GET', '/api/settings');
+                data = await apiRequest('/api/settings', 'GET');
                 break;
               case 'agent-notifications':
                 try {
-                  // Fix: Use correct format for API request
-                  data = await fetch('/api/agent/notifications')
-                    .then(response => {
-                      if (!response.ok) {
-                        throw new Error(`HTTP error ${response.status}`);
-                      }
-                      return response.json();
-                    });
+                  // Use apiRequest helper from the queryClient
+                  data = await apiRequest('/api/agent/notifications', 'GET');
                 } catch (err) {
                   console.error('Error fetching notifications:', err);
                 }
                 break;
               case 'agent-tasks':
                 try {
-                  data = await apiRequest('GET', '/api/agent/tasks');
+                  data = await apiRequest('/api/agent/tasks', 'GET');
                 } catch (err) {
                   console.error('Error fetching agent tasks:', err);
                 }
@@ -122,7 +116,7 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
               default:
                 // Try a generic endpoint based on channel name
                 try {
-                  data = await apiRequest('GET', `/api/${subscription.channel}/latest`);
+                  data = await apiRequest(`/api/${subscription.channel}/latest`, 'GET');
                 } catch (err) {
                   console.error(`Error fetching data from generic endpoint for ${subscription.channel}:`, err);
                 }
@@ -176,7 +170,7 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
         default:
           // For any other message type, send to appropriate API endpoint
           const endpoint = `/api/${message.type}`;
-          await apiRequest('POST', endpoint, message.data);
+          await apiRequest(endpoint, 'POST', message.data);
       }
       
       return Promise.resolve();
