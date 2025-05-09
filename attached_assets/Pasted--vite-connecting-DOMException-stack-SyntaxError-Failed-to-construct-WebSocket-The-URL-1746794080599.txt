@@ -1,0 +1,63 @@
+[vite] connecting...
+DOMException {}
+stack: "SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=5R4ecSh3X-HZ' is invalid.↵ at new t (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:218737)↵ at setupWebSocket (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/@vite/client:536:19)↵ at fallback (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/@vite/client:509:16)↵ at WebSocket.<anonymous> (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/@vite/client:555:7)"
+get stack: ƒ ()
+length: 0
+name: ""
+[[Prototype]]: ƒ ()
+set stack: ƒ ()
+length: 1
+name: ""
+[[Prototype]]: ƒ ()
+[[Prototype]]: DOMException
+
+RefreshRateProvider initialized as singleton
+Loaded saved refresh rate from localStorage: 10000ms
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications/unread/count
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+Refresh interval or connection status changed, updating polling
+REST API polling already active, not starting additional polling
+Fetching latest data via REST API...
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/power-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+*** REFRESH RATE PROVIDER INITIALIZED: 10000ms ***
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+API response status: 401 Unauthorized
+Authentication error detected in API request
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/user
+API request error: 
+Error {}
+
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Error fetching unread count: 
+Error {}
+
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+API response status: 401 Unauthorized
+Authentication error detected in API request
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/user
+API request error: 
+Error {}
+
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
