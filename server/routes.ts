@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { SolcastService } from './solcast-service';
 import { AIService } from './ai-service';
 import { registerAgentRoutes } from './agent-routes';
+import { WebSocketServer, WebSocket } from 'ws';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize the database
@@ -28,6 +29,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create HTTP server
   const httpServer = createServer(app);
+  
+  // Set up WebSocket server (on a different path than Vite's HMR websocket)
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Handle WebSocket connections
+  wss.on('connection', (ws) => {
+    console.log('New WebSocket connection established');
+    
+    // Send welcome message
+    ws.send(JSON.stringify({
+      type: 'connection',
+      data: { message: 'Connected to Emporium WebSocket Server' }
+    }));
+    
+    // Handle messages from client
+    ws.on('message', (message) => {
+      try {
+        const parsedMessage = JSON.parse(message.toString());
+        console.log('Received message:', parsedMessage);
+        
+        // Handle different message types
+        switch (parsedMessage.type) {
+          case 'subscribe':
+            // Handle subscription request
+            handleSubscription(ws, parsedMessage.data);
+            break;
+          default:
+            console.log('Unknown message type:', parsedMessage.type);
+        }
+      } catch (error) {
+        console.error('Error processing websocket message:', error);
+      }
+    });
+    
+    // Handle client disconnection
+    ws.on('close', () => {
+      console.log('WebSocket connection closed');
+    });
+  });
+  
+  // Broadcast data to all connected WebSocket clients
+  function broadcastData(data: any) {
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify(data));
+      }
+    });
+  }
+  
+  // Handle subscription requests
+  function handleSubscription(ws: WebSocket, data: any) {
+    // Currently only supports power and environmental data subscriptions
+    if (data.channel === 'power-data' || data.channel === 'environmental-data') {
+      ws.send(JSON.stringify({
+        type: 'subscription-success',
+        data: { channel: data.channel }
+      }));
+    } else {
+      ws.send(JSON.stringify({
+        type: 'subscription-failed',
+        data: { message: `Unknown channel: ${data.channel}` }
+      }));
+    }
+  }
   
   // Helper function to generate live data based on previous readings (moved outside of interval)
   async function generateLiveDataFromPrevious(latestPower: any, latestEnv: any): Promise<{powerData: any, environmentalData: any}> {
@@ -113,8 +178,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return { powerData, environmentalData };
   }
   
-  // Instead of using WebSockets, we'll generate new data periodically
-  // to be fetched via the REST API endpoints
+  // Generate data periodically and broadcast via WebSockets
+  // as well as making it available via REST API endpoints
   
   // Generate new data every 10 seconds
   setInterval(async () => {
@@ -218,6 +283,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           powerData = result.powerData;
           environmentalData = result.environmentalData;
         }
+      }
+      
+      // Broadcast data through WebSocket if available
+      if (powerData && environmentalData) {
+        // Broadcast power data
+        broadcastData({
+          type: 'power-data',
+          data: powerData
+        });
+        
+        // Broadcast environmental data
+        broadcastData({
+          type: 'environmental-data',
+          data: environmentalData
+        });
       }
     } catch (error) {
       console.error('Error generating periodic data:', error);

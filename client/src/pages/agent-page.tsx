@@ -271,9 +271,9 @@ function ChatInterface() {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 h-[calc(100vh-120px)]">
       {/* Sidebar with conversation list */}
-      <Card className="md:col-span-1 h-[calc(85vh-6rem)] overflow-hidden bg-slate-900 border-slate-800 shadow-md">
+      <Card className="md:col-span-1 h-full overflow-hidden bg-slate-900 border-slate-800 shadow-md">
         <CardHeader className="pb-2 border-b border-slate-800 px-3 py-2">
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center space-x-1">
