@@ -1,4 +1,10 @@
 import { createTestNotification } from './utils/test-notification';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+// Get the current file URL and convert it to a path
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Simple script to create a test notification
@@ -17,6 +23,7 @@ async function main() {
 }
 
 // Run script directly
-if (require.main === module) {
+const modulePath = process.argv[1];
+if (modulePath === __filename) {
   main();
 }

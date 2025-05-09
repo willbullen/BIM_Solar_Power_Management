@@ -17,6 +17,23 @@ function requireAuth(req: Request, res: Response, next: any) {
 }
 
 export function registerNotificationRoutes(app: Express) {
+  // Create a test notification (for development and testing only)
+  app.post('/api/agent/notifications/test', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const session = req.session as any;
+      const userId = session.userId;
+      
+      // Import the test notification creator
+      const { createTestNotification } = await import('./utils/test-notification');
+      const notification = await createTestNotification(userId);
+      
+      res.json({ success: true, notification });
+    } catch (error) {
+      console.error('Error creating test notification:', error);
+      res.status(500).json({ error: 'Failed to create test notification' });
+    }
+  });
+
   // Get all notifications for the authenticated user
   app.get('/api/agent/notifications', requireAuth, async (req: Request, res: Response) => {
     try {

@@ -1,16 +1,6 @@
 import React from 'react';
-import {
-  Bell,
-  Check,
-  Trash2,
-  AlertCircle,
-  InfoIcon,
-  MessageSquare,
-  CheckCircle2,
-} from 'lucide-react';
-import { useNotifications, Notification } from '@/context/notification-context';
-import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,153 +10,189 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useNotifications, AgentNotification } from '@/context/notification-context';
+import { Bell, Check, Trash2, CheckCircle2, AlertCircle, Info, BadgeAlert } from 'lucide-react';
+import { format } from 'date-fns';
+import { CreateTestNotificationButton } from './create-test-notification-button';
 
 export function NotificationDropdown() {
   const { 
     notifications, 
     unreadCount, 
     markAsRead, 
-    markAllAsRead,
+    markAllAsRead, 
     deleteNotification,
-    refreshNotifications
+    isLoading 
   } = useNotifications();
 
-  // Get notification icon based on type
+  const handleMarkAsRead = async (id: number) => {
+    await markAsRead(id);
+  };
+
+  const handleMarkAllAsRead = async () => {
+    await markAllAsRead();
+  };
+
+  const handleDeleteNotification = async (id: number) => {
+    await deleteNotification(id);
+  };
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'info':
-        return <InfoIcon className="h-4 w-4 text-blue-500" />;
+      case 'alert':
+        return <AlertCircle className="h-4 w-4 text-destructive" />;
       case 'warning':
-        return <AlertCircle className="h-4 w-4 text-amber-500" />;
-      case 'error':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
+        return <BadgeAlert className="h-4 w-4 text-amber-500" />;
       case 'success':
         return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-      case 'conversation':
-        return <MessageSquare className="h-4 w-4 text-purple-500" />;
-      case 'task':
-        return <CheckCircle2 className="h-4 w-4 text-cyan-500" />;
+      case 'info':
       default:
-        return <InfoIcon className="h-4 w-4 text-gray-500" />;
+        return <Info className="h-4 w-4 text-blue-500" />;
     }
   };
 
-  // Helper to format date
-  const formatDate = (dateString: string) => {
+  const getNotificationTimeAgo = (createdAt: string) => {
+    const date = new Date(createdAt);
     try {
-      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-    } catch (e) {
+      return format(date, 'MMM d, h:mm a');
+    } catch (error) {
       return 'Unknown time';
     }
   };
 
-  // Notification list item
-  const NotificationItem = ({ notification }: { notification: Notification }) => (
+  return (
+    <div className="flex items-center gap-4">
+      {/* Only show in development */}
+      {process.env.NODE_ENV === 'development' && <CreateTestNotificationButton />}
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="relative">
+            <Bell className="h-4 w-4" />
+            {unreadCount > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center rounded-full p-0 text-xs"
+              >
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Badge>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-[350px]">
+          <DropdownMenuLabel className="flex justify-between items-center">
+            <span>Notifications</span>
+            {notifications.length > 0 && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 text-xs"
+                onClick={handleMarkAllAsRead}
+              >
+                <Check className="mr-1 h-3 w-3" />
+                Mark all read
+              </Button>
+            )}
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          
+          {isLoading ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              Loading notifications...
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              No notifications
+            </div>
+          ) : (
+            <ScrollArea className="h-[300px]">
+              <DropdownMenuGroup>
+                {notifications.map((notification) => (
+                  <NotificationItem 
+                    key={notification.id} 
+                    notification={notification} 
+                    onMarkAsRead={handleMarkAsRead}
+                    onDelete={handleDeleteNotification}
+                    getIcon={getNotificationIcon}
+                    getTimeAgo={getNotificationTimeAgo}
+                  />
+                ))}
+              </DropdownMenuGroup>
+            </ScrollArea>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
+interface NotificationItemProps {
+  notification: AgentNotification;
+  onMarkAsRead: (id: number) => void;
+  onDelete: (id: number) => void;
+  getIcon: (type: string) => React.ReactNode;
+  getTimeAgo: (createdAt: string) => string;
+}
+
+function NotificationItem({ 
+  notification, 
+  onMarkAsRead, 
+  onDelete,
+  getIcon,
+  getTimeAgo
+}: NotificationItemProps) {
+  const isUnread = !notification.readAt;
+  
+  return (
     <DropdownMenuItem 
-      className={`flex flex-col items-start p-3 space-y-1 border-b ${!notification.read ? 'bg-slate-50 dark:bg-slate-900' : ''}`}
+      className={`flex flex-col items-start w-full p-3 gap-1 cursor-default ${isUnread ? 'bg-muted' : ''}`}
     >
       <div className="flex justify-between w-full">
-        <div className="flex items-center space-x-2">
-          {getNotificationIcon(notification.type)}
+        <div className="flex items-center gap-2">
+          {getIcon(notification.type)}
           <span className="font-medium text-sm">{notification.title}</span>
         </div>
-        <div className="flex space-x-1">
-          {!notification.read && (
+        <div className="flex items-center gap-1">
+          {isUnread && (
             <Button 
               variant="ghost" 
-              size="icon" 
-              className="h-6 w-6"
-              onClick={(e) => {
-                e.stopPropagation();
-                markAsRead(notification.id);
-              }}
+              size="sm" 
+              className="h-6 w-6 p-0"
+              onClick={() => onMarkAsRead(notification.id)}
             >
-              <Check className="h-4 w-4" />
-              <span className="sr-only">Mark as read</span>
+              <Check className="h-3 w-3" />
             </Button>
           )}
           <Button 
             variant="ghost" 
-            size="icon" 
-            className="h-6 w-6 text-destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              deleteNotification(notification.id);
-            }}
+            size="sm" 
+            className="h-6 w-6 p-0 text-muted-foreground"
+            onClick={() => onDelete(notification.id)}
           >
-            <Trash2 className="h-4 w-4" />
-            <span className="sr-only">Delete</span>
+            <Trash2 className="h-3 w-3" />
           </Button>
         </div>
       </div>
-      <p className="text-sm text-muted-foreground">{notification.message}</p>
-      <div className="flex justify-between w-full text-xs text-muted-foreground">
-        <span>{notification.source}</span>
-        <span>{formatDate(notification.createdAt)}</span>
+      <p className="text-xs text-muted-foreground">{notification.message}</p>
+      <div className="flex justify-between w-full items-center mt-1">
+        <span className="text-xs text-muted-foreground">{getTimeAgo(notification.createdAt)}</span>
+        <Badge variant={getPriorityVariant(notification.priority)} className="h-5 text-[10px]">
+          {notification.priority}
+        </Badge>
       </div>
     </DropdownMenuItem>
   );
+}
 
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 flex items-center justify-center h-5 w-5 text-xs p-0"
-            >
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
-        <DropdownMenuLabel className="flex justify-between items-center">
-          <span>Notifications</span>
-          {notifications.length > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => markAllAsRead()}
-              className="h-8 text-xs"
-            >
-              Mark all as read
-            </Button>
-          )}
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {notifications.length === 0 ? (
-          <div className="py-4 text-center text-sm text-muted-foreground">
-            No notifications yet
-          </div>
-        ) : (
-          <ScrollArea className="h-80">
-            <DropdownMenuGroup>
-              {notifications.map((notification) => (
-                <NotificationItem 
-                  key={notification.id} 
-                  notification={notification} 
-                />
-              ))}
-            </DropdownMenuGroup>
-          </ScrollArea>
-        )}
-        <DropdownMenuSeparator />
-        <div className="p-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full"
-            onClick={() => refreshNotifications()}
-          >
-            Refresh
-          </Button>
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+function getPriorityVariant(priority: string): "default" | "destructive" | "outline" | "secondary" {
+  switch (priority) {
+    case 'high':
+      return "destructive";
+    case 'medium':
+      return "secondary";
+    case 'low':
+    default:
+      return "outline";
+  }
 }
