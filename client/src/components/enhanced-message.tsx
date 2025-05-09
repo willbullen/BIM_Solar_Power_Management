@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -11,9 +11,23 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Bot, User, Clock, Pin, Database, ArrowUpRight } from "lucide-react";
 
+// Define interfaces used by ReactMarkdown for type safety
+interface CodeProps {
+  node?: any;
+  inline?: boolean;
+  className?: string;
+  children: ReactNode;
+}
+
+interface MarkdownComponentProps {
+  node?: any;
+  children: ReactNode;
+  [key: string]: any;
+}
+
 interface EnhancedMessageProps {
   role: 'user' | 'assistant' | 'system';
-  content: string;
+  content: string | ReactNode;
   timestamp: string;
   isPinned?: boolean;
   hasReference?: boolean;

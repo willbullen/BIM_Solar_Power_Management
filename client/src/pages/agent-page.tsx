@@ -123,6 +123,7 @@ function ChatInterface() {
   const [isVoiceInputActive, setIsVoiceInputActive] = useState(false);
   const [showPowerDataInput, setShowPowerDataInput] = useState(false);
   const [activeMessageId, setActiveMessageId] = useState<number | null>(null);
+  const [powerDataQuery, setPowerDataQuery] = useState("");
   
   // Scroll to the bottom of the messages
   const scrollToBottom = useCallback(() => {
@@ -512,52 +513,170 @@ function ChatInterface() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : messages && messages.length > 0 ? (
-                <div className="space-y-6">
-                  {messages.map((message: Message) => (
-                    <div 
-                      key={message.id} 
-                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      {message.role !== 'user' && (
-                        <Avatar className="h-8 w-8 mr-2">
-                          <AvatarFallback className="bg-blue-100 text-blue-700">AI</AvatarFallback>
-                        </Avatar>
-                      )}
-                      <div 
-                        className={`max-w-[85%] px-4 py-3 rounded-lg ${
-                          message.role === 'user' 
-                            ? 'bg-blue-600 text-white rounded-tr-none' 
-                            : 'bg-slate-800 text-gray-100 rounded-tl-none'
-                        }`}
+                <div className="h-full flex flex-col">
+                  {/* Conversation toolbar with search and actions */}
+                  <div className="border-b border-slate-700 p-2 flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className={cn(
+                          "h-8 w-8 rounded-full",
+                          isSearchOpen && "bg-blue-900/30 text-blue-400"
+                        )}
+                        onClick={() => setIsSearchOpen(!isSearchOpen)}
                       >
-                        <div className="whitespace-pre-wrap text-sm">{message.content}</div>
-                        <div className={`mt-1 text-xs ${message.role === 'user' ? 'text-blue-100' : 'text-gray-400'}`}>
-                          {new Date(message.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        <Search className="h-4 w-4" />
+                      </Button>
+                      
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => setIsVoiceInputActive(!isVoiceInputActive)}
+                            disabled={true} // Implement voice input later
+                          >
+                            {isVoiceInputActive ? 
+                              <MicOff className="h-4 w-4 text-red-400" /> : 
+                              <Mic className="h-4 w-4" />
+                            }
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Voice input (coming soon)</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className={cn(
+                              "h-8 w-8 rounded-full",
+                              showPowerDataInput && "bg-blue-900/30 text-blue-400"
+                            )}
+                            onClick={() => setShowPowerDataInput(!showPowerDataInput)}
+                          >
+                            <LineChart className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Query power data</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                          <AlignJustify className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-slate-900 border-slate-700">
+                        <DropdownMenuLabel>Conversation</DropdownMenuLabel>
+                        <DropdownMenuSeparator className="bg-slate-700" />
+                        <DropdownMenuItem className="focus:bg-slate-800 focus:text-slate-100 cursor-pointer">
+                          <Pin className="h-4 w-4 mr-2" />
+                          <span>Pinned Messages</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="focus:bg-slate-800 focus:text-slate-100 cursor-pointer">
+                          <Clock className="h-4 w-4 mr-2" />
+                          <span>Conversation History</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="focus:bg-slate-800 focus:text-slate-100 cursor-pointer">
+                          <LineChart className="h-4 w-4 mr-2" />
+                          <span>Data Visualization</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  
+                  {/* Message content area */}
+                  <div className="space-y-4 overflow-y-auto">
+                    {/* Message search component */}
+                    {isSearchOpen && messages && messages.length > 0 && (
+                      <div className="mb-4">
+                        <MessageSearch 
+                          messages={messages} 
+                          onSelectResult={scrollToMessage} 
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Power data query input */}
+                    {showPowerDataInput && (
+                      <div className="mb-4 p-3 bg-blue-900/20 border border-blue-800/50 rounded-lg">
+                        <div className="mb-2 text-sm font-medium text-blue-300">Power Data Query</div>
+                        <div className="flex gap-2">
+                          <Input 
+                            value={powerDataQuery}
+                            onChange={(e) => setPowerDataQuery(e.target.value)}
+                            placeholder="Ask about power data... e.g., 'Show solar output from yesterday'"
+                            className="bg-slate-900/70 border-slate-700"
+                          />
+                          <Button 
+                            size="sm" 
+                            className="bg-blue-700 hover:bg-blue-800"
+                            onClick={() => {
+                              if (powerDataQuery.trim() && activeConversation) {
+                                // Format query to indicate it's a power data query
+                                const formattedQuery = `[POWER DATA QUERY] ${powerDataQuery.trim()}`;
+                                sendMessage.mutate(formattedQuery);
+                                setPowerDataQuery("");
+                                setShowPowerDataInput(false);
+                              }
+                            }}
+                            disabled={!powerDataQuery.trim() || !activeConversation || sendMessage.isPending}
+                          >
+                            <Database className="h-4 w-4 mr-2" />
+                            Query
+                          </Button>
                         </div>
                       </div>
-                      {message.role === 'user' && (
-                        <Avatar className="h-8 w-8 ml-2">
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            {message.role.substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                    </div>
-                  ))}
-                  {sendMessage.isPending && (
-                    <div className="flex justify-start">
-                      <Avatar className="h-8 w-8 mr-2">
-                        <AvatarFallback className="bg-blue-100 text-blue-700">AI</AvatarFallback>
-                      </Avatar>
-                      <div className="max-w-[85%] px-4 py-3 rounded-lg bg-slate-800 text-gray-100 rounded-tl-none">
-                        <div className="flex space-x-2">
-                          <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                          <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                          <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    )}
+                    
+                    {/* Enhanced messages list */}
+                    {messages.map((message: Message) => (
+                      <div 
+                        key={message.id}
+                        id={`message-${message.id}`}
+                        className={cn(
+                          "relative transition-all duration-300",
+                          activeMessageId === message.id && "ring-2 ring-blue-500 rounded-lg"
+                        )}
+                      >
+                        <EnhancedMessage
+                          role={message.role}
+                          content={message.content}
+                          timestamp={message.createdAt}
+                          isPinned={pinnedMessages.has(message.id)}
+                          onPin={() => togglePinMessage(message.id)}
+                          hasReference={message.content.includes('data reference') || message.content.includes('power data')}
+                        />
+                      </div>
+                    ))}
+                    
+                    {/* Typing indicator */}
+                    {sendMessage.isPending && (
+                      <div className="flex justify-start">
+                        <div className="max-w-[85%] w-full">
+                          <EnhancedMessage
+                            role="assistant"
+                            content={
+                              <div className="flex space-x-2 items-center h-6">
+                                <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                              </div>
+                            }
+                            timestamp={new Date().toISOString()}
+                          />
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                   <div ref={messagesEndRef} />
                 </div>
               ) : (
