@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Save, Settings, Users, Zap, CloudSun, Palette, Globe, BugPlay } from "lucide-react";
+import { Loader2, Save, Settings, Users, Zap, CloudSun, Palette, Globe, BugPlay, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CreateTestNotificationButton } from "@/components/create-test-notification-button";
@@ -72,6 +72,15 @@ const appearanceSchema = z.object({
   chartAnimations: z.boolean(),
   dashboardLayout: z.string(),
 });
+
+// Import Telegram schemas
+import { 
+  telegramBotSchema, 
+  telegramPreferencesSchema, 
+  telegramTestMessageSchema,
+  type TelegramBotSettings,
+  type TelegramPreferences
+} from "@/lib/telegram-schemas";
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -155,6 +164,27 @@ export default function SettingsPage() {
       sidebarCollapsed: false,
       chartAnimations: true,
       dashboardLayout: "standard",
+    },
+  });
+  
+  // Create form for Telegram bot settings (admin only)
+  const telegramBotForm = useForm<z.infer<typeof telegramBotSchema>>({
+    resolver: zodResolver(telegramBotSchema),
+    defaultValues: {
+      botToken: "",
+      botUsername: "",
+      isEnabled: false,
+      tokenUpdated: false
+    },
+  });
+  
+  // Create form for Telegram user preferences
+  const telegramPrefsForm = useForm<z.infer<typeof telegramPreferencesSchema>>({
+    resolver: zodResolver(telegramPreferencesSchema),
+    defaultValues: {
+      notificationsEnabled: true,
+      receiveAlerts: true,
+      receiveReports: true
     },
   });
   
@@ -316,6 +346,171 @@ export default function SettingsPage() {
     
     // Apply theme change immediately
     document.documentElement.classList.toggle("dark", data.theme === "dark");
+  };
+  
+  // Update Telegram settings (admin only)
+  const updateTelegramSettingsMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof telegramBotSchema>) => {
+      return await apiRequest('/api/telegram/settings', {
+        method: 'PATCH',
+        data,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Telegram bot settings updated",
+        description: "The Telegram integration has been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/telegram/settings'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update Telegram settings",
+        description: error.message || "There was an error updating the Telegram integration.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Update user's Telegram preferences
+  const updateTelegramPrefsMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof telegramPreferencesSchema>) => {
+      return await apiRequest('/api/telegram/preferences', {
+        method: 'PATCH',
+        data,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Telegram preferences updated",
+        description: "Your Telegram notification preferences have been updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/telegram/status'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update preferences",
+        description: error.message || "There was an error updating your Telegram preferences.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Disconnect from Telegram
+  const disconnectTelegramMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/telegram/disconnect', {
+        method: 'POST',
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Disconnected from Telegram",
+        description: "Your account has been disconnected from Telegram. You will no longer receive notifications.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/telegram/status'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to disconnect",
+        description: error.message || "There was an error disconnecting from Telegram.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Generate verification code
+  const generateCodeMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/telegram/verify', {
+        method: 'POST',
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Verification code generated",
+        description: "A verification code has been generated. Please send it to the Telegram bot to connect your account.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/telegram/status'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to generate code",
+        description: error.message || "There was an error generating a verification code.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Send test message
+  const sendTestMessageMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/telegram/test', {
+        method: 'POST',
+        data: {
+          message: "This is a test message from the Emporium Power Monitoring system." 
+        },
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Test message sent",
+        description: "A test message has been sent to your Telegram account.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to send message",
+        description: error.message || "There was an error sending the test message.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Set form values for Telegram settings
+  useEffect(() => {
+    if (telegramSettings) {
+      telegramBotForm.reset({
+        botToken: "",  // Don't display actual token for security
+        botUsername: telegramSettings.botUsername || "",
+        isEnabled: telegramSettings.isEnabled,
+        tokenUpdated: false,
+      });
+    }
+  }, [telegramSettings, telegramBotForm]);
+
+  // Set form values for Telegram preferences
+  useEffect(() => {
+    if (telegramStatus?.connected) {
+      telegramPrefsForm.reset({
+        notificationsEnabled: telegramStatus.notificationsEnabled,
+        receiveAlerts: telegramStatus.receiveAlerts,
+        receiveReports: telegramStatus.receiveReports,
+      });
+    }
+  }, [telegramStatus, telegramPrefsForm]);
+  
+  // Handlers for Telegram forms
+  const onUpdateTelegramSettings = (data: z.infer<typeof telegramBotSchema>) => {
+    updateTelegramSettingsMutation.mutate(data);
+  };
+  
+  const onUpdateTelegramPreferences = (data: z.infer<typeof telegramPreferencesSchema>) => {
+    updateTelegramPrefsMutation.mutate(data);
+  };
+  
+  const onDisconnectTelegram = () => {
+    if (window.confirm("Are you sure you want to disconnect from Telegram? You will no longer receive notifications.")) {
+      disconnectTelegramMutation.mutate();
+    }
+  };
+  
+  const onGenerateVerificationCode = () => {
+    generateCodeMutation.mutate();
+  };
+  
+  const onSendTestMessage = () => {
+    sendTestMessageMutation.mutate();
   };
   
   return (
@@ -990,6 +1185,308 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
+        {/* Integrations Settings */}
+        <TabsContent value="integrations">
+          <Card>
+            <CardHeader>
+              <CardTitle>Integrations</CardTitle>
+              <CardDescription>
+                Configure external integrations and messaging services
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Telegram Integration */}
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-muted px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Send className="h-5 w-5 text-blue-500" />
+                    <h3 className="text-lg font-medium">Telegram Integration</h3>
+                  </div>
+                  {user?.role === 'Admin' && telegramSettings ? (
+                    <Badge variant={telegramSettings.isEnabled ? "success" : "secondary"}>
+                      {telegramSettings.isEnabled ? "Enabled" : "Disabled"}
+                    </Badge>
+                  ) : null}
+                </div>
+                
+                {(isLoadingTelegram || isLoadingTelegramStatus) ? (
+                  <div className="flex justify-center items-center h-48">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="p-4 space-y-6">
+                    {/* Admin-only settings */}
+                    {user?.role === 'Admin' && (
+                      <div className="space-y-4">
+                        <h4 className="font-medium text-lg">Bot Configuration</h4>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Configure the Telegram bot that users will interact with
+                        </p>
+                        
+                        <Form {...telegramBotForm}>
+                          <form onSubmit={telegramBotForm.handleSubmit(onUpdateTelegramSettings)} className="space-y-4">
+                            <FormField
+                              control={telegramBotForm.control}
+                              name="botToken"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Bot Token</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      type="password" 
+                                      placeholder={telegramSettings?.hasToken ? "••••••••" : "Enter bot token"} 
+                                      {...field}
+                                      onChange={(e) => {
+                                        field.onChange(e.target.value);
+                                        telegramBotForm.setValue('tokenUpdated', true);
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    Token provided by @BotFather when creating a Telegram bot
+                                  </FormDescription>
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={telegramBotForm.control}
+                              name="botUsername"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Bot Username</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="username_bot" 
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    The username of your Telegram bot (usually ends with '_bot')
+                                  </FormDescription>
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={telegramBotForm.control}
+                              name="isEnabled"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between p-4 border rounded-lg">
+                                  <div className="space-y-0.5">
+                                    <FormLabel className="text-base">Enable Telegram Integration</FormLabel>
+                                    <FormDescription>
+                                      Allow users to connect and receive notifications via Telegram
+                                    </FormDescription>
+                                  </div>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <Button 
+                              type="submit" 
+                              disabled={!telegramBotForm.formState.isDirty || updateTelegramSettingsMutation.isPending}
+                            >
+                              {updateTelegramSettingsMutation.isPending && (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              )}
+                              Save Bot Settings
+                            </Button>
+                          </form>
+                        </Form>
+                      </div>
+                    )}
+                    
+                    {/* User connection settings - visible to all users */}
+                    <Separator className="my-6" />
+                    
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-lg">Your Telegram Connection</h4>
+                      
+                      {telegramStatus?.connected ? (
+                        <>
+                          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900 rounded-lg p-4 flex items-start space-x-3">
+                            <Check className="h-5 w-5 text-green-500 mt-0.5" />
+                            <div>
+                              <h5 className="font-medium text-green-800 dark:text-green-300">Connected to Telegram</h5>
+                              <p className="text-sm text-green-700 dark:text-green-400 mt-1">
+                                Your account is connected to Telegram {telegramStatus.telegramUsername ? 
+                                  `(@${telegramStatus.telegramUsername})` : ''}
+                              </p>
+                              {telegramStatus.lastAccessed && (
+                                <p className="text-xs text-green-600 dark:text-green-500 mt-1">
+                                  Last activity: {new Date(telegramStatus.lastAccessed).toLocaleString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <Form {...telegramPrefsForm}>
+                            <form onSubmit={telegramPrefsForm.handleSubmit(onUpdateTelegramPreferences)} className="space-y-4">
+                              <FormField
+                                control={telegramPrefsForm.control}
+                                name="notificationsEnabled"
+                                render={({ field }) => (
+                                  <FormItem className="flex flex-row items-center justify-between p-3 border rounded-lg">
+                                    <div className="space-y-0.5">
+                                      <FormLabel className="text-base">Telegram Notifications</FormLabel>
+                                      <FormDescription>
+                                        Receive notifications through Telegram
+                                      </FormDescription>
+                                    </div>
+                                    <FormControl>
+                                      <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <FormField
+                                  control={telegramPrefsForm.control}
+                                  name="receiveAlerts"
+                                  render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between p-3 border rounded-lg">
+                                      <div className="space-y-0.5">
+                                        <FormLabel className="text-base">Alert Notifications</FormLabel>
+                                        <FormDescription>
+                                          Receive system alerts and warnings
+                                        </FormDescription>
+                                      </div>
+                                      <FormControl>
+                                        <Switch
+                                          checked={field.value}
+                                          onCheckedChange={field.onChange}
+                                          disabled={!telegramPrefsForm.watch('notificationsEnabled')}
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <FormField
+                                  control={telegramPrefsForm.control}
+                                  name="receiveReports"
+                                  render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between p-3 border rounded-lg">
+                                      <div className="space-y-0.5">
+                                        <FormLabel className="text-base">Report Delivery</FormLabel>
+                                        <FormDescription>
+                                          Receive scheduled reports and summaries
+                                        </FormDescription>
+                                      </div>
+                                      <FormControl>
+                                        <Switch
+                                          checked={field.value}
+                                          onCheckedChange={field.onChange}
+                                          disabled={!telegramPrefsForm.watch('notificationsEnabled')}
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              
+                              <div className="flex items-center justify-between">
+                                <Button 
+                                  type="submit" 
+                                  disabled={!telegramPrefsForm.formState.isDirty || updateTelegramPrefsMutation.isPending}
+                                >
+                                  {updateTelegramPrefsMutation.isPending && (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  )}
+                                  Save Preferences
+                                </Button>
+                                
+                                <Button 
+                                  type="button"
+                                  variant="destructive"
+                                  onClick={onDisconnectTelegram}
+                                  disabled={disconnectTelegramMutation.isPending}
+                                >
+                                  {disconnectTelegramMutation.isPending && (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  )}
+                                  Disconnect Telegram
+                                </Button>
+                              </div>
+                              
+                              <div className="mt-4">
+                                <Button 
+                                  type="button"
+                                  variant="outline"
+                                  className="w-full"
+                                  onClick={onSendTestMessage}
+                                  disabled={sendTestMessageMutation.isPending || !telegramPrefsForm.watch('notificationsEnabled')}
+                                >
+                                  {sendTestMessageMutation.isPending && (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  )}
+                                  Send Test Message
+                                </Button>
+                              </div>
+                            </form>
+                          </Form>
+                        </>
+                      ) : (
+                        <div className="space-y-4">
+                          {telegramStatus?.verificationCode ? (
+                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                              <h5 className="font-medium text-blue-800 dark:text-blue-300">Verification Pending</h5>
+                              <p className="text-sm text-blue-700 dark:text-blue-400 mt-2">
+                                Send the following verification code to our Telegram bot to connect your account:
+                              </p>
+                              <div className="mt-3 flex items-center justify-center">
+                                <code className="bg-white dark:bg-blue-950 p-3 rounded-md font-mono text-lg font-bold text-blue-600 dark:text-blue-300 tracking-wider">
+                                  /verify {telegramStatus.verificationCode}
+                                </code>
+                              </div>
+                              <p className="text-xs text-blue-600 dark:text-blue-500 mt-2">
+                                This code will expire on {telegramStatus.verificationExpires ? 
+                                  new Date(telegramStatus.verificationExpires).toLocaleString() : 'soon'}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 text-center">
+                              <div className="flex justify-center mb-4">
+                                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                                  <MessageCircle className="h-8 w-8 text-blue-500 dark:text-blue-400" />
+                                </div>
+                              </div>
+                              <h5 className="font-medium text-lg">Connect to Telegram</h5>
+                              <p className="text-slate-600 dark:text-slate-400 mt-2 mb-6 max-w-md mx-auto">
+                                Connect your account to Telegram to receive notifications, alerts, and reports directly to your device.
+                              </p>
+                              <Button
+                                onClick={onGenerateVerificationCode}
+                                disabled={generateCodeMutation.isPending}
+                              >
+                                {generateCodeMutation.isPending && (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                )}
+                                Connect to Telegram
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
         {/* Advanced Developer Settings */}
         <TabsContent value="developer">
           <Card>
