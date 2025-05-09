@@ -88,7 +88,33 @@ export function TelegramChat() {
     queryKey: ['/api/telegram/messages'],
     retry: false,
     enabled: !!telegramUser?.isVerified,
-    onSuccess: (data) => {
+    refetchInterval: 10000, // Poll for new messages every 10 seconds
+    onSuccess: (data, prevData) => {
+      // Check if we received new messages
+      if (prevData && data && data.length > prevData.length) {
+        // New messages arrived
+        const newMessages = data.length - prevData.length;
+        
+        // Notify user about new messages
+        toast({
+          title: "New Telegram Message",
+          description: `You have ${newMessages} new message${newMessages > 1 ? 's' : ''} from Telegram`,
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="bg-blue-900/30 text-blue-200 border-blue-800 hover:bg-blue-800"
+              onClick={() => {
+                // Find and click the Telegram tab - we'll use a custom event to trigger this
+                document.dispatchEvent(new CustomEvent('switchToTelegramTab'));
+              }}
+            >
+              View
+            </Button>
+          )
+        });
+      }
+      
       // Scroll to bottom after messages load
       setTimeout(() => {
         scrollToBottom();

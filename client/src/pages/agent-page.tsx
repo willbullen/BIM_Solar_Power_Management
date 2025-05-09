@@ -1448,6 +1448,22 @@ export default function AgentPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   
+  // Add event listener for switching to the Telegram tab
+  useEffect(() => {
+    const handleSwitchToTelegramTab = () => {
+      console.log('Switching to Telegram tab from event');
+      setActiveTab('telegram');
+    };
+    
+    // Add the event listener
+    document.addEventListener('switchToTelegramTab', handleSwitchToTelegramTab);
+    
+    // Clean up the event listener when component unmounts
+    return () => {
+      document.removeEventListener('switchToTelegramTab', handleSwitchToTelegramTab);
+    };
+  }, []);
+  
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) return;
