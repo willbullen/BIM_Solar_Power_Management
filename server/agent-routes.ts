@@ -49,8 +49,9 @@ const notificationSchema = z.object({
   type: z.enum(['alert', 'report', 'reminder', 'status']).optional().default('alert'),
 });
 
-// Import storage for user access
-import * as storage from './storage';
+// Create a storage instance
+import { DatabaseStorage } from './storage';
+const storage = new DatabaseStorage();
 
 // Authentication helper
 /**

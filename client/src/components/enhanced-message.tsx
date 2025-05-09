@@ -140,7 +140,7 @@ export function EnhancedMessage({
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw, rehypeSanitize]}
                 components={{
-                  code({node, inline, className, children, ...props}) {
+                  code: ({node, inline, className, children, ...props}: CodeProps) => {
                     const match = /language-(\w+)/.exec(className || '');
                     return !inline && match ? (
                       <SyntaxHighlighter
@@ -158,7 +158,7 @@ export function EnhancedMessage({
                     )
                   },
                   // Custom styling for other markdown elements
-                  a: ({node, ...props}) => (
+                  a: ({node, ...props}: MarkdownComponentProps) => (
                     <a 
                       {...props} 
                       className="text-blue-400 hover:text-blue-300 hover:underline flex items-center"
@@ -169,18 +169,18 @@ export function EnhancedMessage({
                       <ArrowUpRight className="h-3 w-3 ml-0.5" />
                     </a>
                   ),
-                  table: ({node, ...props}) => (
+                  table: ({node, ...props}: MarkdownComponentProps) => (
                     <div className="overflow-x-auto my-2">
                       <table className="min-w-full divide-y divide-gray-700 border border-slate-700" {...props} />
                     </div>
                   ),
-                  th: ({node, ...props}) => (
+                  th: ({node, ...props}: MarkdownComponentProps) => (
                     <th 
                       {...props} 
                       className="bg-slate-800 px-3 py-2 text-left text-xs font-medium text-slate-300 uppercase tracking-wider"
                     />
                   ),
-                  td: ({node, ...props}) => (
+                  td: ({node, ...props}: MarkdownComponentProps) => (
                     <td 
                       {...props} 
                       className="px-3 py-2 text-sm text-slate-200 border-t border-slate-700"
