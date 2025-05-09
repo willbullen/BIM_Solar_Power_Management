@@ -95,6 +95,19 @@ export default function SettingsPage() {
     queryFn: getQueryFn({ on401: 'throw' }),
   });
   
+  // Fetch Telegram settings (for admin only)
+  const { data: telegramSettings, isLoading: isLoadingTelegram } = useQuery({
+    queryKey: ['/api/telegram/settings'],
+    queryFn: getQueryFn({ on401: 'ignore' }),
+    enabled: user?.role === 'Admin', // Only fetch if user is admin
+  });
+  
+  // Fetch user's Telegram connection status
+  const { data: telegramStatus, isLoading: isLoadingTelegramStatus } = useQuery({
+    queryKey: ['/api/telegram/status'],
+    queryFn: getQueryFn({ on401: 'ignore' }),
+  });
+  
   // Create form for general settings
   const generalForm = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
@@ -309,7 +322,7 @@ export default function SettingsPage() {
     <SharedLayout>
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full md:w-fit">
+        <TabsList className="grid grid-cols-2 md:grid-cols-6 w-full md:w-fit">
           <TabsTrigger value="general">
             <Settings className="h-4 w-4 mr-2" />
             General
@@ -325,6 +338,10 @@ export default function SettingsPage() {
           <TabsTrigger value="appearance">
             <Palette className="h-4 w-4 mr-2" />
             Appearance
+          </TabsTrigger>
+          <TabsTrigger value="integrations">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Integrations
           </TabsTrigger>
           <TabsTrigger value="developer">
             <BugPlay className="h-4 w-4 mr-2" />
