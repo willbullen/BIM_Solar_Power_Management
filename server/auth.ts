@@ -175,9 +175,58 @@ export function setupAuth(app: Express) {
     });
   });
 
+  // Session restore endpoint (special backdoor for client-side state recovery)
+  app.post("/api/session/restore", async (req, res, next) => {
+    try {
+      const { userId, username } = req.body;
+      
+      if (!userId || !username) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Get the user from storage
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.username !== username) {
+        return res.status(401).json({ message: "Invalid session restore attempt" });
+      }
+      
+      // Log the user in directly
+      req.login(user, (err) => {
+        if (err) return next(err);
+        
+        // Store user ID and role in session for authentication
+        req.session.userId = user.id;
+        req.session.userRole = user.role;
+        
+        // Force the session to be saved right away
+        req.session.save((err) => {
+          if (err) {
+            console.error('Error saving session on restore:', err);
+            return next(err);
+          }
+          
+          console.log('Session restored successfully for user ID:', user.id);
+          
+          // Return user without password
+          const { password, ...userWithoutPassword } = user;
+          return res.json(userWithoutPassword);
+        });
+      });
+    } catch (error) {
+      console.error('Session restore error:', error);
+      next(error);
+    }
+  });
+
   // Get current user endpoint
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) {
+      // Debug: Log session information when authentication fails
+      console.log('Auth check - Session:', req.session ? 'exists' : 'none');
+      console.log('Auth check - UserId:', req.session?.userId || 'none');
+      console.log('Auth check - IsAuthenticated:', req.isAuthenticated() ? 'yes' : 'no');
+      
       return res.status(401).json({ message: "Not authenticated" });
     }
     

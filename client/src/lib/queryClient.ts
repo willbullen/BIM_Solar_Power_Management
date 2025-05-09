@@ -1,5 +1,8 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// Local storage key for user data - must match the one in use-auth.tsx
+const USER_STORAGE_KEY = 'emporium_user';
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -11,6 +14,23 @@ async function throwIfResNotOk(res: Response) {
 function getBaseUrl() {
   // In Replit, we need to use the window.location.origin
   return window.location.origin;
+}
+
+// Get authentication headers from local storage if available
+function getAuthHeaders() {
+  try {
+    const userData = localStorage.getItem(USER_STORAGE_KEY);
+    if (userData) {
+      const user = JSON.parse(userData);
+      return {
+        'X-Auth-User-Id': user.id.toString(),
+        'X-Auth-Username': user.username,
+      };
+    }
+  } catch (e) {
+    console.error('Failed to get auth headers from local storage:', e);
+  }
+  return {};
 }
 
 // New apiRequest format with options parameter
@@ -59,6 +79,7 @@ export async function apiRequest(
     headers: {
       ...(requestData && method !== 'GET' ? { "Content-Type": "application/json" } : {}),
       'Accept': 'application/json',
+      ...getAuthHeaders(), // Add auth headers from local storage
     },
     credentials: "include", // Important for sending cookies with request
     mode: "cors",
@@ -118,6 +139,7 @@ export const getQueryFn: <T>(options: {
         cache: "no-cache", // Prevent caching of requests
         headers: {
           'Accept': 'application/json',
+          ...getAuthHeaders(), // Add auth headers from local storage
         },
       });
       
