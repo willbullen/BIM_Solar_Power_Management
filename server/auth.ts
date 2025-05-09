@@ -19,11 +19,13 @@ export function setupAuth(app: Express) {
     resave: true,
     saveUninitialized: true,
     store: storage.sessionStore,
+    name: 'emporium.sid', // Custom name to avoid conflicts
     cookie: {
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: 'lax', // Changed from 'none' to 'lax' for better compatibility
-      secure: false, // Set to false for development to ensure cookies work in all environments
-      httpOnly: true
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      sameSite: 'lax', // Use 'lax' for better compatibility
+      secure: false, // Set to false since Replit can use both http and https
+      httpOnly: true,
+      path: '/' // Ensure cookie is available across the entire site
     }
   };
 
@@ -87,9 +89,24 @@ export function setupAuth(app: Express) {
       req.login(user, (err) => {
         if (err) return next(err);
         
-        // Return user without password
-        const { password, ...userWithoutPassword } = user;
-        res.status(201).json(userWithoutPassword);
+        // Store user ID and role in session for authentication
+        req.session.userId = user.id;
+        req.session.userRole = user.role;
+        
+        // Force the session to be saved right away
+        req.session.save((err) => {
+          if (err) {
+            console.error('Error saving session:', err);
+            return next(err);
+          }
+          
+          console.log('User registered and authenticated successfully with ID:', user.id);
+          console.log('Session saved with userId:', req.session.userId);
+          
+          // Return user without password
+          const { password, ...userWithoutPassword } = user;
+          res.status(201).json(userWithoutPassword);
+        });
       });
     } catch (error) {
       if (error instanceof ZodError) {
@@ -111,19 +128,50 @@ export function setupAuth(app: Express) {
         // Store user ID and role in session for authentication
         req.session.userId = user.id;
         req.session.userRole = user.role;
+        
+        // Force the session to be saved right away
+        req.session.save((err) => {
+          if (err) {
+            console.error('Error saving session:', err);
+            return next(err);
+          }
+          
+          console.log('User authenticated successfully with ID:', user.id);
+          console.log('Session saved with userId:', req.session.userId);
 
-        // Return user without password
-        const { password, ...userWithoutPassword } = user;
-        return res.json(userWithoutPassword);
+          // Return user without password
+          const { password, ...userWithoutPassword } = user;
+          return res.json(userWithoutPassword);
+        });
       });
     })(req, res, next);
   });
 
   // User logout endpoint
   app.post("/api/logout", (req, res, next) => {
+    // Clear userId and userRole from session
+    if (req.session) {
+      req.session.userId = undefined;
+      req.session.userRole = undefined;
+    }
+    
     req.logout((err) => {
       if (err) return next(err);
-      res.sendStatus(200);
+      
+      // Force the session to be saved right away
+      if (req.session) {
+        req.session.save((err) => {
+          if (err) {
+            console.error('Error saving session on logout:', err);
+            return next(err);
+          }
+          
+          console.log('User logged out successfully');
+          res.sendStatus(200);
+        });
+      } else {
+        res.sendStatus(200);
+      }
     });
   });
 
