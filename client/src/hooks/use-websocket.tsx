@@ -98,12 +98,30 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     // Determine the WebSocket URL based on the current location
     // Get the URL from the window location to ensure same-origin connection
     // Note: We need to handle both http/https and development/production environments
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
+    let wsUrl = '';
     
-    // Make sure we're using the correct WebSocket URL format
-    // Use the same origin as the page and the correct path
-    const wsUrl = `${protocol}//${host}/ws`;
+    // Special handling for Replit environment
+    const isReplitEnvironment = window.location.host.includes('.replit.dev') || 
+                                window.location.host.includes('.repl.co');
+    
+    // Check if we have a stored protocol preference in localStorage
+    const storedProtocol = localStorage.getItem('websocket-protocol');
+    
+    if (storedProtocol) {
+      // If the user has explicitly set a protocol preference, use that
+      console.log(`Using stored WebSocket protocol preference: ${storedProtocol}`);
+      wsUrl = `${storedProtocol}://${window.location.host}/ws`;
+    } else if (isReplitEnvironment) {
+      // In Replit, try using non-secure WebSocket first
+      // Replit proxy sometimes has issues with secure WebSocket connections
+      console.log('Replit environment detected, using non-secure WebSocket');
+      wsUrl = `ws://${window.location.host}/ws`;
+    } else {
+      // For non-Replit environments, use the standard protocol matching
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      wsUrl = `${protocol}//${host}/ws`;
+    }
     
     console.log(`Configured WebSocket URL: ${wsUrl}`);
     

@@ -38,6 +38,7 @@ function App() {
               <Route component={NotFound} />
             </Switch>
             <Toaster />
+            <WebSocketDebugger />
           </PowerDataProvider>
         </RefreshRateProvider>
       </AuthProvider>
