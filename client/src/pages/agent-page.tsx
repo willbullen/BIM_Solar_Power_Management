@@ -15,6 +15,7 @@ import { AgentMcpTasksPage } from "@/pages/agent-mcp-tasks";
 import { TelegramChat } from "@/components/telegram-chat";
 import { EnhancedMessage } from "@/components/enhanced-message";
 import { MessageSearch } from "@/components/message-search";
+import { AIChat } from "@/components/ai-chat";
 import { cn } from "@/lib/utils";
 import { 
   Loader2, Send, Bot, MessageSquare, ListChecks, Settings, Plus, 
@@ -1659,6 +1660,13 @@ export default function AgentPage() {
                       <span className="font-medium">Telegram</span>
                     </TabsTrigger>
                     <TabsTrigger 
+                      value="ai-chat" 
+                      className="flex items-center justify-center gap-1.5 text-xs py-1 px-3 rounded-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-300"
+                    >
+                      <Bot className="h-3.5 w-3.5" />
+                      <span className="font-medium">AI Chat</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
                       value="settings" 
                       className="flex items-center justify-center gap-1.5 text-xs py-1 px-3 rounded-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-300"
                     >
@@ -1749,6 +1757,15 @@ export default function AgentPage() {
                 </TabsContent>
                 
                 <TabsContent 
+                  value="ai-chat" 
+                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
+                >
+                  <div className="p-3">
+                    <AIChat />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent 
                   value="settings" 
                   className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
                 >
@@ -1802,6 +1819,14 @@ export default function AgentPage() {
                       <Settings className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <span>Adjust model parameters to focus on specific data analysis priorities</span>
+                  </>
+                )}
+                {activeTab === "ai-chat" && (
+                  <>
+                    <div className="bg-green-100/80 dark:bg-green-900/20 p-1.5 rounded-md ring-1 ring-green-200/50 dark:ring-green-800/30">
+                      <Bot className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <span>Unified AI Chat interface with file upload/download capabilities</span>
                   </>
                 )}
               </div>
