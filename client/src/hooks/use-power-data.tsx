@@ -144,25 +144,34 @@ export function PowerDataProvider({ children }: { children: ReactNode }) {
   
   // Set up fallback polling mechanism when WebSocket is not connected or disabled
   useEffect(() => {
+    let pollingInterval: NodeJS.Timeout | null = null;
+    
     // Skip polling if WebSocket is connected
     if (wsConnected && wsEnabled) {
       console.log('WebSocket connected, skipping polling');
-      return;
+      return () => {
+        if (pollingInterval) {
+          console.log(`Clearing polling interval (${refreshInterval}ms)`);
+          clearInterval(pollingInterval);
+        }
+      };
     }
     
     console.log(`Starting power data polling with interval: ${refreshInterval}ms`);
     
     // Set up polling interval based on the selected refresh rate
-    const pollingInterval = setInterval(fetchLatestData, refreshInterval);
+    pollingInterval = setInterval(fetchLatestData, refreshInterval);
     
     // Clean up on unmount or when dependencies change
     return () => {
-      console.log(`Clearing polling interval (${refreshInterval}ms)`);
-      clearInterval(pollingInterval);
+      if (pollingInterval) {
+        console.log(`Clearing polling interval (${refreshInterval}ms)`);
+        clearInterval(pollingInterval);
+      }
     };
     
     // Dependencies ensure this effect runs again when relevant states change
-  }, [wsConnected, wsEnabled, refreshInterval]);
+  }, [wsConnected, wsEnabled, refreshInterval, fetchLatestData]);
   
   // Update settings when they change from the query
   useEffect(() => {
