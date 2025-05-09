@@ -764,10 +764,10 @@ function ChatInterface() {
                 </Dialog>
               </div>
             )}
-        </CardContent>
-        
-        <CardFooter className="border-t border-slate-800 p-4 bg-slate-900">
-          <form onSubmit={handleSendMessage} className="flex w-full space-x-2">
+          </CardContent>
+          
+          <CardFooter className="border-t border-slate-800 p-4 bg-slate-900">
+            <form onSubmit={handleSendMessage} className="flex w-full space-x-2">
             <Input 
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -787,8 +787,8 @@ function ChatInterface() {
                 <Send className="h-4 w-4" />
               )}
             </Button>
-          </form>
-        </CardFooter>
+            </form>
+          </CardFooter>
       </Card>
     </div>
   );
