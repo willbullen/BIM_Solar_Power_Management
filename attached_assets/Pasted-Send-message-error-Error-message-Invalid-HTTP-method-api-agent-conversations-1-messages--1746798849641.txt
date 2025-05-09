@@ -1,0 +1,50 @@
+Send message error: 
+Error {}
+message: "Invalid HTTP method: /api/agent/conversations/1/messages"
+stack: "Error: Invalid HTTP method: /api/agent/conversations/1/messages↵ at apiRequest (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/src/lib/queryClient.ts:44:11)↵ at Object.mutationFn (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/src/pages/agent-page.tsx:224:30)↵ at Object.fn (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=3a99ae2f:1189:29)↵ at run (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=3a99ae2f:494:49)↵ at Object.start (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=3a99ae2f:536:9)↵ at _a6.execute (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=3a99ae2f:1225:56)"
+get stack: ƒ ()
+length: 0
+name: ""
+[[Prototype]]: ƒ ()
+set stack: ƒ ()
+length: 1
+name: ""
+[[Prototype]]: ƒ ()
+apply: ƒ apply()
+arguments: "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them"
+get arguments: ƒ ()
+set arguments: ƒ ()
+bind: ƒ bind()
+call: ƒ call()
+caller: "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them"
+get caller: ƒ ()
+set caller: ƒ ()
+constructor: ƒ Function()
+length: 0
+name: ""
+toString: ƒ toString()
+Symbol(Symbol.hasInstance): undefined
+[[Prototype]]: Object
+constructor: ƒ Function()
+hasOwnProperty: ƒ hasOwnProperty()
+isPrototypeOf: ƒ isPrototypeOf()
+propertyIsEnumerable: ƒ propertyIsEnumerable()
+toLocaleString: ƒ toLocaleString()
+toString: ƒ toString()
+valueOf: ƒ valueOf()
+__defineGetter__: ƒ __defineGetter__()
+__defineSetter__: ƒ __defineSetter__()
+__lookupGetter__: ƒ __lookupGetter__()
+__lookupSetter__: ƒ __lookupSetter__()
+__proto__: ƒ ()
+get __proto__: ƒ get __proto__()
+set __proto__: ƒ set __proto__()
+[[Prototype]]: Object
+
+Found user in local storage
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Found user in local storage
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+API response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
