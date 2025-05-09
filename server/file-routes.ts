@@ -3,6 +3,15 @@ import { fileService } from './services/file-service';
 import multer from 'multer';
 import path from 'path';
 
+// Extend Request type to include userId property
+declare global {
+  namespace Express {
+    interface Request {
+      userId?: number;
+    }
+  }
+}
+
 // Configure multer for memory storage (we'll handle file saving ourselves)
 const upload = multer({
   storage: multer.memoryStorage(),

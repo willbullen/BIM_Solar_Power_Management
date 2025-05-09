@@ -18,6 +18,7 @@ import { AIService } from './ai-service';
 import { registerAgentRoutes } from './agent-routes';
 import { registerNotificationRoutes } from './agent-notification-routes';
 import { registerTelegramRoutes } from './telegram-routes';
+import { registerFileRoutes } from './file-routes';
 import mcpRoutes from './mcp-routes';
 import { WebSocketServer, WebSocket } from 'ws';
 
@@ -1451,6 +1452,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Telegram integration routes
   registerTelegramRoutes(app);
+  
+  // Register File handling routes
+  registerFileRoutes(app);
   
   // Register MCP routes for Model Context Protocol
   app.use('/api/mcp', mcpRoutes);
