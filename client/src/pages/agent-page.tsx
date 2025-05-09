@@ -1379,30 +1379,30 @@ export default function AgentPage() {
               </div>
               
               {/* Content Area with Improved Containment */}
-              <div className="flex-1 overflow-hidden bg-slate-900">
+              <div className="bg-slate-900">
                 <TabsContent 
                   value="chat" 
-                  className="m-0 p-0 h-full overflow-auto focus-visible:outline-none focus-visible:ring-0 border-0"
+                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
                 >
-                  <div className="p-1 h-full">
+                  <div className="p-1">
                     <ChatInterface />
                   </div>
                 </TabsContent>
                 
                 <TabsContent 
                   value="tasks" 
-                  className="m-0 p-0 h-full overflow-auto focus-visible:outline-none focus-visible:ring-0 border-0"
+                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
                 >
-                  <div className="p-1 h-full">
+                  <div className="p-1">
                     <TasksInterface />
                   </div>
                 </TabsContent>
                 
                 <TabsContent 
                   value="settings" 
-                  className="m-0 p-0 h-full overflow-auto focus-visible:outline-none focus-visible:ring-0 border-0"
+                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
                 >
-                  <div className="p-1 h-full">
+                  <div className="p-1">
                     <AgentSettingsInterface />
                   </div>
                 </TabsContent>
