@@ -87,6 +87,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize subscription channels
   subscriptions.set('power-data', new Set<WebSocket>());
   subscriptions.set('environmental-data', new Set<WebSocket>());
+  subscriptions.set('agent-notifications', new Set<WebSocket>());
+  subscriptions.set('agent-messages', new Set<WebSocket>());
   
   // Log WebSocket server errors
   wss.on('error', (error) => {
@@ -288,8 +290,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Handle subscription requests
   function handleSubscription(ws: WebSocket, data: any, subscribedChannels: Set<string>) {
-    // Currently only supports power and environmental data subscriptions
-    if (data.channel === 'power-data' || data.channel === 'environmental-data') {
+    // Valid subscription channels
+    const validChannels = [
+      'power-data', 
+      'environmental-data', 
+      'agent-notifications', 
+      'agent-messages'
+    ];
+    
+    if (validChannels.includes(data.channel)) {
       // Add client to subscription list for the channel
       const subscribers = subscriptions.get(data.channel);
       if (subscribers) {
@@ -305,14 +314,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } else {
       ws.send(JSON.stringify({
         type: 'subscription-failed',
-        data: { message: `Unknown channel: ${data.channel}` }
+        data: { 
+          message: `Unknown channel: ${data.channel}`,
+          validChannels: validChannels 
+        }
       }));
     }
   }
   
   // Handle unsubscription requests
   function handleUnsubscription(ws: WebSocket, data: any, subscribedChannels: Set<string>) {
-    if (data.channel === 'power-data' || data.channel === 'environmental-data') {
+    // Valid subscription channels
+    const validChannels = [
+      'power-data', 
+      'environmental-data', 
+      'agent-notifications', 
+      'agent-messages'
+    ];
+    
+    if (validChannels.includes(data.channel)) {
       // Remove client from subscription list for the channel
       const subscribers = subscriptions.get(data.channel);
       if (subscribers) {
@@ -328,7 +348,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } else {
       ws.send(JSON.stringify({
         type: 'unsubscription-failed',
-        data: { message: `Unknown channel: ${data.channel}` }
+        data: { 
+          message: `Unknown channel: ${data.channel}`,
+          validChannels: validChannels 
+        }
       }));
     }
   }
