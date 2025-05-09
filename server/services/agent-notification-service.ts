@@ -1,169 +1,127 @@
-import * as schema from "@shared/schema";
 import { db } from "../db";
-import { eq, and, desc } from "drizzle-orm";
+import * as schema from "../../shared/schema";
+import { eq } from "drizzle-orm";
 
-/**
- * Service for handling AI agent notifications using REST API instead of WebSockets
- */
-export class AgentNotificationService {
+class AgentNotificationService {
   /**
    * Create a new notification
-   * @param notification The notification object to create
    */
-  async createNotification(notification: schema.InsertAgentNotification): Promise<schema.AgentNotification> {
-    const [createdNotification] = await db.insert(schema.agentNotifications)
-      .values(notification)
-      .returning();
-    
-    return createdNotification;
-  }
-
-  /**
-   * Get all unread notifications for a user
-   * @param userId The user ID to get notifications for
-   * @param limit The maximum number of notifications to return
-   */
-  async getUnreadNotifications(userId: number, limit: number = 100): Promise<schema.AgentNotification[]> {
-    const notifications = await db.query.agentNotifications.findMany({
-      where: and(
-        eq(schema.agentNotifications.userId, userId),
-        eq(schema.agentNotifications.read, false)
-      ),
-      orderBy: [desc(schema.agentNotifications.createdAt)],
-      limit
-    });
-    
-    return notifications;
+  async createNotification(data: Omit<schema.InsertAgentNotification, "id" | "createdAt" | "readAt">): Promise<schema.AgentNotification> {
+    try {
+      const result = await db.insert(schema.agentNotifications).values({
+        ...data,
+        createdAt: new Date().toISOString(),
+        readAt: null
+      }).returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      throw error;
+    }
   }
 
   /**
    * Get all notifications for a user
-   * @param userId The user ID to get notifications for
-   * @param limit The maximum number of notifications to return
    */
-  async getNotifications(userId: number, limit: number = 100): Promise<schema.AgentNotification[]> {
-    const notifications = await db.query.agentNotifications.findMany({
-      where: eq(schema.agentNotifications.userId, userId),
-      orderBy: [desc(schema.agentNotifications.createdAt)],
-      limit
-    });
-    
-    return notifications;
+  async getNotifications(userId: number): Promise<schema.AgentNotification[]> {
+    try {
+      return await db.select().from(schema.agentNotifications)
+        .where(eq(schema.agentNotifications.userId, userId))
+        .orderBy(schema.agentNotifications.createdAt, "desc");
+    } catch (error) {
+      console.error("Error getting notifications:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get unread notifications for a user
+   */
+  async getUnreadNotifications(userId: number): Promise<schema.AgentNotification[]> {
+    try {
+      return await db.select().from(schema.agentNotifications)
+        .where(eq(schema.agentNotifications.userId, userId))
+        .where(eq(schema.agentNotifications.read, false))
+        .orderBy(schema.agentNotifications.createdAt, "desc");
+    } catch (error) {
+      console.error("Error getting unread notifications:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get unread notification count for a user
+   */
+  async getUnreadCount(userId: number): Promise<number> {
+    try {
+      const result = await db.select({ count: db.fn.count() })
+        .from(schema.agentNotifications)
+        .where(eq(schema.agentNotifications.userId, userId))
+        .where(eq(schema.agentNotifications.read, false));
+      
+      return Number(result[0].count);
+    } catch (error) {
+      console.error("Error getting unread count:", error);
+      throw error;
+    }
   }
 
   /**
    * Mark a notification as read
-   * @param notificationId The ID of the notification to mark as read
    */
-  async markAsRead(notificationId: number): Promise<schema.AgentNotification> {
-    const [updatedNotification] = await db.update(schema.agentNotifications)
-      .set({ read: true, readAt: new Date() })
-      .where(eq(schema.agentNotifications.id, notificationId))
-      .returning();
-    
-    return updatedNotification;
+  async markAsRead(id: number): Promise<schema.AgentNotification> {
+    try {
+      const result = await db.update(schema.agentNotifications)
+        .set({ 
+          read: true,
+          readAt: new Date().toISOString()
+        })
+        .where(eq(schema.agentNotifications.id, id))
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      throw error;
+    }
   }
 
   /**
    * Mark all notifications for a user as read
-   * @param userId The user ID to mark notifications for
-   * @returns The number of notifications marked as read
    */
   async markAllAsRead(userId: number): Promise<number> {
-    const result = await db.update(schema.agentNotifications)
-      .set({ read: true, readAt: new Date() })
-      .where(and(
-        eq(schema.agentNotifications.userId, userId),
-        eq(schema.agentNotifications.read, false)
-      ));
-    
-    return result.rowCount || 0;
+    try {
+      const result = await db.update(schema.agentNotifications)
+        .set({ 
+          read: true,
+          readAt: new Date().toISOString()
+        })
+        .where(eq(schema.agentNotifications.userId, userId))
+        .where(eq(schema.agentNotifications.read, false));
+      
+      return result.rowCount || 0;
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      throw error;
+    }
   }
 
   /**
    * Delete a notification
-   * @param notificationId The ID of the notification to delete
    */
-  async deleteNotification(notificationId: number): Promise<void> {
-    await db.delete(schema.agentNotifications)
-      .where(eq(schema.agentNotifications.id, notificationId));
-  }
-
-  /**
-   * Create a system notification for a user
-   * @param userId The user ID to create the notification for
-   * @param title The notification title
-   * @param message The notification message
-   * @param type The notification type ('info', 'warning', 'error', 'success')
-   * @returns The created notification
-   */
-  async createSystemNotification(
-    userId: number, 
-    title: string, 
-    message: string, 
-    type: string = 'info'
-  ): Promise<schema.AgentNotification> {
-    return this.createNotification({
-      userId,
-      title,
-      message,
-      type,
-      source: 'system',
-      read: false,
-      data: {}
-    });
-  }
-
-  /**
-   * Create a task notification for a user
-   * @param userId The user ID to create the notification for
-   * @param taskId The task ID related to the notification
-   * @param title The notification title
-   * @param message The notification message
-   * @returns The created notification
-   */
-  async createTaskNotification(
-    userId: number,
-    taskId: number,
-    title: string,
-    message: string
-  ): Promise<schema.AgentNotification> {
-    return this.createNotification({
-      userId,
-      title,
-      message,
-      type: 'task',
-      source: 'task',
-      read: false,
-      data: { taskId }
-    });
-  }
-
-  /**
-   * Create a conversation notification for a user
-   * @param userId The user ID to create the notification for
-   * @param conversationId The conversation ID related to the notification
-   * @param title The notification title
-   * @param message The notification message
-   * @returns The created notification
-   */
-  async createConversationNotification(
-    userId: number,
-    conversationId: number,
-    title: string,
-    message: string
-  ): Promise<schema.AgentNotification> {
-    return this.createNotification({
-      userId,
-      title,
-      message,
-      type: 'conversation',
-      source: 'conversation',
-      read: false,
-      data: { conversationId }
-    });
+  async deleteNotification(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(schema.agentNotifications)
+        .where(eq(schema.agentNotifications.id, id));
+      
+      return !!result.rowCount;
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      throw error;
+    }
   }
 }
 
-// Export a singleton instance
+// Export service as a singleton
 export const agentNotificationService = new AgentNotificationService();

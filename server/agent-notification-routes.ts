@@ -1,110 +1,105 @@
-import { Express, Request, Response } from "express";
-import { z } from "zod";
-import { agentNotificationService } from "./services/agent-notification-service";
+import { Express, Request, Response } from 'express';
+import { agentNotificationService } from './services/agent-notification-service';
 
-// Middleware to require authentication
+// Authentication middleware
 function requireAuth(req: Request, res: Response, next: any) {
-  if (!req.session || !req.session.userId) {
-    return res.status(401).json({ message: 'Not authenticated' });
+  const session = req.session as any;
+  if (!session || !session.userId) {
+    console.log('Auth check - Session:', session ? 'exists' : 'none');
+    console.log('Auth check - UserId:', session?.userId || 'none');
+    console.log('Auth check - IsAuthenticated: no');
+    return res.status(401).json({ error: 'Not authenticated' });
   }
+  console.log('Auth check - Session:', 'exists');
+  console.log('Auth check - UserId:', session.userId);
+  console.log('Auth check - IsAuthenticated: yes');
   next();
 }
 
-// Define validation schemas
-const notificationIdSchema = z.object({
-  id: z.coerce.number().positive()
-});
-
-// Register notification routes
 export function registerNotificationRoutes(app: Express) {
-  // Get all notifications for the current user
+  // Get all notifications for the authenticated user
   app.get('/api/agent/notifications', requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.session!.userId as number;
+      const session = req.session as any;
+      const userId = session.userId;
+      
       const notifications = await agentNotificationService.getNotifications(userId);
       res.json(notifications);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
-      res.status(500).json({ message: 'Failed to fetch notifications' });
+      console.error('Error getting notifications:', error);
+      res.status(500).json({ error: 'Failed to get notifications' });
     }
   });
 
-  // Get unread notifications count for the current user
+  // Get unread notification count for the authenticated user
   app.get('/api/agent/notifications/unread/count', requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.session!.userId as number;
-      const notifications = await agentNotificationService.getUnreadNotifications(userId);
-      res.json({ count: notifications.length });
+      const session = req.session as any;
+      const userId = session.userId;
+      
+      const count = await agentNotificationService.getUnreadCount(userId);
+      res.json({ count });
     } catch (error) {
-      console.error('Error fetching unread notification count:', error);
-      res.status(500).json({ message: 'Failed to fetch unread notification count' });
+      console.error('Error getting unread notification count:', error);
+      res.status(500).json({ error: 'Failed to get unread notification count' });
     }
   });
 
-  // Get unread notifications for the current user
+  // Get unread notifications for the authenticated user
   app.get('/api/agent/notifications/unread', requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.session!.userId as number;
+      const session = req.session as any;
+      const userId = session.userId;
+      
       const notifications = await agentNotificationService.getUnreadNotifications(userId);
       res.json(notifications);
     } catch (error) {
-      console.error('Error fetching unread notifications:', error);
-      res.status(500).json({ message: 'Failed to fetch unread notifications' });
+      console.error('Error getting unread notifications:', error);
+      res.status(500).json({ error: 'Failed to get unread notifications' });
     }
   });
 
   // Mark a notification as read
   app.patch('/api/agent/notifications/:id/read', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { id } = notificationIdSchema.parse({ id: req.params.id });
+      const notificationId = parseInt(req.params.id);
       
-      // Mark the notification as read
-      const notification = await agentNotificationService.markAsRead(id);
-      
+      const notification = await agentNotificationService.markAsRead(notificationId);
       res.json(notification);
     } catch (error) {
       console.error('Error marking notification as read:', error);
-      
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ errors: error.errors });
-      }
-      
-      res.status(500).json({ message: 'Failed to mark notification as read' });
+      res.status(500).json({ error: 'Failed to mark notification as read' });
     }
   });
 
-  // Mark all notifications as read for the current user
+  // Mark all notifications as read for the authenticated user
   app.post('/api/agent/notifications/mark-all-read', requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.session!.userId as number;
+      const session = req.session as any;
+      const userId = session.userId;
       
-      // Mark all notifications as read
       const count = await agentNotificationService.markAllAsRead(userId);
-      
-      res.json({ count });
+      res.json({ count, success: true });
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
-      res.status(500).json({ message: 'Failed to mark all notifications as read' });
+      res.status(500).json({ error: 'Failed to mark all notifications as read' });
     }
   });
 
   // Delete a notification
   app.delete('/api/agent/notifications/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      const { id } = notificationIdSchema.parse({ id: req.params.id });
+      const notificationId = parseInt(req.params.id);
       
-      // Delete the notification
-      await agentNotificationService.deleteNotification(id);
-      
-      res.json({ success: true });
+      const success = await agentNotificationService.deleteNotification(notificationId);
+      if (success) {
+        res.json({ success: true });
+      } else {
+        res.status(404).json({ error: 'Notification not found' });
+      }
     } catch (error) {
       console.error('Error deleting notification:', error);
-      
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ errors: error.errors });
-      }
-      
-      res.status(500).json({ message: 'Failed to delete notification' });
+      res.status(500).json({ error: 'Failed to delete notification' });
     }
   });
 }
