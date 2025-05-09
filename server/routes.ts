@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { SolcastService } from './solcast-service';
 import { AIService } from './ai-service';
 import { registerAgentRoutes } from './agent-routes';
+import { registerNotificationRoutes } from './agent-notification-routes';
 import { WebSocketServer, WebSocket } from 'ws';
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1442,6 +1443,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register agent routes for the AI capabilities
   registerAgentRoutes(app);
+  
+  // Register agent notification routes for API-based notifications
+  registerNotificationRoutes(app);
 
   return httpServer;
 }

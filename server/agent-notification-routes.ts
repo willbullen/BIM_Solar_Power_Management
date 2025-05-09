@@ -20,7 +20,7 @@ export function registerNotificationRoutes(app: Express) {
   // Get all notifications for the current user
   app.get('/api/agent/notifications', requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.session!.userId;
+      const userId = req.session!.userId as number;
       const notifications = await agentNotificationService.getNotifications(userId);
       res.json(notifications);
     } catch (error) {
@@ -32,7 +32,7 @@ export function registerNotificationRoutes(app: Express) {
   // Get unread notifications count for the current user
   app.get('/api/agent/notifications/unread/count', requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.session!.userId;
+      const userId = req.session!.userId as number;
       const notifications = await agentNotificationService.getUnreadNotifications(userId);
       res.json({ count: notifications.length });
     } catch (error) {
@@ -44,7 +44,7 @@ export function registerNotificationRoutes(app: Express) {
   // Get unread notifications for the current user
   app.get('/api/agent/notifications/unread', requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.session!.userId;
+      const userId = req.session!.userId as number;
       const notifications = await agentNotificationService.getUnreadNotifications(userId);
       res.json(notifications);
     } catch (error) {
@@ -76,7 +76,7 @@ export function registerNotificationRoutes(app: Express) {
   // Mark all notifications as read for the current user
   app.post('/api/agent/notifications/mark-all-read', requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.session!.userId;
+      const userId = req.session!.userId as number;
       
       // Mark all notifications as read
       const count = await agentNotificationService.markAllAsRead(userId);

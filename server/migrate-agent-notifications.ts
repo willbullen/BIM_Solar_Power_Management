@@ -52,14 +52,13 @@ async function createNotificationsTable() {
 }
 
 // Run the migration if this script is executed directly
-if (require.main === module) {
-  migrate()
-    .then(() => {
-      console.log("Migration completed successfully");
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error("Migration failed:", error);
-      process.exit(1);
-    });
-}
+// Using ES Module syntax instead of CommonJS
+migrate()
+  .then(() => {
+    console.log("Migration completed successfully");
+    // No need to call process.exit in ESM
+  })
+  .catch((error) => {
+    console.error("Migration failed:", error);
+    process.exit(1);
+  });
