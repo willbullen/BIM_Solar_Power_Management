@@ -28,8 +28,8 @@ import {
   X,
   Check,
   Trash2,
-  RefreshCw,
-  PlusCircle
+  PlusCircle,
+  RefreshCw
 } from "lucide-react";
 import { EnhancedMessage } from "./enhanced-message";
 
@@ -492,7 +492,7 @@ export function AIChat() {
         <Button 
           size="sm"
           className="w-full mt-4"
-          onClick={() => createConversation.mutate("New Conversation")}
+          onClick={handleCreateNewConversation}
           disabled={createConversation.isPending}
         >
           {createConversation.isPending ? (
