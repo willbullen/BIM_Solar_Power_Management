@@ -256,23 +256,45 @@ export function IntegratedAIChat() {
   
   // Delete a conversation
   const deleteConversation = useMutation({
-    mutationFn: (conversationId: number) => {
+    mutationFn: async (conversationId: number) => {
       // Ensure the user is authenticated
       if (!user || !user.id) {
         throw new Error("You must be logged in to delete a conversation");
       }
       
-      return apiRequest(`/api/agent/conversations/${conversationId}`, {
-        method: 'DELETE'
-      });
+      try {
+        const response = await apiRequest(`/api/agent/conversations/${conversationId}`, {
+          method: 'DELETE'
+        });
+        return response;
+      } catch (err: any) {
+        // Check if this is a 404 error (conversation not found)
+        if (err.status === 404) {
+          // Instead of throwing an error, we'll handle this gracefully
+          console.log(`Conversation ${conversationId} already deleted or not found`);
+          // Return a success value to trigger onSuccess handler
+          return { success: true, notFound: true };
+        }
+        // Rethrow other errors
+        throw err;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       setActiveConversation(null);
       refetchConversations();
-      toast({
-        title: "Conversation deleted",
-        description: "The conversation has been deleted"
-      });
+      
+      // Check if it was a "not found" situation
+      if (data && data.notFound) {
+        toast({
+          title: "Conversation updated",
+          description: "Conversation already removed. List refreshed."
+        });
+      } else {
+        toast({
+          title: "Conversation deleted",
+          description: "The conversation has been deleted"
+        });
+      }
     },
     onError: (error: Error) => {
       console.error("Conversation deletion error:", error);
