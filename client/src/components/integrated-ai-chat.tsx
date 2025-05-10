@@ -329,7 +329,7 @@ export function IntegratedAIChat() {
       const url = `/api/files/conversation/${activeConversation?.id}`;
       
       try {
-        const response = await apiRequest(url);
+        const response = await apiRequest(url, { method: 'GET' });
         console.log(`API RESPONSE for files:`, response);
         return response || [];
       } catch (error) {
@@ -512,10 +512,7 @@ export function IntegratedAIChat() {
       if (data && data.userMessage) {
         console.log("User message created:", data.userMessage);
         
-        // Manually add the user message to the messages array to ensure immediate display
-        // This is a workaround for the case where the query doesn't update fast enough
-        const newMessages = [...messages];
-        // Convert the userMessage to match our Message interface
+        // Create a normalized user message
         const userMsg: Message = {
           id: data.userMessage.id,
           conversationId: data.userMessage.conversationId,
@@ -527,20 +524,20 @@ export function IntegratedAIChat() {
           metadata: data.userMessage.metadata
         };
         
-        // Only add if not already in the array
-        if (!newMessages.some(msg => msg.id === userMsg.id)) {
-          newMessages.push(userMsg);
-          // This is a hack to force an update since we can't directly modify the query cache
-          queryClient.setQueryData(messagesQueryKey, newMessages);
-        }
+        // Add user message to our manual state
+        setManualMessages(prevMessages => {
+          // Only add if not already in the array
+          if (!prevMessages.some(msg => msg.id === userMsg.id)) {
+            return [...prevMessages, userMsg];
+          }
+          return prevMessages;
+        });
       }
       
       if (data && data.assistantMessage) {
         console.log("Assistant response received:", data.assistantMessage);
         
-        // Also manually add the assistant message to ensure it displays immediately
-        const newMessages = queryClient.getQueryData<Message[]>(messagesQueryKey) || [...messages];
-        // Convert the assistantMessage to match our Message interface
+        // Create a normalized assistant message
         const assistantMsg: Message = {
           id: data.assistantMessage.id,
           conversationId: data.assistantMessage.conversationId,
@@ -552,11 +549,14 @@ export function IntegratedAIChat() {
           metadata: data.assistantMessage.metadata
         };
         
-        // Only add if not already in the array
-        if (!newMessages.some(msg => msg.id === assistantMsg.id)) {
-          newMessages.push(assistantMsg);
-          queryClient.setQueryData(messagesQueryKey, newMessages);
-        }
+        // Add assistant message to our manual state
+        setManualMessages(prevMessages => {
+          // Only add if not already in the array
+          if (!prevMessages.some(msg => msg.id === assistantMsg.id)) {
+            return [...prevMessages, assistantMsg];
+          }
+          return prevMessages;
+        });
         
         toast({
           title: "Response received",
@@ -564,19 +564,40 @@ export function IntegratedAIChat() {
         });
       }
       
-      // Invalidate the messages cache - this is critical
-      queryClient.invalidateQueries({ queryKey: messagesQueryKey });
+      // Scroll to bottom after updating messages
+      setTimeout(scrollToBottom, 100);
       
-      // Immediately fetch new messages
-      refetchMessages();
+      // Refresh all conversations to update titles, etc.
+      refetchConversations();
       
-      // Force multiple refetches with increasing delays to ensure everything is updated
-      // This helps with race conditions where the API needs time to process
-      setTimeout(() => refetchMessages(), 500);
+      // Force another fetch of all messages after a delay to ensure everything is in sync
       setTimeout(() => {
-        refetchMessages();
-        refetchConversations();
-        scrollToBottom();
+        if (activeConversation && typeof activeConversation.id === 'number' && user) {
+          fetch(`/api/agent/conversations/${activeConversation.id}/messages`, {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Auth-User-Id': user.id.toString(),
+              'X-Auth-Username': user.username
+            }
+          })
+          .then(response => response.json())
+          .then(messages => {
+            if (Array.isArray(messages)) {
+              // Normalize timestamp field
+              const normalizedMessages = messages.map(msg => {
+                const normalizedMsg = { ...msg };
+                if (!normalizedMsg.timestamp && normalizedMsg.createdAt) {
+                  normalizedMsg.timestamp = normalizedMsg.createdAt;
+                }
+                return normalizedMsg;
+              });
+              
+              setManualMessages(normalizedMessages);
+              setTimeout(scrollToBottom, 100);
+            }
+          })
+          .catch(err => console.error("Failed to fetch messages after send:", err));
+        }
       }, 2000);
     },
     onError: (error: Error) => {
@@ -595,12 +616,19 @@ export function IntegratedAIChat() {
       apiRequest(`/api/agent/conversations/${conversationId}/messages/${messageId}`, {
         method: 'DELETE'
       }),
-    onSuccess: () => {
-      refetchMessages();
+    onSuccess: (_, variables) => {
+      // Remove the deleted message from our manual state
+      setManualMessages(prevMessages => 
+        prevMessages.filter(msg => msg.id !== variables.messageId)
+      );
+      
       toast({
         title: "Message deleted",
         description: "The message has been deleted"
       });
+      
+      // Also refetch the conversation list to update titles
+      refetchConversations();
     },
     onError: (error: Error) => {
       console.error("Delete message error:", error);
