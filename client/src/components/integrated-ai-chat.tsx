@@ -467,9 +467,48 @@ export function IntegratedAIChat() {
   // Message sending handlers
   const handleSendAIMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || !activeConversation) return;
+    if (!message.trim()) return;
     
-    sendMessage.mutate(message);
+    if (!activeConversation) {
+      // Create a new conversation first, then send message
+      const defaultTitle = `Conversation ${new Date().toLocaleString()}`;
+      createConversation.mutate(defaultTitle, {
+        onSuccess: (newConversation) => {
+          // Now we can send the message
+          setTimeout(() => {
+            if (newConversation && newConversation.id) {
+              // Temporarily set the active conversation
+              setActiveConversation(newConversation);
+              // Use a direct API call here since our mutation relies on activeConversation
+              apiRequest(`/api/agent/conversations/${newConversation.id}/messages`, {
+                method: 'POST',
+                data: { content: message }
+              })
+                .then(() => {
+                  setMessage("");
+                  refetchMessages();
+                  // Refetch after a short delay to get the AI response
+                  setTimeout(() => {
+                    refetchMessages();
+                    scrollToBottom();
+                  }, 1000);
+                })
+                .catch(error => {
+                  console.error("Send message error:", error);
+                  toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Failed to send message: " + error.message
+                  });
+                });
+            }
+          }, 500); // Small delay to ensure conversation is created first
+        }
+      });
+    } else {
+      // Regular flow with existing conversation
+      sendMessage.mutate(message);
+    }
   };
   
   const handleSendTelegramMessage = (e: React.FormEvent) => {
@@ -891,7 +930,7 @@ export function IntegratedAIChat() {
                   <Button 
                     type="submit" 
                     className="bg-blue-600 hover:bg-blue-700 text-white"
-                    disabled={!message.trim() || sendMessage.isPending || !activeConversation}
+                    disabled={!message.trim() || sendMessage.isPending}
                   >
                     {sendMessage.isPending ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -901,13 +940,38 @@ export function IntegratedAIChat() {
                   </Button>
                 </form>
               ) : (
-                <Button 
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  onClick={() => setShowCreateDialog(true)}
-                >
-                  <MessageSquarePlus className="mr-2 h-4 w-4" />
-                  Start New Conversation
-                </Button>
+                <div className="w-full flex flex-col space-y-2">
+                  <form onSubmit={handleSendAIMessage} className="w-full flex space-x-2">
+                    <Input
+                      className="flex-grow bg-slate-800 border-slate-700 text-white"
+                      placeholder="Type to start a new conversation..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyDown={handleAIKeyDown}
+                    />
+                    <Button 
+                      type="submit" 
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      disabled={!message.trim()}
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </form>
+                  
+                  <div className="flex items-center justify-center w-full">
+                    <div className="border-t border-slate-700 w-full"></div>
+                    <span className="text-xs text-slate-500 px-2">or</span>
+                    <div className="border-t border-slate-700 w-full"></div>
+                  </div>
+                  
+                  <Button 
+                    className="w-full bg-slate-700 hover:bg-slate-600 text-white"
+                    onClick={() => setShowCreateDialog(true)}
+                  >
+                    <MessageSquarePlus className="mr-2 h-4 w-4" />
+                    Create Named Conversation
+                  </Button>
+                </div>
               )}
             </CardFooter>
           </>
