@@ -143,14 +143,19 @@ export function IntegratedAIChat() {
   }, [conversations, activeConversation]);
   
   // Fetch messages for active conversation
+  const messagesQueryKey = ['/api/agent/conversations', activeConversation?.id, 'messages'];
   const { data: messages = [], isLoading: loadingMessages, refetch: refetchMessages } = useQuery<Message[]>({
-    queryKey: ['/api/agent/conversations', activeConversation?.id, 'messages'],
+    queryKey: messagesQueryKey,
     enabled: !!activeConversation && typeof activeConversation.id === 'number',
-    retry: false,
+    retry: 3,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
+    refetchInterval: activeConversation ? 3000 : false, // Poll for new messages every 3 seconds when a conversation is active
+    staleTime: 2000, // Consider data stale after 2 seconds
     onSuccess: (data) => {
       console.log(`Fetched ${data.length} messages for conversation ${activeConversation?.id}:`, data);
+      // Scroll to bottom when new messages are loaded
+      setTimeout(scrollToBottom, 100);
     },
     onError: (error) => {
       console.error(`Error fetching messages for conversation ${activeConversation?.id}:`, error);
@@ -321,6 +326,12 @@ export function IntegratedAIChat() {
         method: 'POST',
         data: { content }
       }),
+    onMutate: () => {
+      toast({
+        title: "Sending message",
+        description: "Your message is being sent..."
+      });
+    },
     onSuccess: (data) => {
       console.log("Message sent successfully, response:", data);
       setMessage("");
@@ -332,16 +343,24 @@ export function IntegratedAIChat() {
       
       if (data && data.assistantMessage) {
         console.log("Assistant response received:", data.assistantMessage);
+        toast({
+          title: "Response received",
+          description: "AI agent has responded to your message"
+        });
       }
       
-      // Refetch to update the UI with both messages
+      // Invalidate the messages cache
+      queryClient.invalidateQueries({ queryKey: messagesQueryKey });
+      
+      // Immediately fetch new messages
       refetchMessages();
       
-      // Refetch again after a longer delay to ensure any function calls are complete
+      // Force another refetch after a delay to ensure everything is up to date
       setTimeout(() => {
         refetchMessages();
+        refetchConversations();
         scrollToBottom();
-      }, 2000);
+      }, 1000);
     },
     onError: (error: Error) => {
       console.error("Send message error:", error);
