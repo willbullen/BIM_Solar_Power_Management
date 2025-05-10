@@ -48,22 +48,16 @@ export class AgentService {
 
   /**
    * Add a system message to a conversation to set up the agent context
-   * Only adds if no system message exists for the conversation
+   * Cleans up duplicate system messages and ensures only one exists
    */
   private async addSystemMessage(conversationId: number): Promise<void> {
-    // Check if a system message already exists for this conversation
+    // Check if system messages already exist for this conversation
     const existingSystemMessages = await db.query.agentMessages.findMany({
       where: (fields, { and, eq }) => and(
         eq(fields.conversationId, conversationId),
         eq(fields.role, "system")
       )
     });
-    
-    // If system messages already exist, don't add another one
-    if (existingSystemMessages.length > 0) {
-      console.log(`System message already exists for conversation ${conversationId}. Not adding another one.`);
-      return;
-    }
     
     // Get the system prompt from settings
     const systemPromptSetting = await db.query.agentSettings.findFirst({
@@ -73,13 +67,40 @@ export class AgentService {
     const systemPrompt = systemPromptSetting?.value || 
       "You are an advanced AI Energy Advisor for Emporium Power Monitoring. Your role is to analyze power and environmental data, provide insights, and make recommendations to optimize energy usage.";
 
-    // Only insert if no system message exists
-    await db.insert(schema.agentMessages).values({
-      conversationId,
-      role: "system",
-      content: systemPrompt,
-      metadata: {}
-    });
+    // If multiple system messages exist, delete all but one
+    if (existingSystemMessages.length > 1) {
+      console.log(`Found ${existingSystemMessages.length} system messages for conversation ${conversationId}. Cleaning up duplicates...`);
+      
+      // Keep the first one, delete the rest
+      const [firstMessage, ...duplicates] = existingSystemMessages;
+      
+      // Delete all duplicate system messages
+      for (const msg of duplicates) {
+        await db.delete(schema.agentMessages).where(eq(schema.agentMessages.id, msg.id));
+      }
+      
+      // Update the content of the first message to ensure it has the latest system prompt
+      await db.update(schema.agentMessages)
+        .set({ content: systemPrompt })
+        .where(eq(schema.agentMessages.id, firstMessage.id));
+      
+      console.log(`Cleaned up ${duplicates.length} duplicate system messages.`);
+    }
+    // If exactly one system message exists, just update its content
+    else if (existingSystemMessages.length === 1) {
+      await db.update(schema.agentMessages)
+        .set({ content: systemPrompt })
+        .where(eq(schema.agentMessages.id, existingSystemMessages[0].id));
+    }
+    // If no system message exists, create one
+    else {
+      await db.insert(schema.agentMessages).values({
+        conversationId,
+        role: "system",
+        content: systemPrompt,
+        metadata: {}
+      });
+    }
   }
 
   /**
@@ -501,6 +522,44 @@ export class AgentService {
     return updatedSetting;
   }
 
+  /**
+   * Delete a conversation and all its messages
+   * @param conversationId ID of the conversation to delete
+   * @param userId User requesting the deletion, for authorization
+   * @returns Success boolean
+   */
+  async deleteConversation(conversationId: number, userId: number): Promise<boolean> {
+    try {
+      // First check if the conversation belongs to this user
+      const conversation = await db.query.agentConversations.findFirst({
+        where: (fields, { eq }) => eq(fields.id, conversationId)
+      });
+      
+      if (!conversation) {
+        return false;
+      }
+      
+      // Verify the conversation belongs to the user
+      if (conversation.userId !== userId) {
+        return false;
+      }
+      
+      // Delete all messages in the conversation
+      await db.delete(schema.agentMessages)
+        .where(eq(schema.agentMessages.conversationId, conversationId));
+      
+      // Delete the conversation
+      const result = await db.delete(schema.agentConversations)
+        .where(eq(schema.agentConversations.id, conversationId))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      return false;
+    }
+  }
+  
   /**
    * Send a notification via Signal
    */

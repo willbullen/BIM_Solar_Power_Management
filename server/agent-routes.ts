@@ -269,6 +269,26 @@ export function registerAgentRoutes(app: Express) {
     }
   });
   
+  // Delete a conversation and all its messages
+  app.delete('/api/agent/conversations/:id', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const conversationId = parseInt(req.params.id);
+      const userId = req.userId!;
+      
+      const agentService = new AgentService();
+      const success = await agentService.deleteConversation(conversationId, userId);
+      
+      if (!success) {
+        return res.status(404).json({ message: 'Conversation not found or not authorized to delete' });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      res.status(500).json({ message: 'Failed to delete conversation' });
+    }
+  });
+  
   // Get messages for a specific conversation
   app.get('/api/agent/conversations/:id/messages', requireAuth, async (req: Request, res: Response) => {
     try {
