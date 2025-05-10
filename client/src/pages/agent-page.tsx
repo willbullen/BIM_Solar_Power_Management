@@ -16,6 +16,7 @@ import { TelegramChat } from "@/components/telegram-chat";
 import { EnhancedMessage } from "@/components/enhanced-message";
 import { MessageSearch } from "@/components/message-search";
 import { AIChat } from "@/components/ai-chat";
+import { IntegratedAIChat } from "@/components/integrated-ai-chat";
 import { cn } from "@/lib/utils";
 import { 
   Loader2, Send, Bot, MessageSquare, ListChecks, Settings, Plus, 
@@ -1761,7 +1762,7 @@ export default function AgentPage() {
                   className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
                 >
                   <div className="p-3">
-                    <AIChat />
+                    <IntegratedAIChat />
                   </div>
                 </TabsContent>
                 

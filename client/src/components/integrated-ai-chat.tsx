@@ -18,6 +18,7 @@ import { EnhancedMessage } from "@/components/enhanced-message";
 import {
   Loader2,
   MessageSquare,
+  MessageSquarePlus,
   Bot,
   Send,
   AlertCircle,
@@ -125,60 +126,52 @@ export function IntegratedAIChat() {
   const [activeTab, setActiveTab] = useState<"ai" | "telegram">("ai");
   
   // Fetch conversations
-  const { data: conversations, isLoading: loadingConversations, refetch: refetchConversations } = useQuery<Conversation[]>({
+  const { data: conversations = [], isLoading: loadingConversations, refetch: refetchConversations } = useQuery<Conversation[]>({
     queryKey: ['/api/agent/conversations'],
-    retry: false,
-    onError: (error) => {
-      console.error('Error fetching conversations:', error);
-    }
+    retry: false
   });
   
   // Fetch messages for active conversation
-  const { data: messages, isLoading: loadingMessages, refetch: refetchMessages } = useQuery<Message[]>({
+  const { data: messages = [], isLoading: loadingMessages, refetch: refetchMessages } = useQuery<Message[]>({
     queryKey: ['/api/agent/conversations', activeConversation?.id, 'messages'],
     enabled: !!activeConversation && typeof activeConversation.id === 'number',
-    retry: false,
-    onError: (error) => {
-      console.error('Error fetching messages:', error);
-    }
+    retry: false
   });
   
   // Fetch files for active conversation
-  const { data: files, isLoading: loadingFiles, refetch: refetchFiles } = useQuery<FileAttachment[]>({
+  const { data: files = [], isLoading: loadingFiles, refetch: refetchFiles } = useQuery<FileAttachment[]>({
     queryKey: ['/api/files/conversation', activeConversation?.id],
     // Only enable this query when we have a valid conversation ID
-    enabled: !!activeConversation && typeof activeConversation.id === 'number',
-    onError: (error) => {
-      console.error('Error fetching files for conversation:', error);
-      // Don't show toast errors for file loading as it's not critical
-    }
+    enabled: !!activeConversation && typeof activeConversation.id === 'number'
   });
   
   // Fetch Telegram user info
-  const { data: telegramUser, isLoading: loadingTelegramUser, refetch: refetchTelegramUser } = useQuery<TelegramUser | null>({
+  const { data: telegramUser = null, isLoading: loadingTelegramUser, refetch: refetchTelegramUser } = useQuery<TelegramUser | null>({
     queryKey: ['/api/telegram/user'],
-    retry: false,
-    onError: (error) => {
-      console.error('Error fetching Telegram user:', error);
-    }
+    retry: false
   });
   
   // Fetch Telegram messages
-  const { data: telegramMessages, isLoading: loadingTelegramMessages, refetch: refetchTelegramMessages } = useQuery<TelegramMessage[]>({
+  const { data: telegramMessages = [], isLoading: loadingTelegramMessages, refetch: refetchTelegramMessages } = useQuery<TelegramMessage[]>({
     queryKey: ['/api/telegram/messages'],
     retry: false,
-    enabled: !!telegramUser?.isVerified,
-    refetchInterval: 10000, // Poll for new messages every 10 seconds
-    onSuccess: (data, prevData) => {
-      // Check if we received new messages
-      if (prevData && data && data.length > prevData.length) {
-        // New messages arrived
-        const newMessages = data.length - prevData.length;
+    enabled: !!telegramUser && telegramUser.isVerified === true,
+    refetchInterval: 10000 // Poll for new messages every 10 seconds
+  });
+  
+  // Effect to handle new Telegram messages
+  useEffect(() => {
+    if (telegramMessages && telegramMessages.length > 0) {
+      // Notify user about new messages if this is not the initial load
+      const prevMessageCount = localStorage.getItem('telegramMessageCount');
+      const currentCount = telegramMessages.length.toString();
+      
+      if (prevMessageCount && parseInt(prevMessageCount) < telegramMessages.length) {
+        const newMessagesCount = telegramMessages.length - parseInt(prevMessageCount);
         
-        // Notify user about new messages
         toast({
           title: "New Telegram Message",
-          description: `You have ${newMessages} new message${newMessages > 1 ? 's' : ''} from Telegram`,
+          description: `You have ${newMessagesCount} new message${newMessagesCount > 1 ? 's' : ''} from Telegram`,
           action: (
             <Button 
               variant="outline" 
@@ -192,15 +185,15 @@ export function IntegratedAIChat() {
         });
       }
       
+      // Store the current count for next comparison
+      localStorage.setItem('telegramMessageCount', currentCount);
+      
       // Scroll to bottom after messages load
       setTimeout(() => {
         scrollToBottom();
       }, 100);
-    },
-    onError: (error) => {
-      console.error('Error fetching Telegram messages:', error);
     }
-  });
+  }, [telegramMessages, toast]);
   
   // Create a new conversation
   const createConversation = useMutation({
@@ -326,11 +319,7 @@ export function IntegratedAIChat() {
         
         return await apiRequest('/api/files/upload', {
           method: 'POST',
-          headers: {
-            // Don't set Content-Type here as it will be set automatically with the correct boundary
-          },
-          data: formData,
-          isFormData: true
+          data: formData
         });
       });
       
@@ -433,13 +422,12 @@ export function IntegratedAIChat() {
         // Upload files
         const uploadResults = await apiRequest('/api/files/upload', {
           method: 'POST',
-          data: formData,
-          isFormData: true
+          data: formData
         });
         
         // Create a message with the file references
         if (Array.isArray(uploadResults) && uploadResults.length > 0) {
-          const fileLinks = uploadResults.map(file => 
+          const fileLinks = uploadResults.map((file: any) => 
             `[File: ${file.filename}](/api/files/${file.id}/download)`
           ).join('\n');
           
@@ -792,7 +780,7 @@ export function IntegratedAIChat() {
                             
                             {/* Enhanced message content with parsing */}
                             <div className="text-sm">
-                              <EnhancedMessage content={msg.content} />
+                              <EnhancedMessage content={msg.content} role={msg.role} timestamp={msg.createdAt} />
                             </div>
                             
                             {/* Message metadata */}
@@ -927,7 +915,7 @@ export function IntegratedAIChat() {
                     <CardTitle className="text-sm text-white">Telegram Chat</CardTitle>
                     <CardDescription className="text-xs text-gray-400">
                       {isTelegramConnected 
-                        ? `Connected as ${telegramUser.telegramUsername || 'User'}`
+                        ? `Connected as ${telegramUser?.telegramUsername || 'User'}`
                         : 'Not connected'}
                     </CardDescription>
                   </div>
@@ -967,7 +955,11 @@ export function IntegratedAIChat() {
                           }`}
                         >
                           <div className="text-sm">
-                            <EnhancedMessage content={message.messageText} />
+                            <EnhancedMessage 
+                              content={message.messageText} 
+                              role={message.direction === 'outbound' ? 'user' : 'assistant'}
+                              timestamp={message.timestamp}
+                            />
                           </div>
                           <div className="text-xs mt-1 flex items-center justify-end opacity-70">
                             <span>{formatMessageTime(message.timestamp)}</span>
