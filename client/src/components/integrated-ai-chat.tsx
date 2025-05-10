@@ -313,14 +313,27 @@ export function IntegratedAIChat() {
         method: 'POST',
         data: { content }
       }),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Message sent successfully, response:", data);
       setMessage("");
+      
+      // Process the response data which includes both userMessage and assistantMessage
+      if (data && data.userMessage) {
+        console.log("User message created:", data.userMessage);
+      }
+      
+      if (data && data.assistantMessage) {
+        console.log("Assistant response received:", data.assistantMessage);
+      }
+      
+      // Refetch to update the UI with both messages
       refetchMessages();
-      // Refetch after a short delay to get the AI response
+      
+      // Refetch again after a longer delay to ensure any function calls are complete
       setTimeout(() => {
         refetchMessages();
         scrollToBottom();
-      }, 1000);
+      }, 2000);
     },
     onError: (error: Error) => {
       console.error("Send message error:", error);
