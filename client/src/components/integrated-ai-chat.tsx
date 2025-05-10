@@ -153,6 +153,15 @@ export function IntegratedAIChat() {
   
   // Fetch messages for active conversation
   const messagesQueryKey = ['/api/agent/conversations', activeConversation?.id, 'messages'];
+  
+  // Enhanced debugging for active conversation
+  useEffect(() => {
+    if (activeConversation) {
+      console.log("ACTIVE CONVERSATION SET:", activeConversation);
+      console.log("Will be querying messages at:", `/api/agent/conversations/${activeConversation.id}/messages`);
+    }
+  }, [activeConversation]);
+  
   const { data: messages = [], isLoading: loadingMessages, refetch: refetchMessages } = useQuery<Message[]>({
     queryKey: messagesQueryKey,
     enabled: !!activeConversation && typeof activeConversation.id === 'number',
@@ -161,6 +170,20 @@ export function IntegratedAIChat() {
     refetchOnWindowFocus: true,
     refetchInterval: activeConversation ? 3000 : false, // Poll for new messages every 3 seconds when a conversation is active
     staleTime: 2000, // Consider data stale after 2 seconds
+    // Add explicit logging for the API request
+    queryFn: async () => {
+      console.log(`EXPLICITLY FETCHING MESSAGES for conversation ${activeConversation?.id}`);
+      const url = `/api/agent/conversations/${activeConversation?.id}/messages`;
+      
+      try {
+        const response = await apiRequest(url);
+        console.log(`API RESPONSE for messages:`, response);
+        return response;
+      } catch (error) {
+        console.error(`ERROR fetching messages:`, error);
+        throw error;
+      }
+    },
     select: (data: any[]) => {
       // Log the fetched messages for debugging
       console.log(`Fetched ${data.length} messages for conversation ${activeConversation?.id}:`, data);
@@ -184,9 +207,24 @@ export function IntegratedAIChat() {
   
   // Fetch files for active conversation
   const { data: files = [], isLoading: loadingFiles, refetch: refetchFiles } = useQuery<FileAttachment[]>({
-    queryKey: ['/api/files/conversation', activeConversation?.id],
+    queryKey: ['/api/files', 'conversation', activeConversation?.id],
     // Only enable this query when we have a valid conversation ID
-    enabled: !!activeConversation && typeof activeConversation.id === 'number'
+    enabled: !!activeConversation && typeof activeConversation.id === 'number',
+    // Custom query function to properly handle the conversation ID
+    queryFn: async () => {
+      console.log(`EXPLICITLY FETCHING FILES for conversation ${activeConversation?.id}`);
+      const url = `/api/files/conversation/${activeConversation?.id}`;
+      
+      try {
+        const response = await apiRequest(url);
+        console.log(`API RESPONSE for files:`, response);
+        return response || [];
+      } catch (error) {
+        console.error(`ERROR fetching files:`, error);
+        // Return empty array on error to prevent UI errors
+        return [];
+      }
+    }
   });
   
   // Fetch Telegram user info
