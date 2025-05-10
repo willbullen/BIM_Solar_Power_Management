@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -106,6 +107,7 @@ interface TelegramVerificationResponse {
 
 export function IntegratedAIChat() {
   const { toast } = useToast();
+  const { user } = useAuth(); // Get the authenticated user
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const telegramInputRef = useRef<HTMLInputElement>(null);
@@ -125,10 +127,19 @@ export function IntegratedAIChat() {
   // Integrated UI state
   const [activeTab, setActiveTab] = useState<"ai" | "telegram">("ai");
   
+  // Set active conversation when conversations are loaded
+  useEffect(() => {
+    if (conversations && conversations.length > 0 && !activeConversation) {
+      // Set the first conversation as active when loaded
+      setActiveConversation(conversations[0]);
+    }
+  }, [conversations, activeConversation]);
+  
   // Fetch conversations
   const { data: conversations = [], isLoading: loadingConversations, refetch: refetchConversations } = useQuery<Conversation[]>({
     queryKey: ['/api/agent/conversations'],
-    retry: false
+    retry: false,
+    enabled: !!user // Only fetch conversations when the user is authenticated
   });
   
   // Fetch messages for active conversation
