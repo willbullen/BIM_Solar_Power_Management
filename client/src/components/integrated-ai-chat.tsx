@@ -318,7 +318,8 @@ export function IntegratedAIChat() {
   
   // Initial fetch of messages and subscribe to WebSocket updates when active conversation changes
   useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
+    let unsubscribeConversation: (() => void) | undefined;
+    let unsubscribeAgent: (() => void) | undefined;
     
     if (activeConversation && typeof activeConversation.id === 'number') {
       console.log("Active conversation changed, fetching messages and subscribing:", activeConversation.id);
@@ -329,23 +330,38 @@ export function IntegratedAIChat() {
       // Subscribe to real-time updates for this conversation
       if (wsConnected) {
         console.log("WebSocket connected, subscribing to conversation:", activeConversation.id);
-        // Subscribe to conversation-specific updates
-        unsubscribe = subscribeToConversation(activeConversation.id);
         
-        // Also subscribe to agent messages for system-wide notifications
-        const unsubscribeAgent = subscribeToAgentMessages();
-        
-        // Return composite cleanup function
-        return () => {
-          if (unsubscribe) unsubscribe();
-          unsubscribeAgent();
-        };
+        try {
+          // Subscribe to conversation-specific updates
+          unsubscribeConversation = subscribeToConversation(activeConversation.id);
+          
+          // Also subscribe to agent messages for system-wide notifications
+          unsubscribeAgent = subscribeToAgentMessages();
+          
+          console.log("Successfully subscribed to WebSocket channels");
+        } catch (err) {
+          console.error("Error subscribing to WebSocket channels:", err);
+        }
       }
     }
     
     // Cleanup function
     return () => {
-      if (unsubscribe) unsubscribe();
+      if (unsubscribeConversation) {
+        try {
+          unsubscribeConversation();
+        } catch (err) {
+          console.error("Error unsubscribing from conversation:", err);
+        }
+      }
+      
+      if (unsubscribeAgent) {
+        try {
+          unsubscribeAgent();
+        } catch (err) {
+          console.error("Error unsubscribing from agent messages:", err);
+        }
+      }
     };
   }, [activeConversation, user, wsConnected, subscribeToConversation, subscribeToAgentMessages, fetchMessagesManually]);
   
