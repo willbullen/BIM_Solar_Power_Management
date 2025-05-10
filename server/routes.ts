@@ -91,6 +91,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize subscription channels
   subscriptions.set('power-data', new Set<WebSocket>());
   subscriptions.set('environmental-data', new Set<WebSocket>());
+  subscriptions.set('agent-messages', new Set<WebSocket>());
+  
+  // Track authenticated users
+  const authenticatedClients = new Map<WebSocket, { userId: number, username: string }>();
+  
+  // Track conversation-specific subscriptions
+  const conversationSubscriptions = new Map<number, Set<WebSocket>>();
   
   // Log WebSocket server errors
   wss.on('error', (error) => {
@@ -198,12 +205,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Handle unsubscription request
             handleUnsubscription(ws, parsedMessage.data, subscribedChannels);
             break;
+          case 'authenticate':
+            // Handle authentication
+            handleAuthentication(ws, parsedMessage.data);
+            break;
           case 'ping': 
             // Respond to ping with pong
             ws.send(JSON.stringify({
               type: 'pong',
               data: { timestamp: new Date().toISOString() }
             }));
+            break;
+          case 'agent-message':
+            // Handle agent message - requires authentication
+            handleAgentMessage(ws, parsedMessage);
             break;
           default:
             console.log('Unknown message type:', parsedMessage.type);
@@ -1458,6 +1473,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register MCP routes for Model Context Protocol
   app.use('/api/mcp', mcpRoutes);
+
+  // WebSocket handler functions for agent messages
+  
+  // Handle authentication requests
+  function handleAuthentication(ws: WebSocket, data: any) {
+    const { userId, username } = data;
+    
+    if (!userId || !username) {
+      console.error('Authentication missing userId or username');
+      ws.send(JSON.stringify({
+        type: 'auth-failed',
+        data: { message: 'Missing userId or username' }
+      }));
+      return;
+    }
+    
+    // Store authentication info
+    authenticatedClients.set(ws, { userId, username });
+    
+    console.log(`Client authenticated: User ID ${userId}, Username ${username}`);
+    
+    ws.send(JSON.stringify({
+      type: 'auth-success',
+      data: { 
+        userId,
+        username,
+        timestamp: new Date().toISOString() 
+      }
+    }));
+  }
+  
+  // Handle agent messages
+  function handleAgentMessage(ws: WebSocket, message: any) {
+    // Check if client is authenticated
+    const authInfo = authenticatedClients.get(ws);
+    if (!authInfo) {
+      ws.send(JSON.stringify({
+        type: 'error',
+        data: { message: 'Authentication required to send agent messages' }
+      }));
+      return;
+    }
+    
+    const { conversationId, messageId, data } = message;
+    
+    if (!conversationId || !data) {
+      console.error('Agent message missing conversationId or data');
+      return;
+    }
+    
+    // Broadcast to all subscribers of the specific conversation
+    const conversationChannel = `conversation-${conversationId}`;
+    const conversationSubs = conversationSubscriptions.get(conversationId);
+    
+    if (conversationSubs && conversationSubs.size > 0) {
+      const outgoingMessage = {
+        type: 'agent-message',
+        conversationId,
+        messageId,
+        data,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Send to all subscribed clients except the sender
+      conversationSubs.forEach(client => {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(outgoingMessage));
+        }
+      });
+      
+      console.log(`Broadcasted agent message to ${conversationSubs.size - 1} clients`);
+    }
+    
+    // Also broadcast to all subscribers of the agent-messages channel
+    const agentSubscribers = subscriptions.get('agent-messages');
+    if (agentSubscribers && agentSubscribers.size > 0) {
+      const outgoingMessage = {
+        type: 'agent-message',
+        conversationId,
+        messageId,
+        data,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Send to all subscribed clients except the sender
+      agentSubscribers.forEach(client => {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(outgoingMessage));
+        }
+      });
+    }
+  }
 
   return httpServer;
 }
