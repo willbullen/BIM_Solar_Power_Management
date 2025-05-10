@@ -48,8 +48,23 @@ export class AgentService {
 
   /**
    * Add a system message to a conversation to set up the agent context
+   * Only adds if no system message exists for the conversation
    */
   private async addSystemMessage(conversationId: number): Promise<void> {
+    // Check if a system message already exists for this conversation
+    const existingSystemMessages = await db.query.agentMessages.findMany({
+      where: (fields, { and, eq }) => and(
+        eq(fields.conversationId, conversationId),
+        eq(fields.role, "system")
+      )
+    });
+    
+    // If system messages already exist, don't add another one
+    if (existingSystemMessages.length > 0) {
+      console.log(`System message already exists for conversation ${conversationId}. Not adding another one.`);
+      return;
+    }
+    
     // Get the system prompt from settings
     const systemPromptSetting = await db.query.agentSettings.findFirst({
       where: (fields, { eq }) => eq(fields.name, "agent_system_prompt")
@@ -58,6 +73,7 @@ export class AgentService {
     const systemPrompt = systemPromptSetting?.value || 
       "You are an advanced AI Energy Advisor for Emporium Power Monitoring. Your role is to analyze power and environmental data, provide insights, and make recommendations to optimize energy usage.";
 
+    // Only insert if no system message exists
     await db.insert(schema.agentMessages).values({
       conversationId,
       role: "system",

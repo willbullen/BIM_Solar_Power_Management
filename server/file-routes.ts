@@ -156,7 +156,17 @@ export function registerFileRoutes(app: Express) {
   // Get files by conversation ID
   app.get('/api/files/conversation/:conversationId', requireAuth, async (req: Request, res: Response) => {
     try {
+      // Check if conversationId is valid
+      if (!req.params.conversationId || req.params.conversationId === 'undefined') {
+        return res.status(400).json({ error: 'Invalid conversation ID' });
+      }
+      
       const conversationId = Number(req.params.conversationId);
+      
+      // Validate that conversationId is a number
+      if (isNaN(conversationId)) {
+        return res.status(400).json({ error: 'Conversation ID must be a number' });
+      }
       
       const files = await fileService.getFileAttachmentsByConversation(conversationId);
       

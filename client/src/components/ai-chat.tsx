@@ -121,9 +121,11 @@ export function AIChat() {
   // Fetch files for active conversation
   const { data: files, isLoading: loadingFiles, refetch: refetchFiles } = useQuery<FileAttachment[]>({
     queryKey: ['/api/files/conversation', activeConversation?.id],
-    enabled: !!activeConversation,
+    // Only enable this query when we have a valid conversation ID
+    enabled: !!activeConversation && typeof activeConversation.id === 'number',
     onError: (error) => {
-      console.error('Error fetching files:', error);
+      console.error('Error fetching files for conversation:', error);
+      // Don't show toast errors for file loading as it's not critical
     }
   });
   
