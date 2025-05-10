@@ -553,25 +553,57 @@ export function IntegratedAIChat() {
               // Temporarily set the active conversation
               setActiveConversation(newConversation);
               // Use a direct API call here since our mutation relies on activeConversation
+              
+              // Store the message content before clearing it
+              const messageContent = message;
+              
+              // Show a "sending" toast
+              toast({
+                title: "Sending message",
+                description: "Creating conversation and sending your message..."
+              });
+              
               apiRequest(`/api/agent/conversations/${newConversation.id}/messages`, {
                 method: 'POST',
-                data: { content: message }
+                data: { content: messageContent }
               })
-                .then(() => {
+                .then((data) => {
+                  console.log("New conversation message response:", data);
                   setMessage("");
+                  
+                  // Process the response data which includes both userMessage and assistantMessage
+                  if (data && data.userMessage) {
+                    console.log("User message created in new conversation:", data.userMessage);
+                  }
+                  
+                  if (data && data.assistantMessage) {
+                    console.log("Assistant response received in new conversation:", data.assistantMessage);
+                    
+                    toast({
+                      title: "Response received",
+                      description: "The AI agent has responded to your message."
+                    });
+                  } else {
+                    console.warn("No assistant message in the response");
+                  }
+                  
+                  // Refetch to get the updated conversation
                   refetchMessages();
-                  // Refetch after a short delay to get the AI response
+                  refetchConversations();
+                  
+                  // Refetch after a longer delay to ensure any function calls are complete
                   setTimeout(() => {
                     refetchMessages();
+                    refetchConversations();
                     scrollToBottom();
-                  }, 1000);
+                  }, 2000);
                 })
                 .catch(error => {
                   console.error("Send message error:", error);
                   toast({
                     variant: "destructive",
                     title: "Error",
-                    description: "Failed to send message: " + error.message
+                    description: "Failed to send message: " + (error.message || "Unknown error")
                   });
                 });
             }
@@ -580,7 +612,12 @@ export function IntegratedAIChat() {
       });
     } else {
       // Regular flow with existing conversation
-      sendMessage.mutate(message);
+      const messageContent = message;
+      toast({
+        title: "Sending message",
+        description: "Processing your request..."
+      });
+      sendMessage.mutate(messageContent);
     }
   };
   
