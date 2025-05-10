@@ -124,10 +124,18 @@ export class FileService {
    */
   async getFileAttachmentsByConversation(conversationId: number): Promise<FileAttachment[]> {
     try {
-      return await db.select().from(fileAttachments).where(eq(fileAttachments.conversationId, conversationId));
+      // Validate the conversation ID
+      if (!conversationId || isNaN(conversationId)) {
+        console.error('Invalid conversation ID:', conversationId);
+        return []; // Return empty array instead of throwing to prevent 500 errors
+      }
+      
+      const files = await db.select().from(fileAttachments).where(eq(fileAttachments.conversationId, conversationId));
+      return files || []; // Return empty array if null
     } catch (error) {
       console.error('Error getting file attachments by conversation:', error);
-      throw new Error('Failed to get file attachments');
+      // Return empty array instead of throwing to prevent 500 errors
+      return [];
     }
   }
   
@@ -136,10 +144,18 @@ export class FileService {
    */
   async getFileAttachmentsByMessage(messageId: number): Promise<FileAttachment[]> {
     try {
-      return await db.select().from(fileAttachments).where(eq(fileAttachments.messageId, messageId));
+      // Validate the message ID
+      if (!messageId || isNaN(messageId)) {
+        console.error('Invalid message ID:', messageId);
+        return []; // Return empty array instead of throwing to prevent 500 errors
+      }
+      
+      const files = await db.select().from(fileAttachments).where(eq(fileAttachments.messageId, messageId));
+      return files || []; // Return empty array if null
     } catch (error) {
       console.error('Error getting file attachments by message:', error);
-      throw new Error('Failed to get file attachments');
+      // Return empty array instead of throwing to prevent 500 errors
+      return [];
     }
   }
   

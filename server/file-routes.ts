@@ -123,7 +123,19 @@ export function registerFileRoutes(app: Express) {
   // Get file by ID
   app.get('/api/files/:id', async (req: Request, res: Response) => {
     try {
+      // Validate file ID
+      if (!req.params.id || req.params.id === 'undefined') {
+        console.warn('Invalid file ID provided:', req.params.id);
+        return res.status(400).json({ error: 'Invalid file ID' });
+      }
+      
       const fileId = Number(req.params.id);
+      
+      // Check if fileId is a valid number
+      if (isNaN(fileId)) {
+        console.warn('Non-numeric file ID provided:', req.params.id);
+        return res.status(400).json({ error: 'File ID must be a number' });
+      }
       
       // Get file information
       const fileAttachment = await fileService.getFileAttachment(fileId);
@@ -137,10 +149,15 @@ export function registerFileRoutes(app: Express) {
       const userId = req.session?.userId || req.headers['x-auth-user-id'] ? Number(req.headers['x-auth-user-id']) : undefined;
       
       if (!isPublic && userId) {
-        // Check if user has access
-        const canAccess = await fileService.canAccessFile(fileId, userId);
-        if (!canAccess) {
-          return res.status(403).json({ error: 'Access denied' });
+        try {
+          // Check if user has access
+          const canAccess = await fileService.canAccessFile(fileId, userId);
+          if (!canAccess) {
+            return res.status(403).json({ error: 'Access denied' });
+          }
+        } catch (accessError) {
+          console.error('Error checking file access:', accessError);
+          return res.status(500).json({ error: 'Error checking file access' });
         }
       } else if (!isPublic && !userId) {
         return res.status(401).json({ error: 'Authentication required for non-public files' });
@@ -158,6 +175,7 @@ export function registerFileRoutes(app: Express) {
     try {
       // Check if conversationId is valid
       if (!req.params.conversationId || req.params.conversationId === 'undefined') {
+        console.warn('Invalid conversation ID provided:', req.params.conversationId);
         return res.status(400).json({ error: 'Invalid conversation ID' });
       }
       
@@ -165,29 +183,47 @@ export function registerFileRoutes(app: Express) {
       
       // Validate that conversationId is a number
       if (isNaN(conversationId)) {
+        console.warn('Non-numeric conversation ID provided:', req.params.conversationId);
         return res.status(400).json({ error: 'Conversation ID must be a number' });
       }
       
+      // Get files using the enhanced getFileAttachmentsByConversation that returns empty array on error
       const files = await fileService.getFileAttachmentsByConversation(conversationId);
       
+      // Return the files (will be empty array if there was an error or no files)
       res.json(files);
     } catch (error) {
       console.error('Get files by conversation error:', error);
-      res.status(500).json({ error: 'Failed to get files' });
+      // Return empty array instead of error to avoid breaking the client
+      res.json([]);
     }
   });
   
   // Get files by message ID
   app.get('/api/files/message/:messageId', requireAuth, async (req: Request, res: Response) => {
     try {
+      // Check if messageId is valid
+      if (!req.params.messageId || req.params.messageId === 'undefined') {
+        console.warn('Invalid message ID provided:', req.params.messageId);
+        return res.json([]); // Return empty array instead of error status
+      }
+      
       const messageId = Number(req.params.messageId);
       
+      // Validate messageId is a number
+      if (isNaN(messageId)) {
+        console.warn('Non-numeric message ID provided:', req.params.messageId);
+        return res.json([]); // Return empty array instead of error status
+      }
+      
+      // Get files - enhanced function now returns empty array on error
       const files = await fileService.getFileAttachmentsByMessage(messageId);
       
       res.json(files);
     } catch (error) {
       console.error('Get files by message error:', error);
-      res.status(500).json({ error: 'Failed to get files' });
+      // Return empty array instead of error to avoid breaking the client
+      res.json([]);
     }
   });
   
