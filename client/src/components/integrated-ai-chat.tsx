@@ -146,7 +146,15 @@ export function IntegratedAIChat() {
   const { data: messages = [], isLoading: loadingMessages, refetch: refetchMessages } = useQuery<Message[]>({
     queryKey: ['/api/agent/conversations', activeConversation?.id, 'messages'],
     enabled: !!activeConversation && typeof activeConversation.id === 'number',
-    retry: false
+    retry: false,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    onSuccess: (data) => {
+      console.log(`Fetched ${data.length} messages for conversation ${activeConversation?.id}:`, data);
+    },
+    onError: (error) => {
+      console.error(`Error fetching messages for conversation ${activeConversation?.id}:`, error);
+    }
   });
   
   // Fetch files for active conversation
@@ -891,8 +899,13 @@ export function IntegratedAIChat() {
                     <div className="flex justify-center items-center h-40">
                       <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
                     </div>
-                  ) : messages && messages.length > 0 ? (
+                  ) : Array.isArray(messages) && messages.length > 0 ? (
                     <div className="space-y-4">
+                      <div className="text-center py-2 px-4 mb-4">
+                        <p className="text-xs text-blue-400">
+                          Beginning of conversation
+                        </p>
+                      </div>
                       {messages.map((msg) => (
                         <div 
                           key={msg.id} 
