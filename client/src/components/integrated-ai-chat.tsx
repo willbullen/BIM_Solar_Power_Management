@@ -47,12 +47,21 @@ interface Conversation {
   updatedAt: string;
 }
 
+// Message interface that matches the server's schema
 interface Message {
   id: number;
   conversationId: number;
   role: string;
   content: string;
-  createdAt: string;
+  timestamp: string;  // Primary field for message timing
+  functionCall?: any;
+  functionResponse?: any;
+  metadata?: any;
+  
+  // Optional fields that might be in API responses
+  createdAt?: string;  // Some API responses use this instead of timestamp
+  updatedAt?: string;
+  userId?: number;
 }
 
 // Types for file attachments
@@ -152,13 +161,24 @@ export function IntegratedAIChat() {
     refetchOnWindowFocus: true,
     refetchInterval: activeConversation ? 3000 : false, // Poll for new messages every 3 seconds when a conversation is active
     staleTime: 2000, // Consider data stale after 2 seconds
-    onSuccess: (data) => {
+    select: (data: any[]) => {
+      // Log the fetched messages for debugging
       console.log(`Fetched ${data.length} messages for conversation ${activeConversation?.id}:`, data);
+      
+      // Make sure we have the correct field mappings
+      const normalized = data.map(msg => {
+        // Some responses have createdAt, some have timestamp - normalize them
+        const normalizedMsg = { ...msg };
+        if (!normalizedMsg.timestamp && msg.createdAt) {
+          normalizedMsg.timestamp = msg.createdAt;
+        }
+        return normalizedMsg;
+      });
+      
       // Scroll to bottom when new messages are loaded
       setTimeout(scrollToBottom, 100);
-    },
-    onError: (error) => {
-      console.error(`Error fetching messages for conversation ${activeConversation?.id}:`, error);
+      
+      return normalized;
     }
   });
   
@@ -326,7 +346,8 @@ export function IntegratedAIChat() {
         method: 'POST',
         data: { content }
       }),
-    onMutate: () => {
+    onMutate: (content) => {
+      console.log("Sending message to conversation:", activeConversation?.id, content);
       toast({
         title: "Sending message",
         description: "Your message is being sent..."
@@ -339,28 +360,73 @@ export function IntegratedAIChat() {
       // Process the response data which includes both userMessage and assistantMessage
       if (data && data.userMessage) {
         console.log("User message created:", data.userMessage);
+        
+        // Manually add the user message to the messages array to ensure immediate display
+        // This is a workaround for the case where the query doesn't update fast enough
+        const newMessages = [...messages];
+        // Convert the userMessage to match our Message interface
+        const userMsg: Message = {
+          id: data.userMessage.id,
+          conversationId: data.userMessage.conversationId,
+          role: data.userMessage.role,
+          content: data.userMessage.content,
+          timestamp: data.userMessage.timestamp || data.userMessage.createdAt || new Date().toISOString(),
+          functionCall: data.userMessage.functionCall,
+          functionResponse: data.userMessage.functionResponse,
+          metadata: data.userMessage.metadata
+        };
+        
+        // Only add if not already in the array
+        if (!newMessages.some(msg => msg.id === userMsg.id)) {
+          newMessages.push(userMsg);
+          // This is a hack to force an update since we can't directly modify the query cache
+          queryClient.setQueryData(messagesQueryKey, newMessages);
+        }
       }
       
       if (data && data.assistantMessage) {
         console.log("Assistant response received:", data.assistantMessage);
+        
+        // Also manually add the assistant message to ensure it displays immediately
+        const newMessages = queryClient.getQueryData<Message[]>(messagesQueryKey) || [...messages];
+        // Convert the assistantMessage to match our Message interface
+        const assistantMsg: Message = {
+          id: data.assistantMessage.id,
+          conversationId: data.assistantMessage.conversationId,
+          role: data.assistantMessage.role,
+          content: data.assistantMessage.content,
+          timestamp: data.assistantMessage.timestamp || data.assistantMessage.createdAt || new Date().toISOString(),
+          functionCall: data.assistantMessage.functionCall,
+          functionResponse: data.assistantMessage.functionResponse,
+          metadata: data.assistantMessage.metadata
+        };
+        
+        // Only add if not already in the array
+        if (!newMessages.some(msg => msg.id === assistantMsg.id)) {
+          newMessages.push(assistantMsg);
+          queryClient.setQueryData(messagesQueryKey, newMessages);
+        }
+        
         toast({
           title: "Response received",
           description: "AI agent has responded to your message"
         });
       }
       
-      // Invalidate the messages cache
+      // Invalidate the messages cache - this is critical
       queryClient.invalidateQueries({ queryKey: messagesQueryKey });
       
       // Immediately fetch new messages
       refetchMessages();
       
-      // Force another refetch after a delay to ensure everything is up to date
+      // Force multiple refetches with increasing delays to ensure everything is updated
+      // This helps with race conditions where the API needs time to process
+      setTimeout(() => refetchMessages(), 500);
       setTimeout(() => {
         refetchMessages();
         refetchConversations();
         scrollToBottom();
-      }, 1000);
+      }, 2000);
     },
     onError: (error: Error) => {
       console.error("Send message error:", error);
@@ -967,7 +1033,7 @@ export function IntegratedAIChat() {
                                   role={msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system' 
                                     ? msg.role 
                                     : 'assistant'} 
-                                  timestamp={msg.createdAt} 
+                                  timestamp={msg.timestamp} 
                                 />
                               ) : (
                                 <span className="text-slate-400 italic">Message content unavailable</span>
@@ -976,7 +1042,7 @@ export function IntegratedAIChat() {
                             
                             {/* Message metadata */}
                             <div className="text-xs mt-1 flex items-center justify-end opacity-70">
-                              <span className="mr-1">{formatMessageTime(msg.createdAt)}</span>
+                              <span className="mr-1">{formatMessageTime(msg.timestamp)}</span>
                               {msg.role === 'assistant' && (
                                 <Bot className="h-3 w-3 ml-1" />
                               )}
