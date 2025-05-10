@@ -147,9 +147,39 @@ export function IntegratedAIChat() {
   useEffect(() => {
     if (conversations && conversations.length > 0 && !activeConversation) {
       // Set the first conversation as active when loaded
+      console.log("Setting initial active conversation:", conversations[0]);
       setActiveConversation(conversations[0]);
     }
   }, [conversations, activeConversation]);
+  
+  // Explicitly fetch messages when active conversation changes
+  useEffect(() => {
+    if (activeConversation && typeof activeConversation.id === 'number') {
+      console.log("MANUALLY FETCHING MESSAGES for conversation:", activeConversation.id);
+      // Make a direct API call to fetch messages for debugging purposes
+      fetch(`/api/agent/conversations/${activeConversation.id}/messages`, {
+        headers: {
+          'X-Auth-User-Id': user?.id.toString() || '',
+          'X-Auth-Username': user?.username || ''
+        }
+      })
+      .then(response => {
+        console.log("Manual message fetch response status:", response.status);
+        return response.json();
+      })
+      .then(data => {
+        console.log("DIRECT API CALL - Messages:", data);
+        if (Array.isArray(data) && data.length > 0) {
+          console.log(`Found ${data.length} messages through direct API call`);
+        } else {
+          console.log("No messages found through direct API call");
+        }
+      })
+      .catch(error => {
+        console.error("Error in manual message fetch:", error);
+      });
+    }
+  }, [activeConversation, user]);
   
   // Fetch messages for active conversation
   const messagesQueryKey = ['/api/agent/conversations', activeConversation?.id, 'messages'];
@@ -162,47 +192,79 @@ export function IntegratedAIChat() {
     }
   }, [activeConversation]);
   
+  // Setup manual messages state to avoid issues with React Query
+  const [manualMessages, setManualMessages] = useState<Message[]>([]);
+  
+  // Fetch and store messages manually when active conversation changes
+  useEffect(() => {
+    let isMounted = true;
+    
+    if (activeConversation && typeof activeConversation.id === 'number') {
+      // Set to loading state
+      setManualMessages([]);
+      
+      console.log("MANUALLY FETCHING MESSAGES for conversation:", activeConversation.id);
+      
+      // Make direct API call with proper authentication headers
+      fetch(`/api/agent/conversations/${activeConversation.id}/messages`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Auth-User-Id': user?.id.toString() || '',
+          'X-Auth-Username': user?.username || ''
+        }
+      })
+      .then(response => {
+        console.log("Manual message fetch response status:", response.status);
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log("Messages from API:", data);
+        if (isMounted && Array.isArray(data)) {
+          // Normalize the data
+          const normalized = data.map(msg => {
+            const normalizedMsg = { ...msg };
+            // Some responses have createdAt, some have timestamp - normalize them
+            if (!normalizedMsg.timestamp && msg.createdAt) {
+              normalizedMsg.timestamp = msg.createdAt;
+            }
+            return normalizedMsg;
+          });
+          
+          // Update state with normalized messages
+          setManualMessages(normalized);
+          console.log(`Stored ${normalized.length} messages in state`);
+          
+          // Scroll to bottom
+          setTimeout(scrollToBottom, 100);
+        }
+      })
+      .catch(error => {
+        console.error("Error fetching messages:", error);
+        toast({
+          title: "Error",
+          description: `Failed to load messages: ${error.message}`,
+          variant: "destructive"
+        });
+      });
+    }
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [activeConversation, user]);
+  
+  // Keep for compatibility, but don't use it for rendering
   const { data: messages = [], isLoading: loadingMessages, refetch: refetchMessages } = useQuery<Message[]>({
     queryKey: messagesQueryKey,
     enabled: !!activeConversation && typeof activeConversation.id === 'number',
     retry: 3,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
-    refetchInterval: activeConversation ? 3000 : false, // Poll for new messages every 3 seconds when a conversation is active
-    staleTime: 2000, // Consider data stale after 2 seconds
-    // Add explicit logging for the API request
-    queryFn: async () => {
-      console.log(`EXPLICITLY FETCHING MESSAGES for conversation ${activeConversation?.id}`);
-      const url = `/api/agent/conversations/${activeConversation?.id}/messages`;
-      
-      try {
-        const response = await apiRequest(url);
-        console.log(`API RESPONSE for messages:`, response);
-        return response;
-      } catch (error) {
-        console.error(`ERROR fetching messages:`, error);
-        throw error;
-      }
-    },
-    select: (data: any[]) => {
-      // Log the fetched messages for debugging
-      console.log(`Fetched ${data.length} messages for conversation ${activeConversation?.id}:`, data);
-      
-      // Make sure we have the correct field mappings
-      const normalized = data.map(msg => {
-        // Some responses have createdAt, some have timestamp - normalize them
-        const normalizedMsg = { ...msg };
-        if (!normalizedMsg.timestamp && msg.createdAt) {
-          normalizedMsg.timestamp = msg.createdAt;
-        }
-        return normalizedMsg;
-      });
-      
-      // Scroll to bottom when new messages are loaded
-      setTimeout(scrollToBottom, 100);
-      
-      return normalized;
-    }
+    refetchInterval: false, // Disable automatic polling since we do it manually
+    staleTime: 2000 // Consider data stale after 2 seconds
   });
   
   // Fetch files for active conversation
@@ -1021,18 +1083,22 @@ export function IntegratedAIChat() {
                   {loadingMessages ? (
                     <div className="flex justify-center items-center h-40">
                       <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+                      <span className="ml-2 text-sm text-blue-400">Loading messages...</span>
                     </div>
                   ) : Array.isArray(messages) && messages.length > 0 ? (
                     <div className="space-y-4">
                       <div className="text-center py-2 px-4 mb-4">
                         <p className="text-xs text-blue-400">
-                          Beginning of conversation
+                          Beginning of conversation - {messages.length} messages
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Conversation ID: {activeConversation?.id}
                         </p>
                       </div>
-                      {messages.map((msg) => (
+                      {messages.map((msg, index) => (
                         <div 
-                          key={msg.id} 
-                          id={`message-${msg.id}`}
+                          key={`${msg.id || index}`} 
+                          id={`message-${msg.id || index}`}
                           className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
                           <div 
