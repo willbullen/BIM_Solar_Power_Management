@@ -780,7 +780,13 @@ export function IntegratedAIChat() {
                             
                             {/* Enhanced message content with parsing */}
                             <div className="text-sm">
-                              <EnhancedMessage content={msg.content} role={msg.role} timestamp={msg.createdAt} />
+                              <EnhancedMessage 
+                                content={msg.content} 
+                                role={msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system' 
+                                  ? msg.role 
+                                  : 'assistant'} 
+                                timestamp={msg.createdAt} 
+                              />
                             </div>
                             
                             {/* Message metadata */}
