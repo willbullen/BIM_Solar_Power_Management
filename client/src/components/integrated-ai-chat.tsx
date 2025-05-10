@@ -316,73 +316,18 @@ export function IntegratedAIChat() {
     }
   };
   
-  // Initial fetch of messages and subscribe to WebSocket updates when active conversation changes
+  // Combined hook: fetch messages and subscribe to WebSocket updates when active conversation changes
   useEffect(() => {
     let unsubscribeConversation: (() => void) | undefined;
     let unsubscribeAgent: (() => void) | undefined;
-    
-    if (activeConversation && typeof activeConversation.id === 'number') {
-      console.log("Active conversation changed, fetching messages and subscribing:", activeConversation.id);
-      
-      // Initially fetch messages manually
-      fetchMessagesManually();
-      
-      // Subscribe to real-time updates for this conversation
-      if (wsConnected) {
-        console.log("WebSocket connected, subscribing to conversation:", activeConversation.id);
-        
-        try {
-          // Subscribe to conversation-specific updates
-          unsubscribeConversation = subscribeToConversation(activeConversation.id);
-          
-          // Also subscribe to agent messages for system-wide notifications
-          unsubscribeAgent = subscribeToAgentMessages();
-          
-          console.log("Successfully subscribed to WebSocket channels");
-        } catch (err) {
-          console.error("Error subscribing to WebSocket channels:", err);
-        }
-      }
-    }
-    
-    // Cleanup function
-    return () => {
-      if (unsubscribeConversation) {
-        try {
-          unsubscribeConversation();
-        } catch (err) {
-          console.error("Error unsubscribing from conversation:", err);
-        }
-      }
-      
-      if (unsubscribeAgent) {
-        try {
-          unsubscribeAgent();
-        } catch (err) {
-          console.error("Error unsubscribing from agent messages:", err);
-        }
-      }
-    };
-  }, [activeConversation, user, wsConnected, subscribeToConversation, subscribeToAgentMessages, fetchMessagesManually]);
-  
-  // Fetch messages for active conversation
-  const messagesQueryKey = ['/api/agent/conversations', activeConversation?.id, 'messages'];
-  
-  // Enhanced debugging for active conversation
-  useEffect(() => {
-    if (activeConversation) {
-      console.log("ACTIVE CONVERSATION SET:", activeConversation);
-      console.log("Will be querying messages at:", `/api/agent/conversations/${activeConversation.id}/messages`);
-    }
-  }, [activeConversation]);
-  
-  // Fetch and store messages manually when active conversation changes
-  useEffect(() => {
     let isMounted = true;
     
     if (activeConversation && typeof activeConversation.id === 'number') {
-      // Set to loading state
+      console.log("Active conversation changed:", activeConversation.id);
+      
+      // Set to loading state and clear previous messages
       setManualMessages([]);
+      setLoadingManualMessages(true);
       
       console.log("MANUALLY FETCHING MESSAGES for conversation:", activeConversation.id);
       
@@ -390,19 +335,18 @@ export function IntegratedAIChat() {
       fetch(`/api/agent/conversations/${activeConversation.id}/messages`, {
         headers: {
           'Content-Type': 'application/json',
-          'X-Auth-User-Id': user?.id.toString() || '',
+          'X-Auth-User-Id': user?.id?.toString() || '',
           'X-Auth-Username': user?.username || ''
         }
       })
       .then(response => {
-        console.log("Manual message fetch response status:", response.status);
+        console.log("Message fetch response status:", response.status);
         if (!response.ok) {
           throw new Error(`Error ${response.status}: ${response.statusText}`);
         }
         return response.json();
       })
       .then(data => {
-        console.log("Messages from API:", data);
         if (isMounted && Array.isArray(data)) {
           // Normalize the data
           const normalized = data.map(msg => {
@@ -429,13 +373,55 @@ export function IntegratedAIChat() {
           description: `Failed to load messages: ${error.message}`,
           variant: "destructive"
         });
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoadingManualMessages(false);
+        }
       });
+      
+      // Subscribe to real-time updates for this conversation
+      if (wsConnected) {
+        console.log("WebSocket connected, subscribing to conversation:", activeConversation.id);
+        
+        try {
+          // Subscribe to conversation-specific updates
+          unsubscribeConversation = subscribeToConversation(activeConversation.id);
+          
+          // Also subscribe to agent messages for system-wide notifications
+          unsubscribeAgent = subscribeToAgentMessages();
+          
+          console.log("Successfully subscribed to WebSocket channels");
+        } catch (err) {
+          console.error("Error subscribing to WebSocket channels:", err);
+        }
+      }
     }
     
+    // Cleanup function
     return () => {
       isMounted = false;
+      
+      if (unsubscribeConversation) {
+        try {
+          unsubscribeConversation();
+        } catch (err) {
+          console.error("Error unsubscribing from conversation:", err);
+        }
+      }
+      
+      if (unsubscribeAgent) {
+        try {
+          unsubscribeAgent();
+        } catch (err) {
+          console.error("Error unsubscribing from agent messages:", err);
+        }
+      }
     };
-  }, [activeConversation, user]);
+  }, [activeConversation, user, wsConnected, subscribeToConversation, subscribeToAgentMessages, toast]);
+  
+  // Fetch messages for active conversation (keeping this for compatibility with React Query)
+  const messagesQueryKey = ['/api/agent/conversations', activeConversation?.id, 'messages'];
   
   // Keep for compatibility, but don't use it for rendering
   const { data: messages = [], isLoading: loadingMessages, refetch: refetchMessages } = useQuery<Message[]>({
