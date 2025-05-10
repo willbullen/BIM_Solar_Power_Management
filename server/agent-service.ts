@@ -530,28 +530,36 @@ export class AgentService {
    */
   async deleteConversation(conversationId: number, userId: number): Promise<boolean> {
     try {
-      // First check if the conversation belongs to this user
+      console.log(`AgentService: Attempting to delete conversation ${conversationId} for user ${userId}`);
+      
+      // First check if the conversation exists and belongs to this user
       const conversation = await db.query.agentConversations.findFirst({
-        where: (fields, { eq }) => eq(fields.id, conversationId)
+        where: (fields, { eq, and }) => and(
+          eq(fields.id, conversationId),
+          eq(fields.userId, userId)
+        )
       });
       
       if (!conversation) {
+        console.log(`Conversation ${conversationId} not found or not owned by user ${userId}`);
         return false;
       }
       
-      // Verify the conversation belongs to the user
-      if (conversation.userId !== userId) {
-        return false;
-      }
+      console.log(`Found conversation with ID ${conversationId} for user ${userId}, deleting associated messages`);
       
       // Delete all messages in the conversation
-      await db.delete(schema.agentMessages)
-        .where(eq(schema.agentMessages.conversationId, conversationId));
+      const deletedMessages = await db.delete(schema.agentMessages)
+        .where(eq(schema.agentMessages.conversationId, conversationId))
+        .returning();
+      
+      console.log(`Deleted ${deletedMessages.length} messages from conversation ${conversationId}`);
       
       // Delete the conversation
       const result = await db.delete(schema.agentConversations)
         .where(eq(schema.agentConversations.id, conversationId))
         .returning();
+      
+      console.log(`Conversation deletion result: ${result.length > 0 ? 'success' : 'failed'}`);
       
       return result.length > 0;
     } catch (error) {

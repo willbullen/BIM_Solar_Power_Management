@@ -273,7 +273,18 @@ export function registerAgentRoutes(app: Express) {
   app.delete('/api/agent/conversations/:id', requireAuth, async (req: Request, res: Response) => {
     try {
       const conversationId = parseInt(req.params.id);
-      const userId = req.session!.userId;
+      let userId = req.session?.userId;
+      
+      // Also check headers for auth if session doesn't have userId
+      if (!userId && req.headers['x-auth-user-id']) {
+        userId = parseInt(req.headers['x-auth-user-id'] as string);
+      }
+      
+      if (!userId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+      
+      console.log(`Deleting conversation ${conversationId} for user ${userId}`);
       
       const agentService = new AgentService();
       const success = await agentService.deleteConversation(conversationId, userId);
