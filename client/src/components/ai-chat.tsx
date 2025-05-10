@@ -203,6 +203,43 @@ export function AIChat() {
     }
   });
   
+  // Delete a conversation
+  const deleteConversation = useMutation({
+    mutationFn: (conversationId: number) => 
+      apiRequest(`/api/agent/conversations/${conversationId}`, {
+        method: 'DELETE'
+      }),
+    onSuccess: () => {
+      // Refetch conversations
+      refetchConversations();
+      
+      // If we have other conversations, set the first one as active
+      if (conversations && conversations.length > 1) {
+        // Find the conversation that's not the one we just deleted
+        const remainingConversation = conversations.find(c => c.id !== activeConversation?.id);
+        if (remainingConversation) {
+          setActiveConversation(remainingConversation);
+        }
+      } else {
+        // No more conversations
+        setActiveConversation(null);
+      }
+      
+      toast({
+        title: "Conversation Deleted",
+        description: "Conversation and all its messages have been deleted"
+      });
+    },
+    onError: (error: Error) => {
+      console.error("Delete conversation error:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete conversation: " + error.message
+      });
+    }
+  });
+  
   // Upload files
   const uploadFiles = async (files: File[], conversationId?: number, messageId?: number) => {
     if (files.length === 0) return;
@@ -412,26 +449,43 @@ export function AIChat() {
         {conversations.map((conversation) => (
           <div 
             key={conversation.id}
-            className={`p-2 rounded-md cursor-pointer flex items-center justify-between ${
+            className={`p-2 rounded-md flex items-center justify-between ${
               activeConversation?.id === conversation.id 
                 ? 'bg-blue-600 text-white' 
                 : 'hover:bg-slate-800 text-slate-300'
             }`}
-            onClick={() => setActiveConversation(conversation)}
           >
-            <div className="flex items-center space-x-2">
+            <div 
+              className="flex-grow flex items-center space-x-2 cursor-pointer" 
+              onClick={() => setActiveConversation(conversation)}
+            >
               <MessageSquare className="h-4 w-4" />
               <span className="text-sm truncate max-w-[150px]">{conversation.title}</span>
             </div>
-            <Badge 
-              variant="outline" 
-              className={activeConversation?.id === conversation.id 
-                ? "bg-blue-700/50 text-blue-100 border-blue-500"
-                : "bg-slate-800 text-slate-300 border-slate-700"
-              }
-            >
-              {new Date(conversation.createdAt).toLocaleDateString()}
-            </Badge>
+            <div className="flex items-center space-x-1">
+              <Badge 
+                variant="outline" 
+                className={activeConversation?.id === conversation.id 
+                  ? "bg-blue-700/50 text-blue-100 border-blue-500"
+                  : "bg-slate-800 text-slate-300 border-slate-700"
+                }
+              >
+                {new Date(conversation.createdAt).toLocaleDateString()}
+              </Badge>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 p-1 rounded-sm text-slate-500 hover:text-red-400 hover:bg-red-500/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm(`Delete conversation "${conversation.title}"?`)) {
+                    deleteConversation.mutate(conversation.id);
+                  }
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         ))}
         
@@ -615,8 +669,59 @@ export function AIChat() {
     );
   };
   
+  // Add the dialog for creating a new conversation with a name
+  const renderNewConversationDialog = () => {
+    return (
+      <Dialog open={newConversationDialog} onOpenChange={setNewConversationDialog}>
+        <DialogContent className="bg-slate-900 border border-slate-800 text-slate-100">
+          <DialogHeader>
+            <DialogTitle>Create New Conversation</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Enter a name for your new conversation.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Label htmlFor="conversationName" className="text-slate-200">Conversation Name</Label>
+            <Input
+              id="conversationName"
+              value={newConversationTitle}
+              onChange={(e) => setNewConversationTitle(e.target.value)}
+              className="mt-2 bg-slate-800 border-slate-700 text-white"
+              placeholder="Enter conversation name..."
+              autoFocus
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
+              onClick={() => setNewConversationDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleNewConversationSubmit}
+              disabled={!newConversationTitle.trim() || createConversation.isPending}
+            >
+              {createConversation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <PlusCircle className="h-4 w-4 mr-2" />
+              )}
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+  
   return (
     <div className="flex flex-col h-full">
+      {renderNewConversationDialog()}
       <Card className="flex-grow overflow-hidden bg-slate-900 border-slate-800 shadow-md">
         <CardHeader className="pb-2 border-b border-slate-800">
           <div className="flex items-center justify-between">
