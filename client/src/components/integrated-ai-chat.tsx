@@ -158,7 +158,7 @@ export function IntegratedAIChat() {
   const [loadingManualMessages, setLoadingManualMessages] = useState(false);
   
   // WebSocket connection for real-time message updates
-  const { connected: wsConnected, subscribeToDynamicTopic, unsubscribeFromDynamicTopic } = useAgentWebSocket({
+  const { isConnected: wsConnected, subscribeToConversation, subscribeToAgentMessages } = useAgentWebSocket({
     onMessage: (message: AgentWebSocketMessage) => {
       console.log("WebSocket message received:", message);
       
@@ -318,6 +318,8 @@ export function IntegratedAIChat() {
   
   // Initial fetch of messages and subscribe to WebSocket updates when active conversation changes
   useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    
     if (activeConversation && typeof activeConversation.id === 'number') {
       console.log("Active conversation changed, fetching messages and subscribing:", activeConversation.id);
       
@@ -326,19 +328,26 @@ export function IntegratedAIChat() {
       
       // Subscribe to real-time updates for this conversation
       if (wsConnected) {
+        console.log("WebSocket connected, subscribing to conversation:", activeConversation.id);
         // Subscribe to conversation-specific updates
-        subscribeToDynamicTopic(`conversation_${activeConversation.id}`);
+        unsubscribe = subscribeToConversation(activeConversation.id);
+        
+        // Also subscribe to agent messages for system-wide notifications
+        const unsubscribeAgent = subscribeToAgentMessages();
+        
+        // Return composite cleanup function
+        return () => {
+          if (unsubscribe) unsubscribe();
+          unsubscribeAgent();
+        };
       }
     }
     
     // Cleanup function
     return () => {
-      if (activeConversation && typeof activeConversation.id === 'number' && wsConnected) {
-        // Unsubscribe from the previous conversation updates
-        unsubscribeFromDynamicTopic(`conversation_${activeConversation.id}`);
-      }
+      if (unsubscribe) unsubscribe();
     };
-  }, [activeConversation, user, wsConnected, subscribeToDynamicTopic, unsubscribeFromDynamicTopic]);
+  }, [activeConversation, user, wsConnected, subscribeToConversation, subscribeToAgentMessages, fetchMessagesManually]);
   
   // Fetch messages for active conversation
   const messagesQueryKey = ['/api/agent/conversations', activeConversation?.id, 'messages'];
@@ -715,16 +724,33 @@ export function IntegratedAIChat() {
     }
   });
   
-  // Delete a message
+  // Delete a message with WebSocket support
   const deleteMessage = useMutation({
     mutationFn: ({ conversationId, messageId }: { conversationId: number; messageId: number }) => 
       apiRequest(`/api/agent/conversations/${conversationId}/messages/${messageId}`, {
         method: 'DELETE'
       }),
-    onSuccess: (_, variables) => {
-      // Remove the deleted message from our manual state
+    onMutate: ({ conversationId, messageId }) => {
+      console.log(`Optimistically deleting message ${messageId} from conversation ${conversationId}`);
+      
+      // Optimistically update UI by removing the message immediately
       setManualMessages(prevMessages => 
-        prevMessages.filter(msg => msg.id !== variables.messageId)
+        prevMessages.filter(msg => msg.id !== messageId)
+      );
+      
+      toast({
+        title: "Deleting message",
+        description: "Message is being deleted..."
+      });
+    },
+    onSuccess: (_, variables) => {
+      const { conversationId, messageId } = variables;
+      console.log(`Message ${messageId} deleted successfully from conversation ${conversationId}`);
+      
+      // The WebSocket should notify clients about this deletion, but we'll
+      // double-check our local state as a fallback
+      setManualMessages(prevMessages => 
+        prevMessages.filter(msg => msg.id !== messageId)
       );
       
       toast({
@@ -735,8 +761,13 @@ export function IntegratedAIChat() {
       // Also refetch the conversation list to update titles
       refetchConversations();
     },
-    onError: (error: Error) => {
-      console.error("Delete message error:", error);
+    onError: (error: Error, variables) => {
+      const { messageId } = variables;
+      console.error(`Error deleting message ${messageId}:`, error);
+      
+      // If deletion fails, fetch messages again to restore state
+      fetchMessagesManually();
+      
       toast({
         variant: "destructive",
         title: "Error",
