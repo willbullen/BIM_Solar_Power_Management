@@ -152,34 +152,88 @@ export function IntegratedAIChat() {
     }
   }, [conversations, activeConversation]);
   
+  // State for manually managed messages
+  const [manualMessages, setManualMessages] = useState<Message[]>([]);
+  const [loadingManualMessages, setLoadingManualMessages] = useState(false);
+  
   // Explicitly fetch messages when active conversation changes
   useEffect(() => {
-    if (activeConversation && typeof activeConversation.id === 'number') {
-      console.log("MANUALLY FETCHING MESSAGES for conversation:", activeConversation.id);
-      // Make a direct API call to fetch messages for debugging purposes
-      fetch(`/api/agent/conversations/${activeConversation.id}/messages`, {
-        headers: {
-          'X-Auth-User-Id': user?.id.toString() || '',
-          'X-Auth-Username': user?.username || ''
+    let isMounted = true;
+    
+    const fetchMessages = async () => {
+      if (activeConversation && typeof activeConversation.id === 'number' && user) {
+        try {
+          setLoadingManualMessages(true);
+          console.log("MANUALLY FETCHING MESSAGES for conversation:", activeConversation.id);
+          
+          // Make direct API call to fetch messages with proper headers
+          const response = await fetch(`/api/agent/conversations/${activeConversation.id}/messages`, {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Auth-User-Id': user.id.toString(),
+              'X-Auth-Username': user.username
+            }
+          });
+          
+          console.log("Manual message fetch response status:", response.status);
+          
+          if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+          }
+          
+          const data = await response.json();
+          console.log("DIRECT API CALL - Messages:", data);
+          
+          if (isMounted) {
+            if (Array.isArray(data) && data.length > 0) {
+              console.log(`Found ${data.length} messages through direct API call`);
+              
+              // Normalize the messages to ensure consistent timestamp field
+              const normalizedMessages = data.map(msg => {
+                const normalizedMsg = { ...msg };
+                if (!normalizedMsg.timestamp && normalizedMsg.createdAt) {
+                  normalizedMsg.timestamp = normalizedMsg.createdAt;
+                }
+                return normalizedMsg;
+              });
+              
+              setManualMessages(normalizedMessages);
+              
+              // Scroll to bottom after messages load
+              setTimeout(scrollToBottom, 100);
+            } else {
+              console.log("No messages found through direct API call");
+              setManualMessages([]);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching messages:", error);
+          if (isMounted) {
+            toast({
+              title: "Error",
+              description: `Failed to load messages: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              variant: "destructive"
+            });
+            setManualMessages([]);
+          }
+        } finally {
+          if (isMounted) {
+            setLoadingManualMessages(false);
+          }
         }
-      })
-      .then(response => {
-        console.log("Manual message fetch response status:", response.status);
-        return response.json();
-      })
-      .then(data => {
-        console.log("DIRECT API CALL - Messages:", data);
-        if (Array.isArray(data) && data.length > 0) {
-          console.log(`Found ${data.length} messages through direct API call`);
-        } else {
-          console.log("No messages found through direct API call");
-        }
-      })
-      .catch(error => {
-        console.error("Error in manual message fetch:", error);
-      });
-    }
-  }, [activeConversation, user]);
+      }
+    };
+    
+    fetchMessages();
+    
+    // Set up polling for new messages
+    const intervalId = setInterval(fetchMessages, 5000);
+    
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, [activeConversation, user, toast]);
   
   // Fetch messages for active conversation
   const messagesQueryKey = ['/api/agent/conversations', activeConversation?.id, 'messages'];
@@ -191,9 +245,6 @@ export function IntegratedAIChat() {
       console.log("Will be querying messages at:", `/api/agent/conversations/${activeConversation.id}/messages`);
     }
   }, [activeConversation]);
-  
-  // Setup manual messages state to avoid issues with React Query
-  const [manualMessages, setManualMessages] = useState<Message[]>([]);
   
   // Fetch and store messages manually when active conversation changes
   useEffect(() => {
@@ -1080,22 +1131,22 @@ export function IntegratedAIChat() {
                 </div>
               ) : (
                 <ScrollArea className="h-[calc(100vh-22rem)] p-4">
-                  {loadingMessages ? (
+                  {loadingManualMessages ? (
                     <div className="flex justify-center items-center h-40">
                       <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
                       <span className="ml-2 text-sm text-blue-400">Loading messages...</span>
                     </div>
-                  ) : Array.isArray(messages) && messages.length > 0 ? (
+                  ) : Array.isArray(manualMessages) && manualMessages.length > 0 ? (
                     <div className="space-y-4">
                       <div className="text-center py-2 px-4 mb-4">
                         <p className="text-xs text-blue-400">
-                          Beginning of conversation - {messages.length} messages
+                          Beginning of conversation - {manualMessages.length} messages
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
                           Conversation ID: {activeConversation?.id}
                         </p>
                       </div>
-                      {messages.map((msg, index) => (
+                      {manualMessages.map((msg, index) => (
                         <div 
                           key={`${msg.id || index}`} 
                           id={`message-${msg.id || index}`}
