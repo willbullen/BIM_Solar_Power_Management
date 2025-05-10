@@ -88,16 +88,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Track subscriptions and clients
   const subscriptions = new Map<string, Set<WebSocket>>();
   
+  // Track authenticated clients and their info
+  const authenticatedClients = new Map<WebSocket, { userId: number; username: string }>();
+  
+  // Track conversation-specific subscriptions (conversationId -> subscribers)
+  const conversationSubscriptions = new Map<number, Set<WebSocket>>();
+  
   // Initialize subscription channels
   subscriptions.set('power-data', new Set<WebSocket>());
   subscriptions.set('environmental-data', new Set<WebSocket>());
   subscriptions.set('agent-messages', new Set<WebSocket>());
   
-  // Track authenticated users
-  const authenticatedClients = new Map<WebSocket, { userId: number, username: string }>();
-  
-  // Track conversation-specific subscriptions
-  const conversationSubscriptions = new Map<number, Set<WebSocket>>();
+  // WebSocket connections are already set up
   
   // Log WebSocket server errors
   wss.on('error', (error) => {
