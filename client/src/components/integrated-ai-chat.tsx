@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useAgentWebSocket, AgentWebSocketMessage } from "@/hooks/use-agent-websocket";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -156,84 +157,188 @@ export function IntegratedAIChat() {
   const [manualMessages, setManualMessages] = useState<Message[]>([]);
   const [loadingManualMessages, setLoadingManualMessages] = useState(false);
   
-  // Explicitly fetch messages when active conversation changes
-  useEffect(() => {
-    let isMounted = true;
-    
-    const fetchMessages = async () => {
-      if (activeConversation && typeof activeConversation.id === 'number' && user) {
-        try {
-          setLoadingManualMessages(true);
-          console.log("MANUALLY FETCHING MESSAGES for conversation:", activeConversation.id);
+  // WebSocket connection for real-time message updates
+  const { connected: wsConnected, subscribeToDynamicTopic, unsubscribeFromDynamicTopic } = useAgentWebSocket({
+    onMessage: (message: AgentWebSocketMessage) => {
+      console.log("WebSocket message received:", message);
+      
+      // Handle new messages
+      if (message.type === 'new_message' && message.conversationId && message.data) {
+        // Check if this message is for the active conversation
+        if (activeConversation && message.conversationId === activeConversation.id) {
+          console.log("New message received for active conversation:", message.data);
           
-          // Make direct API call to fetch messages with proper headers
-          const response = await fetch(`/api/agent/conversations/${activeConversation.id}/messages`, {
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Auth-User-Id': user.id.toString(),
-              'X-Auth-Username': user.username
-            }
-          });
+          // Normalize the message data
+          const newMsg: Message = {
+            id: message.data.id,
+            conversationId: message.data.conversationId,
+            role: message.data.role,
+            content: message.data.content,
+            timestamp: message.data.timestamp || message.data.createdAt || new Date().toISOString(),
+            functionCall: message.data.functionCall,
+            functionResponse: message.data.functionResponse,
+            metadata: message.data.metadata
+          };
           
-          console.log("Manual message fetch response status:", response.status);
-          
-          if (!response.ok) {
-            throw new Error(`Error ${response.status}: ${response.statusText}`);
-          }
-          
-          const data = await response.json();
-          console.log("DIRECT API CALL - Messages:", data);
-          
-          if (isMounted) {
-            if (Array.isArray(data) && data.length > 0) {
-              console.log(`Found ${data.length} messages through direct API call`);
-              
-              // Normalize the messages to ensure consistent timestamp field
-              const normalizedMessages = data.map(msg => {
-                const normalizedMsg = { ...msg };
-                if (!normalizedMsg.timestamp && normalizedMsg.createdAt) {
-                  normalizedMsg.timestamp = normalizedMsg.createdAt;
-                }
-                return normalizedMsg;
-              });
-              
-              setManualMessages(normalizedMessages);
-              
-              // Scroll to bottom after messages load
+          // Add to manual messages if not already present
+          setManualMessages(prevMessages => {
+            if (!prevMessages.some(msg => msg.id === newMsg.id)) {
+              const updatedMessages = [...prevMessages, newMsg];
+              // Scroll to bottom on new message
               setTimeout(scrollToBottom, 100);
-            } else {
-              console.log("No messages found through direct API call");
-              setManualMessages([]);
+              return updatedMessages;
             }
-          }
-        } catch (error) {
-          console.error("Error fetching messages:", error);
-          if (isMounted) {
-            toast({
-              title: "Error",
-              description: `Failed to load messages: ${error instanceof Error ? error.message : 'Unknown error'}`,
-              variant: "destructive"
-            });
-            setManualMessages([]);
-          }
-        } finally {
-          if (isMounted) {
-            setLoadingManualMessages(false);
-          }
+            return prevMessages;
+          });
         }
       }
-    };
+      
+      // Handle message deletions
+      if (message.type === 'delete_message' && message.conversationId && message.messageId) {
+        if (activeConversation && message.conversationId === activeConversation.id) {
+          console.log("Message deleted from active conversation:", message.messageId);
+          
+          // Remove the deleted message from our state
+          setManualMessages(prevMessages => 
+            prevMessages.filter(msg => msg.id !== message.messageId)
+          );
+        }
+      }
+      
+      // Handle conversation deletions (optional, could navigate away)
+      if (message.type === 'delete_conversation' && message.conversationId) {
+        if (activeConversation && message.conversationId === activeConversation.id) {
+          console.log("Active conversation deleted:", message.conversationId);
+          
+          // Clear active conversation and its messages
+          setActiveConversation(null);
+          setManualMessages([]);
+          
+          // Refresh the conversations list
+          refetchConversations();
+          
+          toast({
+            title: "Conversation Deleted",
+            description: "The current conversation was deleted"
+          });
+        }
+      }
+    },
+    onConnect: () => {
+      console.log("WebSocket connected - AI Chat ready for real-time updates");
+      
+      toast({
+        title: "Connected",
+        description: "Real-time chat connection established",
+        duration: 3000
+      });
+    },
+    onDisconnect: () => {
+      console.log("WebSocket disconnected - Real-time updates paused");
+      
+      // Fall back to manual fetch on disconnect
+      if (activeConversation && typeof activeConversation.id === 'number') {
+        fetchMessagesManually();
+      }
+    },
+    onError: (error) => {
+      console.error("WebSocket error:", error);
+      
+      toast({
+        title: "Connection Error",
+        description: "Chat connection error. Falling back to regular updates.",
+        variant: "destructive"
+      });
+      
+      // Fall back to manual fetch on error
+      if (activeConversation && typeof activeConversation.id === 'number') {
+        fetchMessagesManually();
+      }
+    }
+  });
+  
+  // Function to manually fetch messages if needed
+  const fetchMessagesManually = async () => {
+    if (!activeConversation || !user) return;
     
-    fetchMessages();
+    try {
+      setLoadingManualMessages(true);
+      console.log("MANUALLY FETCHING MESSAGES for conversation:", activeConversation.id);
+      
+      // Make direct API call to fetch messages with proper headers
+      const response = await fetch(`/api/agent/conversations/${activeConversation.id}/messages`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Auth-User-Id': user.id.toString(),
+          'X-Auth-Username': user.username
+        }
+      });
+      
+      console.log("Manual message fetch response status:", response.status);
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log("DIRECT API CALL - Messages:", data);
+      
+      if (Array.isArray(data) && data.length > 0) {
+        console.log(`Found ${data.length} messages through direct API call`);
+        
+        // Normalize the messages to ensure consistent timestamp field
+        const normalizedMessages = data.map(msg => {
+          const normalizedMsg = { ...msg };
+          if (!normalizedMsg.timestamp && normalizedMsg.createdAt) {
+            normalizedMsg.timestamp = normalizedMsg.createdAt;
+          }
+          return normalizedMsg;
+        });
+        
+        setManualMessages(normalizedMessages);
+        
+        // Scroll to bottom after messages load
+        setTimeout(scrollToBottom, 100);
+      } else {
+        console.log("No messages found through direct API call");
+        setManualMessages([]);
+      }
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      toast({
+        title: "Error",
+        description: `Failed to load messages: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive"
+      });
+      setManualMessages([]);
+    } finally {
+      setLoadingManualMessages(false);
+    }
+  };
+  
+  // Initial fetch of messages and subscribe to WebSocket updates when active conversation changes
+  useEffect(() => {
+    if (activeConversation && typeof activeConversation.id === 'number') {
+      console.log("Active conversation changed, fetching messages and subscribing:", activeConversation.id);
+      
+      // Initially fetch messages manually
+      fetchMessagesManually();
+      
+      // Subscribe to real-time updates for this conversation
+      if (wsConnected) {
+        // Subscribe to conversation-specific updates
+        subscribeToDynamicTopic(`conversation_${activeConversation.id}`);
+      }
+    }
     
-    // Set up polling for new messages
-    const intervalId = setInterval(fetchMessages, 5000);
-    
+    // Cleanup function
     return () => {
-      isMounted = false;
-      clearInterval(intervalId);
+      if (activeConversation && typeof activeConversation.id === 'number' && wsConnected) {
+        // Unsubscribe from the previous conversation updates
+        unsubscribeFromDynamicTopic(`conversation_${activeConversation.id}`);
+      }
     };
-  }, [activeConversation, user, toast]);
+  }, [activeConversation, user, wsConnected, subscribeToDynamicTopic, unsubscribeFromDynamicTopic]);
   
   // Fetch messages for active conversation
   const messagesQueryKey = ['/api/agent/conversations', activeConversation?.id, 'messages'];
