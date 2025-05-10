@@ -780,13 +780,17 @@ export function IntegratedAIChat() {
                             
                             {/* Enhanced message content with parsing */}
                             <div className="text-sm">
-                              <EnhancedMessage 
-                                content={msg.content} 
-                                role={msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system' 
-                                  ? msg.role 
-                                  : 'assistant'} 
-                                timestamp={msg.createdAt} 
-                              />
+                              {msg.content && msg.content.trim() ? (
+                                <EnhancedMessage 
+                                  content={msg.content} 
+                                  role={msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system' 
+                                    ? msg.role 
+                                    : 'assistant'} 
+                                  timestamp={msg.createdAt} 
+                                />
+                              ) : (
+                                <span className="text-slate-400 italic">Message content unavailable</span>
+                              )}
                             </div>
                             
                             {/* Message metadata */}
@@ -961,11 +965,15 @@ export function IntegratedAIChat() {
                           }`}
                         >
                           <div className="text-sm">
-                            <EnhancedMessage 
-                              content={message.messageText} 
-                              role={message.direction === 'outbound' ? 'user' : 'assistant'}
-                              timestamp={message.timestamp}
-                            />
+                            {message.messageText && message.messageText.trim() ? (
+                              <EnhancedMessage 
+                                content={message.messageText} 
+                                role={message.direction === 'outbound' ? 'user' : 'assistant'}
+                                timestamp={message.timestamp}
+                              />
+                            ) : (
+                              <span className="text-slate-400 italic">Message content unavailable</span>
+                            )}
                           </div>
                           <div className="text-xs mt-1 flex items-center justify-end opacity-70">
                             <span>{formatMessageTime(message.timestamp)}</span>

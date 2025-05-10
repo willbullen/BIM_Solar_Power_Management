@@ -20,7 +20,7 @@ export function EnhancedMessage({
 }: EnhancedMessageProps) {
   return (
     <div className="prose prose-sm prose-invert max-w-none prose-p:my-1 prose-headings:mb-2 prose-headings:mt-4 first:prose-headings:mt-1">
-      {content ? (
+      {content && content.trim() ? (
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeRaw, rehypeSanitize]}
@@ -95,9 +95,7 @@ export function EnhancedMessage({
         >
           {content}
         </ReactMarkdown>
-      ) : (
-        <div className="text-slate-400 italic">No content</div>
-      )}
+      ) : null}
     </div>
   );
 }
