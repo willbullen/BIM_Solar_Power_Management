@@ -142,6 +142,27 @@ export function IntegratedAIChat() {
     }
   }, [conversations, activeConversation]);
   
+  // Additional effect to trigger data refresh when user authentication state changes
+  useEffect(() => {
+    if (user) {
+      // User is logged in, refresh conversations and other data
+      refetchConversations();
+      
+      // If there are existing messages but user changed, refresh them
+      if (activeConversation?.id) {
+        refetchMessages();
+        refetchFiles();
+      }
+      
+      // If Telegram user info exists, refresh it as well
+      if (telegramUser) {
+        refetchTelegramUser();
+        refetchTelegramMessages();
+      }
+    }
+  }, [user?.id, refetchConversations, refetchMessages, refetchFiles, refetchTelegramUser, 
+      refetchTelegramMessages, activeConversation?.id, telegramUser]);
+  
   // Fetch messages for active conversation
   const { data: messages = [], isLoading: loadingMessages, refetch: refetchMessages } = useQuery<Message[]>({
     queryKey: ['/api/agent/conversations', activeConversation?.id, 'messages'],

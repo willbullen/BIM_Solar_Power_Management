@@ -267,7 +267,8 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
       window._activePollingInstance = {
         subscriptions,
         isConnected,
-        pollingInterval
+        pollingInterval,
+        userId: localStorage.getItem('emporium_user') ? JSON.parse(localStorage.getItem('emporium_user') || '{}')?.id : null
       };
     }
     
