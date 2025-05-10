@@ -206,6 +206,27 @@ export function IntegratedAIChat() {
     }
   }, [telegramMessages, toast]);
   
+  // Authentication refresh effect - Added after all refetch functions are defined
+  useEffect(() => {
+    if (user) {
+      // User is logged in, refresh conversations and other data
+      refetchConversations();
+      
+      // If there are existing messages but user changed, refresh them
+      if (activeConversation?.id) {
+        refetchMessages();
+        refetchFiles();
+      }
+      
+      // If Telegram user info exists, refresh it as well
+      if (telegramUser) {
+        refetchTelegramUser();
+        refetchTelegramMessages();
+      }
+    }
+  }, [user?.id, refetchConversations, refetchMessages, refetchFiles, refetchTelegramUser, 
+      refetchTelegramMessages, activeConversation?.id, telegramUser]);
+  
   // Create a new conversation
   const createConversation = useMutation({
     mutationFn: (title: string) => 
