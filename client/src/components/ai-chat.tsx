@@ -78,6 +78,8 @@ export function AIChat() {
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [newConversationDialog, setNewConversationDialog] = useState(false);
+  const [newConversationTitle, setNewConversationTitle] = useState("New Conversation");
   
   // Fetch conversations
   const { data: conversations, isLoading: loadingConversations, refetch: refetchConversations } = useQuery<Conversation[]>({
@@ -158,6 +160,20 @@ export function AIChat() {
     }
   });
   
+  // Handle creating a new conversation with a dialog
+  const handleCreateNewConversation = () => {
+    setNewConversationTitle("New Conversation");
+    setNewConversationDialog(true);
+  };
+  
+  // Handle submitting the new conversation dialog
+  const handleNewConversationSubmit = () => {
+    if (newConversationTitle.trim()) {
+      createConversation.mutate(newConversationTitle.trim());
+      setNewConversationDialog(false);
+    }
+  };
+  
   // Create new conversation
   const createConversation = useMutation({
     mutationFn: (title: string) => 
@@ -174,7 +190,7 @@ export function AIChat() {
       
       toast({
         title: "Conversation Created",
-        description: "New conversation has been created"
+        description: `"${data.title}" conversation has been created`
       });
     },
     onError: (error: Error) => {
@@ -377,7 +393,7 @@ export function AIChat() {
           <Button 
             size="sm"
             className="mt-2"
-            onClick={() => createConversation.mutate("New Conversation")}
+            onClick={handleCreateNewConversation}
             disabled={createConversation.isPending}
           >
             {createConversation.isPending ? (
