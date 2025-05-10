@@ -127,6 +127,13 @@ export function IntegratedAIChat() {
   // Integrated UI state
   const [activeTab, setActiveTab] = useState<"ai" | "telegram">("ai");
   
+  // Fetch conversations
+  const { data: conversations = [], isLoading: loadingConversations, refetch: refetchConversations } = useQuery<Conversation[]>({
+    queryKey: ['/api/agent/conversations'],
+    retry: false,
+    enabled: !!user // Only fetch conversations when the user is authenticated
+  });
+  
   // Set active conversation when conversations are loaded
   useEffect(() => {
     if (conversations && conversations.length > 0 && !activeConversation) {
@@ -134,13 +141,6 @@ export function IntegratedAIChat() {
       setActiveConversation(conversations[0]);
     }
   }, [conversations, activeConversation]);
-  
-  // Fetch conversations
-  const { data: conversations = [], isLoading: loadingConversations, refetch: refetchConversations } = useQuery<Conversation[]>({
-    queryKey: ['/api/agent/conversations'],
-    retry: false,
-    enabled: !!user // Only fetch conversations when the user is authenticated
-  });
   
   // Fetch messages for active conversation
   const { data: messages = [], isLoading: loadingMessages, refetch: refetchMessages } = useQuery<Message[]>({
@@ -235,10 +235,16 @@ export function IntegratedAIChat() {
   
   // Delete a conversation
   const deleteConversation = useMutation({
-    mutationFn: (conversationId: number) => 
-      apiRequest(`/api/agent/conversations/${conversationId}`, {
+    mutationFn: (conversationId: number) => {
+      // Ensure the user is authenticated
+      if (!user || !user.id) {
+        throw new Error("You must be logged in to delete a conversation");
+      }
+      
+      return apiRequest(`/api/agent/conversations/${conversationId}`, {
         method: 'DELETE'
-      }),
+      });
+    },
     onSuccess: () => {
       setActiveConversation(null);
       refetchConversations();
