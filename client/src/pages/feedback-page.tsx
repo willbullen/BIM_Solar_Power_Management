@@ -271,16 +271,10 @@ export default function FeedbackPage() {
     queryFn: async () => {
       try {
         console.log("Fetching issues from API:", ISSUES_QUERY_KEY);
-        const result = await apiRequest({
-          url: ISSUES_QUERY_KEY,
-          method: "GET",
-          headers: {
-            "X-Auth-User-Id": String(user?.id || 1),
-            "X-Auth-Username": user?.username || "admin",
-          }
-        });
+        // Use the correct format for apiRequest - first parameter is URL, second is method
+        const result = await apiRequest(ISSUES_QUERY_KEY, "GET");
         console.log("Issues API response:", result);
-        return result.data;
+        return result;
       } catch (error) {
         console.error("Error fetching issues:", error);
         throw error;
@@ -323,15 +317,10 @@ export default function FeedbackPage() {
   // Load comments for a specific issue
   const fetchComments = async (issueId: number) => {
     try {
-      const result = await apiRequest({
-        url: `${ISSUE_COMMENTS_QUERY_KEY}/${issueId}/comments`,
-        method: "GET",
-        headers: {
-          "X-Auth-User-Id": String(user?.id || 1),
-          "X-Auth-Username": user?.username || "admin",
-        }
-      });
-      return result.data;
+      // Use the correct format for apiRequest - first parameter is URL, second is method
+      const result = await apiRequest(`${ISSUE_COMMENTS_QUERY_KEY}/${issueId}/comments`, "GET");
+      console.log(`Comments for issue ${issueId}:`, result);
+      return result;
     } catch (error) {
       console.error(`Failed to fetch comments for issue ${issueId}:`, error);
       return [];
