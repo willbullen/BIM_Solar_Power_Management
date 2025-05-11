@@ -996,7 +996,6 @@ export default function FeedbackPage() {
                             </Button>
                           </form>
                         </Form>
-                      </div>
                     </div>
                   </div>
                 ) : (
