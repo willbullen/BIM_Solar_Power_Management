@@ -52,13 +52,16 @@ interface Issue {
   status: IssueStatus;
   priority: IssuePriority;
   type: IssueType;
-  createdAt: Date;
-  updatedAt: Date;
-  createdBy: string;
-  assignedTo: string | null;
+  createdAt: string;
+  updatedAt: string;
+  submitterId: number;
+  assigneeId: number | null;
+  closedAt: string | null;
+  milestone: string | null;
+  labels: string[] | null;
+  linkedTaskId: number | null;
   votes: number;
-  comments: Comment[];
-  tags: string[];
+  comments?: Comment[]; // Comments will be loaded separately
 }
 
 interface Comment {
