@@ -142,8 +142,8 @@ export class SqlExecutor {
    * @returns Boolean indicating if user has permission
    */
   private hasExecutePermission(): boolean {
-    // Only admin users can execute SQL queries
-    return this.options.userRole === 'Admin';
+    // Only admin users can execute SQL queries - case insensitive comparison
+    return this.options.userRole.toLowerCase() === 'admin';
   }
   
   /**

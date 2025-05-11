@@ -224,22 +224,29 @@ export class FunctionRegistry {
    * @returns True if the user has permission, false otherwise
    */
   private static hasExecutePermission(func: schema.AgentFunction, userRole: string): boolean {
+    // Normalize roles for case-insensitive comparison
+    const normalizedUserRole = userRole.toLowerCase();
+    const normalizedAccessLevel = func.accessLevel.toLowerCase();
+    
     // Admin can execute any function
-    if (userRole === "admin") {
+    if (normalizedUserRole === "admin") {
       return true;
     }
     
     // Check function access level
-    switch (func.accessLevel) {
+    switch (normalizedAccessLevel) {
       case "public":
         // Public functions can be executed by any role
         return true;
       case "admin":
         // Admin-only functions
-        return userRole === "admin";
+        return normalizedUserRole === "admin";
       case "manager":
         // Manager functions can be executed by managers and admins
-        return userRole === "manager" || userRole === "admin";
+        return normalizedUserRole === "manager" || normalizedUserRole === "admin";
+      case "user":
+        // User functions can be executed by users, managers and admins
+        return normalizedUserRole === "user" || normalizedUserRole === "manager" || normalizedUserRole === "admin";
       default:
         return false;
     }

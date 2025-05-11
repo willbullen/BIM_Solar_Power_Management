@@ -213,6 +213,9 @@ export class DbUtils {
     userRole: string,
     operation: "read" | "write" | "delete"
   ): boolean {
+    // Normalize user role for case-insensitive comparison
+    const normalizedRole = userRole.toLowerCase();
+    
     // Define role-based access control rules
     const rolePermissions: Record<string, Record<string, string[]>> = {
       "admin": {
@@ -234,7 +237,7 @@ export class DbUtils {
     };
     
     // Get permissions for the specified role (default to empty arrays if not found)
-    const permissions = rolePermissions[userRole] || {
+    const permissions = rolePermissions[normalizedRole] || {
       "read": [],
       "write": [],
       "delete": []
