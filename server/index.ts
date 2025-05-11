@@ -90,7 +90,7 @@ app.use((req, res, next) => {
   
   // Log the environment for debugging
   console.log('Environment variables:');
-  console.log(`PORT: Setting to 5000 for Replit compatibility`);
+  console.log(`PORT: ${port} (Using standard port for Replit compatibility)`);
   console.log(`NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
   console.log(`REPL_ID: ${process.env.REPL_ID || 'not set'}`);
   console.log(`REPL_OWNER: ${process.env.REPL_OWNER || 'not set'}`);
@@ -104,11 +104,34 @@ app.use((req, res, next) => {
     });
   });
   
-  server.listen({
-    port: Number(port),
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  // Try to start server on the primary port, fall back to alternate if primary is in use
+  const startServer = (primaryPort: number, fallbackPort: number) => {
+    server.listen({
+      port: primaryPort,
+      host: "0.0.0.0",
+      reusePort: true,
+    }, () => {
+      log(`serving on port ${primaryPort}`);
+    }).on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${primaryPort} is already in use, trying alternate port ${fallbackPort}`);
+        
+        // Attempt to use fallback port instead
+        server.listen({
+          port: fallbackPort,
+          host: "0.0.0.0",
+          reusePort: true,
+        }, () => {
+          log(`serving on alternate port ${fallbackPort}`);
+        }).on('error', (fallbackErr: NodeJS.ErrnoException) => {
+          console.error(`Failed to bind to alternate port ${fallbackPort}: ${fallbackErr.message}`);
+        });
+      } else {
+        console.error(`Failed to start server: ${err.message}`);
+      }
+    });
+  };
+  
+  // Start server with primary port 5000 and fallback port 5001
+  startServer(5000, 5001);
 })();

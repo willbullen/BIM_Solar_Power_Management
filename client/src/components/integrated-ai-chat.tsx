@@ -227,10 +227,11 @@ export function IntegratedAIChat() {
     onConnect: () => {
       console.log("WebSocket connected - AI Chat ready for real-time updates");
       
+      // Show a more subtle toast with shorter duration
       toast({
         title: "Connected",
         description: "Real-time chat connection established",
-        duration: 3000
+        duration: 1500
       });
     },
     onDisconnect: () => {

@@ -21,6 +21,7 @@ export interface AgentWebSocketOptions {
 // Singleton pattern to ensure only one WebSocket connection
 let socketInstance: WebSocket | null = null;
 let authenticated = false;
+let connectionReported = false; // Track if connection has been reported to user
 const subscribers = new Set<(message: AgentWebSocketMessage) => void>();
 
 export function useAgentWebSocket(options: AgentWebSocketOptions = {}) {
@@ -41,7 +42,11 @@ export function useAgentWebSocket(options: AgentWebSocketOptions = {}) {
     if (socketInstance?.readyState === WebSocket.OPEN) {
       console.log('WebSocket connection already established, reusing');
       setIsConnected(true);
-      if (options.onConnect) options.onConnect();
+      // Only call onConnect if we haven't reported the connection before
+      if (options.onConnect && !connectionReported) {
+        options.onConnect();
+        connectionReported = true;
+      }
       return;
     }
     
@@ -97,13 +102,18 @@ export function useAgentWebSocket(options: AgentWebSocketOptions = {}) {
         socketInstance?.send(JSON.stringify(subscribeMessage));
       });
       
-      if (options.onConnect) options.onConnect();
+      // Only report connection if it hasn't been reported before
+      if (options.onConnect && !connectionReported) {
+        options.onConnect();
+        connectionReported = true;
+      }
     };
     
     socketInstance.onclose = (event) => {
       console.log(`WebSocket closed: ${event.code} - ${event.reason}`);
       setIsConnected(false);
       authenticated = false;
+      connectionReported = false; // Reset the connection reported flag
       
       if (options.onDisconnect) options.onDisconnect();
       
