@@ -863,7 +863,8 @@ export default function FeedbackPage() {
                         <p>{selectedIssue.description}</p>
                       </div>
                       
-                      {selectedIssue.labels && selectedIssue.labels.length > 0 && (
+                      {/* Check if labels exist and is an array before trying to access length */}
+                      {selectedIssue.labels && Array.isArray(selectedIssue.labels) && selectedIssue.labels.length > 0 && (
                         <div className="flex items-center flex-wrap gap-2">
                           <Tag className="h-3.5 w-3.5 text-muted-foreground" />
                           {selectedIssue.labels.map((tag, index) => (
