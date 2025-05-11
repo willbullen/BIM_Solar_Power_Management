@@ -19,6 +19,7 @@ export async function registerDatabaseFunctions() {
     name: 'queryTable',
     description: 'Query data from a database table with optional filters and sorting',
     module: 'database',
+    return_type: 'array',
     accessLevel: 'User',
     parameters: {
       type: 'object',
@@ -103,6 +104,7 @@ export async function registerDatabaseFunctions() {
     name: 'countRecords',
     description: 'Count records in a database table with optional filters',
     module: 'database',
+    return_type: 'object',
     accessLevel: 'User',
     parameters: {
       type: 'object',
@@ -164,6 +166,7 @@ export async function registerDatabaseFunctions() {
     name: 'getDatabaseSchemaInfo',
     description: 'Get information about the database schema including tables and their columns',
     module: 'database',
+    return_type: 'object',
     accessLevel: 'User',
     parameters: {
       type: 'object',
@@ -207,6 +210,7 @@ export async function registerDatabaseFunctions() {
     name: 'aggregateData',
     description: 'Perform aggregation operations on table data (sum, avg, min, max, count)',
     module: 'database',
+    return_type: 'object',
     accessLevel: 'User',
     parameters: {
       type: 'object',

@@ -17,6 +17,7 @@ export async function registerSqlFunctions() {
     name: 'executeSqlQuery',
     description: 'Execute a SQL query with parameterized values for security',
     module: 'database',
+    return_type: 'object',
     accessLevel: 'Admin', // Only admins can execute raw SQL
     parameters: {
       type: 'object',
@@ -63,6 +64,8 @@ export async function registerSqlFunctions() {
   await FunctionRegistry.registerFunction({
     name: 'getDatabaseInfo',
     description: 'Get information about database tables and columns',
+    module: 'database',
+    return_type: 'array',
     accessLevel: 'User',
     parameters: {
       type: 'object',
@@ -106,6 +109,7 @@ export async function registerSqlFunctions() {
   await FunctionRegistry.registerFunction({
     name: 'analyzeTableData',
     description: 'Analyze table data with common statistical queries',
+    module: 'database',
     accessLevel: 'User',
     parameters: {
       type: 'object',
