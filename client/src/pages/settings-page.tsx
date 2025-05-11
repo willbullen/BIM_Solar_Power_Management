@@ -541,6 +541,10 @@ export default function SettingsPage() {
             <MessageSquare className="h-4 w-4 mr-2" />
             Integrations
           </TabsTrigger>
+          <TabsTrigger value="langchain">
+            <Zap className="h-4 w-4 mr-2" />
+            LangChain
+          </TabsTrigger>
           <TabsTrigger value="developer">
             <BugPlay className="h-4 w-4 mr-2" />
             Advanced
@@ -1583,6 +1587,306 @@ export default function SettingsPage() {
                   </div>
                 )}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* LangChain Agent and Tools Configuration */}
+        <TabsContent value="langchain">
+          <Card>
+            <CardHeader>
+              <CardTitle>LangChain Agent Configuration</CardTitle>
+              <CardDescription>
+                Configure LangChain agents, tools, and prompt templates
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="agents" className="mt-2">
+                <TabsList className="grid grid-cols-4 mb-6">
+                  <TabsTrigger value="agents">Agents</TabsTrigger>
+                  <TabsTrigger value="tools">Tools</TabsTrigger>
+                  <TabsTrigger value="prompts">Prompt Templates</TabsTrigger>
+                  <TabsTrigger value="runs">Execution Runs</TabsTrigger>
+                </TabsList>
+                
+                {/* Agents Tab */}
+                <TabsContent value="agents">
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-medium">Agent Models</h3>
+                      <Button variant="outline" className="flex items-center gap-2">
+                        <Zap className="h-4 w-4" />
+                        Create New Agent
+                      </Button>
+                    </div>
+                    
+                    {/* Agent List */}
+                    <div className="grid gap-5">
+                      {/* Default agent card */}
+                      <Card className="overflow-hidden">
+                        <CardHeader className="bg-gradient-to-r from-blue-950 to-indigo-950 pb-3">
+                          <div className="flex justify-between items-center">
+                            <CardTitle className="flex items-center gap-2 text-white">
+                              <Zap className="h-5 w-5 text-blue-400" />
+                              Main Assistant Agent
+                            </CardTitle>
+                            <Badge variant="outline" className="bg-blue-950 text-blue-300 border-blue-700">Default</Badge>
+                          </div>
+                          <CardDescription className="text-slate-300">
+                            Primary agent for user interactions using GPT-4o and custom tools
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-5 bg-gradient-to-b from-slate-950 to-slate-900">
+                          <div className="space-y-4">
+                            <div className="grid sm:grid-cols-2 gap-4">
+                              <div className="rounded-md border p-3 bg-slate-900">
+                                <div className="flex items-center justify-between">
+                                  <div className="font-medium text-sm text-slate-400">Model</div>
+                                  <div className="text-sm font-mono text-white bg-blue-950 px-2 py-0.5 rounded-full">
+                                    gpt-4o
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="rounded-md border p-3 bg-slate-900">
+                                <div className="flex items-center justify-between">
+                                  <div className="font-medium text-sm text-slate-400">Temperature</div>
+                                  <div className="text-sm font-mono text-white">0.7</div>
+                                </div>
+                              </div>
+                              <div className="rounded-md border p-3 bg-slate-900">
+                                <div className="flex items-center justify-between">
+                                  <div className="font-medium text-sm text-slate-400">Tools</div>
+                                  <div className="text-sm font-mono text-white">2 active</div>
+                                </div>
+                              </div>
+                              <div className="rounded-md border p-3 bg-slate-900">
+                                <div className="flex items-center justify-between">
+                                  <div className="font-medium text-sm text-slate-400">Status</div>
+                                  <Badge variant="outline" className="bg-green-950 text-green-400 border-green-800">
+                                    Active
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex justify-end gap-2 mt-4">
+                              <Button variant="outline" size="sm" className="text-slate-400">
+                                View Details
+                              </Button>
+                              <Button variant="outline" size="sm" className="text-blue-400">
+                                Edit
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                {/* Tools Tab */}
+                <TabsContent value="tools">
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-medium">Available Tools</h3>
+                      <Button variant="outline" className="flex items-center gap-2">
+                        <Zap className="h-4 w-4" />
+                        Create New Tool
+                      </Button>
+                    </div>
+                    
+                    {/* Tools List */}
+                    <div className="grid gap-5">
+                      {/* ReadFromDB Tool */}
+                      <Card className="overflow-hidden">
+                        <CardHeader className="bg-gradient-to-r from-indigo-950 to-purple-950 pb-3">
+                          <div className="flex justify-between items-center">
+                            <CardTitle className="flex items-center gap-2 text-white">
+                              <div className="bg-indigo-900 w-8 h-8 flex items-center justify-center rounded-md text-indigo-300">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                                  <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                                </svg>
+                              </div>
+                              ReadFromDB
+                            </CardTitle>
+                            <Badge variant="outline" className="bg-indigo-950 text-indigo-300 border-indigo-700">Built-in</Badge>
+                          </div>
+                          <CardDescription className="text-slate-300">
+                            Parameterized database queries with SQL injection protection
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-5 bg-gradient-to-b from-slate-950 to-slate-900">
+                          <div className="space-y-4">
+                            <div className="grid gap-4">
+                              <div className="rounded-md border p-3 bg-slate-900">
+                                <div className="font-medium text-sm text-slate-400 mb-1">Tool Type</div>
+                                <div className="text-sm font-mono text-white">Custom Tool (Database)</div>
+                              </div>
+                              <div className="rounded-md border p-3 bg-slate-900">
+                                <div className="font-medium text-sm text-slate-400 mb-1">Access</div>
+                                <div className="text-sm text-white">23 tables available</div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex justify-end gap-2 mt-4">
+                              <Button variant="outline" size="sm" className="text-slate-400">
+                                View Schema
+                              </Button>
+                              <Button variant="outline" size="sm" className="text-blue-400">
+                                Configure
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      {/* CompileReport Tool */}
+                      <Card className="overflow-hidden">
+                        <CardHeader className="bg-gradient-to-r from-emerald-950 to-teal-950 pb-3">
+                          <div className="flex justify-between items-center">
+                            <CardTitle className="flex items-center gap-2 text-white">
+                              <div className="bg-emerald-900 w-8 h-8 flex items-center justify-center rounded-md text-emerald-300">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                  <path d="M14 2v6h6"></path>
+                                  <path d="M16 13H8"></path>
+                                  <path d="M16 17H8"></path>
+                                  <path d="M10 9H8"></path>
+                                </svg>
+                              </div>
+                              CompileReport
+                            </CardTitle>
+                            <Badge variant="outline" className="bg-emerald-950 text-emerald-300 border-emerald-700">Built-in</Badge>
+                          </div>
+                          <CardDescription className="text-slate-300">
+                            Generate Markdown and PDF reports from structured data
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-5 bg-gradient-to-b from-slate-950 to-slate-900">
+                          <div className="space-y-4">
+                            <div className="grid gap-4">
+                              <div className="rounded-md border p-3 bg-slate-900">
+                                <div className="font-medium text-sm text-slate-400 mb-1">Tool Type</div>
+                                <div className="text-sm font-mono text-white">Custom Tool (Reports)</div>
+                              </div>
+                              <div className="rounded-md border p-3 bg-slate-900">
+                                <div className="font-medium text-sm text-slate-400 mb-1">Output Formats</div>
+                                <div className="text-sm text-white">Markdown, PDF</div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex justify-end gap-2 mt-4">
+                              <Button variant="outline" size="sm" className="text-slate-400">
+                                View Schema
+                              </Button>
+                              <Button variant="outline" size="sm" className="text-blue-400">
+                                Configure
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                {/* Prompt Templates Tab */}
+                <TabsContent value="prompts">
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-medium">Prompt Templates</h3>
+                      <Button variant="outline" className="flex items-center gap-2">
+                        <Zap className="h-4 w-4" />
+                        Create Template
+                      </Button>
+                    </div>
+                    
+                    <div className="rounded-md border p-6 bg-slate-950">
+                      <div className="text-center py-8 space-y-3">
+                        <div className="mx-auto h-12 w-12 rounded-full bg-slate-900 flex items-center justify-center mb-3">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-slate-500">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                          </svg>
+                        </div>
+                        <h3 className="text-lg font-medium text-slate-300">No Prompt Templates</h3>
+                        <p className="text-sm text-slate-500 max-w-md mx-auto">
+                          Create prompt templates to standardize AI interactions and ensure consistent responses
+                        </p>
+                        <Button variant="outline" className="mt-2">Create Your First Template</Button>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                {/* Runs Tab */}
+                <TabsContent value="runs">
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-medium">Execution Runs</h3>
+                    </div>
+                    
+                    <div className="rounded-md border overflow-hidden">
+                      <div className="p-4 bg-slate-900 border-b border-slate-700">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-medium">Recent Runs</h4>
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" className="h-8">
+                              Refresh
+                            </Button>
+                            <Select defaultValue="all">
+                              <SelectTrigger className="w-[160px] h-8">
+                                <SelectValue placeholder="Status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
+                                <SelectItem value="running">Running</SelectItem>
+                                <SelectItem value="error">Error</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="p-0">
+                        <div className="relative overflow-x-auto">
+                          <table className="w-full text-sm text-left text-slate-300">
+                            <thead className="text-xs uppercase bg-slate-900 text-slate-400">
+                              <tr>
+                                <th scope="col" className="px-4 py-3">ID</th>
+                                <th scope="col" className="px-4 py-3">Agent</th>
+                                <th scope="col" className="px-4 py-3">Started</th>
+                                <th scope="col" className="px-4 py-3">Duration</th>
+                                <th scope="col" className="px-4 py-3">Status</th>
+                                <th scope="col" className="px-4 py-3">Tools Used</th>
+                                <th scope="col" className="px-4 py-3">Tokens</th>
+                                <th scope="col" className="px-4 py-3"></th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr className="border-b border-slate-800">
+                                <td colSpan={8} className="px-4 py-10 text-center">
+                                  <div className="flex flex-col items-center justify-center gap-2">
+                                    <div className="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center mb-1">
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-slate-500">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                                      </svg>
+                                    </div>
+                                    <p className="text-slate-500">No execution runs found</p>
+                                    <p className="text-xs text-slate-600">Runs will be tracked when you interact with the AI agent</p>
+                                  </div>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </TabsContent>

@@ -19,6 +19,7 @@ import { registerAgentRoutes } from './agent-routes';
 import { registerNotificationRoutes } from './agent-notification-routes';
 import { registerTelegramRoutes } from './telegram-routes';
 import { registerFileRoutes } from './file-routes';
+import { registerLangChainRoutes } from './langchain-routes';
 import mcpRoutes from './mcp-routes';
 import { DatabaseService } from './utils/database-service';
 import { WebSocketServer, WebSocket } from 'ws';
@@ -1489,6 +1490,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register agent routes for the AI capabilities
   registerAgentRoutes(app);
+  
+  // Register LangChain powered AI Agent routes with custom tools
+  registerLangChainRoutes(app);
   
   // Register agent notification routes for API-based notifications
   registerNotificationRoutes(app);

@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { migrate as migrateTelegram } from "./migrate-telegram";
+import { migrate as migrateLangChain } from "./migrate-langchain";
 import cors from 'cors';
 
 const app = express();
@@ -61,6 +62,15 @@ app.use((req, res, next) => {
     // Run Telegram database migration
     await migrateTelegram();
     console.log('Telegram database migration completed successfully');
+    
+    // Run LangChain database migration 
+    try {
+      await migrateLangChain();
+      console.log('LangChain database migration completed successfully');
+    } catch (langChainError) {
+      console.error('Error during LangChain database migration:', langChainError);
+      // Continue with server startup even if LangChain migration fails
+    }
   } catch (error) {
     console.error('Error during Telegram database migration:', error);
     // Continue with server startup even if migration fails

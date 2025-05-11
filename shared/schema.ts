@@ -792,3 +792,211 @@ export const agentConversationsRelationsWithFiles = relations(agentConversations
 }));
 
 // Update user relations to include AI agent related entities
+
+// LangChain Tables
+
+// LangChain Agents table - Configuration for different LangChain agents
+export const langchainAgents = pgTable("langchain_agents", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  modelName: text("model_name").notNull().default("gpt-4o"), // Default to most recent model
+  temperature: real("temperature").notNull().default(0.7),
+  maxTokens: integer("max_tokens").default(4000),
+  streaming: boolean("streaming").default(true),
+  systemPrompt: text("system_prompt"),
+  maxIterations: integer("max_iterations").default(5),
+  verbose: boolean("verbose").default(false),
+  enabled: boolean("enabled").default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+  metadata: jsonb("metadata"),
+});
+
+export const insertLangchainAgentSchema = createInsertSchema(langchainAgents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertLangchainAgent = z.infer<typeof insertLangchainAgentSchema>;
+export type LangchainAgent = typeof langchainAgents.$inferSelect;
+
+// LangChain Tools table - Custom tools available to LangChain agents
+export const langchainTools = pgTable("langchain_tools", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description").notNull(),
+  toolType: text("tool_type").notNull(), // 'custom', 'readFromDB', 'compileReport', etc.
+  schema: jsonb("schema"), // JSON schema describing parameters
+  implementation: text("implementation"), // Code or reference to implementation
+  enabled: boolean("enabled").default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+  isBuiltIn: boolean("is_built_in").default(false),
+  metadata: jsonb("metadata"),
+});
+
+export const insertLangchainToolSchema = createInsertSchema(langchainTools).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertLangchainTool = z.infer<typeof insertLangchainToolSchema>;
+export type LangchainTool = typeof langchainTools.$inferSelect;
+
+// LangChain Agent-Tool associations
+export const langchainAgentTools = pgTable("langchain_agent_tools", {
+  id: serial("id").primaryKey(),
+  agentId: integer("agent_id").notNull().references(() => langchainAgents.id),
+  toolId: integer("tool_id").notNull().references(() => langchainTools.id),
+  priority: integer("priority").default(0), // Order of tool preference
+});
+
+export const insertLangchainAgentToolSchema = createInsertSchema(langchainAgentTools).omit({
+  id: true,
+});
+
+export type InsertLangchainAgentTool = z.infer<typeof insertLangchainAgentToolSchema>;
+export type LangchainAgentTool = typeof langchainAgentTools.$inferSelect;
+
+// LangChain Prompt Templates
+export const langchainPromptTemplates = pgTable("langchain_prompt_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  template: text("template").notNull(),
+  templateType: text("template_type").notNull().default("string"), // string, chat, etc.
+  variables: jsonb("variables"), // JSON array of variable names
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+});
+
+export const insertLangchainPromptTemplateSchema = createInsertSchema(langchainPromptTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertLangchainPromptTemplate = z.infer<typeof insertLangchainPromptTemplateSchema>;
+export type LangchainPromptTemplate = typeof langchainPromptTemplates.$inferSelect;
+
+// LangChain Runs - For tracking execution of agents (like LangSmith)
+export const langchainRuns = pgTable("langchain_runs", {
+  id: serial("id").primaryKey(),
+  runId: text("run_id").notNull().unique(), // Unique ID for the run
+  agentId: integer("agent_id").references(() => langchainAgents.id),
+  userId: integer("user_id").references(() => users.id),
+  conversationId: integer("conversation_id").references(() => agentConversations.id),
+  startTime: timestamp("start_time").notNull().defaultNow(),
+  endTime: timestamp("end_time"),
+  status: text("status").notNull().default("running"), // running, completed, error, cancelled
+  input: jsonb("input"), // Input to the run
+  output: jsonb("output"), // Output of the run
+  error: text("error"), // Error message if any
+  toolCalls: jsonb("tool_calls"), // Array of tool calls made
+  tokens: integer("tokens"), // Total tokens used
+  cost: real("cost"), // Estimated cost
+  metadata: jsonb("metadata"), // Additional metadata
+  parentRunId: text("parent_run_id"), // For nested runs/chains
+});
+
+export const insertLangchainRunSchema = createInsertSchema(langchainRuns).omit({
+  id: true,
+  endTime: true,
+});
+
+export type InsertLangchainRun = z.infer<typeof insertLangchainRunSchema>;
+export type LangchainRun = typeof langchainRuns.$inferSelect;
+
+// LangChain Tool Executions - Details of each tool call
+export const langchainToolExecutions = pgTable("langchain_tool_executions", {
+  id: serial("id").primaryKey(),
+  runId: text("run_id").notNull().references(() => langchainRuns.runId),
+  toolId: integer("tool_id").references(() => langchainTools.id),
+  toolName: text("tool_name").notNull(), // Sometimes we use built-in tools not in our DB
+  startTime: timestamp("start_time").notNull().defaultNow(),
+  endTime: timestamp("end_time"),
+  status: text("status").notNull().default("running"), // running, completed, error
+  input: jsonb("input"), // Input parameters to the tool
+  output: jsonb("output"), // Output from the tool
+  error: text("error"), // Error message if any
+  executionOrder: integer("execution_order"), // Order in which tools were called
+});
+
+export const insertLangchainToolExecutionSchema = createInsertSchema(langchainToolExecutions).omit({
+  id: true,
+  endTime: true,
+});
+
+export type InsertLangchainToolExecution = z.infer<typeof insertLangchainToolExecutionSchema>;
+export type LangchainToolExecution = typeof langchainToolExecutions.$inferSelect;
+
+// Define the relationships
+
+export const langchainAgentsRelations = relations(langchainAgents, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [langchainAgents.createdBy],
+    references: [users.id],
+  }),
+  tools: many(langchainAgentTools),
+  runs: many(langchainRuns),
+}));
+
+export const langchainToolsRelations = relations(langchainTools, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [langchainTools.createdBy],
+    references: [users.id],
+  }),
+  agents: many(langchainAgentTools),
+  executions: many(langchainToolExecutions),
+}));
+
+export const langchainPromptTemplatesRelations = relations(langchainPromptTemplates, ({ one }) => ({
+  creator: one(users, {
+    fields: [langchainPromptTemplates.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const langchainAgentToolsRelations = relations(langchainAgentTools, ({ one }) => ({
+  agent: one(langchainAgents, {
+    fields: [langchainAgentTools.agentId],
+    references: [langchainAgents.id],
+  }),
+  tool: one(langchainTools, {
+    fields: [langchainAgentTools.toolId],
+    references: [langchainTools.id],
+  }),
+}));
+
+export const langchainRunsRelations = relations(langchainRuns, ({ one, many }) => ({
+  agent: one(langchainAgents, {
+    fields: [langchainRuns.agentId],
+    references: [langchainAgents.id],
+  }),
+  user: one(users, {
+    fields: [langchainRuns.userId],
+    references: [users.id],
+  }),
+  conversation: one(agentConversations, {
+    fields: [langchainRuns.conversationId],
+    references: [agentConversations.id],
+  }),
+  toolExecutions: many(langchainToolExecutions),
+}));
+
+export const langchainToolExecutionsRelations = relations(langchainToolExecutions, ({ one }) => ({
+  run: one(langchainRuns, {
+    fields: [langchainToolExecutions.runId],
+    references: [langchainRuns.runId],
+  }),
+  tool: one(langchainTools, {
+    fields: [langchainToolExecutions.toolId],
+    references: [langchainTools.id],
+  }),
+}));
