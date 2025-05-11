@@ -513,6 +513,7 @@ export class DbAgentFunctions {
       description: 'Aggregate time series data by time intervals',
       module: 'database',
       returnType: 'array',
+      functionCode: 'return DatabaseService.AgentFunctions.timeSeriesAggregate(params, context)',
       accessLevel: 'User', // Will be compared case-insensitively
       parameters: {
         type: 'object',
@@ -589,6 +590,7 @@ export class DbAgentFunctions {
       description: 'Analyze correlation between two numeric columns',
       module: 'database',
       returnType: 'object',
+      functionCode: 'return DatabaseService.AgentFunctions.analyzeCorrelation(params)',
       accessLevel: 'User', // Will be compared case-insensitively
       parameters: {
         type: 'object',
@@ -612,10 +614,6 @@ export class DbAgentFunctions {
           }
         },
         required: ['tableName', 'column1', 'column2']
-      },
-      handler: async (args: any) => {
-        const { tableName, column1, column2, filters = {} } = args;
-        return await DbQueryTools.correlationAnalysis(tableName, column1, column2, filters);
       }
     });
 
@@ -625,6 +623,7 @@ export class DbAgentFunctions {
       description: 'Get a list of all equipment in the system',
       module: 'database',
       returnType: 'array',
+      functionCode: 'return DatabaseService.AgentFunctions.getEquipmentList(params)',
       accessLevel: 'User', // Will be compared case-insensitively
       parameters: {
         type: 'object',
@@ -634,16 +633,6 @@ export class DbAgentFunctions {
             description: 'Optional filter for active equipment only'
           }
         }
-      },
-      handler: async (args: any) => {
-        const { active } = args;
-        const filters: Record<string, any> = {};
-        
-        if (active !== undefined) {
-          filters.active = active;
-        }
-        
-        return await DbCore.select('equipment', filters);
       }
     });
 
@@ -653,20 +642,11 @@ export class DbAgentFunctions {
       description: 'Get the most recent power monitoring data',
       module: 'database',
       returnType: 'object',
+      functionCode: 'return DatabaseService.AgentFunctions.getLatestPowerData()',
       accessLevel: 'User', // Will be compared case-insensitively
       parameters: {
         type: 'object',
         properties: {}
-      },
-      handler: async () => {
-        const query = `
-          SELECT * FROM power_data 
-          ORDER BY timestamp DESC 
-          LIMIT 1
-        `;
-        
-        const results = await DbCore.executeRaw(query);
-        return results.length > 0 ? results[0] : null;
       }
     });
 
@@ -676,6 +656,7 @@ export class DbAgentFunctions {
       description: 'Execute a SQL query with parameterized values for security',
       module: 'database',
       returnType: 'object',
+      functionCode: 'return DatabaseService.AgentFunctions.executeSqlQuery(params, context)',
       accessLevel: 'admin', // Will be compared case-insensitively 
       parameters: {
         type: 'object',
@@ -703,46 +684,6 @@ export class DbAgentFunctions {
           }
         },
         required: ['query']
-      },
-      handler: async (args: any, userRole?: string) => {
-        const { query, parameters = [], options = {} } = args;
-        
-        // Verify user role - case insensitive comparison
-        const normalizedUserRole = userRole?.toLowerCase() || '';
-        if (normalizedUserRole !== 'admin') {
-          throw new Error('Permission denied: Admin role required for SQL execution');
-        }
-        
-        // Verify query doesn't contain disallowed statements
-        const disallowedPatterns = [
-          /\bDROP\s+DATABASE\b/i,
-          /\bDROP\s+SCHEMA\b/i,
-          /\bTRUNCATE\s+DATABASE\b/i,
-          /\bALTER\s+DATABASE\b/i
-        ];
-        
-        for (const pattern of disallowedPatterns) {
-          if (pattern.test(query)) {
-            throw new Error('Prohibited SQL operation: This query contains disallowed statements');
-          }
-        }
-        
-        // Execute the query with parameters
-        const executor = new SqlExecutor();
-        
-        let result;
-        if (options.useTransaction) {
-          result = await executor.executeInTransaction(query, parameters);
-        } else {
-          result = await executor.execute(query, parameters);
-        }
-        
-        return {
-          success: true,
-          rows: result.rows,
-          rowCount: result.rowCount,
-          command: result.command
-        };
       }
     });
 

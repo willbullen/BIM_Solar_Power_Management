@@ -20,8 +20,7 @@ import { registerNotificationRoutes } from './agent-notification-routes';
 import { registerTelegramRoutes } from './telegram-routes';
 import { registerFileRoutes } from './file-routes';
 import mcpRoutes from './mcp-routes';
-import { registerDatabaseFunctions } from './utils/db-agent-functions';
-import { registerSqlFunctions } from './utils/sql-agent-functions';
+import { DatabaseService } from './utils/database-service';
 import { WebSocketServer, WebSocket } from 'ws';
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1497,8 +1496,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register database query and analysis functions for AI agent
   try {
     console.log("Registering AI Agent database functions...");
-    await registerDatabaseFunctions();
-    await registerSqlFunctions();
+    // Register AI Agent database functions using consolidated DatabaseService
+    await DatabaseService.AgentFunctions.registerDatabaseFunctions();
+    // Note: registerSqlFunctions is now part of registerDatabaseFunctions
     console.log("AI Agent database functions registered successfully");
   } catch (error) {
     console.error("Error registering AI Agent database functions:", error);
