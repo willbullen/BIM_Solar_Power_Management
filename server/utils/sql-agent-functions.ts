@@ -18,7 +18,7 @@ export async function registerSqlFunctions() {
     description: 'Execute a SQL query with parameterized values for security',
     module: 'database',
     returnType: 'object',
-    accessLevel: 'Admin', // Only admins can execute raw SQL
+    accessLevel: 'admin', // Only admins can execute raw SQL - use lowercase for consistency
     parameters: {
       type: 'object',
       properties: {
@@ -45,7 +45,7 @@ export async function registerSqlFunctions() {
       
       // Create SQL executor with user role for permission checking
       const executor = new SqlExecutor({
-        userRole: context.userRole || 'User',
+        userRole: (context.userRole || 'user').toLowerCase(), // Normalize role to lowercase
         allowModification,
         allowSchemaModification: false // Never allow schema modification
       });

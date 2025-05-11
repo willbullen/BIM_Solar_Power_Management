@@ -430,7 +430,9 @@ export function registerAgentRoutes(app: Express) {
   app.get('/api/agent/functions', requireAuth, async (req: Request, res: Response) => {
     try {
       const userRole = req.session!.userRole || 'public';
-      const accessLevel = userRole === 'Admin' ? 'admin' : userRole === 'Operator' ? 'restricted' : 'public';
+      // Normalize role to lowercase for consistent comparison
+      const userRoleLower = userRole.toLowerCase();
+      const accessLevel = userRoleLower === 'admin' ? 'admin' : userRoleLower === 'operator' ? 'restricted' : 'public';
       
       const functions = await agentService.getAvailableFunctions(accessLevel);
       
