@@ -247,7 +247,12 @@ export class FunctionRegistry {
       case "user":
         // User functions can be executed by users, managers and admins
         return normalizedUserRole === "user" || normalizedUserRole === "manager" || normalizedUserRole === "admin";
+      case "restricted":
+        // Restricted functions can only be executed by admins and managers
+        return normalizedUserRole === "admin" || normalizedUserRole === "manager";
       default:
+        // Log unexpected access level for debugging
+        console.warn(`Unknown function access level: ${func.accessLevel} for function ${func.name}`);
         return false;
     }
   }
