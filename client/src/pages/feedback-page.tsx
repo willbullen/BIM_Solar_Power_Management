@@ -444,22 +444,15 @@ export default function FeedbackPage() {
   // Create issue mutation
   const createIssueMutation = useMutation({
     mutationFn: (data: z.infer<typeof feedbackSchema>) => {
-      return apiRequest({
-        url: ISSUES_QUERY_KEY,
-        method: "POST",
-        data: {
-          title: data.title,
-          description: data.description,
-          status: "open",
-          priority: data.priority,
-          type: data.type,
-          submitterId: user?.id || 1, // Default to admin if not logged in
-          labels: data.labels ? data.labels.split(",").map(tag => tag.trim()) : [],
-        },
-        headers: {
-          "X-Auth-User-Id": String(user?.id || 1),
-          "X-Auth-Username": user?.username || "admin",
-        }
+      // Use the correct format for apiRequest - first parameter is URL, second is method, third is data
+      return apiRequest(ISSUES_QUERY_KEY, "POST", {
+        title: data.title,
+        description: data.description,
+        status: "open",
+        priority: data.priority,
+        type: data.type,
+        submitterId: user?.id || 1, // Default to admin if not logged in
+        labels: data.labels ? data.labels.split(",").map(tag => tag.trim()) : [],
       });
     },
     onSuccess: () => {
@@ -498,17 +491,10 @@ export default function FeedbackPage() {
     mutationFn: (data: z.infer<typeof commentSchema>) => {
       if (!selectedIssueId) throw new Error("No issue selected");
       
-      return apiRequest({
-        url: `${ISSUE_COMMENTS_QUERY_KEY}/${selectedIssueId}`,
-        method: "POST",
-        data: {
-          content: data.content,
-          userId: user?.id || 1 // Default to admin if not logged in
-        },
-        headers: {
-          "X-Auth-User-Id": String(user?.id || 1),
-          "X-Auth-Username": user?.username || "admin",
-        }
+      // Use the correct format for apiRequest - first parameter is URL, second is method, third is data
+      return apiRequest(`${ISSUE_COMMENTS_QUERY_KEY}/${selectedIssueId}`, "POST", {
+        content: data.content,
+        userId: user?.id || 1 // Default to admin if not logged in
       });
     },
     onSuccess: () => {
@@ -543,16 +529,9 @@ export default function FeedbackPage() {
   // Vote mutation
   const voteIssueMutation = useMutation({
     mutationFn: (issueId: number) => {
-      return apiRequest({
-        url: `${ISSUES_QUERY_KEY}/${issueId}/vote`,
-        method: "POST",
-        data: {
-          userId: user?.id || 1 // Default to admin if not logged in
-        },
-        headers: {
-          "X-Auth-User-Id": String(user?.id || 1),
-          "X-Auth-Username": user?.username || "admin",
-        }
+      // Use the correct format for apiRequest - first parameter is URL, second is method, third is data
+      return apiRequest(`${ISSUES_QUERY_KEY}/${issueId}/vote`, "POST", {
+        userId: user?.id || 1 // Default to admin if not logged in
       });
     },
     onSuccess: () => {
