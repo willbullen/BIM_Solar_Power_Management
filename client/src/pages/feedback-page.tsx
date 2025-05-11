@@ -265,6 +265,17 @@ export default function FeedbackPage() {
   // Fetch issues from API
   const { data: issues = [], isLoading: issuesLoading, error: issuesError } = useQuery<Issue[]>({
     queryKey: [ISSUES_QUERY_KEY],
+    queryFn: async () => {
+      const result = await apiRequest({
+        url: ISSUES_QUERY_KEY,
+        method: "GET",
+        headers: {
+          "X-Auth-User-Id": String(user?.id || 1),
+          "X-Auth-Username": user?.username || "admin",
+        }
+      });
+      return result.data;
+    }
   });
   
   // Get the selected issue
@@ -420,6 +431,10 @@ export default function FeedbackPage() {
           type: data.type,
           submitterId: user?.id || 1, // Default to admin if not logged in
           labels: data.tags ? data.tags.split(",").map(tag => tag.trim()) : [],
+        },
+        headers: {
+          "X-Auth-User-Id": String(user?.id || 1),
+          "X-Auth-Username": user?.username || "admin",
         }
       });
     },
@@ -452,50 +467,92 @@ export default function FeedbackPage() {
   // Submit new feedback
   const handleSubmitFeedback = (data: z.infer<typeof feedbackSchema>) => {
     createIssueMutation.mutate(data);
-    
-    // Reset the form
-    feedbackForm.reset();
-    
-    // Switch to issues tab and select the new issue
-    setActiveTab("issues");
-    setSelectedIssueId(newIssue.id);
   };
+  
+  // Comment mutation
+  const addCommentMutation = useMutation({
+    mutationFn: (data: z.infer<typeof commentSchema>) => {
+      if (!selectedIssueId) throw new Error("No issue selected");
+      
+      return apiRequest({
+        url: `${ISSUE_COMMENTS_QUERY_KEY}/${selectedIssueId}`,
+        method: "POST",
+        data: {
+          content: data.content,
+          userId: user?.id || 1 // Default to admin if not logged in
+        },
+        headers: {
+          "X-Auth-User-Id": String(user?.id || 1),
+          "X-Auth-Username": user?.username || "admin",
+        }
+      });
+    },
+    onSuccess: () => {
+      // Invalidate the issue to refresh comments
+      queryClient.invalidateQueries({ queryKey: [ISSUES_QUERY_KEY] });
+      
+      // Show success message
+      toast({
+        title: "Comment added",
+        description: "Your comment has been added successfully.",
+      });
+      
+      // Reset form
+      commentForm.reset();
+    },
+    onError: (error) => {
+      console.error("Failed to add comment:", error);
+      toast({
+        title: "Comment failed",
+        description: "There was an error adding your comment. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
   
   // Submit new comment
   const handleSubmitComment = (data: z.infer<typeof commentSchema>) => {
     if (!selectedIssueId) return;
-    
-    // Create new comment
-    const newComment: Comment = {
-      id: Math.max(...issues.flatMap(issue => issue.comments.map(comment => comment.id)), 0) + 1,
-      issueId: selectedIssueId,
-      content: data.content,
-      createdAt: new Date(),
-      createdBy: user?.username || "anonymous",
-    };
-    
-    // Add comment to the issue
-    setIssues(issues.map(issue => 
-      issue.id === selectedIssueId 
-        ? { 
-            ...issue, 
-            comments: [...issue.comments, newComment],
-            updatedAt: new Date(),
-          } 
-        : issue
-    ));
-    
-    // Reset the comment form
-    commentForm.reset();
+    addCommentMutation.mutate(data);
   };
+  
+  // Vote mutation
+  const voteIssueMutation = useMutation({
+    mutationFn: (issueId: number) => {
+      return apiRequest({
+        url: `${ISSUES_QUERY_KEY}/${issueId}/vote`,
+        method: "POST",
+        data: {
+          userId: user?.id || 1 // Default to admin if not logged in
+        },
+        headers: {
+          "X-Auth-User-Id": String(user?.id || 1),
+          "X-Auth-Username": user?.username || "admin",
+        }
+      });
+    },
+    onSuccess: () => {
+      // Invalidate issues query to refresh the data
+      queryClient.invalidateQueries({ queryKey: [ISSUES_QUERY_KEY] });
+      
+      toast({
+        title: "Vote recorded",
+        description: "Your vote has been recorded.",
+      });
+    },
+    onError: (error) => {
+      console.error("Failed to vote for issue:", error);
+      toast({
+        title: "Vote failed",
+        description: "There was an error recording your vote. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
   
   // Vote for an issue
   const handleVote = (issueId: number) => {
-    setIssues(issues.map(issue => 
-      issue.id === issueId 
-        ? { ...issue, votes: issue.votes + 1 } 
-        : issue
-    ));
+    voteIssueMutation.mutate(issueId);
   };
   
   // Calculate issue statistics
