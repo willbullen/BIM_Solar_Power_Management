@@ -247,7 +247,7 @@ const feedbackSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters").max(1000, "Description must be less than 1000 characters"),
   type: z.enum(["bug", "feature", "improvement", "question"]),
   priority: z.enum(["low", "medium", "high", "critical"]),
-  tags: z.string().optional(),
+  labels: z.string().optional(),
 });
 
 // Define the schema for comment form
@@ -301,7 +301,7 @@ export default function FeedbackPage() {
       description: "",
       type: "bug",
       priority: "medium",
-      tags: "",
+      labels: "",
     },
   });
   
@@ -458,7 +458,7 @@ export default function FeedbackPage() {
           priority: data.priority,
           type: data.type,
           submitterId: user?.id || 1, // Default to admin if not logged in
-          labels: data.tags ? data.tags.split(",").map(tag => tag.trim()) : [],
+          labels: data.labels ? data.labels.split(",").map(tag => tag.trim()) : [],
         },
         headers: {
           "X-Auth-User-Id": String(user?.id || 1),
@@ -1146,10 +1146,10 @@ export default function FeedbackPage() {
                   
                   <FormField
                     control={feedbackForm.control}
-                    name="tags"
+                    name="labels"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tags</FormLabel>
+                        <FormLabel>Labels</FormLabel>
                         <FormControl>
                           <Input 
                             placeholder="dashboard, export, mobile, etc. (comma separated)"
@@ -1157,7 +1157,7 @@ export default function FeedbackPage() {
                           />
                         </FormControl>
                         <FormDescription>
-                          Optional: Add tags to help categorize your feedback
+                          Optional: Add labels to help categorize your feedback
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
