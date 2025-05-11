@@ -477,7 +477,6 @@ export async function registerDatabaseFunctions() {
 
 // Import required for direct execution
 import { DbUtils } from './db-utils';
-import { executeSQL } from '../sql-executor';
 
 // Export function to execute raw SQL for complex queries
 export async function executeRawSQL(sql: string, params: any[] = []): Promise<any[]> {

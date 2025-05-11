@@ -10,6 +10,7 @@ interface SQLExecutionResult {
   success: boolean;
   error?: string;
   columns?: { name: string; type: string }[];
+  truncated?: boolean;
 }
 
 /**

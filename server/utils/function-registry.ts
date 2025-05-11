@@ -1,6 +1,8 @@
 import { db } from "../db";
 import * as schema from "@shared/schema";
 import { DbUtils } from "./db-utils";
+import { DbQueryTools } from "./db-query-tools";
+import { handleAgentSqlQuery } from "../sql-executor";
 import { eq } from "drizzle-orm";
 
 /**
