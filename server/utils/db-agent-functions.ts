@@ -19,7 +19,7 @@ export async function registerDatabaseFunctions() {
     name: 'queryTable',
     description: 'Query data from a database table with optional filters and sorting',
     module: 'database',
-    return_type: 'array',
+    returnType: 'array',
     accessLevel: 'User',
     parameters: {
       type: 'object',
@@ -104,7 +104,7 @@ export async function registerDatabaseFunctions() {
     name: 'countRecords',
     description: 'Count records in a database table with optional filters',
     module: 'database',
-    return_type: 'object',
+    returnType: 'object',
     accessLevel: 'User',
     parameters: {
       type: 'object',

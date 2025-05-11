@@ -110,6 +110,7 @@ export async function registerSqlFunctions() {
     name: 'analyzeTableData',
     description: 'Analyze table data with common statistical queries',
     module: 'database',
+    return_type: 'object',
     accessLevel: 'User',
     parameters: {
       type: 'object',
