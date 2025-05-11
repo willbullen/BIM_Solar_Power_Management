@@ -256,12 +256,16 @@ export default function FeedbackPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("issues");
-  const [issues, setIssues] = useState<Issue[]>(mockIssues);
   const [selectedIssueId, setSelectedIssueId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [priorityFilter, setFilterPriority] = useState<string>("all");
   const [sortType, setSortType] = useState<"newest" | "oldest" | "most_votes" | "priority">("newest");
+  
+  // Fetch issues from API
+  const { data: issues = [], isLoading: issuesLoading, error: issuesError } = useQuery<Issue[]>({
+    queryKey: [ISSUES_QUERY_KEY],
+  });
   
   // Get the selected issue
   const selectedIssue = selectedIssueId 
@@ -402,33 +406,52 @@ export default function FeedbackPage() {
     }
   };
   
+  // Create issue mutation
+  const createIssueMutation = useMutation({
+    mutationFn: (data: z.infer<typeof feedbackSchema>) => {
+      return apiRequest({
+        url: ISSUES_QUERY_KEY,
+        method: "POST",
+        data: {
+          title: data.title,
+          description: data.description,
+          status: "open",
+          priority: data.priority,
+          type: data.type,
+          submitterId: user?.id || 1, // Default to admin if not logged in
+          labels: data.tags ? data.tags.split(",").map(tag => tag.trim()) : [],
+        }
+      });
+    },
+    onSuccess: () => {
+      // Invalidate issues query to refresh the data
+      queryClient.invalidateQueries({ queryKey: [ISSUES_QUERY_KEY] });
+      
+      // Show success message
+      toast({
+        title: "Feedback submitted",
+        description: "Thank you for your feedback. We'll review it shortly.",
+      });
+      
+      // Reset form
+      feedbackForm.reset();
+      
+      // Switch to issues tab
+      setActiveTab("issues");
+    },
+    onError: (error) => {
+      console.error("Failed to submit feedback:", error);
+      toast({
+        title: "Submission failed",
+        description: "There was an error submitting your feedback. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+  
   // Submit new feedback
   const handleSubmitFeedback = (data: z.infer<typeof feedbackSchema>) => {
-    // Create new issue
-    const newIssue: Issue = {
-      id: Math.max(...issues.map(issue => issue.id), 0) + 1,
-      title: data.title,
-      description: data.description,
-      status: "open",
-      priority: data.priority as IssuePriority,
-      type: data.type as IssueType,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      createdBy: user?.username || "anonymous",
-      assignedTo: null,
-      votes: 0,
-      comments: [],
-      tags: data.tags ? data.tags.split(",").map(tag => tag.trim()) : [],
-    };
-    
-    // Add new issue to the list
-    setIssues([newIssue, ...issues]);
-    
-    // Show success message
-    toast({
-      title: "Feedback submitted",
-      description: "Thank you for your feedback. We'll review it shortly.",
-    });
+    createIssueMutation.mutate(data);
     
     // Reset the form
     feedbackForm.reset();
