@@ -269,15 +269,22 @@ export default function FeedbackPage() {
   const { data: issues = [], isLoading: issuesLoading, error: issuesError } = useQuery<Issue[]>({
     queryKey: [ISSUES_QUERY_KEY],
     queryFn: async () => {
-      const result = await apiRequest({
-        url: ISSUES_QUERY_KEY,
-        method: "GET",
-        headers: {
-          "X-Auth-User-Id": String(user?.id || 1),
-          "X-Auth-Username": user?.username || "admin",
-        }
-      });
-      return result.data;
+      try {
+        console.log("Fetching issues from API:", ISSUES_QUERY_KEY);
+        const result = await apiRequest({
+          url: ISSUES_QUERY_KEY,
+          method: "GET",
+          headers: {
+            "X-Auth-User-Id": String(user?.id || 1),
+            "X-Auth-Username": user?.username || "admin",
+          }
+        });
+        console.log("Issues API response:", result);
+        return result.data;
+      } catch (error) {
+        console.error("Error fetching issues:", error);
+        throw error;
+      }
     }
   });
   

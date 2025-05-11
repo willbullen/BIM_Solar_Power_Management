@@ -1079,8 +1079,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Issues routes
   app.get('/api/issues', async (req, res) => {
+    console.log("GET /api/issues - Request received");
     try {
       const issues = await storage.getAllIssues();
+      console.log(`GET /api/issues - Found ${issues.length} issues`);
       res.json(issues);
     } catch (error) {
       console.error("Error fetching issues:", error);
