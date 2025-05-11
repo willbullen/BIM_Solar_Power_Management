@@ -1,9 +1,54 @@
 import { db } from "../db";
 import * as schema from "@shared/schema";
-import { DbUtils } from "./db-utils";
-import { DbQueryTools } from "./db-query-tools";
-import { handleAgentSqlQuery } from "../sql-executor";
+import { DatabaseService } from "./database-service";
 import { eq } from "drizzle-orm";
+
+// Utility functions for table name validation and permissions
+function validateTableName(tableName: string): string {
+  // Basic validation to prevent SQL injection via table names
+  const safeTableName = tableName.replace(/[^a-zA-Z0-9_]/g, '');
+  if (safeTableName !== tableName) {
+    throw new Error(`Invalid table name: ${tableName}`);
+  }
+  return safeTableName;
+}
+
+function hasTablePermission(tableName: string, userRole?: string, operation: 'read' | 'write' | 'delete' = 'read'): boolean {
+  // Normalize role to lowercase for case-insensitive comparison
+  const role = (userRole || 'user').toLowerCase();
+  
+  // Admin has access to everything
+  if (role === 'admin') {
+    return true;
+  }
+  
+  // Restricted tables that require admin access
+  const adminOnlyTables = ['users', 'user_sessions', 'agent_settings'];
+  if (adminOnlyTables.includes(tableName)) {
+    return false;
+  }
+  
+  // User role can read most tables but can't write/delete to sensitive ones
+  if (role === 'user') {
+    if (operation === 'read') {
+      // Users can read most tables except very sensitive ones
+      return !['api_keys', 'user_secrets'].includes(tableName);
+    } else {
+      // Users can only write to certain tables
+      const userWritableTables = [
+        'agent_conversations', 
+        'agent_messages',
+        'feedback',
+        'issues',
+        'todo_items'
+      ];
+      return userWritableTables.includes(tableName);
+    }
+  }
+  
+  // Default deny for unknown roles
+  return false;
+}
 
 /**
  * Function registry for agent capabilities
@@ -123,50 +168,50 @@ export class FunctionRegistry {
       const dbHelper = {
         async select<T>(tableName: string, whereConditions = {}, options = {}): Promise<T[]> {
           // Validate table name to prevent SQL injection
-          const validTableName = DbUtils.validateTableName(tableName);
+          const validTableName = validateTableName(tableName);
           
           // Check if user has permission to read from this table
-          if (!DbUtils.hasTablePermission(validTableName, context.userRole, "read")) {
+          if (!hasTablePermission(validTableName, context?.userRole, "read")) {
             throw new Error(`Access denied: Cannot read from table ${validTableName}`);
           }
           
-          return await DbUtils.select<T>(validTableName, whereConditions, options);
+          return await DatabaseService.Core.select<T>(validTableName, whereConditions, options);
         },
         
         async insert<T>(tableName: string, data: Record<string, any>): Promise<T> {
           // Validate table name to prevent SQL injection
-          const validTableName = DbUtils.validateTableName(tableName);
+          const validTableName = validateTableName(tableName);
           
           // Check if user has permission to write to this table
-          if (!DbUtils.hasTablePermission(validTableName, context.userRole, "write")) {
+          if (!hasTablePermission(validTableName, context?.userRole, "write")) {
             throw new Error(`Access denied: Cannot write to table ${validTableName}`);
           }
           
-          return await DbUtils.insert<T>(validTableName, data);
+          return await DatabaseService.Core.insert<T>(validTableName, data);
         },
         
-        async update<T>(tableName: string, data: Record<string, any>, whereConditions: Record<string, any>): Promise<T> {
+        async update<T>(tableName: string, data: Record<string, any>, whereConditions: Record<string, any>): Promise<T[]> {
           // Validate table name to prevent SQL injection
-          const validTableName = DbUtils.validateTableName(tableName);
+          const validTableName = validateTableName(tableName);
           
           // Check if user has permission to write to this table
-          if (!DbUtils.hasTablePermission(validTableName, context.userRole, "write")) {
+          if (!hasTablePermission(validTableName, context?.userRole, "write")) {
             throw new Error(`Access denied: Cannot update table ${validTableName}`);
           }
           
-          return await DbUtils.update<T>(validTableName, data, whereConditions);
+          return await DatabaseService.Core.update<T>(validTableName, data, whereConditions);
         },
         
-        async delete(tableName: string, whereConditions: Record<string, any>): Promise<number> {
+        async delete<T>(tableName: string, whereConditions: Record<string, any>): Promise<T[]> {
           // Validate table name to prevent SQL injection
-          const validTableName = DbUtils.validateTableName(tableName);
+          const validTableName = validateTableName(tableName);
           
           // Check if user has permission to delete from this table
-          if (!DbUtils.hasTablePermission(validTableName, context.userRole, "delete")) {
+          if (!hasTablePermission(validTableName, context?.userRole, "delete")) {
             throw new Error(`Access denied: Cannot delete from table ${validTableName}`);
           }
           
-          return await DbUtils.delete(validTableName, whereConditions);
+          return await DatabaseService.Core.delete<T>(validTableName, whereConditions);
         }
       };
       

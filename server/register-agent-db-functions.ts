@@ -7,20 +7,15 @@
  * Run with: npx tsx server/register-agent-db-functions.ts
  */
 
-import { registerDatabaseFunctions } from './utils/db-agent-functions';
-import { registerSqlFunctions } from './utils/sql-agent-functions';
-import { DbUtils } from './utils/db-utils';
+import { DatabaseService } from './utils/database-service';
 import { db } from './db';
 
 async function main() {
   try {
     console.log('Starting registration of AI agent database functions...');
     
-    // Register database query and analysis functions
-    await registerDatabaseFunctions();
-    
-    // Register SQL execution functions
-    await registerSqlFunctions();
+    // Register all database functions using unified service
+    await DatabaseService.AgentFunctions.registerDatabaseFunctions();
     
     console.log('Database functions registered successfully with the AI agent');
   } catch (error) {

@@ -7,6 +7,7 @@
 
 import { db } from './db';
 import { sql } from 'drizzle-orm';
+import { DatabaseService } from './utils/database-service';
 
 export interface SqlExecutorOptions {
   // User role for permission checking
@@ -24,12 +25,13 @@ export interface SqlExecutorOptions {
 export class SqlExecutor {
   private options: SqlExecutorOptions;
   
-  constructor(options: SqlExecutorOptions) {
+  constructor(options?: SqlExecutorOptions) {
     this.options = {
+      userRole: 'user',
       maxRows: 100,
       allowModification: false,
       allowSchemaModification: false,
-      ...options
+      ...(options || {})
     };
   }
   
@@ -49,8 +51,8 @@ export class SqlExecutor {
     this.validateQuery(query);
     
     try {
-      // Execute the query with parameters
-      const result = await db.execute(sql.raw(query, params));
+      // Execute the query with parameters using DatabaseService
+      const result = await DatabaseService.Core.executeRaw(query, params);
       
       // Limit the number of rows returned
       if (Array.isArray(result) && this.options.maxRows) {
@@ -58,9 +60,39 @@ export class SqlExecutor {
       }
       
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error('SQL execution error:', error);
       throw new Error(`SQL execution failed: ${error.message}`);
+    }
+  }
+  
+  /**
+   * Execute a SQL query within a transaction
+   * @param query SQL query to execute
+   * @param params Query parameters
+   * @returns Query results
+   */
+  async executeInTransaction(query: string, params: any[] = []): Promise<any> {
+    // Validate user role and query first
+    if (!this.hasExecutePermission()) {
+      throw new Error('Insufficient permissions to execute SQL queries in transaction');
+    }
+    
+    this.validateQuery(query);
+    
+    try {
+      // Use DatabaseService for transactions with the newly implemented method
+      const result = await DatabaseService.Core.executeTransaction(query, params);
+      
+      // Limit the number of rows returned
+      if (Array.isArray(result) && this.options.maxRows) {
+        return result.slice(0, this.options.maxRows);
+      }
+      
+      return result;
+    } catch (error: any) {
+      console.error('SQL transaction error:', error);
+      throw new Error(`SQL transaction failed: ${error.message}`);
     }
   }
   
