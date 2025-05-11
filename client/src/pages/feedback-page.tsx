@@ -69,7 +69,12 @@ interface Comment {
   createdBy: string;
 }
 
-// Mock data for issues
+// Define API query keys
+const ISSUES_QUERY_KEY = "/api/issues";
+const ISSUE_COMMENTS_QUERY_KEY = "/api/issue-comments";
+
+// Previously used mock data, now we'll use real data
+/*
 const mockIssues: Issue[] = [
   {
     id: 1,
@@ -231,6 +236,7 @@ const mockIssues: Issue[] = [
     tags: ["safari", "browser-compatibility", "equipment-page"]
   },
 ];
+*/
 
 // Define the schema for feedback form
 const feedbackSchema = z.object({
