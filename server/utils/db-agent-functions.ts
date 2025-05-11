@@ -166,7 +166,7 @@ export async function registerDatabaseFunctions() {
     name: 'getDatabaseSchemaInfo',
     description: 'Get information about the database schema including tables and their columns',
     module: 'database',
-    return_type: 'object',
+    returnType: 'object',
     accessLevel: 'User',
     parameters: {
       type: 'object',
@@ -210,7 +210,7 @@ export async function registerDatabaseFunctions() {
     name: 'aggregateData',
     description: 'Perform aggregation operations on table data (sum, avg, min, max, count)',
     module: 'database',
-    return_type: 'object',
+    returnType: 'object',
     accessLevel: 'User',
     parameters: {
       type: 'object',
