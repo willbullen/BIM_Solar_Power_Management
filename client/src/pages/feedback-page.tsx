@@ -68,7 +68,7 @@ interface Comment {
   id: number;
   issueId: number;
   content: string;
-  createdAt: Date;
+  createdAt: string;
   createdBy: string;
 }
 
@@ -285,6 +285,13 @@ export default function FeedbackPage() {
   const selectedIssue = selectedIssueId 
     ? issues.find(issue => issue.id === selectedIssueId) 
     : null;
+    
+  // Load comments when a specific issue is selected
+  const { data: comments = [], isLoading: commentsLoading } = useQuery<Comment[]>({
+    queryKey: [ISSUE_COMMENTS_QUERY_KEY, selectedIssueId, 'comments'],
+    queryFn: () => fetchComments(selectedIssueId!),
+    enabled: !!selectedIssueId,
+  });
   
   // Initialize form for feedback submission
   const feedbackForm = useForm<z.infer<typeof feedbackSchema>>({
@@ -306,6 +313,24 @@ export default function FeedbackPage() {
     },
   });
   
+  // Load comments for a specific issue
+  const fetchComments = async (issueId: number) => {
+    try {
+      const result = await apiRequest({
+        url: `${ISSUE_COMMENTS_QUERY_KEY}/${issueId}/comments`,
+        method: "GET",
+        headers: {
+          "X-Auth-User-Id": String(user?.id || 1),
+          "X-Auth-Username": user?.username || "admin",
+        }
+      });
+      return result.data;
+    } catch (error) {
+      console.error(`Failed to fetch comments for issue ${issueId}:`, error);
+      return [];
+    }
+  };
+
   // Filter and sort issues
   const getFilteredIssues = () => {
     // Apply filters
@@ -340,8 +365,8 @@ export default function FeedbackPage() {
   };
   
   // Format date for display
-  const formatDate = (date: Date) => {
-    return format(date, "MMM d, yyyy");
+  const formatDate = (date: string | Date) => {
+    return format(new Date(date), "MMM d, yyyy");
   };
   
   // Get status badge
@@ -797,7 +822,7 @@ export default function FeedbackPage() {
                           </div>
                           <div className="text-xs text-muted-foreground mt-1 flex flex-wrap items-center gap-2">
                             <span>{formatDate(issue.createdAt)}</span>
-                            <span>by {issue.createdBy}</span>
+                            <span>by User #{issue.submitterId}</span>
                           </div>
                         </div>
                         {getStatusBadge(issue.status)}
@@ -821,12 +846,7 @@ export default function FeedbackPage() {
                         {getPriorityBadge(issue.priority)}
                       </div>
                       
-                      {issue.comments.length > 0 && (
-                        <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
-                          <MessageSquare className="h-3 w-3" />
-                          <span>{issue.comments.length} comment{issue.comments.length > 1 ? 's' : ''}</span>
-                        </div>
-                      )}
+                      {/* Comments have to be loaded separately when clicking on an issue */}
                     </div>
                   ))}
                   
