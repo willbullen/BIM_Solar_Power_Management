@@ -1,386 +1,234 @@
+/**
+ * SQL execution functions for the AI agent
+ * 
+ * This file provides functions that allow the AI agent to execute SQL queries
+ * with proper security controls and permissions.
+ */
+
 import { FunctionRegistry } from './function-registry';
-import { handleAgentSqlQuery } from '../sql-executor';
+import { SqlExecutor } from '../sql-executor';
 
 /**
  * Register SQL execution functions for the AI agent
  */
 export async function registerSqlFunctions() {
-  console.log('Registering AI Agent SQL execution functions...');
-  
-  // SQL Query Execution Function
+  // Register the executeSql function for direct SQL query execution
   await FunctionRegistry.registerFunction({
     name: 'executeSqlQuery',
-    description: 'Execute a SQL query against the database with security and permission checks',
+    description: 'Execute a SQL query with parameterized values for security',
     module: 'database',
+    accessLevel: 'Admin', // Only admins can execute raw SQL
     parameters: {
       type: 'object',
       properties: {
-        sqlQuery: {
+        query: {
           type: 'string',
-          description: 'SQL query to execute (SELECT statements only for regular users)'
+          description: 'SQL query to execute'
         },
-        explain: {
+        parameters: {
+          type: 'array',
+          items: {
+            type: ['string', 'number', 'boolean', 'null']
+          },
+          description: 'Parameters for the query (for security, use ? or $1, $2, etc. placeholders in query)'
+        },
+        allowModification: {
           type: 'boolean',
-          description: 'Execute as EXPLAIN ANALYZE for query performance analysis'
-        },
-        maxRows: {
-          type: 'number',
-          description: 'Maximum number of rows to return'
+          description: 'Whether to allow data modification (INSERT, UPDATE, DELETE)'
         }
       },
-      required: ['sqlQuery']
+      required: ['query']
     },
-    returnType: 'SqlQueryResult',
-    functionCode: `
-      async function executeSqlQuery(params, dbUtils, context) {
-        const { sqlQuery, explain = false, maxRows = 1000 } = params;
-        
-        // Get user role from context
-        const userRole = context.userRole || 'user';
-        
-        return await handleAgentSqlQuery(sqlQuery, userRole, { explain, maxRows });
+    functionCode: async function(params, context) {
+      const { query, parameters = [], allowModification = false } = params;
+      
+      // Create SQL executor with user role for permission checking
+      const executor = new SqlExecutor({
+        userRole: context.userRole || 'User',
+        allowModification,
+        allowSchemaModification: false // Never allow schema modification
+      });
+      
+      try {
+        // Execute the query with parameters
+        const result = await executor.execute(query, parameters);
+        return result;
+      } catch (error) {
+        throw new Error(`SQL execution failed: ${error.message}`);
       }
-    `,
-    accessLevel: 'restricted',
-    tags: ['database', 'sql', 'query']
+    }
   });
   
-  // SQL Schema Query Function - Safer option for exploring the database structure
+  // Register a function to get database schema information
   await FunctionRegistry.registerFunction({
-    name: 'getSqlTableInfo',
-    description: 'Get information about database tables, their columns, and relationships',
-    module: 'database',
+    name: 'getDatabaseInfo',
+    description: 'Get information about database tables and columns',
+    accessLevel: 'User',
+    parameters: {
+      type: 'object',
+      properties: {
+        includeSystemTables: {
+          type: 'boolean',
+          description: 'Whether to include system tables (default: false)'
+        }
+      }
+    },
+    functionCode: async function(params, context) {
+      const { includeSystemTables = false } = params;
+      
+      // Create SQL executor with user role for permission checking
+      const executor = new SqlExecutor({
+        userRole: context.userRole || 'User',
+        allowModification: false,
+        allowSchemaModification: false
+      });
+      
+      try {
+        // Get database information
+        const dbInfo = await executor.getDatabaseInfo();
+        
+        // Filter out system tables if needed
+        if (!includeSystemTables) {
+          return dbInfo.filter(tableInfo => 
+            !tableInfo.tableName.startsWith('pg_') && 
+            !tableInfo.tableName.startsWith('sql_')
+          );
+        }
+        
+        return dbInfo;
+      } catch (error) {
+        throw new Error(`Failed to get database information: ${error.message}`);
+      }
+    }
+  });
+  
+  // Register a function to analyze table data
+  await FunctionRegistry.registerFunction({
+    name: 'analyzeTableData',
+    description: 'Analyze table data with common statistical queries',
+    accessLevel: 'User',
     parameters: {
       type: 'object',
       properties: {
         tableName: {
           type: 'string',
-          description: 'Optional table name to get information for. If not provided, returns list of all tables.'
-        },
-        includeColumns: {
-          type: 'boolean',
-          description: 'Include column details'
-        },
-        includeIndexes: {
-          type: 'boolean',
-          description: 'Include index information'
-        },
-        includeRelationships: {
-          type: 'boolean',
-          description: 'Include foreign key relationships'
-        }
-      }
-    },
-    returnType: 'SqlTableInfo',
-    functionCode: `
-      async function getSqlTableInfo(params, dbUtils, context) {
-        const { 
-          tableName, 
-          includeColumns = true, 
-          includeIndexes = true, 
-          includeRelationships = true 
-        } = params;
-        
-        const result = {
-          tables: [],
-          columns: [],
-          indexes: [],
-          relationships: []
-        };
-        
-        // Get tables
-        if (!tableName) {
-          const tablesQuery = \`
-            SELECT 
-              table_name, 
-              pg_catalog.obj_description(pg_class.oid, 'pg_class') as description, 
-              pg_relation_size(quote_ident(table_name)) as size_bytes
-            FROM 
-              information_schema.tables 
-              JOIN pg_catalog.pg_class ON pg_class.relname = table_name
-            WHERE 
-              table_schema = 'public'
-              AND table_type = 'BASE TABLE'
-            ORDER BY 
-              table_name
-          \`;
-          
-          result.tables = await dbUtils.executeRaw(tablesQuery);
-        } else {
-          // Get single table info
-          const tableQuery = \`
-            SELECT 
-              table_name, 
-              pg_catalog.obj_description(pg_class.oid, 'pg_class') as description, 
-              pg_relation_size(quote_ident(table_name)) as size_bytes
-            FROM 
-              information_schema.tables 
-              JOIN pg_catalog.pg_class ON pg_class.relname = table_name
-            WHERE 
-              table_schema = 'public'
-              AND table_type = 'BASE TABLE'
-              AND table_name = $1
-          \`;
-          
-          result.tables = await dbUtils.executeRaw(tableQuery, [tableName]);
-          
-          // Get column info if requested
-          if (includeColumns) {
-            const columnsQuery = \`
-              SELECT 
-                column_name, 
-                data_type, 
-                is_nullable,
-                column_default,
-                character_maximum_length,
-                pg_catalog.col_description(pg_class.oid, columns.ordinal_position) as description
-              FROM 
-                information_schema.columns
-                JOIN pg_catalog.pg_class ON pg_class.relname = table_name
-              WHERE 
-                table_schema = 'public' 
-                AND table_name = $1
-              ORDER BY 
-                ordinal_position
-            \`;
-            
-            result.columns = await dbUtils.executeRaw(columnsQuery, [tableName]);
-          }
-          
-          // Get index info if requested
-          if (includeIndexes) {
-            const indexesQuery = \`
-              SELECT
-                i.relname as index_name,
-                a.attname as column_name,
-                ix.indisunique as is_unique,
-                ix.indisprimary as is_primary
-              FROM
-                pg_class t, pg_class i, pg_index ix, pg_attribute a
-              WHERE
-                t.oid = ix.indrelid
-                AND i.oid = ix.indexrelid
-                AND a.attrelid = t.oid
-                AND a.attnum = ANY(ix.indkey)
-                AND t.relkind = 'r'
-                AND t.relname = $1
-              ORDER BY
-                i.relname, a.attnum
-            \`;
-            
-            result.indexes = await dbUtils.executeRaw(indexesQuery, [tableName]);
-          }
-          
-          // Get relationship info if requested
-          if (includeRelationships) {
-            const relationshipsQuery = \`
-              SELECT
-                tc.constraint_name,
-                kcu.column_name,
-                ccu.table_name as foreign_table_name,
-                ccu.column_name as foreign_column_name
-              FROM
-                information_schema.table_constraints tc
-                JOIN information_schema.key_column_usage kcu
-                  ON tc.constraint_name = kcu.constraint_name
-                JOIN information_schema.constraint_column_usage ccu
-                  ON tc.constraint_name = ccu.constraint_name
-              WHERE
-                tc.constraint_type = 'FOREIGN KEY'
-                AND tc.table_name = $1
-                AND tc.table_schema = 'public'
-            \`;
-            
-            result.relationships = await dbUtils.executeRaw(relationshipsQuery, [tableName]);
-          }
-        }
-        
-        return result;
-      }
-    `,
-    accessLevel: 'public',
-    tags: ['database', 'schema', 'metadata']
-  });
-  
-  // SQL Query Builder Function - Safer alternative to raw SQL execution
-  await FunctionRegistry.registerFunction({
-    name: 'buildAndExecuteSqlQuery',
-    description: 'Build and execute a SQL query using safe parameters and options',
-    module: 'database',
-    parameters: {
-      type: 'object',
-      properties: {
-        table: {
-          type: 'string',
-          description: 'Table name to query'
-        },
-        action: {
-          type: 'string',
-          enum: ['select', 'count', 'aggregate'],
-          description: 'Query action to perform'
+          description: 'Name of the table to analyze'
         },
         columns: {
           type: 'array',
-          items: { type: 'string' },
-          description: 'Columns to include in the query (for SELECT)'
-        },
-        aggregations: {
-          type: 'array',
           items: {
-            type: 'object',
-            properties: {
-              function: { 
-                type: 'string', 
-                enum: ['count', 'sum', 'avg', 'min', 'max']
-              },
-              column: { type: 'string' },
-              alias: { type: 'string' }
-            }
+            type: 'string'
           },
-          description: 'Aggregation functions to apply (for aggregate action)'
+          description: 'Columns to analyze (numeric columns for statistics, any for distinct values)'
         },
-        filters: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              column: { type: 'string' },
-              operator: { 
-                type: 'string', 
-                enum: ['=', '!=', '>', '<', '>=', '<=', 'like', 'in', 'is null', 'is not null'] 
-              },
-              value: { type: 'any' }
-            }
-          },
-          description: 'Filter conditions for WHERE clause'
-        },
-        groupBy: {
-          type: 'array',
-          items: { type: 'string' },
-          description: 'Columns to group by (for aggregate action)'
-        },
-        orderBy: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              column: { type: 'string' },
-              direction: { type: 'string', enum: ['asc', 'desc'] }
-            }
-          },
-          description: 'Columns and directions to order by'
+        analysisType: {
+          type: 'string',
+          enum: ['statistics', 'distinct', 'distribution', 'correlation'],
+          description: 'Type of analysis to perform'
         },
         limit: {
           type: 'number',
-          description: 'Maximum number of rows to return'
-        },
-        offset: {
-          type: 'number',
-          description: 'Number of rows to skip'
+          description: 'Limit for the number of results (for distinct values)'
         }
       },
-      required: ['table', 'action']
+      required: ['tableName', 'columns', 'analysisType']
     },
-    returnType: 'SqlQueryResult',
-    functionCode: `
-      async function buildAndExecuteSqlQuery(params, dbUtils, context) {
-        const { 
-          table, 
-          action, 
-          columns = ['*'], 
-          aggregations = [], 
-          filters = [], 
-          groupBy = [], 
-          orderBy = [], 
-          limit, 
-          offset 
-        } = params;
+    functionCode: async function(params, context) {
+      const { tableName, columns, analysisType, limit = 100 } = params;
+      
+      // Create SQL executor with user role for permission checking
+      const executor = new SqlExecutor({
+        userRole: context.userRole || 'User',
+        allowModification: false,
+        allowSchemaModification: false
+      });
+      
+      // Validate table name
+      if (!executor.isTableAllowed(tableName)) {
+        throw new Error(`Table '${tableName}' does not exist or is not accessible`);
+      }
+      
+      try {
+        let query;
         
-        // Build the SQL query safely
-        let sqlQuery = '';
-        const queryParams = [];
-        
-        // Generate the SELECT part based on action
-        if (action === 'select') {
-          sqlQuery = \`SELECT \${columns.join(', ')} FROM "\${table}"\`;
-        } else if (action === 'count') {
-          sqlQuery = \`SELECT COUNT(*) as count FROM "\${table}"\`;
-        } else if (action === 'aggregate') {
-          // Build aggregation expressions
-          const aggExpressions = aggregations.map(agg => {
-            const alias = agg.alias || \`\${agg.function}_\${agg.column}\`;
-            return \`\${agg.function.toUpperCase()}(\${agg.column}) AS "\${alias}"\`;
-          });
-          
-          // Combine with group by columns
-          const selectExpressions = [...groupBy, ...aggExpressions];
-          sqlQuery = \`SELECT \${selectExpressions.join(', ')} FROM "\${table}"\`;
-        }
-        
-        // Add WHERE clause if filters exist
-        if (filters.length > 0) {
-          const whereConditions = filters.map(filter => {
-            // Handle special operators
-            if (filter.operator === 'is null') {
-              return \`"\${filter.column}" IS NULL\`;
-            } else if (filter.operator === 'is not null') {
-              return \`"\${filter.column}" IS NOT NULL\`;
-            } else if (filter.operator === 'in' && Array.isArray(filter.value)) {
-              // Generate placeholders for IN clause
-              const placeholders = filter.value.map((_, i) => \`$\${queryParams.length + i + 1}\`).join(', ');
-              filter.value.forEach(val => queryParams.push(val));
-              return \`"\${filter.column}" IN (\${placeholders})\`;
-            } else if (filter.operator === 'like') {
-              // For LIKE, add wildcards if they're not already there
-              queryParams.push(filter.value.includes('%') ? filter.value : \`%\${filter.value}%\`);
-              return \`"\${filter.column}" LIKE $\${queryParams.length}\`;
-            } else {
-              // Standard operators
-              queryParams.push(filter.value);
-              return \`"\${filter.column}" \${filter.operator} $\${queryParams.length}\`;
+        switch (analysisType) {
+          case 'statistics':
+            // For each numeric column, generate statistics
+            query = `
+              SELECT 
+                ${columns.map(col => `
+                  MIN(${col}) as min_${col},
+                  MAX(${col}) as max_${col},
+                  AVG(${col}) as avg_${col},
+                  PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ${col}) as median_${col},
+                  STDDEV(${col}) as stddev_${col}
+                `).join(',')}
+              FROM ${tableName}
+            `;
+            break;
+            
+          case 'distinct':
+            // For each column, count distinct values
+            query = `
+              SELECT 
+                ${columns.map(col => `
+                  COUNT(DISTINCT ${col}) as distinct_${col}
+                `).join(',')}
+              FROM ${tableName}
+            `;
+            break;
+            
+          case 'distribution':
+            // For the first column, show value distribution
+            if (!columns || columns.length === 0) {
+              throw new Error('At least one column must be specified for distribution analysis');
             }
-          });
-          
-          sqlQuery += \` WHERE \${whereConditions.join(' AND ')}\`;
-        }
-        
-        // Add GROUP BY if needed
-        if (groupBy.length > 0 && action === 'aggregate') {
-          sqlQuery += \` GROUP BY \${groupBy.map(col => \`"\${col}"\`).join(', ')}\`;
-        }
-        
-        // Add ORDER BY if specified
-        if (orderBy.length > 0) {
-          const orderClauses = orderBy.map(order => 
-            \`"\${order.column}" \${order.direction.toUpperCase()}\`
-          );
-          sqlQuery += \` ORDER BY \${orderClauses.join(', ')}\`;
-        }
-        
-        // Add LIMIT if specified
-        if (limit !== undefined) {
-          sqlQuery += \` LIMIT \${limit}\`;
-        }
-        
-        // Add OFFSET if specified
-        if (offset !== undefined) {
-          sqlQuery += \` OFFSET \${offset}\`;
+            
+            query = `
+              SELECT 
+                ${columns[0]},
+                COUNT(*) as count
+              FROM ${tableName}
+              GROUP BY ${columns[0]}
+              ORDER BY count DESC
+              LIMIT ${limit}
+            `;
+            break;
+            
+          case 'correlation':
+            // For pairs of numeric columns, calculate correlation
+            if (columns.length < 2) {
+              throw new Error('At least two columns must be specified for correlation analysis');
+            }
+            
+            const correlationPairs = [];
+            for (let i = 0; i < columns.length; i++) {
+              for (let j = i + 1; j < columns.length; j++) {
+                correlationPairs.push(`
+                  CORR(${columns[i]}, ${columns[j]}) as corr_${columns[i]}_${columns[j]}
+                `);
+              }
+            }
+            
+            query = `
+              SELECT 
+                ${correlationPairs.join(',')}
+              FROM ${tableName}
+            `;
+            break;
+            
+          default:
+            throw new Error(`Unsupported analysis type: ${analysisType}`);
         }
         
         // Execute the query
-        const results = await dbUtils.executeRaw(sqlQuery, queryParams);
-        
-        return {
-          query: sqlQuery,
-          parameters: queryParams,
-          results,
-          rowCount: results.length
-        };
+        const result = await executor.executeReadOnly(query);
+        return result;
+      } catch (error) {
+        throw new Error(`Table analysis failed: ${error.message}`);
       }
-    `,
-    accessLevel: 'public',
-    tags: ['database', 'sql', 'query-builder']
+    }
   });
   
-  console.log('AI Agent SQL execution functions registered successfully');
+  console.log('SQL execution functions registered successfully');
 }

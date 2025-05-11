@@ -63,6 +63,24 @@ export class FunctionRegistry {
   }
   
   /**
+   * Get all registered functions
+   * @param accessLevel Optional access level filter
+   * @returns Array of all registered functions
+   */
+  static async getAllFunctions(accessLevel?: string): Promise<schema.AgentFunction[]> {
+    if (accessLevel) {
+      return await db.query.agentFunctions.findMany({
+        where: (fields, { eq }) => eq(fields.accessLevel, accessLevel),
+        orderBy: (fields, { asc }) => [asc(fields.name)]
+      });
+    } else {
+      return await db.query.agentFunctions.findMany({
+        orderBy: (fields, { asc }) => [asc(fields.name)]
+      });
+    }
+  }
+  
+  /**
    * Execute a function with the given parameters
    * @param name Function name to execute
    * @param parameters Parameters to pass to the function

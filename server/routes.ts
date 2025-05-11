@@ -20,6 +20,8 @@ import { registerNotificationRoutes } from './agent-notification-routes';
 import { registerTelegramRoutes } from './telegram-routes';
 import { registerFileRoutes } from './file-routes';
 import mcpRoutes from './mcp-routes';
+import { registerDatabaseFunctions } from './utils/db-agent-functions';
+import { registerSqlFunctions } from './utils/sql-agent-functions';
 import { WebSocketServer, WebSocket } from 'ws';
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1466,6 +1468,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register agent notification routes for API-based notifications
   registerNotificationRoutes(app);
+  
+  // Register database query and analysis functions for AI agent
+  try {
+    console.log("Registering AI Agent database functions...");
+    await registerDatabaseFunctions();
+    await registerSqlFunctions();
+    console.log("AI Agent database functions registered successfully");
+  } catch (error) {
+    console.error("Error registering AI Agent database functions:", error);
+  }
   
   // Register Telegram integration routes
   registerTelegramRoutes(app);
