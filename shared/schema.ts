@@ -199,6 +199,7 @@ export const issues = pgTable("issues", {
   milestone: text("milestone"), // Which version/milestone it's targeted for
   labels: text("labels").array(), // Array of labels like 'ui', 'backend', 'solcast', etc.
   linkedTaskId: integer("linked_task_id"), // For linking to another issue
+  votes: integer("votes").notNull().default(0), // Number of votes/upvotes for this issue
 });
 
 export const insertIssueSchema = createInsertSchema(issues).omit({

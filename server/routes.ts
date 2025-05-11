@@ -1191,6 +1191,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Vote on an issue
+  app.post('/api/issues/:id/vote', async (req, res) => {
+    try {
+      const issueId = parseInt(req.params.id);
+      
+      // Get the current issue
+      const issue = await storage.getIssueById(issueId);
+      if (!issue) {
+        return res.status(404).json({ error: "Issue not found" });
+      }
+      
+      // Increment the vote count
+      const votes = (issue.votes || 0) + 1;
+      
+      // Update the issue
+      const updatedIssue = await storage.updateIssue(issueId, { votes });
+      res.json(updatedIssue);
+    } catch (error) {
+      console.error(`Error voting on issue ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to register vote" });
+    }
+  });
+  
   app.put('/api/comments/:id', async (req, res) => {
     try {
       // Optional: Check if user owns the comment before updating
