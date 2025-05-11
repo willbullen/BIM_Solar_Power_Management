@@ -71,7 +71,7 @@ interface Comment {
 
 // Define API query keys
 const ISSUES_QUERY_KEY = "/api/issues";
-const ISSUE_COMMENTS_QUERY_KEY = "/api/issue-comments";
+const ISSUE_COMMENTS_QUERY_KEY = "/api/issues";
 
 // Previously used mock data, now we'll use real data
 /*
