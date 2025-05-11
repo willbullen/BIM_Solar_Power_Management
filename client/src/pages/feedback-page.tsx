@@ -923,11 +923,11 @@ export default function FeedbackPage() {
                             comments.map(comment => (
                               <div key={comment.id} className="flex gap-4">
                                 <Avatar>
-                                  <AvatarFallback>{comment.createdBy.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                  <AvatarFallback>U{comment.userId || '?'}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2">
-                                    <span className="font-medium">{comment.createdBy}</span>
+                                    <span className="font-medium">User #{comment.userId || 'Unknown'}</span>
                                     <span className="text-xs text-muted-foreground">
                                       {formatDate(comment.createdAt)}
                                     </span>
