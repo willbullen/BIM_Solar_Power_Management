@@ -1,0 +1,1 @@
+import { db } from '../server/db'; import { issues } from '@shared/schema'; export async function checkIssuesTable() { const result = await db.query.issues.findMany(); console.log('Found issues:', result); return result; }
