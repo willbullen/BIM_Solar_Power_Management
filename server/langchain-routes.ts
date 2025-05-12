@@ -787,6 +787,7 @@ export function registerLangChainRoutes(app: Express) {
       const runId = `run_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
       
       // Record the run start
+      // We need to include run_type which is required and ensure input is properly handled as a text field
       const [run] = await db
         .insert(schema.langchainRuns)
         .values({
@@ -795,7 +796,8 @@ export function registerLangChainRoutes(app: Express) {
           userId: req.session?.userId ? Number(req.session.userId) : (req.headers['x-auth-user-id'] ? Number(req.headers['x-auth-user-id']) : null),
           startTime: new Date(),
           status: 'running',
-          input: { message },
+          input: JSON.stringify({ message }), // Make sure we stringify the JSON since input is TEXT type
+          run_type: 'conversation', // This field is required
         })
         .returning();
 

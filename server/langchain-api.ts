@@ -277,10 +277,11 @@ export class LangChainApiService {
       );
       
       // Get the run details to include token usage and execution time
+      // Make sure we're querying with a string for the runId to avoid conversion issues
       const [runDetails] = await db
         .select()
         .from(schema.langchainRuns)
-        .where(eq(schema.langchainRuns.runId, response.runId));
+        .where(eq(schema.langchainRuns.runId, String(response.runId)));
         
       // Calculate execution time
       const startTime = runDetails?.startTime ? new Date(runDetails.startTime) : new Date();
