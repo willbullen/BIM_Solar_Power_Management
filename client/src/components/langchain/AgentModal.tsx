@@ -9,13 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Settings, History, PlayCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { agentSchema, type AgentFormValues } from "@/lib/langchain-schemas";
-import { RunsHistory } from "./RunsHistory";
 
 interface AgentModalProps {
   isOpen: boolean;
@@ -82,13 +80,9 @@ export function AgentModal({ isOpen, onClose, agent }: AgentModalProps) {
     mutation.mutate(data);
   };
 
-  // Determine which tab to show initially
-  const [activeTab, setActiveTab] = useState<string>("configuration");
-  const showRunsHistory = isEditing && agent && agent.id;
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit' : 'Create'} LangChain Agent</DialogTitle>
           <DialogDescription>
@@ -98,39 +92,28 @@ export function AgentModal({ isOpen, onClose, agent }: AgentModalProps) {
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="configuration" value={activeTab} onValueChange={setActiveTab} className="mt-2">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="configuration" className="flex items-center gap-1">
-              <Settings className="h-4 w-4" /> Configuration
-            </TabsTrigger>
-            <TabsTrigger value="runs" disabled={!showRunsHistory} className="flex items-center gap-1">
-              <History className="h-4 w-4" /> Execution Runs
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="configuration" className="pt-4">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Agent Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="My Agent" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        A unique name for this agent
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="description"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Agent Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="My Agent" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    A unique name for this agent
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="description"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Description</FormLabel>
@@ -354,42 +337,6 @@ export function AgentModal({ isOpen, onClose, agent }: AgentModalProps) {
             </DialogFooter>
           </form>
         </Form>
-          </TabsContent>
-          
-          <TabsContent value="runs" className="pt-4">
-            {agent && agent.id && (
-              <div className="space-y-4">
-                <RunsHistory agentId={agent.id} />
-                
-                <DialogFooter>
-                  <Button variant="outline" type="button" onClick={() => setActiveTab("configuration")}>
-                    Back to Configuration
-                  </Button>
-                  <Button 
-                    variant="default" 
-                    className="gap-1" 
-                    onClick={() => {
-                      onClose();
-                      // Open a new Test Agent interface through setSelectedAgentForTesting in settings page
-                      // This will be caught by the observer in settings-page.tsx
-                      const testEvent = new CustomEvent('test-agent', { 
-                        detail: { agent: agent }
-                      });
-                      window.dispatchEvent(testEvent);
-                      
-                      toast({
-                        title: "Test mode activated",
-                        description: `Agent "${agent.name}" is ready for testing.`,
-                      });
-                    }}
-                  >
-                    <PlayCircle className="h-4 w-4" /> Test Agent
-                  </Button>
-                </DialogFooter>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
       </DialogContent>
     </Dialog>
   );

@@ -100,22 +100,6 @@ export default function SettingsPage() {
   const [selectedTool, setSelectedTool] = useState<any>(null);
   const [selectedAgentForTesting, setSelectedAgentForTesting] = useState<any>(null);
   
-  // Event listener for test-agent events from AgentModal
-  useEffect(() => {
-    const handleTestAgent = (event: any) => {
-      if (event.detail && event.detail.agent) {
-        setSelectedAgentForTesting(event.detail.agent);
-        // Switch to the LangChain tab if not already there
-        setActiveTab("langchain");
-      }
-    };
-    
-    window.addEventListener('test-agent', handleTestAgent);
-    return () => {
-      window.removeEventListener('test-agent', handleTestAgent);
-    };
-  }, []);
-  
   // Fetch current settings
   const { data: settings, isLoading: isLoadingSettings } = useQuery({
     queryKey: ['/api/settings'],
@@ -150,120 +134,28 @@ export default function SettingsPage() {
   // Fetch LangChain agents
   const { data: langchainAgents = [], isLoading: isLoadingAgents } = useQuery({
     queryKey: ['/api/langchain/agents'],
-    queryFn: async ({ queryKey }) => {
-      try {
-        const response = await fetch(`${window.location.origin}${queryKey[0]}`, {
-          credentials: "include",
-          mode: "cors",
-          cache: "no-cache",
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error('Authentication required');
-          }
-          throw new Error(`Failed to fetch agents: ${response.statusText}`);
-        }
-        
-        return await response.json();
-      } catch (error) {
-        console.error('Error fetching LangChain agents:', error);
-        return [];
-      }
-    },
+    queryFn: getQueryFn({ on401: 'throw' }),
     enabled: activeTab === "langchain"
   }) as { data: any[], isLoading: boolean };
   
   // Fetch LangChain tools
   const { data: langchainTools = [], isLoading: isLoadingTools } = useQuery({
     queryKey: ['/api/langchain/tools'],
-    queryFn: async ({ queryKey }) => {
-      try {
-        const response = await fetch(`${window.location.origin}${queryKey[0]}`, {
-          credentials: "include",
-          mode: "cors",
-          cache: "no-cache",
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error('Authentication required');
-          }
-          throw new Error(`Failed to fetch tools: ${response.statusText}`);
-        }
-        
-        return await response.json();
-      } catch (error) {
-        console.error('Error fetching LangChain tools:', error);
-        return [];
-      }
-    },
+    queryFn: getQueryFn({ on401: 'throw' }),
     enabled: activeTab === "langchain"
   }) as { data: any[], isLoading: boolean };
   
   // Fetch LangChain prompt templates
   const { data: langchainPrompts = [], isLoading: isLoadingPrompts } = useQuery({
     queryKey: ['/api/langchain/prompts'],
-    queryFn: async ({ queryKey }) => {
-      try {
-        const response = await fetch(`${window.location.origin}${queryKey[0]}`, {
-          credentials: "include",
-          mode: "cors",
-          cache: "no-cache",
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error('Authentication required');
-          }
-          throw new Error(`Failed to fetch prompts: ${response.statusText}`);
-        }
-        
-        return await response.json();
-      } catch (error) {
-        console.error('Error fetching LangChain prompts:', error);
-        return [];
-      }
-    },
+    queryFn: getQueryFn({ on401: 'throw' }),
     enabled: activeTab === "langchain"
   }) as { data: any[], isLoading: boolean };
   
   // Fetch LangChain execution runs
   const { data: langchainRuns = [], isLoading: isLoadingRuns } = useQuery({
     queryKey: ['/api/langchain/runs'],
-    queryFn: async ({ queryKey }) => {
-      try {
-        const response = await fetch(`${window.location.origin}${queryKey[0]}`, {
-          credentials: "include",
-          mode: "cors",
-          cache: "no-cache",
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error('Authentication required');
-          }
-          throw new Error(`Failed to fetch runs: ${response.statusText}`);
-        }
-        
-        return await response.json();
-      } catch (error) {
-        console.error('Error fetching LangChain runs:', error);
-        return [];
-      }
-    },
+    queryFn: getQueryFn({ on401: 'throw' }),
     enabled: activeTab === "langchain"
   }) as { data: any[], isLoading: boolean };
   
@@ -2304,13 +2196,6 @@ export default function SettingsPage() {
         isOpen={isPromptModalOpen}
         onClose={() => setIsPromptModalOpen(false)}
         promptTemplate={null}
-      />
-      
-      {/* Agent Tester Modal */}
-      <AgentTester
-        isOpen={!!selectedAgentForTesting}
-        onClose={() => setSelectedAgentForTesting(null)}
-        agentId={selectedAgentForTesting?.id}
       />
     </SharedLayout>
   );
