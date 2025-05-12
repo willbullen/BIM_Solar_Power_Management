@@ -632,7 +632,7 @@ export function registerLangChainRoutes(app: Express) {
             name: 'ReadFromDB',
             description: 'Parameterized database queries with SQL injection protection',
             toolType: 'database',
-            schema: {
+            parameters: {
               type: 'object',
               properties: {
                 input: {
@@ -672,7 +672,7 @@ export function registerLangChainRoutes(app: Express) {
             name: 'CompileReport',
             description: 'Generate Markdown and PDF reports from structured data',
             toolType: 'report',
-            schema: {
+            parameters: {
               type: 'object',
               properties: {
                 input: {

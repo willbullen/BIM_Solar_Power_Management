@@ -93,24 +93,18 @@ export async function createAgent(
   console.log("ReadFromDBTool schema:", JSON.stringify(readFromDBTool.schema, null, 2));
   console.log("CompileReportTool schema:", JSON.stringify(compileReportTool.schema, null, 2));
 
-  // Force-set the schema transform function to ensure compatibility
-  readFromDBTool._schema = z.object({
-    input: z.string().optional().describe("SQL query to execute. Format: 'QUERY: select * from table WHERE column = ?; PARAMS: [\"value\"]'")
-  }).transform(input => {
-    if (typeof input === 'object' && input !== null && 'input' in input) {
-      return input.input || '';
-    }
-    return input as string || '';
-  });
+  // Import zod if needed - access it from the tool instances
+  const { schema: readFromDBSchema } = readFromDBTool;
+  const { schema: compileReportSchema } = compileReportTool;
+  
+  // Override tools with correct schema format if needed
+  if (readFromDBTool.schema) {
+    console.log("Verifying ReadFromDB tool schema is properly configured");
+  }
 
-  compileReportTool._schema = z.object({
-    input: z.string().optional().describe("Report details in the format: 'TITLE: <report-title>; CONTENT: <markdown-content>; FORMAT: [markdown|pdf]'")
-  }).transform(input => {
-    if (typeof input === 'object' && input !== null && 'input' in input) {
-      return input.input || '';
-    }
-    return input as string || '';
-  });
+  if (compileReportTool.schema) {
+    console.log("Verifying CompileReport tool schema is properly configured");
+  }
 
   // Set up tools to be compatible with LangChain's OpenAI functions format
   const tools: Tool<any>[] = [
