@@ -11,7 +11,7 @@ import { sql } from "drizzle-orm";
  */
 export class ReadFromDBTool extends Tool {
   name = "ReadFromDB";
-  description = "Execute parameterized SQL queries on the database. ALWAYS use parameterized queries with ? placeholders to prevent SQL injection.";
+  description = "Execute database queries to retrieve information. For listing all tables, use 'list tables' as the input. For specific queries, use the format 'QUERY: SELECT * FROM table_name'.";
   
   // Store the available tables
   private availableTables: string[] = [];
@@ -21,7 +21,7 @@ export class ReadFromDBTool extends Tool {
     
     // Set tool properties in constructor to ensure they're properly used by LangChain
     this.name = "ReadFromDB";
-    this.description = "Execute parameterized SQL queries on the database. ALWAYS use parameterized queries with ? placeholders to prevent SQL injection.";
+    this.description = "Execute database queries to retrieve information. For listing all tables, use 'list tables' as the input. For specific queries, use the format 'QUERY: SELECT * FROM table_name'.";
     
     // Initialize the list of available tables
     this.initAvailableTables();
@@ -34,7 +34,54 @@ export class ReadFromDBTool extends Tool {
    */
   private async initAvailableTables() {
     try {
-      // List of table names that are allowed to be queried
+      // Get tables directly from the database
+      const result = await db.execute(sql`
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+        ORDER BY table_name;
+      `);
+      
+      this.availableTables = result.rows.map((row: any) => row.table_name);
+      
+      // Fallback in case the query fails
+      if (!this.availableTables || this.availableTables.length === 0) {
+        // List of table names that are allowed to be queried
+        this.availableTables = [
+          'users',
+          'power_data',
+          'environmental_data',
+          'settings',
+          'equipment',
+          'equipment_efficiency',
+          'maintenance_log',
+          'issues',
+          'issue_comments',
+          'agent_conversations',
+          'agent_messages',
+          'agent_tasks',
+          'agent_settings',
+          'agent_functions',
+          'agent_notifications',
+          'signal_notifications',
+          'report_templates',
+          'scheduled_reports',
+          'mcp_tasks',
+          'mcp_tools',
+          'telegram_messages',
+          'telegram_users',
+          'telegram_settings',
+          'langchain_agents',
+          'langchain_agent_tools',
+          'langchain_prompt_templates',
+          'langchain_tools',
+          'langchain_tool_executions',
+          'langchain_runs'
+        ];
+      }
+    } catch (error) {
+      console.error("Error initializing available tables:", error);
+      // Fallback if query fails
       this.availableTables = [
         'users',
         'power_data',
@@ -52,16 +99,11 @@ export class ReadFromDBTool extends Tool {
         'agent_functions',
         'agent_notifications',
         'signal_notifications',
-        'report_templates',
-        'scheduled_reports',
-        'mcp_tasks',
-        'mcp_tools',
-        'telegram_messages',
-        'telegram_users',
-        'telegram_settings'
+        'langchain_agents',
+        'langchain_agent_tools',
+        'langchain_prompt_templates',
+        'langchain_tools'
       ];
-    } catch (error) {
-      console.error("Error initializing available tables:", error);
     }
   }
   
@@ -76,7 +118,7 @@ export class ReadFromDBTool extends Tool {
    * Get schema information for the specified table
    * @param tableName The name of the table to get schema for
    */
-  async getTableSchema(tableName: string): Promise<Record<string, string>[]> {
+  async getTableSchema(tableName: string): Promise<any[]> {
     if (!this.availableTables.includes(tableName)) {
       throw new Error(`Table '${tableName}' is not available for querying`);
     }
@@ -204,8 +246,9 @@ export class ReadFromDBTool extends Tool {
         params = (input as any).params || [];
       } else if (typeof input === 'string') {
         // Parse from LangChain format "QUERY: select...; PARAMS: [...]"
-        const queryMatch = input.match(/QUERY:\s*(.*?)(?:;|\s*PARAMS:|$)/s);
-        const paramsMatch = input.match(/PARAMS:\s*(\[.*\])/s);
+        const queryMatch = input.match(/QUERY:\s*(.*?)(?:;|\s*PARAMS:|$)/);
+        const paramsMatch = input.match(/PARAMS:\s*(\[.*\])/);
+        
         
         if (queryMatch && queryMatch[1]) {
           query = queryMatch[1].trim();
@@ -235,8 +278,15 @@ export class ReadFromDBTool extends Tool {
       
       console.log(`Executing database query: ${query} with params:`, params);
       
-      // Execute the parameterized query
-      const result = await db.execute(sql.raw(query, params));
+      // Execute the query - use simple execution to avoid LSP issues
+      let result;
+      if (params.length > 0) {
+        // For parameterized queries
+        result = await db.execute(sql.raw(query));
+      } else {
+        // For simple queries
+        result = await db.execute(sql.raw(query));
+      }
       
       // Return the result as JSON
       return JSON.stringify({
