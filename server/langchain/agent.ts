@@ -84,7 +84,12 @@ export async function createAgent(
   const readFromDBTool = new ReadFromDBTool();
   const compileReportTool = new CompileReportTool();
 
-  // Log the tool schemas to help with debugging
+  // Verify tools are properly initialized
+  console.log("Tool verification:");
+  console.log(`- ReadFromDBTool name: ${readFromDBTool.name}`);
+  console.log(`- CompileReportTool name: ${compileReportTool.name}`);
+  console.log(`- ReadFromDBTool description: ${readFromDBTool.description}`);
+  console.log(`- CompileReportTool description: ${compileReportTool.description}`);
   console.log("ReadFromDBTool schema:", JSON.stringify(readFromDBTool.schema, null, 2));
   console.log("CompileReportTool schema:", JSON.stringify(compileReportTool.schema, null, 2));
 
