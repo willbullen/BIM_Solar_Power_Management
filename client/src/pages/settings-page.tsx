@@ -134,28 +134,120 @@ export default function SettingsPage() {
   // Fetch LangChain agents
   const { data: langchainAgents = [], isLoading: isLoadingAgents } = useQuery({
     queryKey: ['/api/langchain/agents'],
-    queryFn: getQueryFn({ on401: 'throw' }),
+    queryFn: async ({ queryKey }) => {
+      try {
+        const response = await fetch(`${window.location.origin}${queryKey[0]}`, {
+          credentials: "include",
+          mode: "cors",
+          cache: "no-cache",
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Authentication required');
+          }
+          throw new Error(`Failed to fetch agents: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching LangChain agents:', error);
+        return [];
+      }
+    },
     enabled: activeTab === "langchain"
   }) as { data: any[], isLoading: boolean };
   
   // Fetch LangChain tools
   const { data: langchainTools = [], isLoading: isLoadingTools } = useQuery({
     queryKey: ['/api/langchain/tools'],
-    queryFn: getQueryFn({ on401: 'throw' }),
+    queryFn: async ({ queryKey }) => {
+      try {
+        const response = await fetch(`${window.location.origin}${queryKey[0]}`, {
+          credentials: "include",
+          mode: "cors",
+          cache: "no-cache",
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Authentication required');
+          }
+          throw new Error(`Failed to fetch tools: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching LangChain tools:', error);
+        return [];
+      }
+    },
     enabled: activeTab === "langchain"
   }) as { data: any[], isLoading: boolean };
   
   // Fetch LangChain prompt templates
   const { data: langchainPrompts = [], isLoading: isLoadingPrompts } = useQuery({
     queryKey: ['/api/langchain/prompts'],
-    queryFn: getQueryFn({ on401: 'throw' }),
+    queryFn: async ({ queryKey }) => {
+      try {
+        const response = await fetch(`${window.location.origin}${queryKey[0]}`, {
+          credentials: "include",
+          mode: "cors",
+          cache: "no-cache",
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Authentication required');
+          }
+          throw new Error(`Failed to fetch prompts: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching LangChain prompts:', error);
+        return [];
+      }
+    },
     enabled: activeTab === "langchain"
   }) as { data: any[], isLoading: boolean };
   
   // Fetch LangChain execution runs
   const { data: langchainRuns = [], isLoading: isLoadingRuns } = useQuery({
     queryKey: ['/api/langchain/runs'],
-    queryFn: getQueryFn({ on401: 'throw' }),
+    queryFn: async ({ queryKey }) => {
+      try {
+        const response = await fetch(`${window.location.origin}${queryKey[0]}`, {
+          credentials: "include",
+          mode: "cors",
+          cache: "no-cache",
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Authentication required');
+          }
+          throw new Error(`Failed to fetch runs: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching LangChain runs:', error);
+        return [];
+      }
+    },
     enabled: activeTab === "langchain"
   }) as { data: any[], isLoading: boolean };
   
