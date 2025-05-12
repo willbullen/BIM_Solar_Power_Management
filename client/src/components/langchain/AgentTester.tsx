@@ -136,7 +136,9 @@ export function AgentTester({ isOpen = true, onClose, agentId, selectedAgent, on
       return;
     }
     
-    if (!agentId) {
+    // Use the correct agent ID
+    const agentIdToTest = agent?.id || effectiveAgentId;
+    if (!agentIdToTest) {
       toast({
         title: "No agent selected",
         description: "Please select an agent to test.",
@@ -145,7 +147,7 @@ export function AgentTester({ isOpen = true, onClose, agentId, selectedAgent, on
       return;
     }
     
-    testMutation.mutate({ agentId, input: query });
+    testMutation.mutate({ agentId: agentIdToTest, input: query });
   };
 
   // Format timestamps
@@ -366,7 +368,12 @@ export function AgentTester({ isOpen = true, onClose, agentId, selectedAgent, on
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        if (onClose) onClose();
+        if (onClearAgent) onClearAgent();
+      }
+    }}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -405,7 +412,14 @@ export function AgentTester({ isOpen = true, onClose, agentId, selectedAgent, on
             </div>
             
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={onClose}>
+              <Button 
+                variant="outline" 
+                type="button" 
+                onClick={() => {
+                  if (onClose) onClose();
+                  if (onClearAgent) onClearAgent();
+                }}
+              >
                 Cancel
               </Button>
               <Button
