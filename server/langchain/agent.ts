@@ -150,7 +150,7 @@ export async function processMessage(
     // Create a unique run ID
     const runId = `run_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
     
-    // Record the run start
+    // Record the run start - include required run_type and properly handle input
     await db
       .insert(schema.langchainRuns)
       .values({
@@ -159,7 +159,8 @@ export async function processMessage(
         userId: null, // This would be filled with actual user ID if available
         startTime: new Date(),
         status: 'running',
-        input: { message },
+        input: JSON.stringify({ message }), // Convert to string for TEXT column
+        run_type: 'conversation', // Required field
       });
     
     try {

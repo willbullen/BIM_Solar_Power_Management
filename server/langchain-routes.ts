@@ -805,15 +805,15 @@ export function registerLangChainRoutes(app: Express) {
       try {
         const response = await model.invoke(message);
         
-        // Update run with result
+        // Update run with result - make sure output is a string since the column is TEXT type
         await db
           .update(schema.langchainRuns)
           .set({
             endTime: new Date(),
             status: 'completed',
-            output: { response: response.content },
+            output: JSON.stringify({ response: response.content }), // Convert object to string
           })
-          .where(eq(schema.langchainRuns.runId, runId));
+          .where(eq(schema.langchainRuns.runId, String(runId)));
         
         res.json({ 
           response: response.content,
@@ -822,15 +822,15 @@ export function registerLangChainRoutes(app: Express) {
       } catch (error) {
         console.error('Error invoking LangChain model:', error);
         
-        // Update run with error
+        // Update run with error - ensure error is properly handled as string
         await db
           .update(schema.langchainRuns)
           .set({
             endTime: new Date(),
             status: 'error',
-            error: error.message,
+            error: error instanceof Error ? error.message : String(error),
           })
-          .where(eq(schema.langchainRuns.runId, runId));
+          .where(eq(schema.langchainRuns.runId, String(runId)));
         
         res.status(500).json({ error: 'Failed to process message with LangChain' });
       }
