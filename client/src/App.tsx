@@ -9,7 +9,7 @@ import { NotificationProvider } from "@/context/notification-context";
 import { ProtectedRoute, AdminRoute } from "@/lib/protected-route";
 import DashboardPage from "@/pages/dashboard-page";
 import AuthPage from "@/pages/auth-page";
-import SettingsPage from "@/pages/settings-page";
+import SettingsPage from "@/pages/fixed-settings-page";
 import LangChainSettingsPage from "@/pages/langchain-settings-page";
 import ReportsPage from "@/pages/reports-page";
 import ForecastingPage from "@/pages/forecasting-page";
