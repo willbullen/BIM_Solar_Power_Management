@@ -1,6 +1,5 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getQueryFn } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, CheckCircle, Clock, TerminalSquare, Hourglass, Zap } from 'lucide-react';
@@ -9,18 +8,40 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
+interface AgentRun {
+  runId: string;
+  agentId: number;
+  status: string;
+  input: string;
+  output?: string;
+  error?: string;
+  startTime: string;
+  endTime?: string;
+  tokenUsage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+  toolCalls?: any[];
+  metadata?: Record<string, any>;
+}
+
 interface RunsHistoryProps {
   agentId: number;
 }
 
 export function RunsHistory({ agentId }: RunsHistoryProps) {
   // Fetch runs for this agent
-  const { data: runs = [], isLoading } = useQuery({
+  const { data: runs = [] as AgentRun[], isLoading } = useQuery<AgentRun[]>({
     queryKey: ['/api/langchain/runs', agentId],
     queryFn: async () => {
       const url = `/api/langchain/runs?agentId=${agentId}`;
-      const response = await fetch(url, {
+      const response = await fetch(`${window.location.origin}${url}`, {
+        credentials: "include",
+        mode: "cors",
+        cache: "no-cache",
         headers: {
+          'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
       });
@@ -126,7 +147,7 @@ export function RunsHistory({ agentId }: RunsHistoryProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.isArray(runs) && runs.map((run: any) => (
+            {Array.isArray(runs) && runs.map((run: AgentRun) => (
               <TableRow key={run.runId}>
                 <TableCell className="font-mono text-xs">
                   {formatDate(run.startTime)}

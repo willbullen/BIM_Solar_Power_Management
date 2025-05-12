@@ -14,23 +14,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 
 interface AgentTesterProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
   agentId?: number;
+  selectedAgent?: any;
+  onClearAgent?: () => void;
 }
 
-export function AgentTester({ isOpen, onClose, agentId }: AgentTesterProps) {
+export function AgentTester({ isOpen = true, onClose, agentId, selectedAgent, onClearAgent }: AgentTesterProps) {
   const { toast } = useToast();
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<string>("results");
   const [testResults, setTestResults] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  
+  // Use selectedAgent's id if provided
+  const effectiveAgentId = selectedAgent?.id || agentId;
 
-  // Fetch agent details if agentId is provided
-  const { data: agent } = useQuery({
-    queryKey: ['/api/langchain/agents', agentId],
+  // Fetch agent details if agentId is provided and selectedAgent isn't
+  const { data: fetchedAgent } = useQuery({
+    queryKey: ['/api/langchain/agents', effectiveAgentId],
     queryFn: async ({ queryKey }) => {
-      const url = `/api/langchain/agents/${agentId}`;
+      const url = `/api/langchain/agents/${effectiveAgentId}`;
       const response = await fetch(`${window.location.origin}${url}`, {
         credentials: "include",
         mode: "cors",
@@ -44,8 +49,11 @@ export function AgentTester({ isOpen, onClose, agentId }: AgentTesterProps) {
       }
       return await response.json();
     },
-    enabled: !!agentId && isOpen,
+    enabled: !!effectiveAgentId && isOpen && !selectedAgent,
   });
+  
+  // Use selectedAgent if provided, otherwise use the fetched agent
+  const agent = selectedAgent || fetchedAgent;
 
   // Fetch system status
   const { data: status = { 
