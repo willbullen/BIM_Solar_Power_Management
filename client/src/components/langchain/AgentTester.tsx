@@ -30,8 +30,19 @@ export function AgentTester({ isOpen, onClose, agentId }: AgentTesterProps) {
   const { data: agent } = useQuery({
     queryKey: ['/api/langchain/agents', agentId],
     queryFn: async ({ queryKey }) => {
-      const response = await getQueryFn({ on401: 'throw' })({ queryKey });
-      return response || {};
+      const url = `/api/langchain/agents/${agentId}`;
+      const response = await fetch(`${window.location.origin}${url}`, {
+        credentials: "include",
+        mode: "cors",
+        cache: "no-cache",
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch agent details');
+      }
+      return await response.json();
     },
     enabled: !!agentId && isOpen,
   });
@@ -45,7 +56,20 @@ export function AgentTester({ isOpen, onClose, agentId }: AgentTesterProps) {
     }
   } = useQuery({
     queryKey: ['/api/langchain/status'],
-    queryFn: getQueryFn(),
+    queryFn: async ({ queryKey }) => {
+      const response = await fetch(`${window.location.origin}${queryKey[0]}`, {
+        credentials: "include",
+        mode: "cors",
+        cache: "no-cache",
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch status');
+      }
+      return await response.json();
+    },
     enabled: isOpen,
     refetchInterval: 30000,
   });
@@ -55,10 +79,24 @@ export function AgentTester({ isOpen, onClose, agentId }: AgentTesterProps) {
     mutationFn: async (data: { agentId: number; input: string }) => {
       setLoading(true);
       try {
-        return await apiRequest(`/api/langchain/agents/${data.agentId}/test`, {
+        const response = await fetch(`${window.location.origin}/api/langchain/agents/${data.agentId}/test`, {
           method: 'POST',
-          data: { input: data.input },
+          credentials: "include",
+          mode: "cors",
+          cache: "no-cache",
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ input: data.input })
         });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Test failed: ${errorText}`);
+        }
+        
+        return await response.json();
       } finally {
         setLoading(false);
       }
@@ -325,7 +363,7 @@ export function AgentTester({ isOpen, onClose, agentId }: AgentTesterProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Wand2 className="h-5 w-5" />
-            {agent && agent.name ? `Test Agent: ${agent.name}` : 'Agent Tester'}
+            {agent && typeof agent === 'object' && 'name' in agent ? `Test Agent: ${agent.name}` : 'Agent Tester'}
           </DialogTitle>
           <DialogDescription>
             Test the agent with custom inputs and analyze its performance

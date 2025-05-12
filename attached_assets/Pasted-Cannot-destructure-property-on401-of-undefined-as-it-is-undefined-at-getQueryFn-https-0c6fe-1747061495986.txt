@@ -1,0 +1,42 @@
+Cannot destructure property 'on401' of 'undefined' as it is undefined.
+at getQueryFn (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/src/lib/queryClient.ts:100:37)
+at AgentTester (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/src/components/langchain/AgentTester.tsx?t=1747061248508:55:14)
+at renderWithHooks (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=231519c9:11548:26)
+at mountIndeterminateComponent (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=231519c9:14926:21)
+at beginWork (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=231519c9:15914:22)
+at HTMLUnknownElement.callCallback2 (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=231519c9:3674:22)
+at Object.invokeGuardedCallbackDev (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=231519c9:3699:24)
+at invokeGuardedCallback (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=231519c9:3733:39)
+at beginWork$1 (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=231519c9:19765:15)
+at performUnitOfWork (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=231519c9:19198:20)
+The above error occurred in the <AgentTester> component:
+
+    at AgentTester (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/src/components/langchain/AgentTester.tsx?t=1747061248508:31:31)
+    at main
+    at div
+    at div
+    at SharedLayout (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/src/components/ui/shared-layout.tsx:56:32)
+    at SettingsPage (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/src/pages/settings-page.tsx?t=1747061248508:96:21)
+    at Route (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=231519c9:323:16)
+    at AdminRoute (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/src/lib/protected-route.tsx:64:3)
+    at Switch (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=231519c9:379:17)
+    at NotificationProvider (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/src/context/notification-context.tsx:22:40)
+    at PowerDataProvider (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/src/hooks/use-power-data.tsx:25:37)
+    at RefreshRateProvider (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/src/hooks/use-refresh-rate.tsx:29:39)
+    at AuthProvider (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/src/hooks/use-auth.tsx:57:32)
+    at QueryClientProvider (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=231519c9:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+Cannot destructure property 'on401' of 'undefined' as it is undefined.
+at getQueryFn (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/src/lib/queryClient.ts:100:37)
+at AgentTester (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/src/components/langchain/AgentTester.tsx?t=1747061248508:55:14)
+at renderWithHooks (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=231519c9:11548:26)
+at mountIndeterminateComponent (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=231519c9:14926:21)
+at beginWork (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=231519c9:15914:22)
+at beginWork$1 (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=231519c9:19753:22)
+at performUnitOfWork (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=231519c9:19198:20)
+at workLoopSync (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=231519c9:19137:13)
+at renderRootSync (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=231519c9:19116:15)
+at recoverFromConcurrentError (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=231519c9:18736:28)
