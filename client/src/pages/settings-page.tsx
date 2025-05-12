@@ -2104,7 +2104,7 @@ export default function SettingsPage() {
 
   /* Modal components outside of main render function */
   
-  function CreateAgentModal() {
+  const CreateAgentModal = () => {
     if (!isAgentModalOpen) return null;
     
     return (
@@ -2498,7 +2498,7 @@ export default function SettingsPage() {
   }
 
   // Agent Modal Component
-  function DetailsAgentModal() {
+  const DetailsAgentModal = () => {
     if (!isAgentModalOpen) return null;
     
     return (
@@ -2895,5 +2895,3 @@ export default function SettingsPage() {
 
 // Export the component directly
 export default SettingsPage;
-
-export default SettingsPageWithModals;

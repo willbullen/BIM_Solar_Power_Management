@@ -78,20 +78,153 @@ export default function LangChainSettingsPage() {
             
             {/* Other tabs would go here */}
             <TabsContent value="tools">
-              <div className="p-4 text-center text-muted-foreground">
-                Tools configuration panel
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium">Available Tools</h3>
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                    onClick={() => {
+                      toast({
+                        title: "Tool Created",
+                        description: "New tool has been added successfully.",
+                      });
+                    }}
+                  >
+                    <Zap className="h-4 w-4" />
+                    Create New Tool
+                  </Button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="bg-slate-800 p-4 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">Database</Badge>
+                        <h4 className="font-medium">SQL Query Tool</h4>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm">View Schema</Button>
+                        <Button variant="ghost" size="sm">Configure</Button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-400 mt-2">Executes SQL queries against the application database</p>
+                  </div>
+                  
+                  <div className="bg-slate-800 p-4 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">External</Badge>
+                        <h4 className="font-medium">Weather API Tool</h4>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm">View Schema</Button>
+                        <Button variant="ghost" size="sm">Configure</Button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-400 mt-2">Fetches weather data from external weather API service</p>
+                  </div>
+                </div>
               </div>
             </TabsContent>
             
             <TabsContent value="prompts">
-              <div className="p-4 text-center text-muted-foreground">
-                Prompt templates panel
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium">Prompt Templates</h3>
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                    onClick={() => {
+                      toast({
+                        title: "Template Created",
+                        description: "New prompt template has been created successfully.",
+                      });
+                    }}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    Create Template
+                  </Button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="bg-slate-800 p-4 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">System</Badge>
+                        <h4 className="font-medium">Energy Advisor Template</h4>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm">View</Button>
+                        <Button variant="ghost" size="sm">Edit</Button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-400 mt-2">Template for providing energy usage advice based on usage patterns</p>
+                  </div>
+                </div>
               </div>
             </TabsContent>
             
             <TabsContent value="runs">
-              <div className="p-4 text-center text-muted-foreground">
-                Execution runs history panel
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium">Execution Runs</h3>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        toast({
+                          title: "Runs Refreshed",
+                          description: "Execution runs list has been refreshed.",
+                        });
+                      }}
+                    >
+                      Refresh
+                    </Button>
+                    <Button 
+                      variant="ghost"
+                      onClick={() => {
+                        toast({
+                          title: "Logs Cleared",
+                          description: "All execution logs have been cleared.",
+                          variant: "destructive"
+                        });
+                      }}
+                    >
+                      Clear Logs
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="bg-slate-800 p-4 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-green-500 hover:bg-green-600">Success</Badge>
+                        <h4 className="font-medium">Execution #1002</h4>
+                        <span className="text-xs text-slate-400">12 minutes ago</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm">View Details</Button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-400 mt-2">Main Assistant Agent - SQL Query Tool - Database query execution</p>
+                  </div>
+                  
+                  <div className="bg-slate-800 p-4 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">Running</Badge>
+                        <h4 className="font-medium">Execution #1001</h4>
+                        <span className="text-xs text-slate-400">27 minutes ago</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm">View Details</Button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-400 mt-2">Main Assistant Agent - Weather API Tool - Forecast data</p>
+                  </div>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
