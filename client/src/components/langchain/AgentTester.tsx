@@ -246,9 +246,12 @@ export function AgentTester({ selectedAgent }: AgentTesterProps) {
         
         {/* Response Area */}
         {(isLoading || response) && (
-          <div className="space-y-2">
-            <div className="text-sm font-medium">Agent Response</div>
-            <div className="rounded-md border p-3 bg-slate-900 min-h-[100px]">
+          <div className="space-y-4">
+            <div className="text-sm font-medium flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Agent Response
+            </div>
+            <div className="rounded-md border p-4 bg-slate-900 min-h-[100px]">
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -258,6 +261,127 @@ export function AgentTester({ selectedAgent }: AgentTesterProps) {
                 <div className="text-sm whitespace-pre-wrap">{response}</div>
               )}
             </div>
+            
+            {/* Test Results Details */}
+            {testResult && !isLoading && (
+              <div className="space-y-4 mt-4">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm font-medium flex items-center gap-2">
+                    <BarChart className="h-4 w-4" />
+                    Test Results
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Run ID: {testResult.runId.substring(0, 8)}...
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Performance Metrics */}
+                  <div className="rounded-md border p-4 bg-slate-900">
+                    <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-primary" /> Performance
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-muted-foreground">Execution Time</span>
+                          <span className="font-medium">{(testResult.executionTimeMs / 1000).toFixed(2)}s</span>
+                        </div>
+                        <Progress 
+                          value={Math.min(100, (testResult.executionTimeMs / 5000) * 100)} 
+                          className="h-1.5" 
+                        />
+                      </div>
+                      
+                      <div className="flex justify-between text-xs mt-3">
+                        <span className="text-muted-foreground">Model</span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <span className="font-medium bg-primary/10 text-primary px-2 py-0.5 rounded text-xs">
+                                {testResult.modelName}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Model used for this agent test</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Timestamp</span>
+                        <span className="font-mono text-xs">
+                          {new Date(testResult.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Token Usage */}
+                  <div className="rounded-md border p-4 bg-slate-900">
+                    <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-yellow-500" /> Token Usage
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-muted-foreground">Prompt Tokens</span>
+                          <span>{testResult.tokenUsage.promptTokens}</span>
+                        </div>
+                        <Progress 
+                          value={Math.min(100, (testResult.tokenUsage.promptTokens / 1000) * 100)} 
+                          className="h-1.5 bg-slate-700" 
+                        />
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-muted-foreground">Completion Tokens</span>
+                          <span>{testResult.tokenUsage.completionTokens}</span>
+                        </div>
+                        <Progress 
+                          value={Math.min(100, (testResult.tokenUsage.completionTokens / 1000) * 100)} 
+                          className="h-1.5 bg-slate-700" 
+                        />
+                      </div>
+                      
+                      <div className="pt-2 mt-1 border-t border-slate-700">
+                        <div className="flex justify-between text-xs">
+                          <span className="font-medium">Total Tokens</span>
+                          <Badge variant="outline" className="bg-slate-800">
+                            {testResult.tokenUsage.totalTokens}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Tool Usage */}
+                <div className="rounded-md border p-4 bg-slate-900">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Wrench className="h-4 w-4 text-blue-500" /> Tool Usage
+                    </h4>
+                    <Badge 
+                      variant={testResult.hasToolCalls ? "outline" : "secondary"}
+                      className={testResult.hasToolCalls 
+                        ? "bg-blue-950 text-blue-400 border-blue-700" 
+                        : ""}
+                    >
+                      {testResult.hasToolCalls ? "Tools Used" : "No Tools Used"}
+                    </Badge>
+                  </div>
+                  
+                  <div className="text-xs text-muted-foreground">
+                    {testResult.hasToolCalls 
+                      ? "This agent execution used one or more tools. Check the logs for details." 
+                      : "No tools were called during this execution."}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
