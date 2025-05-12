@@ -149,10 +149,32 @@ export class ReadFromDBTool extends Tool {
   
   /**
    * Execute the tool with the specified input
-   * @param input String in format 'QUERY: <sql>; PARAMS: <json-params-array>'
+   * @param input String in format 'QUERY: <sql>; PARAMS: <json-params-array>' or special commands
    */
   async _call(input: string): Promise<string> {
     try {
+      // Check for direct commands first
+      if (input.toLowerCase().includes("list tables") || 
+          input.toLowerCase().includes("show tables") || 
+          input.toLowerCase().includes("get tables")) {
+        
+        console.log("Tool received 'list tables' command");
+        
+        // Direct command to list tables
+        const result = await db.execute(sql`
+          SELECT table_name
+          FROM information_schema.tables
+          WHERE table_schema = 'public'
+          ORDER BY table_name;
+        `);
+        
+        return JSON.stringify({
+          message: "Here are all tables in the database:",
+          rowCount: result.rowCount,
+          rows: result.rows
+        });
+      }
+      
       // Parse the input string to extract query and params
       let query = '';
       let params: any[] = [];

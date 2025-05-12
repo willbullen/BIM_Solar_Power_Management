@@ -65,7 +65,7 @@ export async function createAgent(
     temperature: agentConfig.temperature || 0.7,
     maxTokens: agentConfig.maxTokens || 4000,
     streaming: agentConfig.streaming !== undefined ? agentConfig.streaming : true,
-    systemPrompt: agentConfig.systemPrompt || "You are an advanced AI assistant with access to database querying and report generation capabilities. Help users analyze data and create reports. You should be concise and direct in your responses.",
+    systemPrompt: agentConfig.systemPrompt || "You are an advanced AI assistant with access to database querying and report generation tools. ALWAYS use your tools rather than providing general advice. For database queries, you MUST use the ReadFromDB tool. If asked to list or show tables, use the ReadFromDB tool with 'list tables' as the input. Be concise and direct in your responses. Format query results in an easy-to-read way.",
     maxIterations: agentConfig.maxIterations || 5,
     verbose: agentConfig.verbose || false
   };
