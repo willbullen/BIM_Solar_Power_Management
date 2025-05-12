@@ -5,7 +5,6 @@ import { z } from "zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { Link } from "wouter";
 import { SharedLayout } from "@/components/ui/shared-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -15,10 +14,10 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Save, Send, Settings, Users, Zap, CloudSun, Palette, Globe, BugPlay, MessageSquare, MessageCircle, Check, AlertTriangle, Info, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2, Save, Send, Settings, Users, Zap, CloudSun, Palette, Globe, BugPlay, MessageSquare, MessageCircle, Check, AlertTriangle, Info } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CreateTestNotificationButton } from "@/components/create-test-notification-button";
@@ -94,11 +93,6 @@ export default function SettingsPage() {
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<any>(null);
   const [selectedTool, setSelectedTool] = useState<any>(null);
-  const [viewSchemaOpen, setViewSchemaOpen] = useState(false);
-  const [configureToolOpen, setConfigureToolOpen] = useState(false);
-  const [viewAgentDetailsOpen, setViewAgentDetailsOpen] = useState(false);
-  const [editAgentOpen, setEditAgentOpen] = useState(false);
-  const [selectedRun, setSelectedRun] = useState<any>(null);
   
   // Fetch current settings
   const { data: settings, isLoading: isLoadingSettings } = useQuery({
@@ -556,40 +550,39 @@ export default function SettingsPage() {
   };
   
   return (
-    <>
-      <SharedLayout>
-        <h1 className="text-2xl font-bold mb-6">Settings</h1>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-2 md:grid-cols-6 w-full md:w-fit">
-            <TabsTrigger value="general">
-              <Settings className="h-4 w-4 mr-2" />
-              General
-            </TabsTrigger>
-            <TabsTrigger value="solcast">
-              <CloudSun className="h-4 w-4 mr-2" />
-              Solcast API
-            </TabsTrigger>
-            <TabsTrigger value="user">
-              <Users className="h-4 w-4 mr-2" />
-              User Profile
-            </TabsTrigger>
-            <TabsTrigger value="appearance">
-              <Palette className="h-4 w-4 mr-2" />
-              Appearance
-            </TabsTrigger>
-            <TabsTrigger value="integrations">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Integrations
-            </TabsTrigger>
-            <TabsTrigger value="langchain">
-              <Zap className="h-4 w-4 mr-2" />
-              LangChain
-            </TabsTrigger>
-            <TabsTrigger value="developer">
-              <BugPlay className="h-4 w-4 mr-2" />
-              Advanced
-            </TabsTrigger>
-          </TabsList>
+    <SharedLayout>
+      <h1 className="text-2xl font-bold mb-6">Settings</h1>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid grid-cols-2 md:grid-cols-6 w-full md:w-fit">
+          <TabsTrigger value="general">
+            <Settings className="h-4 w-4 mr-2" />
+            General
+          </TabsTrigger>
+          <TabsTrigger value="solcast">
+            <CloudSun className="h-4 w-4 mr-2" />
+            Solcast API
+          </TabsTrigger>
+          <TabsTrigger value="user">
+            <Users className="h-4 w-4 mr-2" />
+            User Profile
+          </TabsTrigger>
+          <TabsTrigger value="appearance">
+            <Palette className="h-4 w-4 mr-2" />
+            Appearance
+          </TabsTrigger>
+          <TabsTrigger value="integrations">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Integrations
+          </TabsTrigger>
+          <TabsTrigger value="langchain">
+            <Zap className="h-4 w-4 mr-2" />
+            LangChain
+          </TabsTrigger>
+          <TabsTrigger value="developer">
+            <BugPlay className="h-4 w-4 mr-2" />
+            Advanced
+          </TabsTrigger>
+        </TabsList>
         
         {/* General Settings */}
         <TabsContent value="general">
@@ -1639,21 +1632,6 @@ export default function SettingsPage() {
               <CardDescription>
                 Configure LangChain agents, tools, and prompt templates
               </CardDescription>
-              <Alert className="mt-4 mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Enhanced LangChain Settings Available</AlertTitle>
-                <AlertDescription>
-                  We've improved the LangChain settings interface. Please use the dedicated page below for all LangChain configuration.
-                </AlertDescription>
-              </Alert>
-              <div className="mt-4 flex justify-center">
-                <Link href="/langchain-settings">
-                  <Button className="w-full md:w-auto" size="lg">
-                    <Zap className="h-5 w-5 mr-2" />
-                    Go to LangChain Settings
-                  </Button>
-                </Link>
-              </div>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="agents" className="mt-2">
@@ -1745,13 +1723,10 @@ export default function SettingsPage() {
                                     tools: 2
                                   });
                                   // Open agent details modal
-                                  setSelectedAgent({
-                                    id: 1,
-                                    name: "PowerAnalysisAgent",
-                                    model: "gpt-4o",
-                                    description: "Analyzes power consumption patterns and identifies optimization opportunities"
+                                  toast({
+                                    title: "Agent details",
+                                    description: "This would show agent details in a modal"
                                   });
-                                  setViewAgentDetailsOpen(true);
                                 }}
                               >
                                 View Details
@@ -1770,7 +1745,10 @@ export default function SettingsPage() {
                                     tools: 2
                                   });
                                   // Open agent edit modal
-                                  setEditAgentOpen(true);
+                                  toast({
+                                    title: "Edit agent",
+                                    description: "This would open an edit agent form"
+                                  });
                                 }}
                               >
                                 Edit
@@ -1840,34 +1818,10 @@ export default function SettingsPage() {
                             </div>
                             
                             <div className="flex justify-end gap-2 mt-4">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="text-slate-400"
-                                onClick={() => {
-                                  setSelectedTool({
-                                    id: 1,
-                                    name: "ReadFromDB",
-                                    type: "Custom Tool (Database)"
-                                  });
-                                  setViewSchemaOpen(true);
-                                }}
-                              >
+                              <Button variant="outline" size="sm" className="text-slate-400">
                                 View Schema
                               </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="text-blue-400"
-                                onClick={() => {
-                                  setSelectedTool({
-                                    id: 1,
-                                    name: "ReadFromDB",
-                                    type: "Custom Tool (Database)"
-                                  });
-                                  setConfigureToolOpen(true);
-                                }}
-                              >
+                              <Button variant="outline" size="sm" className="text-blue-400">
                                 Configure
                               </Button>
                             </div>
@@ -1911,37 +1865,10 @@ export default function SettingsPage() {
                             </div>
                             
                             <div className="flex justify-end gap-2 mt-4">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="text-slate-400"
-                                onClick={() => {
-                                  setSelectedTool({
-                                    id: 2,
-                                    name: "CompileReport",
-                                    type: "Built-in"
-                                  });
-                                  toast({
-                                    title: "Report Schema",
-                                    description: "Viewing schema for CompileReport tool"
-                                  });
-                                }}
-                              >
+                              <Button variant="outline" size="sm" className="text-slate-400">
                                 View Schema
                               </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="text-blue-400"
-                                onClick={() => {
-                                  setSelectedTool({
-                                    id: 2,
-                                    name: "CompileReport",
-                                    type: "Built-in"
-                                  });
-                                  setConfigureToolOpen(true);
-                                }}
-                              >
+                              <Button variant="outline" size="sm" className="text-blue-400">
                                 Configure
                               </Button>
                             </div>
@@ -1962,6 +1889,10 @@ export default function SettingsPage() {
                         className="flex items-center gap-2"
                         onClick={() => {
                           setIsPromptModalOpen(true);
+                          toast({
+                            title: "Create Prompt Template",
+                            description: "This would open a form to create a new prompt template"
+                          });
                         }}
                       >
                         <Zap className="h-4 w-4" />
@@ -1985,6 +1916,10 @@ export default function SettingsPage() {
                           className="mt-2"
                           onClick={() => {
                             setIsPromptModalOpen(true);
+                            toast({
+                              title: "Create Prompt Template",
+                              description: "This would open a form to create a new prompt template"
+                            });
                           }}
                         >
                           Create Your First Template
@@ -2006,28 +1941,10 @@ export default function SettingsPage() {
                         <div className="flex justify-between items-center">
                           <h4 className="font-medium">Recent Runs</h4>
                           <div className="flex items-center gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-8"
-                              onClick={() => {
-                                toast({
-                                  title: "Refreshing",
-                                  description: "Refreshing execution runs data"
-                                });
-                              }}
-                            >
+                            <Button variant="outline" size="sm" className="h-8">
                               Refresh
                             </Button>
-                            <Select 
-                              defaultValue="all"
-                              onValueChange={(value) => {
-                                toast({
-                                  title: "Filter Applied",
-                                  description: `Showing ${value === 'all' ? 'all' : value} execution runs`
-                                });
-                              }}
-                            >
+                            <Select defaultValue="all">
                               <SelectTrigger className="w-[160px] h-8">
                                 <SelectValue placeholder="Status" />
                               </SelectTrigger>
@@ -2108,797 +2025,4 @@ export default function SettingsPage() {
       </Tabs>
     </SharedLayout>
   );
-
-  /* Modal components outside of main render function */
-  
-  const CreateAgentModal = () => {
-    if (!isAgentModalOpen) return null;
-    
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md">
-          <h2 className="text-xl font-semibold mb-4">Create New Agent</h2>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Agent Name</label>
-                <input 
-                  type="text" 
-                  className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                  placeholder="Enter agent name"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
-                <textarea 
-                  className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                  placeholder="Enter agent description"
-                  rows={3}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Model</label>
-                <select className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm">
-                  <option value="gpt-4o">GPT-4o</option>
-                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="outline" onClick={() => setIsAgentModalOpen(false)}>Cancel</Button>
-              <Button 
-                onClick={() => {
-                  setIsAgentModalOpen(false);
-                  toast({
-                    title: "Agent Created",
-                    description: "New agent has been created successfully"
-                  });
-                }}
-              >
-                Create Agent
-              </Button>
-            </div>
-          </div>
-        </div>
-      )
-    );
-  }
-
-  function ToolModal() {
-    return (
-      isToolModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Create New Tool</h2>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Tool Name</label>
-                <input 
-                  type="text" 
-                  className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                  placeholder="Enter tool name"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
-                <textarea 
-                  className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                  placeholder="Enter tool description"
-                  rows={3}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Tool Type</label>
-                <select className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm">
-                  <option value="function">Function Tool</option>
-                  <option value="database">Database Tool</option>
-                  <option value="api">API Tool</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="outline" onClick={() => setIsToolModalOpen(false)}>Cancel</Button>
-              <Button 
-                onClick={() => {
-                  setIsToolModalOpen(false);
-                  toast({
-                    title: "Tool Created",
-                    description: "New tool has been created successfully"
-                  });
-                }}
-              >
-                Create Tool
-              </Button>
-            </div>
-          </div>
-        </div>
-      )
-    );
-  }
-
-  function PromptTemplateModal() {
-    return (
-      isPromptModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Create Prompt Template</h2>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Template Name</label>
-                <input 
-                  type="text" 
-                  className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                  placeholder="Enter template name"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
-                <textarea 
-                  className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                  placeholder="Enter template description"
-                  rows={2}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Template Content</label>
-                <textarea 
-                  className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm font-mono"
-                  placeholder="Enter template with {variables}"
-                  rows={6}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="outline" onClick={() => setIsPromptModalOpen(false)}>Cancel</Button>
-              <Button 
-                onClick={() => {
-                  setIsPromptModalOpen(false);
-                  toast({
-                    title: "Template Created",
-                    description: "New prompt template has been created successfully"
-                  });
-                }}
-              >
-                Create Template
-              </Button>
-            </div>
-          </div>
-        </div>
-      )
-    );
-  }
-
-  function ToolSchemaModal() {
-    return (
-      selectedTool && viewSchemaOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 rounded-lg p-6 w-full max-w-4xl">
-            <h2 className="text-xl font-semibold mb-4">{selectedTool.name} Schema</h2>
-            <div className="bg-slate-900 p-4 rounded-md overflow-auto max-h-96">
-              <pre className="text-sm text-slate-300 font-mono">
-                {JSON.stringify({
-                  name: selectedTool.name,
-                  type: selectedTool.type,
-                  schema: {
-                    properties: {
-                      query: {
-                        type: "string",
-                        description: "SQL query to execute (will be parameterized)"
-                      },
-                      parameters: {
-                        type: "object",
-                        description: "Parameters for the query"
-                      }
-                    },
-                    required: ["query"]
-                  }
-                }, null, 2)}
-              </pre>
-            </div>
-            <div className="flex justify-end mt-6">
-              <Button 
-                onClick={() => {
-                  setViewSchemaOpen(false);
-                }}
-              >
-                Close
-              </Button>
-            </div>
-          </div>
-        </div>
-      )
-    );
-  }
-  
-  function ConfigureToolModal() {
-    return (
-      selectedTool && configureToolOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Configure {selectedTool.name}</h2>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Connection String</label>
-                <input 
-                  type="text" 
-                  className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                  placeholder="Database connection string"
-                  defaultValue={selectedTool.name === "ReadFromDB" ? "postgresql://..." : ""}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Permissions</label>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center space-x-2">
-                    <input type="checkbox" id="allow-select" className="rounded border-slate-600 bg-slate-700" defaultChecked />
-                    <label htmlFor="allow-select" className="text-sm">Allow SELECT queries</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input type="checkbox" id="allow-create" className="rounded border-slate-600 bg-slate-700" />
-                    <label htmlFor="allow-create" className="text-sm">Allow CREATE statements</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input type="checkbox" id="allow-modify" className="rounded border-slate-600 bg-slate-700" />
-                    <label htmlFor="allow-modify" className="text-sm">Allow UPDATE/DELETE</label>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Rate Limiting</label>
-                <input 
-                  type="number" 
-                  className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                  placeholder="Max requests per minute"
-                  defaultValue="10"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="outline" onClick={() => setConfigureToolOpen(false)}>Cancel</Button>
-              <Button 
-                onClick={() => {
-                  setConfigureToolOpen(false);
-                  toast({
-                    title: "Tool Configured",
-                    description: `${selectedTool.name} configuration has been updated`
-                  });
-                }}
-              >
-                Save Configuration
-              </Button>
-            </div>
-          </div>
-        </div>
-      )
-    );
-  }
-  
-  // Additional modals for agent functionality
-  function AgentDetailsModal() {
-    return (
-      selectedAgent && viewAgentDetailsOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Agent Details</h2>
-            <div className="space-y-4">
-              <div className="bg-slate-700 p-4 rounded-md">
-                <h3 className="text-lg font-medium mb-1">{selectedAgent.name}</h3>
-                <p className="text-sm text-slate-300 mb-3">{selectedAgent.description}</p>
-                
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Model:</span>
-                    <div className="font-medium">{selectedAgent.model || selectedAgent.modelName}</div>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Temperature:</span>
-                    <div className="font-medium">{selectedAgent.temperature}</div>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Tools:</span>
-                    <div className="font-medium">{selectedAgent.tools} active tools</div>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Status:</span>
-                    <div className="font-medium text-green-400">Active</div>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="text-sm font-medium mb-2">Recent Executions</h4>
-                <div className="space-y-2">
-                  <div className="bg-slate-900 p-2 rounded text-xs">
-                    <div className="flex justify-between">
-                      <span>Power Analysis</span>
-                      <span className="text-blue-400">2 min ago</span>
-                    </div>
-                  </div>
-                  <div className="bg-slate-900 p-2 rounded text-xs">
-                    <div className="flex justify-between">
-                      <span>Forecast Report</span>
-                      <span className="text-blue-400">35 min ago</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end mt-6">
-              <Button 
-                onClick={() => setViewAgentDetailsOpen(false)}
-              >
-                Close
-              </Button>
-            </div>
-          </div>
-        </div>
-      )
-    );
-  }
-
-  function EditAgentModal() {
-    return (
-      selectedAgent && editAgentOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Edit Agent</h2>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Agent Name</label>
-                <input 
-                  type="text" 
-                  className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                  defaultValue={selectedAgent.name}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
-                <textarea 
-                  className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                  defaultValue={selectedAgent.description}
-                  rows={3}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Model</label>
-                <select 
-                  className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                  defaultValue={selectedAgent.model || selectedAgent.modelName}
-                >
-                  <option value="gpt-4o">GPT-4o</option>
-                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Temperature</label>
-                <input 
-                  type="range" 
-                  min="0" 
-                  max="1" 
-                  step="0.1"
-                  defaultValue={selectedAgent.temperature}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-slate-400">
-                  <span>Precise (0.0)</span>
-                  <span>Creative (1.0)</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="outline" onClick={() => setEditAgentOpen(false)}>Cancel</Button>
-              <Button 
-                onClick={() => {
-                  setEditAgentOpen(false);
-                  toast({
-                    title: "Agent Updated",
-                    description: "Agent settings have been updated successfully"
-                  });
-                }}
-              >
-                Save Changes
-              </Button>
-            </div>
-          </div>
-        </div>
-      )
-    );
-  }
-
-  // Agent Modal Component
-  const DetailsAgentModal = () => {
-    if (!isAgentModalOpen) return null;
-    
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-slate-800 rounded-lg p-6 w-full max-w-lg">
-          <h2 className="text-xl font-semibold mb-4">Create New Agent</h2>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Agent Name</label>
-              <input 
-                type="text" 
-                className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                placeholder="Enter agent name"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Description</label>
-              <textarea 
-                className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                placeholder="Enter agent description"
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Model</label>
-              <select 
-                className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                defaultValue="gpt-4o"
-              >
-                <option value="gpt-4o">GPT-4o</option>
-                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Temperature</label>
-              <input 
-                type="range" 
-                min="0" 
-                max="1" 
-                step="0.1"
-                defaultValue="0.7"
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-slate-400">
-                <span>Precise (0.0)</span>
-                <span>Creative (1.0)</span>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">System Prompt</label>
-              <textarea 
-                className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                placeholder="Enter system prompt"
-                rows={4}
-                defaultValue="You are an advanced AI assistant for Emporium Power Monitoring. Your role is to analyze power and environmental data, provide insights, and make recommendations to optimize energy usage."
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 mt-6">
-            <Button variant="outline" onClick={() => setIsAgentModalOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={() => {
-                setIsAgentModalOpen(false);
-                toast({
-                  title: "Agent Created",
-                  description: "New agent has been created successfully"
-                });
-              }}
-            >
-              Create Agent
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Tool Modal Component
-  function ToolModal() {
-    if (!isToolModalOpen) return null;
-    
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-slate-800 rounded-lg p-6 w-full max-w-lg">
-          <h2 className="text-xl font-semibold mb-4">Create New Tool</h2>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Tool Name</label>
-              <input 
-                type="text" 
-                className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                placeholder="Enter tool name"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Description</label>
-              <textarea 
-                className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                placeholder="Enter tool description"
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Tool Type</label>
-              <select 
-                className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                defaultValue="database"
-              >
-                <option value="database">Database</option>
-                <option value="api">API</option>
-                <option value="function">Custom Function</option>
-                <option value="report">Report Generator</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Parameters Schema (JSON)</label>
-              <textarea 
-                className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm font-mono"
-                placeholder='{"type": "object", "properties": {...}, "required": [...]}'
-                rows={5}
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 mt-6">
-            <Button variant="outline" onClick={() => setIsToolModalOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={() => {
-                setIsToolModalOpen(false);
-                toast({
-                  title: "Tool Created",
-                  description: "New tool has been created successfully"
-                });
-              }}
-            >
-              Create Tool
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Prompt Template Modal Component
-  function PromptTemplateModal() {
-    if (!isPromptModalOpen) return null;
-    
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-slate-800 rounded-lg p-6 w-full max-w-lg">
-          <h2 className="text-xl font-semibold mb-4">Create Prompt Template</h2>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Template Name</label>
-              <input 
-                type="text" 
-                className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                placeholder="Enter template name"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Description</label>
-              <textarea 
-                className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                placeholder="Enter template description"
-                rows={2}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Template Type</label>
-              <select 
-                className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                defaultValue="system"
-              >
-                <option value="system">System Prompt</option>
-                <option value="user">User Message</option>
-                <option value="query">Database Query</option>
-                <option value="report">Report Template</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Content</label>
-              <textarea 
-                className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm font-mono"
-                placeholder="Enter prompt template content with {variables} as needed"
-                rows={6}
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 mt-6">
-            <Button variant="outline" onClick={() => setIsPromptModalOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={() => {
-                setIsPromptModalOpen(false);
-                toast({
-                  title: "Template Created",
-                  description: "New prompt template has been created successfully"
-                });
-              }}
-            >
-              Create Template
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Tool Schema Modal Component
-  function ToolSchemaModal() {
-    if (!viewSchemaOpen || !selectedTool) return null;
-    
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-slate-800 rounded-lg p-6 w-full max-w-2xl">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">{selectedTool.name} Schema</h2>
-            <Badge variant="outline" className="bg-slate-700">{selectedTool.type}</Badge>
-          </div>
-          <div className="bg-slate-900 p-4 rounded-md font-mono text-sm overflow-auto max-h-[60vh]">
-            <pre className="text-green-400">{
-`{
-  "type": "object",
-  "properties": {
-    "query": {
-      "type": "string",
-      "description": "The SQL query to execute. Must use parameterized queries for security."
-    },
-    "params": {
-      "type": "array",
-      "description": "Query parameters to prevent SQL injection",
-      "items": {
-        "type": "string"
-      }
-    }
-  },
-  "required": ["query"]
-}`
-            }</pre>
-          </div>
-          <div className="flex justify-end mt-6">
-            <Button onClick={() => setViewSchemaOpen(false)}>Close</Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Configure Tool Modal Component
-  function ConfigureToolModal() {
-    if (!configureToolOpen || !selectedTool) return null;
-    
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-slate-800 rounded-lg p-6 w-full max-w-lg">
-          <h2 className="text-xl font-semibold mb-4">Configure {selectedTool.name}</h2>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Access Level</label>
-              <select 
-                className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
-                defaultValue="full"
-              >
-                <option value="full">Full Access</option>
-                <option value="read">Read Only</option>
-                <option value="restricted">Restricted</option>
-              </select>
-            </div>
-            {selectedTool.name === "ReadFromDB" && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Allowed Tables</label>
-                <div className="bg-slate-900 p-3 rounded-md max-h-[200px] overflow-y-auto">
-                  <div className="space-y-2">
-                    <div className="flex items-center">
-                      <input type="checkbox" id="table-power_data" defaultChecked className="mr-2" />
-                      <label htmlFor="table-power_data">power_data</label>
-                    </div>
-                    <div className="flex items-center">
-                      <input type="checkbox" id="table-environmental_data" defaultChecked className="mr-2" />
-                      <label htmlFor="table-environmental_data">environmental_data</label>
-                    </div>
-                    <div className="flex items-center">
-                      <input type="checkbox" id="table-forecast_data" defaultChecked className="mr-2" />
-                      <label htmlFor="table-forecast_data">forecast_data</label>
-                    </div>
-                    <div className="flex items-center">
-                      <input type="checkbox" id="table-users" className="mr-2" />
-                      <label htmlFor="table-users">users</label>
-                    </div>
-                    <div className="flex items-center">
-                      <input type="checkbox" id="table-settings" defaultChecked className="mr-2" />
-                      <label htmlFor="table-settings">settings</label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Implementation</label>
-              <input 
-                type="text" 
-                className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm font-mono"
-                defaultValue={`${selectedTool.name}Tool`}
-                readOnly
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">Enabled</label>
-                <Switch defaultChecked={true} />
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 mt-6">
-            <Button variant="outline" onClick={() => setConfigureToolOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={() => {
-                setConfigureToolOpen(false);
-                toast({
-                  title: "Tool Updated",
-                  description: `${selectedTool.name} configuration has been updated`
-                });
-              }}
-            >
-              Save Configuration
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Agent Details Modal Component
-  function AgentDetailsModal() {
-    if (!viewAgentDetailsOpen || !selectedAgent) return null;
-    
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-slate-800 rounded-lg p-6 w-full max-w-2xl">
-          <h2 className="text-xl font-semibold mb-6">{selectedAgent.name} Details</h2>
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-900 p-4 rounded-md">
-                <h3 className="text-sm font-medium text-slate-400 mb-2">System Prompt</h3>
-                <div className="text-sm bg-slate-800 p-3 rounded-md max-h-40 overflow-y-auto">
-                  <p>You are an advanced AI assistant for Emporium Power Monitoring. Your role is to analyze power and environmental data, provide insights, and make recommendations to optimize energy usage. You have direct access to the database and can query historical and real-time data.</p>
-                </div>
-              </div>
-              <div className="bg-slate-900 p-4 rounded-md">
-                <h3 className="text-sm font-medium text-slate-400 mb-2">Assigned Tools</h3>
-                <ul className="space-y-2">
-                  <li className="flex justify-between items-center text-sm bg-slate-800 p-2 rounded-md">
-                    <span>ReadFromDB</span>
-                    <Badge variant="outline" className="bg-indigo-950 text-indigo-300 border-indigo-700">DB</Badge>
-                  </li>
-                  <li className="flex justify-between items-center text-sm bg-slate-800 p-2 rounded-md">
-                    <span>CompileReport</span>
-                    <Badge variant="outline" className="bg-emerald-950 text-emerald-300 border-emerald-700">Report</Badge>
-                  </li>
-                </ul>
-              </div>
-            </div>
-            <div className="bg-slate-900 p-4 rounded-md">
-              <h3 className="text-sm font-medium text-slate-400 mb-2">Recent Executions</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-sm bg-slate-800 p-2 rounded-md">
-                  <span>Power Consumption Analysis</span>
-                  <span className="text-blue-400">5 min ago</span>
-                </div>
-                <div className="flex justify-between items-center text-sm bg-slate-800 p-2 rounded-md">
-                  <span>Solar Output Report</span>
-                  <span className="text-blue-400">23 min ago</span>
-                </div>
-                <div className="flex justify-between items-center text-sm bg-slate-800 p-2 rounded-md">
-                  <span>Forecast Report</span>
-                  <span className="text-blue-400">35 min ago</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end mt-6">
-              <Button 
-                onClick={() => setViewAgentDetailsOpen(false)}
-              >
-                Close
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // No need for a separate return for modals - they'll be included in the main UI
 }
-
-// Export the component directly
-export default SettingsPage;

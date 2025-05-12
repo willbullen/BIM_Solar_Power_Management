@@ -10,7 +10,6 @@ import { ProtectedRoute, AdminRoute } from "@/lib/protected-route";
 import DashboardPage from "@/pages/dashboard-page";
 import AuthPage from "@/pages/auth-page";
 import SettingsPage from "@/pages/settings-page";
-import LangChainSettingsPage from "@/pages/langchain-settings-page";
 import ReportsPage from "@/pages/reports-page";
 import ForecastingPage from "@/pages/forecasting-page";
 import EquipmentPage from "@/pages/equipment-page";
@@ -39,7 +38,6 @@ function App() {
                 <ProtectedRoute path="/agent" component={AgentPage} />
                 <ProtectedRoute path="/langchain" component={LangChainPage} />
                 <AdminRoute path="/settings" component={SettingsPage} />
-                <AdminRoute path="/langchain-settings" component={LangChainSettingsPage} />
                 <Route path="/auth" component={AuthPage} />
                 <Route component={NotFound} />
               </Switch>
