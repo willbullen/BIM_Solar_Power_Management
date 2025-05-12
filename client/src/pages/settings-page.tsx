@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Save, Send, Settings, Users, Zap, CloudSun, Palette, Globe, BugPlay, MessageSquare, MessageCircle, Check, AlertTriangle, Info, PlayCircle } from "lucide-react";
+import { Loader2, Save, Send, Settings, Users, Zap, CloudSun, Palette, Globe, BugPlay, MessageSquare, MessageCircle, Check, AlertTriangle, Info, PlayCircle, RefreshCw } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -1882,17 +1882,51 @@ export default function SettingsPage() {
                   <div className="space-y-6">
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-medium">Available Tools</h3>
-                      <Button 
-                        variant="outline" 
-                        className="flex items-center gap-2"
-                        onClick={() => {
-                          setSelectedTool(null); // Reset any selected tool
-                          setIsToolModalOpen(true); // Open the create tool modal
-                        }}
-                      >
-                        <Zap className="h-4 w-4" />
-                        Create New Tool
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="secondary"
+                          size="sm"
+                          className="flex items-center gap-2 bg-amber-100 text-amber-800 hover:bg-amber-200"
+                          onClick={async () => {
+                            try {
+                              const response = await apiRequest('/api/langchain/update-tools', {
+                                method: 'POST',
+                              });
+                              
+                              toast({
+                                title: "Tool schemas updated",
+                                description: "Tool schemas have been updated to the latest format.",
+                                variant: "default"
+                              });
+                              
+                              // Invalidate queries to refresh data
+                              queryClient.invalidateQueries({ queryKey: ['/api/langchain/tools'] });
+                              queryClient.invalidateQueries({ queryKey: ['/api/langchain/status'] });
+                              queryClient.invalidateQueries({ queryKey: ['/api/langchain/health'] });
+                            } catch (error) {
+                              toast({
+                                title: "Failed to update tools",
+                                description: error.message || "There was an error updating tool schemas.",
+                                variant: "destructive"
+                              });
+                            }
+                          }}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                          Update Tool Schemas
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="flex items-center gap-2"
+                          onClick={() => {
+                            setSelectedTool(null); // Reset any selected tool
+                            setIsToolModalOpen(true); // Open the create tool modal
+                          }}
+                        >
+                          <Zap className="h-4 w-4" />
+                          Create New Tool
+                        </Button>
+                      </div>
                     </div>
                     
                     {/* Tools List */}
