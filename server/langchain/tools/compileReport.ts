@@ -43,13 +43,15 @@ export class CompileReportTool extends Tool {
    * Using the format expected by LangChain.js for OpenAI functions tools
    */
   schema = z.object({
-    input: z.string().optional().describe("Report details in the format: 'TITLE: <report-title>; CONTENT: <markdown-content>; FORMAT: [markdown|pdf]'")
+    input: z.string().describe("Report details in the format: 'TITLE: <report-title>; CONTENT: <markdown-content>; FORMAT: [markdown|pdf]'")
   }).transform(input => {
     if (typeof input === 'object' && input !== null && 'input' in input) {
       return input.input || '';
     }
     return input as string || '';
   });
+  
+  // Property overrides defined in constructor
   
   /**
    * Generate a sanitized filename from the report title
