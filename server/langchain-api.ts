@@ -211,6 +211,7 @@ export class LangChainApiService {
       
       // Create a run record in the database
       // Note: We're setting userId to null for testing purposes which may require a cast
+      // Create run data without tokens field which is missing in the schema
       const runData = {
         runId: `test-${Date.now()}`,
         agentId: agent.id,
@@ -221,7 +222,14 @@ export class LangChainApiService {
         startTime: new Date(),
         endTime: new Date(),
         status: 'success',
-        toolCalls: completion.choices[0].message.tool_calls ? completion.choices[0].message.tool_calls : null
+        toolCalls: completion.choices[0].message.tool_calls ? completion.choices[0].message.tool_calls : null,
+        metadata: { 
+          testMode: true,
+          model: agent.modelName || "gpt-4o",
+          promptTokens: completion.usage?.prompt_tokens,
+          completionTokens: completion.usage?.completion_tokens,
+          totalTokens: completion.usage?.total_tokens
+        }
       };
       
       const [run] = await db
