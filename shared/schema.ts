@@ -899,7 +899,6 @@ export const langchainRuns = pgTable("langchain_runs", {
   output: jsonb("output"), // Output of the run
   error: text("error"), // Error message if any
   toolCalls: jsonb("tool_calls"), // Array of tool calls made
-  tokens: integer("tokens"), // Total tokens used
   cost: real("cost"), // Estimated cost
   metadata: jsonb("metadata"), // Additional metadata
   parentRunId: text("parent_run_id"), // For nested runs/chains
