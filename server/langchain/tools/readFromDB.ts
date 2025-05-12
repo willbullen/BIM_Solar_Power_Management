@@ -95,10 +95,10 @@ export class ReadFromDBTool extends Tool {
   
   /**
    * Define the schema for the tool's input
+   * Using the format expected by LangChain.js for Tool schema
    */
   schema = z.object({
-    query: z.string().describe("The SQL query to execute with ? placeholders for parameters"),
-    params: z.array(z.any()).optional().describe("Array of parameter values to replace ? placeholders in the query")
+    input: z.string().optional().describe("SQL query to execute. Format: 'QUERY: select * from table WHERE column = ?; PARAMS: [\"value\"]'")
   });
   
   /**
@@ -138,12 +138,41 @@ export class ReadFromDBTool extends Tool {
   
   /**
    * Execute the tool with the specified input
-   * @param arg Input object with query and params
+   * @param input String in format 'QUERY: <sql>; PARAMS: <json-params-array>'
    */
-  async _call(arg: { query: string; params?: any[] }): Promise<string> {
+  async _call(input: string): Promise<string> {
     try {
-      // Parse the input
-      const { query, params = [] } = arg;
+      // Parse the input string to extract query and params
+      let query = '';
+      let params: any[] = [];
+
+      // Support both object input (from direct API calls) and string input (from LangChain)
+      if (typeof input === 'object' && input !== null && 'query' in input) {
+        // Direct API call with object format
+        query = (input as any).query;
+        params = (input as any).params || [];
+      } else if (typeof input === 'string') {
+        // Parse from LangChain format "QUERY: select...; PARAMS: [...]"
+        const queryMatch = input.match(/QUERY:\s*(.*?)(?:;|\s*PARAMS:|$)/s);
+        const paramsMatch = input.match(/PARAMS:\s*(\[.*\])/s);
+        
+        if (queryMatch && queryMatch[1]) {
+          query = queryMatch[1].trim();
+        } else {
+          // If no QUERY tag found, assume the entire input is the query
+          query = input;
+        }
+        
+        if (paramsMatch && paramsMatch[1]) {
+          try {
+            params = JSON.parse(paramsMatch[1]);
+          } catch (e) {
+            console.error("Error parsing params JSON:", e);
+            // If parsing fails, use empty params
+            params = [];
+          }
+        }
+      }
       
       // Validate the query for safety
       if (!this.validateQuery(query)) {
@@ -152,6 +181,8 @@ export class ReadFromDBTool extends Tool {
           availableTables: this.availableTables
         });
       }
+      
+      console.log(`Executing database query: ${query} with params:`, params);
       
       // Execute the parameterized query
       const result = await db.execute(sql.raw(query, params));
@@ -164,8 +195,8 @@ export class ReadFromDBTool extends Tool {
     } catch (error) {
       console.error("Error executing database query:", error);
       return JSON.stringify({
-        error: `Database query error: ${error.message}`,
-        query: arg.query
+        error: `Database query error: ${error instanceof Error ? error.message : String(error)}`,
+        query: typeof input === 'string' ? input : JSON.stringify(input)
       });
     }
   }

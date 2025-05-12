@@ -3,7 +3,7 @@ import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts
 import { AgentExecutor, createOpenAIFunctionsAgent } from "langchain/agents";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { formatToOpenAIFunctionMessages } from "langchain/agents/format_utils";
-import { Tool } from "@langchain/core/tools";
+import { Tool, StructuredTool } from "@langchain/core/tools";
 import { db } from "../db";
 import { ReadFromDBTool } from "./tools/readFromDB";
 import { CompileReportTool } from "./tools/compileReport";
@@ -79,10 +79,15 @@ export async function createAgent(
     streaming: finalConfig.streaming,
   });
   
-  // Initialize tools
+  // Initialize tools with LangChain-compatible adapters
+  // Convert custom tools to make them compatible with the expected schema format
+  const readFromDBTool = new ReadFromDBTool();
+  const compileReportTool = new CompileReportTool();
+
+  // Set up tools to be compatible with LangChain's OpenAI functions format
   const tools: Tool[] = [
-    new ReadFromDBTool(),
-    new CompileReportTool(),
+    readFromDBTool,
+    compileReportTool,
   ];
   
   // Create the agent prompt

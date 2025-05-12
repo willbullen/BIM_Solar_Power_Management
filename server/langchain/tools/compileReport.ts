@@ -40,11 +40,10 @@ export class CompileReportTool extends Tool {
   
   /**
    * Define the schema for the tool's input
+   * Using the format expected by LangChain.js for Tool schema
    */
   schema = z.object({
-    title: z.string().describe("The title of the report"),
-    content: z.string().describe("The content of the report in Markdown format"),
-    format: z.enum(["markdown", "pdf"]).default("markdown").describe("The format of the report (markdown or pdf)")
+    input: z.string().optional().describe("Report details in the format: 'TITLE: <report-title>; CONTENT: <markdown-content>; FORMAT: [markdown|pdf]'")
   });
   
   /**
@@ -170,17 +169,49 @@ export class CompileReportTool extends Tool {
   
   /**
    * Execute the tool with the specified input
-   * @param arg Input object with title, content, and format
+   * @param input String in format 'TITLE: <title>; CONTENT: <content>; FORMAT: <format>'
    */
-  async _call(arg: { title: string; content: string; format: "markdown" | "pdf" }): Promise<string> {
+  async _call(input: string): Promise<string> {
     try {
-      // Parse the input
-      const { title, content, format = "markdown" } = arg;
+      // Default values
+      let title = '';
+      let content = '';
+      let format: "markdown" | "pdf" = "markdown";
+
+      // Support both object input (from direct API calls) and string input (from LangChain)
+      if (typeof input === 'object' && input !== null) {
+        // Handle direct API call with object format
+        if ('title' in input && 'content' in input) {
+          const arg = input as any;
+          title = arg.title;
+          content = arg.content;
+          format = arg.format || "markdown";
+        }
+      } else if (typeof input === 'string') {
+        // Parse from LangChain format "TITLE: ...; CONTENT: ...; FORMAT: ..."
+        const titleMatch = input.match(/TITLE:\s*(.*?)(?:;|\s*CONTENT:|$)/s);
+        const contentMatch = input.match(/CONTENT:\s*(.*?)(?:;|\s*FORMAT:|$)/s);
+        const formatMatch = input.match(/FORMAT:\s*(markdown|pdf)/i);
+        
+        if (titleMatch && titleMatch[1]) {
+          title = titleMatch[1].trim();
+        }
+        
+        if (contentMatch && contentMatch[1]) {
+          content = contentMatch[1].trim();
+        }
+        
+        if (formatMatch && formatMatch[1]) {
+          format = formatMatch[1].toLowerCase() as "markdown" | "pdf";
+        }
+      }
+      
+      console.log(`Generating ${format} report with title: ${title}`);
       
       // Validate the input
       if (!title || !content) {
         return JSON.stringify({
-          error: "Report title and content are required"
+          error: "Report title and content are required. Use format 'TITLE: <title>; CONTENT: <content>; FORMAT: [markdown|pdf]'"
         });
       }
       
@@ -204,7 +235,8 @@ export class CompileReportTool extends Tool {
     } catch (error) {
       console.error("Error compiling report:", error);
       return JSON.stringify({
-        error: `Report generation error: ${error.message}`
+        error: `Report generation error: ${error instanceof Error ? error.message : String(error)}`,
+        input: typeof input === 'string' ? input : JSON.stringify(input)
       });
     }
   }
