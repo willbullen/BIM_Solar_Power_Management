@@ -29,7 +29,7 @@ export function WebSocketDebugger() {
   const { isConnected, reconnectCount, reconnect, lastMessage } = useWebSocket();
   const { toast } = useToast();
   const [attempts, setAttempts] = useState(0);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false); // Start minimized by default
   const [protocol, setProtocol] = useState('');
   const [wsProtocol, setWsProtocol] = useState('');
   const [lastUpdate, setLastUpdate] = useState(new Date());
