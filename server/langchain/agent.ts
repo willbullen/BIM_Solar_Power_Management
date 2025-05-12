@@ -2,7 +2,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
 import { AgentExecutor, createOpenAIFunctionsAgent } from "langchain/agents";
 import { RunnableSequence } from "@langchain/core/runnables";
-import { formatToOpenAIFunctionMessages } from "langchain/agents/format_utils";
+// Remove formatToOpenAIFunctionMessages import as we'll use createOpenAIFunctionsAgent directly
 import { Tool, StructuredTool } from "@langchain/core/tools";
 import { db } from "../db";
 import { ReadFromDBTool } from "./tools/readFromDB";
@@ -45,13 +45,13 @@ export async function createAgent(
       if (agent) {
         agentConfig = {
           ...agentConfig,
-          modelName: agent.modelName,
-          temperature: agent.temperature,
-          maxTokens: agent.maxTokens,
-          streaming: agent.streaming,
-          systemPrompt: agent.systemPrompt,
-          maxIterations: agent.maxIterations,
-          verbose: agent.verbose
+          modelName: agent.modelName || undefined,
+          temperature: agent.temperature !== null ? agent.temperature : undefined,
+          maxTokens: agent.maxTokens !== null ? agent.maxTokens : undefined,
+          streaming: agent.streaming !== null ? agent.streaming : undefined,
+          systemPrompt: agent.systemPrompt || undefined,
+          maxIterations: agent.maxIterations !== null ? agent.maxIterations : undefined,
+          verbose: agent.verbose !== null ? agent.verbose : undefined
         };
       }
     } catch (error) {
@@ -84,8 +84,12 @@ export async function createAgent(
   const readFromDBTool = new ReadFromDBTool();
   const compileReportTool = new CompileReportTool();
 
+  // Log the tool schemas to help with debugging
+  console.log("ReadFromDBTool schema:", JSON.stringify(readFromDBTool.schema, null, 2));
+  console.log("CompileReportTool schema:", JSON.stringify(compileReportTool.schema, null, 2));
+
   // Set up tools to be compatible with LangChain's OpenAI functions format
-  const tools: Tool[] = [
+  const tools: Tool<any>[] = [
     readFromDBTool,
     compileReportTool,
   ];
@@ -160,8 +164,8 @@ export async function processMessage(
       .insert(schema.langchainRuns)
       .values({
         runId,
-        agentId: config.agentId || null,
-        userId: null, // This would be filled with actual user ID if available
+        agentId: config.agentId || undefined,
+        userId: undefined, // This would be filled with actual user ID if available
         startTime: new Date(),
         status: 'running',
         input: JSON.stringify({ message }), // Convert to string for TEXT column
