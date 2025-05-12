@@ -54,6 +54,59 @@ function requireAdmin(req: Request, res: Response, next: any) {
 }
 
 export function registerLangChainRoutes(app: Express) {
+  
+  // Update tool schemas to match the implementation
+  app.post('/api/langchain/update-tools', requireAdmin, async (req: Request, res: Response) => {
+    try {
+      // Update the ReadFromDB tool schema
+      await db
+        .update(schema.langchainTools)
+        .set({
+          schema: {
+            type: 'object',
+            properties: {
+              input: {
+                type: 'string',
+                description: "SQL query to execute. Format: 'QUERY: select * from table WHERE column = ?; PARAMS: [\"value\"]'"
+              }
+            },
+            required: ['input']
+          },
+          updatedAt: new Date()
+        })
+        .where(eq(schema.langchainTools.name, 'ReadFromDB'));
+        
+      // Update the CompileReport tool schema
+      await db
+        .update(schema.langchainTools)
+        .set({
+          schema: {
+            type: 'object',
+            properties: {
+              input: {
+                type: 'string',
+                description: "Report details in the format: 'TITLE: <report-title>; CONTENT: <markdown-content>; FORMAT: [markdown|pdf]'"
+              }
+            },
+            required: ['input']
+          },
+          updatedAt: new Date()
+        })
+        .where(eq(schema.langchainTools.name, 'CompileReport'));
+        
+      // Get updated tool schemas
+      const tools = await db.select().from(schema.langchainTools);
+        
+      res.json({ 
+        success: true, 
+        message: 'Tool schemas updated successfully',
+        tools: tools
+      });
+    } catch (error) {
+      console.error('Error updating tool schemas:', error);
+      res.status(500).json({ error: 'Failed to update tool schemas' });
+    }
+  });
   // Initialize LangChain API service
   const langchainIntegration = new LangChainIntegration(new AIService());
   const langchainApiService = new LangChainApiService(langchainIntegration);
@@ -582,19 +635,12 @@ export function registerLangChainRoutes(app: Express) {
             schema: {
               type: 'object',
               properties: {
-                query: {
+                input: {
                   type: 'string',
-                  description: 'The SQL query to execute'
-                },
-                params: {
-                  type: 'array',
-                  description: 'Query parameters to prevent SQL injection',
-                  items: {
-                    type: 'string'
-                  }
+                  description: "SQL query to execute. Format: 'QUERY: select * from table WHERE column = ?; PARAMS: [\"value\"]'"
                 }
               },
-              required: ['query']
+              required: ['input']
             },
             implementation: 'ReadFromDBTool',
             enabled: true,
@@ -629,21 +675,12 @@ export function registerLangChainRoutes(app: Express) {
             schema: {
               type: 'object',
               properties: {
-                title: {
+                input: {
                   type: 'string',
-                  description: 'Report title'
-                },
-                content: {
-                  type: 'string',
-                  description: 'Report content in Markdown format'
-                },
-                format: {
-                  type: 'string',
-                  description: 'Report format (markdown or pdf)',
-                  enum: ['markdown', 'pdf']
+                  description: "Report details in the format: 'TITLE: <report-title>; CONTENT: <markdown-content>; FORMAT: [markdown|pdf]'"
                 }
               },
-              required: ['title', 'content']
+              required: ['input']
             },
             implementation: 'CompileReportTool',
             enabled: true,
