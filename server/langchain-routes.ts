@@ -487,7 +487,8 @@ export function registerLangChainRoutes(app: Express) {
   // Get a specific execution run
   app.get('/api/langchain/runs/:runId', requireAuth, async (req: Request, res: Response) => {
     try {
-      const runId = req.params.runId;
+      // Make sure we handle runId as string
+      const runId = String(req.params.runId);
       const [run] = await db
         .select()
         .from(schema.langchainRuns)
@@ -497,11 +498,11 @@ export function registerLangChainRoutes(app: Express) {
         return res.status(404).json({ error: 'Run not found' });
       }
 
-      // Get tool executions for this run
+      // Get tool executions for this run - ensure runId is treated as string
       const toolExecutions = await db
         .select()
         .from(schema.langchainToolExecutions)
-        .where(eq(schema.langchainToolExecutions.runId, runId))
+        .where(eq(schema.langchainToolExecutions.runId, String(runId)))
         .orderBy(schema.langchainToolExecutions.executionOrder);
 
       res.json({ ...run, toolExecutions });

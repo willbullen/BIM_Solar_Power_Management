@@ -170,27 +170,27 @@ export async function processMessage(
         chat_history: chatHistory,
       });
       
-      // Update run with result
+      // Update run with result - ensure output is properly stringified
       await db
         .update(schema.langchainRuns)
         .set({
           endTime: new Date(),
           status: 'completed',
-          output: { response: result.output },
+          output: JSON.stringify({ response: result.output }), // Convert object to string for TEXT column
         })
-        .where(eq(schema.langchainRuns.runId, runId));
+        .where(eq(schema.langchainRuns.runId, String(runId)));
       
       return result.output;
     } catch (error) {
-      // Update run with error
+      // Update run with error - properly handle error message and runId as string
       await db
         .update(schema.langchainRuns)
         .set({
           endTime: new Date(),
           status: 'error',
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
         })
-        .where(eq(schema.langchainRuns.runId, runId));
+        .where(eq(schema.langchainRuns.runId, String(runId)));
       
       throw error;
     }
