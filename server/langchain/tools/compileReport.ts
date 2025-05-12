@@ -17,6 +17,10 @@ export class CompileReportTool extends Tool {
   constructor() {
     super();
     
+    // Set tool properties in constructor to ensure they're properly used by LangChain
+    this.name = "CompileReport";
+    this.description = "Generate reports from structured data in either Markdown or PDF format";
+    
     // Set the reports directory to a folder in the project
     this.reportsDir = path.join(process.cwd(), "reports");
     
@@ -43,7 +47,7 @@ export class CompileReportTool extends Tool {
    * Using the format expected by LangChain.js for OpenAI functions tools
    */
   schema = z.object({
-    input: z.string().describe("Report details in the format: 'TITLE: <report-title>; CONTENT: <markdown-content>; FORMAT: [markdown|pdf]'")
+    input: z.string().optional().describe("Report details in the format: 'TITLE: <report-title>; CONTENT: <markdown-content>; FORMAT: [markdown|pdf]'")
   }).transform(input => {
     if (typeof input === 'object' && input !== null && 'input' in input) {
       return input.input || '';

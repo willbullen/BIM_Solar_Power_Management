@@ -19,6 +19,10 @@ export class ReadFromDBTool extends Tool {
   constructor() {
     super();
     
+    // Set tool properties in constructor to ensure they're properly used by LangChain
+    this.name = "ReadFromDB";
+    this.description = "Execute parameterized SQL queries on the database. ALWAYS use parameterized queries with ? placeholders to prevent SQL injection.";
+    
     // Initialize the list of available tables
     this.initAvailableTables();
     
@@ -98,7 +102,7 @@ export class ReadFromDBTool extends Tool {
    * Using the format expected by LangChain.js for OpenAI functions tools
    */
   schema = z.object({
-    input: z.string().describe("SQL query to execute. Format: 'QUERY: select * from table WHERE column = ?; PARAMS: [\"value\"]'")
+    input: z.string().optional().describe("SQL query to execute. Format: 'QUERY: select * from table WHERE column = ?; PARAMS: [\"value\"]'")
   }).transform(input => {
     if (typeof input === 'object' && input !== null && 'input' in input) {
       return input.input || '';
