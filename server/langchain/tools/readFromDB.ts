@@ -153,12 +153,25 @@ export class ReadFromDBTool extends Tool {
    */
   async _call(input: string): Promise<string> {
     try {
-      // Check for direct commands first
-      if (input.toLowerCase().includes("list tables") || 
-          input.toLowerCase().includes("show tables") || 
-          input.toLowerCase().includes("get tables")) {
+      console.log(`ReadFromDB tool called with input: "${input}"`);
+      
+      // Normalize the input by trimming and converting to lowercase for comparison
+      const normalizedInput = typeof input === 'string' ? input.trim().toLowerCase() : '';
+      
+      // Check for direct commands first - be very permissive with variations
+      if (normalizedInput === "list tables" || 
+          normalizedInput === "show tables" || 
+          normalizedInput === "get tables" ||
+          normalizedInput.includes("list all tables") ||
+          normalizedInput.includes("show all tables") ||
+          normalizedInput.includes("get all tables") ||
+          normalizedInput.includes("list database tables") ||
+          normalizedInput.includes("show database tables") ||
+          normalizedInput.includes("all tables") ||
+          normalizedInput.includes("tables in database") ||
+          normalizedInput.includes("database tables")) {
         
-        console.log("Tool received 'list tables' command");
+        console.log("Tool received 'list tables' command: " + input);
         
         // Direct command to list tables
         const result = await db.execute(sql`
@@ -168,10 +181,15 @@ export class ReadFromDBTool extends Tool {
           ORDER BY table_name;
         `);
         
+        // Format the response for better readability
+        const tables = result.rows.map((row: any) => row.table_name);
+        const tableList = tables.join('\n- ');
+        
         return JSON.stringify({
-          message: "Here are all tables in the database:",
+          message: "Here are all the tables in the database:",
           rowCount: result.rowCount,
-          rows: result.rows
+          tables: tables,
+          formattedResult: `Database Tables (${tables.length}):\n- ${tableList}`
         });
       }
       
