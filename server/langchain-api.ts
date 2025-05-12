@@ -272,11 +272,35 @@ export class LangChainApiService {
         conversationId
       );
       
+      // Get the run details to include token usage and execution time
+      const [runDetails] = await db
+        .select()
+        .from(schema.langchainRuns)
+        .where(eq(schema.langchainRuns.runId, response.runId));
+        
+      // Calculate execution time
+      const startTime = runDetails?.startTime ? new Date(runDetails.startTime) : new Date();
+      const endTime = runDetails?.endTime ? new Date(runDetails.endTime) : new Date();
+      const executionTimeMs = endTime.getTime() - startTime.getTime();
+      
+      // Extract token usage from metadata if available
+      const metadata = runDetails?.metadata as any || {};
+      const tokenUsage = {
+        promptTokens: metadata.promptTokens || 0,
+        completionTokens: metadata.completionTokens || 0,
+        totalTokens: metadata.totalTokens || 0
+      };
+      
       return {
         agentId,
         agentName: agent.name,
         prompt,
         response: response?.text || "No response generated",
+        runId: response.runId,
+        executionTimeMs,
+        tokenUsage,
+        modelName: agent.modelName || "default",
+        hasToolCalls: runDetails?.toolCalls ? true : false,
         timestamp: new Date().toISOString()
       };
     } catch (error) {

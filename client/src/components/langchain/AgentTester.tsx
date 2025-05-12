@@ -4,13 +4,39 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Check, AlertTriangle, Send, ActivitySquare } from "lucide-react";
+import { 
+  Loader2, Check, AlertTriangle, Send, ActivitySquare, 
+  Clock, Zap, MessageSquare, Cpu, BarChart, Wrench
+} from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, getQueryFn } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger 
+} from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 
 interface AgentTesterProps {
   selectedAgent?: any;
+}
+
+interface TestResult {
+  response: string;
+  executionTimeMs: number;
+  tokenUsage: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+  modelName: string;
+  timestamp: string;
+  agentName: string;
+  runId: string;
+  hasToolCalls: boolean;
 }
 
 export function AgentTester({ selectedAgent }: AgentTesterProps) {
@@ -18,6 +44,7 @@ export function AgentTester({ selectedAgent }: AgentTesterProps) {
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
   
   // Fetch agent status
   const { data: agentStatus, isLoading: isLoadingStatus } = useQuery({
@@ -37,6 +64,20 @@ export function AgentTester({ selectedAgent }: AgentTesterProps) {
     },
     onSuccess: (data) => {
       setResponse(data.response || "Agent responded successfully.");
+      setTestResult({
+        response: data.response || 'No response from agent',
+        executionTimeMs: data.executionTimeMs || 0,
+        tokenUsage: {
+          promptTokens: data.tokenUsage?.promptTokens || 0,
+          completionTokens: data.tokenUsage?.completionTokens || 0,
+          totalTokens: data.tokenUsage?.totalTokens || 0
+        },
+        modelName: data.modelName || 'unknown',
+        timestamp: data.timestamp || new Date().toISOString(),
+        agentName: data.agentName || selectedAgent?.name || 'Unknown Agent',
+        runId: data.runId || 'unknown',
+        hasToolCalls: data.hasToolCalls || false
+      });
       setIsLoading(false);
       toast({
         title: "Agent test completed",
@@ -46,6 +87,7 @@ export function AgentTester({ selectedAgent }: AgentTesterProps) {
     onError: (error: any) => {
       setIsLoading(false);
       setResponse(`Error: ${error.message || "Failed to get response from agent."}`);
+      setTestResult(null);
       toast({
         title: "Agent test failed",
         description: error.message || "There was an error testing the agent.",
