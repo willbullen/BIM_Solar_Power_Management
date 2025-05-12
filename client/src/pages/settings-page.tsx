@@ -100,6 +100,22 @@ export default function SettingsPage() {
   const [selectedTool, setSelectedTool] = useState<any>(null);
   const [selectedAgentForTesting, setSelectedAgentForTesting] = useState<any>(null);
   
+  // Event listener for test-agent events from AgentModal
+  useEffect(() => {
+    const handleTestAgent = (event: any) => {
+      if (event.detail && event.detail.agent) {
+        setSelectedAgentForTesting(event.detail.agent);
+        // Switch to the LangChain tab if not already there
+        setActiveTab("langchain");
+      }
+    };
+    
+    window.addEventListener('test-agent', handleTestAgent);
+    return () => {
+      window.removeEventListener('test-agent', handleTestAgent);
+    };
+  }, []);
+  
   // Fetch current settings
   const { data: settings, isLoading: isLoadingSettings } = useQuery({
     queryKey: ['/api/settings'],

@@ -370,9 +370,15 @@ export function AgentModal({ isOpen, onClose, agent }: AgentModalProps) {
                     className="gap-1" 
                     onClick={() => {
                       onClose();
-                      // Notify the parent to open the test interface for this agent
+                      // Open a new Test Agent interface through setSelectedAgentForTesting in settings page
+                      // This will be caught by the observer in settings-page.tsx
+                      const testEvent = new CustomEvent('test-agent', { 
+                        detail: { agent: agent }
+                      });
+                      window.dispatchEvent(testEvent);
+                      
                       toast({
-                        title: "Test agent",
+                        title: "Test mode activated",
                         description: `Agent "${agent.name}" is ready for testing.`,
                       });
                     }}

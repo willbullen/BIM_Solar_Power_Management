@@ -35,22 +35,28 @@ export function RunsHistory({ agentId }: RunsHistoryProps) {
   const { data: runs = [] as AgentRun[], isLoading } = useQuery<AgentRun[]>({
     queryKey: ['/api/langchain/runs', agentId],
     queryFn: async () => {
-      const url = `/api/langchain/runs?agentId=${agentId}`;
-      const response = await fetch(`${window.location.origin}${url}`, {
-        credentials: "include",
-        mode: "cors",
-        cache: "no-cache",
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch runs');
+      try {
+        const url = `/api/langchain/runs?agentId=${agentId}`;
+        const response = await fetch(`${window.location.origin}${url}`, {
+          credentials: "include",
+          mode: "cors",
+          cache: "no-cache",
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch runs');
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching agent runs:', error);
+        throw new Error('Failed to fetch execution runs');
       }
-      return await response.json();
     },
     refetchInterval: 10000, // Refresh every 10 seconds
+    enabled: !!agentId, // Only run query if agentId is provided
   });
 
   // Format dates
