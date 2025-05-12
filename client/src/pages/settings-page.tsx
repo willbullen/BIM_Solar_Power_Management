@@ -21,6 +21,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CreateTestNotificationButton } from "@/components/create-test-notification-button";
+import { AgentModal } from "@/components/langchain/AgentModal";
+import { ToolModal } from "@/components/langchain/ToolModal";
+import { PromptModal } from "@/components/langchain/PromptModal";
 
 // Define schema for settings form
 const settingsSchema = z.object({
@@ -2023,6 +2026,25 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* LangChain Modals */}
+      <AgentModal
+        isOpen={isAgentModalOpen}
+        onClose={() => setIsAgentModalOpen(false)}
+        agent={selectedAgent}
+      />
+      
+      <ToolModal
+        isOpen={isToolModalOpen}
+        onClose={() => setIsToolModalOpen(false)}
+        tool={selectedTool}
+      />
+      
+      <PromptModal
+        isOpen={isPromptModalOpen}
+        onClose={() => setIsPromptModalOpen(false)}
+        promptTemplate={null}
+      />
     </SharedLayout>
   );
 }
