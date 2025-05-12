@@ -88,6 +88,11 @@ import {
 export default function SettingsPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("general");
+  const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
+  const [isToolModalOpen, setIsToolModalOpen] = useState(false);
+  const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<any>(null);
+  const [selectedTool, setSelectedTool] = useState<any>(null);
   
   // Fetch current settings
   const { data: settings, isLoading: isLoadingSettings } = useQuery({
@@ -118,6 +123,34 @@ export default function SettingsPage() {
   const { data: telegramStatus, isLoading: isLoadingTelegramStatus } = useQuery({
     queryKey: ['/api/telegram/status'],
     queryFn: getQueryFn({ on401: 'ignore' }),
+  });
+  
+  // Fetch LangChain agents
+  const { data: langchainAgents, isLoading: isLoadingAgents } = useQuery({
+    queryKey: ['/api/langchain/agents'],
+    queryFn: getQueryFn({ on401: 'throw' }),
+    enabled: activeTab === "langchain"
+  });
+  
+  // Fetch LangChain tools
+  const { data: langchainTools, isLoading: isLoadingTools } = useQuery({
+    queryKey: ['/api/langchain/tools'],
+    queryFn: getQueryFn({ on401: 'throw' }),
+    enabled: activeTab === "langchain"
+  });
+  
+  // Fetch LangChain prompt templates
+  const { data: langchainPrompts, isLoading: isLoadingPrompts } = useQuery({
+    queryKey: ['/api/langchain/prompts'],
+    queryFn: getQueryFn({ on401: 'throw' }),
+    enabled: activeTab === "langchain"
+  });
+  
+  // Fetch LangChain execution runs
+  const { data: langchainRuns, isLoading: isLoadingRuns } = useQuery({
+    queryKey: ['/api/langchain/runs'],
+    queryFn: getQueryFn({ on401: 'throw' }),
+    enabled: activeTab === "langchain"
   });
   
   // Create form for general settings
@@ -1614,7 +1647,13 @@ export default function SettingsPage() {
                   <div className="space-y-6">
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-medium">Agent Models</h3>
-                      <Button variant="outline" className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        className="flex items-center gap-2"
+                        onClick={() => {
+                          setIsAgentModalOpen(true);
+                        }}
+                      >
                         <Zap className="h-4 w-4" />
                         Create New Agent
                       </Button>
@@ -1670,10 +1709,48 @@ export default function SettingsPage() {
                             </div>
                             
                             <div className="flex justify-end gap-2 mt-4">
-                              <Button variant="outline" size="sm" className="text-slate-400">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-slate-400"
+                                onClick={() => {
+                                  setSelectedAgent({
+                                    id: 1,
+                                    name: "Main Assistant Agent",
+                                    description: "Primary agent for user interactions using GPT-4o and custom tools",
+                                    modelName: "gpt-4o",
+                                    temperature: 0.7,
+                                    tools: 2
+                                  });
+                                  // Open agent details modal
+                                  toast({
+                                    title: "Agent details",
+                                    description: "This would show agent details in a modal"
+                                  });
+                                }}
+                              >
                                 View Details
                               </Button>
-                              <Button variant="outline" size="sm" className="text-blue-400">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-blue-400"
+                                onClick={() => {
+                                  setSelectedAgent({
+                                    id: 1,
+                                    name: "Main Assistant Agent",
+                                    description: "Primary agent for user interactions using GPT-4o and custom tools",
+                                    modelName: "gpt-4o",
+                                    temperature: 0.7,
+                                    tools: 2
+                                  });
+                                  // Open agent edit modal
+                                  toast({
+                                    title: "Edit agent",
+                                    description: "This would open an edit agent form"
+                                  });
+                                }}
+                              >
                                 Edit
                               </Button>
                             </div>
@@ -1689,7 +1766,17 @@ export default function SettingsPage() {
                   <div className="space-y-6">
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-medium">Available Tools</h3>
-                      <Button variant="outline" className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        className="flex items-center gap-2"
+                        onClick={() => {
+                          setIsToolModalOpen(true);
+                          toast({
+                            title: "Create Tool",
+                            description: "This would open a create tool form"
+                          });
+                        }}
+                      >
                         <Zap className="h-4 w-4" />
                         Create New Tool
                       </Button>
@@ -1797,7 +1884,17 @@ export default function SettingsPage() {
                   <div className="space-y-6">
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-medium">Prompt Templates</h3>
-                      <Button variant="outline" className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        className="flex items-center gap-2"
+                        onClick={() => {
+                          setIsPromptModalOpen(true);
+                          toast({
+                            title: "Create Prompt Template",
+                            description: "This would open a form to create a new prompt template"
+                          });
+                        }}
+                      >
                         <Zap className="h-4 w-4" />
                         Create Template
                       </Button>
@@ -1814,7 +1911,19 @@ export default function SettingsPage() {
                         <p className="text-sm text-slate-500 max-w-md mx-auto">
                           Create prompt templates to standardize AI interactions and ensure consistent responses
                         </p>
-                        <Button variant="outline" className="mt-2">Create Your First Template</Button>
+                        <Button 
+                          variant="outline" 
+                          className="mt-2"
+                          onClick={() => {
+                            setIsPromptModalOpen(true);
+                            toast({
+                              title: "Create Prompt Template",
+                              description: "This would open a form to create a new prompt template"
+                            });
+                          }}
+                        >
+                          Create Your First Template
+                        </Button>
                       </div>
                     </div>
                   </div>
