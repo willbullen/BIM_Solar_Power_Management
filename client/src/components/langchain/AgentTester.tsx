@@ -29,7 +29,10 @@ export function AgentTester({ isOpen, onClose, agentId }: AgentTesterProps) {
   // Fetch agent details if agentId is provided
   const { data: agent } = useQuery({
     queryKey: ['/api/langchain/agents', agentId],
-    queryFn: getQueryFn(),
+    queryFn: async ({ queryKey }) => {
+      const response = await getQueryFn({ on401: 'throw' })({ queryKey });
+      return response || {};
+    },
     enabled: !!agentId && isOpen,
   });
 
@@ -322,7 +325,7 @@ export function AgentTester({ isOpen, onClose, agentId }: AgentTesterProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Wand2 className="h-5 w-5" />
-            {agent ? `Test Agent: ${agent.name}` : 'Agent Tester'}
+            {agent && agent.name ? `Test Agent: ${agent.name}` : 'Agent Tester'}
           </DialogTitle>
           <DialogDescription>
             Test the agent with custom inputs and analyze its performance

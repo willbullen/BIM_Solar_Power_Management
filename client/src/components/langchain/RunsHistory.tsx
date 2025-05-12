@@ -15,12 +15,20 @@ interface RunsHistoryProps {
 
 export function RunsHistory({ agentId }: RunsHistoryProps) {
   // Fetch runs for this agent
-  const { data: runs, isLoading } = useQuery({
-    queryKey: ['/api/langchain/runs', { agentId }],
-    queryFn: getQueryFn({ 
-      on401: 'throw',
-      queryParams: { agentId }
-    }),
+  const { data: runs = [], isLoading } = useQuery({
+    queryKey: ['/api/langchain/runs', agentId],
+    queryFn: async () => {
+      const url = `/api/langchain/runs?agentId=${agentId}`;
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch runs');
+      }
+      return await response.json();
+    },
     refetchInterval: 10000, // Refresh every 10 seconds
   });
 
@@ -84,7 +92,7 @@ export function RunsHistory({ agentId }: RunsHistoryProps) {
     );
   }
 
-  if (!runs || runs.length === 0) {
+  if (!runs || (Array.isArray(runs) && runs.length === 0)) {
     return (
       <Card className="bg-muted/30">
         <CardContent className="pt-6 flex flex-col items-center justify-center p-8 text-center">
@@ -103,7 +111,7 @@ export function RunsHistory({ agentId }: RunsHistoryProps) {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Recent Execution Runs</h3>
         <Badge variant="outline" className="flex items-center gap-1">
-          <Zap className="h-3 w-3" /> {runs.length} runs
+          <Zap className="h-3 w-3" /> {Array.isArray(runs) ? runs.length : 0} runs
         </Badge>
       </div>
       
@@ -118,7 +126,7 @@ export function RunsHistory({ agentId }: RunsHistoryProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {runs.map((run: any) => (
+            {Array.isArray(runs) && runs.map((run: any) => (
               <TableRow key={run.runId}>
                 <TableCell className="font-mono text-xs">
                   {formatDate(run.startTime)}
