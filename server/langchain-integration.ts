@@ -143,7 +143,7 @@ export class LangChainIntegration {
             name: 'ReadFromDB',
             description: 'Parameterized database queries with SQL injection protection',
             toolType: 'database',
-            schema: {
+            parameters: {
               type: 'object',
               properties: {
                 query: {
@@ -190,7 +190,7 @@ export class LangChainIntegration {
             name: 'CompileReport',
             description: 'Generate Markdown and PDF reports from structured data',
             toolType: 'report',
-            schema: {
+            parameters: {
               type: 'object',
               properties: {
                 title: {
@@ -229,7 +229,9 @@ export class LangChainIntegration {
         .select()
         .from(schema.langchainAgentTools)
         .where(
-          eq(schema.langchainAgentTools.agentId, agentId),
+          eq(schema.langchainAgentTools.agentId, agentId)
+        )
+        .where(
           eq(schema.langchainAgentTools.toolId, readFromDBToolId)
         );
         
@@ -248,7 +250,9 @@ export class LangChainIntegration {
         .select()
         .from(schema.langchainAgentTools)
         .where(
-          eq(schema.langchainAgentTools.agentId, agentId),
+          eq(schema.langchainAgentTools.agentId, agentId)
+        )
+        .where(
           eq(schema.langchainAgentTools.toolId, compileReportToolId)
         );
         

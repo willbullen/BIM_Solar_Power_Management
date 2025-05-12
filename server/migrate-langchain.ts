@@ -61,11 +61,13 @@ async function createLangChainTables() {
           "name" TEXT NOT NULL,
           "description" TEXT,
           "tool_type" TEXT NOT NULL,
+          "implementation" TEXT,
           "enabled" BOOLEAN DEFAULT true,
           "created_at" TIMESTAMP DEFAULT NOW(),
           "updated_at" TIMESTAMP DEFAULT NOW(),
           "created_by" INTEGER REFERENCES "users"("id"),
           "parameters" JSONB DEFAULT '{}'::jsonb,
+          "is_built_in" BOOLEAN DEFAULT false,
           "metadata" JSONB DEFAULT '{}'::jsonb
         );
       `);
@@ -89,6 +91,7 @@ async function createLangChainTables() {
           "id" SERIAL PRIMARY KEY,
           "agent_id" INTEGER NOT NULL REFERENCES "langchain_agents"("id"),
           "tool_id" INTEGER NOT NULL REFERENCES "langchain_tools"("id"),
+          "priority" INTEGER DEFAULT 0,
           "created_at" TIMESTAMP DEFAULT NOW()
         );
       `);

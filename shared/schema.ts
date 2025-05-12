@@ -827,9 +827,9 @@ export type LangchainAgent = typeof langchainAgents.$inferSelect;
 export const langchainTools = pgTable("langchain_tools", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
-  description: text("description").notNull(),
+  description: text("description"),
   toolType: text("tool_type").notNull(), // 'custom', 'readFromDB', 'compileReport', etc.
-  schema: jsonb("schema"), // JSON schema describing parameters
+  parameters: jsonb("parameters"), // JSON schema describing parameters (replaces schema)
   implementation: text("implementation"), // Code or reference to implementation
   enabled: boolean("enabled").default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
