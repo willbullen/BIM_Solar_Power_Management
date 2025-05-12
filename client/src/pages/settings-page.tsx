@@ -584,10 +584,6 @@ export default function SettingsPage() {
             <Zap className="h-4 w-4 mr-2" />
             LangChain
           </TabsTrigger>
-          <TabsTrigger value="developer">
-            <BugPlay className="h-4 w-4 mr-2" />
-            Advanced
-          </TabsTrigger>
         </TabsList>
         
         {/* General Settings */}

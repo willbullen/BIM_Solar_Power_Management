@@ -228,7 +228,9 @@ export class LangChainApiService {
           model: agent.modelName || "gpt-4o",
           promptTokens: completion.usage?.prompt_tokens,
           completionTokens: completion.usage?.completion_tokens,
-          totalTokens: completion.usage?.total_tokens
+          totalTokens: completion.usage?.total_tokens,
+          // Store cost in metadata since the cost column doesn't exist in the database
+          cost: 0.0 // We can calculate this in the future based on token usage and model
         }
       };
       
@@ -283,12 +285,13 @@ export class LangChainApiService {
       const endTime = runDetails?.endTime ? new Date(runDetails.endTime) : new Date();
       const executionTimeMs = endTime.getTime() - startTime.getTime();
       
-      // Extract token usage from metadata if available
+      // Extract token usage and cost from metadata if available
       const metadata = runDetails?.metadata as any || {};
       const tokenUsage = {
         promptTokens: metadata.promptTokens || 0,
         completionTokens: metadata.completionTokens || 0,
-        totalTokens: metadata.totalTokens || 0
+        totalTokens: metadata.totalTokens || 0,
+        cost: metadata.cost || 0.0
       };
       
       return {
