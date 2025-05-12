@@ -15,10 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Save, Send, Settings, Users, Zap, CloudSun, Palette, Globe, BugPlay, MessageSquare, MessageCircle, Check, AlertTriangle, Info } from "lucide-react";
+import { Loader2, Save, Send, Settings, Users, Zap, CloudSun, Palette, Globe, BugPlay, MessageSquare, MessageCircle, Check, AlertTriangle, Info, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CreateTestNotificationButton } from "@/components/create-test-notification-button";
@@ -1639,10 +1639,17 @@ export default function SettingsPage() {
               <CardDescription>
                 Configure LangChain agents, tools, and prompt templates
               </CardDescription>
-              <div className="mt-4">
+              <Alert className="mt-4 mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Enhanced LangChain Settings Available</AlertTitle>
+                <AlertDescription>
+                  We've improved the LangChain settings interface. Please use the dedicated page below for all LangChain configuration.
+                </AlertDescription>
+              </Alert>
+              <div className="mt-4 flex justify-center">
                 <Link href="/langchain-settings">
-                  <Button variant="outline">
-                    <Zap className="h-4 w-4 mr-2" />
+                  <Button className="w-full md:w-auto" size="lg">
+                    <Zap className="h-5 w-5 mr-2" />
                     Go to LangChain Settings
                   </Button>
                 </Link>
