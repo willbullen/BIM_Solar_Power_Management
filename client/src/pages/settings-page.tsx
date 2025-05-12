@@ -2104,15 +2104,16 @@ export default function SettingsPage() {
 
   /* Modal components outside of main render function */
   
-  function AgentModal() {
+  function CreateAgentModal() {
+    if (!isAgentModalOpen) return null;
+    
     return (
-      isAgentModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Create New Agent</h2>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Agent Name</label>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md">
+          <h2 className="text-xl font-semibold mb-4">Create New Agent</h2>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Agent Name</label>
                 <input 
                   type="text" 
                   className="w-full rounded-md border border-slate-600 bg-slate-700 p-2 text-sm"
@@ -2497,7 +2498,7 @@ export default function SettingsPage() {
   }
 
   // Agent Modal Component
-  function AgentModal() {
+  function DetailsAgentModal() {
     if (!isAgentModalOpen) return null;
     
     return (
@@ -2892,15 +2893,7 @@ export default function SettingsPage() {
   // No need for a separate return for modals - they'll be included in the main UI
 }
 
-// Wrap the actual component with the modals
-const SettingsPageWithModals = () => {
-  const SettingsPageContent = SettingsPage;
-  return (
-    <>
-      <SettingsPageContent />
-      {/* The modals will be handled internally in the SettingsPage component */}
-    </>
-  );
-};
+// Export the component directly
+export default SettingsPage;
 
 export default SettingsPageWithModals;
