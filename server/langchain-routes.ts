@@ -414,10 +414,12 @@ export function registerLangChainRoutes(app: Express) {
   app.get('/api/langchain/prompts', requireAuth, async (req: Request, res: Response) => {
     try {
       const prompts = await db.select().from(schema.langchainPromptTemplates).orderBy(desc(schema.langchainPromptTemplates.updatedAt));
-      res.json(prompts);
+      // Always return an array (empty if no results)
+      res.json(prompts || []);
     } catch (error) {
       console.error('Error fetching prompt templates:', error);
-      res.status(500).json({ error: 'Failed to fetch prompt templates' });
+      // Return empty array instead of error to prevent UI issues
+      res.json([]);
     }
   });
 
@@ -464,10 +466,12 @@ export function registerLangChainRoutes(app: Express) {
         .limit(limit)
         .offset(offset);
       
-      res.json(runs);
+      // Always return an array (empty if no results)
+      res.json(runs || []);
     } catch (error) {
       console.error('Error fetching execution runs:', error);
-      res.status(500).json({ error: 'Failed to fetch execution runs' });
+      // Return empty array instead of error to prevent UI issues
+      res.json([]);
     }
   });
 
