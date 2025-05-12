@@ -1,52 +1,53 @@
 import { z } from "zod";
 
-// Schema for creating/editing LangChain agents
+// Form validation schema for Agent creation/editing
 export const agentSchema = z.object({
-  name: z.string().min(3, { message: "Agent name must be at least 3 characters" }).max(100),
+  name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  modelName: z.string().default("gpt-4o"),
+  modelName: z.string().min(1, "Model name is required"),
   temperature: z.number().min(0).max(1).default(0.7),
-  maxTokens: z.number().min(100).max(8000).default(4000),
+  maxTokens: z.number().int().positive().default(4000),
   streaming: z.boolean().default(true),
   systemPrompt: z.string().optional(),
-  maxIterations: z.number().min(1).max(10).default(5),
+  maxIterations: z.number().int().positive().default(5),
   verbose: z.boolean().default(false),
   enabled: z.boolean().default(true),
-  metadata: z.any().optional(),
 });
 
 export type AgentFormValues = z.infer<typeof agentSchema>;
 
-// Schema for creating/editing LangChain tools
+// Form validation schema for Tool creation/editing
 export const toolSchema = z.object({
-  name: z.string().min(3, { message: "Tool name must be at least 3 characters" }).max(100),
+  name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  toolType: z.string().default("custom"),
+  toolType: z.string().min(1, "Tool type is required"),
   parameters: z.any().optional(),
   implementation: z.string().optional(),
   enabled: z.boolean().default(true),
   isBuiltIn: z.boolean().default(false),
-  metadata: z.any().optional(),
 });
 
 export type ToolFormValues = z.infer<typeof toolSchema>;
 
-// Schema for creating/editing LangChain prompt templates
+// Form validation schema for Prompt Template creation/editing
 export const promptTemplateSchema = z.object({
-  name: z.string().min(3, { message: "Template name must be at least 3 characters" }).max(100),
+  name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  template: z.string().min(10, { message: "Template must be at least 10 characters" }),
+  template: z.string().min(1, "Template is required"),
   templateType: z.string().default("string"),
   variables: z.array(z.string()).optional(),
 });
 
 export type PromptTemplateFormValues = z.infer<typeof promptTemplateSchema>;
 
-// Schema for agent-tool association
-export const agentToolSchema = z.object({
-  agentId: z.number(),
-  toolId: z.number(),
-  priority: z.number().default(0),
+// Schema for LangChain query execution
+export const querySchema = z.object({
+  table: z.string().min(1, "Table name is required"),
+  columns: z.array(z.string()).min(1, "At least one column is required"),
+  where: z.record(z.string(), z.any()).optional(),
+  orderBy: z.string().optional(),
+  limit: z.number().int().positive().optional(),
+  offset: z.number().int().min(0).optional(),
 });
 
-export type AgentToolFormValues = z.infer<typeof agentToolSchema>;
+export type QueryFormValues = z.infer<typeof querySchema>;

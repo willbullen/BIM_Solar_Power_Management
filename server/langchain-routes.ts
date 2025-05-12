@@ -3,6 +3,9 @@ import { z } from 'zod';
 import { db } from './db';
 import * as schema from '@shared/schema';
 import { eq, desc, and } from 'drizzle-orm';
+import { LangChainIntegration } from './langchain-integration';
+import { LangChainApiService } from './langchain-api';
+import { AIService } from './ai-service';
 import { 
   insertLangchainAgentSchema,
   insertLangchainToolSchema,
@@ -51,6 +54,9 @@ function requireAdmin(req: Request, res: Response, next: any) {
 }
 
 export function registerLangChainRoutes(app: Express) {
+  // Initialize LangChain API service
+  const langchainIntegration = new LangChainIntegration(new AIService());
+  const langchainApiService = new LangChainApiService(langchainIntegration);
   // Get all LangChain agents
   app.get('/api/langchain/agents', requireAuth, async (req: Request, res: Response) => {
     try {
@@ -829,6 +835,52 @@ export function registerLangChainRoutes(app: Express) {
     } catch (error) {
       console.error('Error handling LangChain message:', error);
       res.status(500).json({ error: 'Failed to process LangChain message' });
+    }
+  });
+  
+  // Health check endpoint
+  app.get('/api/langchain/health', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const status = await langchainApiService.getHealthStatus();
+      res.json(status);
+    } catch (error) {
+      console.error('Error checking LangChain health:', error);
+      res.status(500).json({ error: 'Failed to check LangChain health' });
+    }
+  });
+  
+  // System status detailed endpoint
+  app.get('/api/langchain/status', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const status = await langchainApiService.getSystemStatus();
+      res.json(status);
+    } catch (error) {
+      console.error('Error getting LangChain status:', error);
+      res.status(500).json({ error: 'Failed to get LangChain status' });
+    }
+  });
+  
+  // Test agent endpoint
+  app.post('/api/langchain/test', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { agentId, prompt } = req.body;
+      
+      if (!agentId) {
+        return res.status(400).json({ error: 'Agent ID is required' });
+      }
+      
+      if (!prompt) {
+        return res.status(400).json({ error: 'Prompt is required' });
+      }
+      
+      const result = await langchainApiService.testAgent(agentId, prompt);
+      res.json(result);
+    } catch (error) {
+      console.error('Error testing LangChain agent:', error);
+      res.status(500).json({ 
+        error: 'Failed to test LangChain agent',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 }

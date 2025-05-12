@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Save, Send, Settings, Users, Zap, CloudSun, Palette, Globe, BugPlay, MessageSquare, MessageCircle, Check, AlertTriangle, Info } from "lucide-react";
+import { Loader2, Save, Send, Settings, Users, Zap, CloudSun, Palette, Globe, BugPlay, MessageSquare, MessageCircle, Check, AlertTriangle, Info, PlayCircle } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -24,6 +24,8 @@ import { CreateTestNotificationButton } from "@/components/create-test-notificat
 import { AgentModal } from "@/components/langchain/AgentModal";
 import { ToolModal } from "@/components/langchain/ToolModal";
 import { PromptModal } from "@/components/langchain/PromptModal";
+import { ViewSchemaButton, ConfigureButton } from "@/components/langchain/ToolButtons";
+import { AgentTester } from "@/components/langchain/AgentTester";
 
 // Define schema for settings form
 const settingsSchema = z.object({
@@ -96,6 +98,7 @@ export default function SettingsPage() {
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<any>(null);
   const [selectedTool, setSelectedTool] = useState<any>(null);
+  const [selectedAgentForTesting, setSelectedAgentForTesting] = useState<any>(null);
   
   // Fetch current settings
   const { data: settings, isLoading: isLoadingSettings } = useQuery({
@@ -129,32 +132,32 @@ export default function SettingsPage() {
   });
   
   // Fetch LangChain agents
-  const { data: langchainAgents, isLoading: isLoadingAgents } = useQuery({
+  const { data: langchainAgents = [], isLoading: isLoadingAgents } = useQuery({
     queryKey: ['/api/langchain/agents'],
     queryFn: getQueryFn({ on401: 'throw' }),
     enabled: activeTab === "langchain"
-  });
+  }) as { data: any[], isLoading: boolean };
   
   // Fetch LangChain tools
-  const { data: langchainTools, isLoading: isLoadingTools } = useQuery({
+  const { data: langchainTools = [], isLoading: isLoadingTools } = useQuery({
     queryKey: ['/api/langchain/tools'],
     queryFn: getQueryFn({ on401: 'throw' }),
     enabled: activeTab === "langchain"
-  });
+  }) as { data: any[], isLoading: boolean };
   
   // Fetch LangChain prompt templates
-  const { data: langchainPrompts, isLoading: isLoadingPrompts } = useQuery({
+  const { data: langchainPrompts = [], isLoading: isLoadingPrompts } = useQuery({
     queryKey: ['/api/langchain/prompts'],
     queryFn: getQueryFn({ on401: 'throw' }),
     enabled: activeTab === "langchain"
-  });
+  }) as { data: any[], isLoading: boolean };
   
   // Fetch LangChain execution runs
-  const { data: langchainRuns, isLoading: isLoadingRuns } = useQuery({
+  const { data: langchainRuns = [], isLoading: isLoadingRuns } = useQuery({
     queryKey: ['/api/langchain/runs'],
     queryFn: getQueryFn({ on401: 'throw' }),
     enabled: activeTab === "langchain"
-  });
+  }) as { data: any[], isLoading: boolean };
   
   // Create form for general settings
   const generalForm = useForm<z.infer<typeof settingsSchema>>({
@@ -1648,6 +1651,9 @@ export default function SettingsPage() {
                 {/* Agents Tab */}
                 <TabsContent value="agents">
                   <div className="space-y-6">
+                    {/* Agent Tester Card */}
+                    <AgentTester selectedAgent={selectedAgentForTesting} />
+                  
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-medium">Agent Models</h3>
                       <Button 
@@ -1713,23 +1719,51 @@ export default function SettingsPage() {
                             
                             <div className="flex justify-end gap-2 mt-4">
                               <Button 
+                                variant="secondary" 
+                                size="sm" 
+                                className="text-indigo-600 bg-indigo-100 hover:bg-indigo-200"
+                                onClick={() => {
+                                  // Use the actual agent data from langchainAgents
+                                  if (langchainAgents && langchainAgents.length > 0) {
+                                    // Find the agent with name "Main Assistant Agent"
+                                    const mainAgent = langchainAgents.find(agent => agent.name === "Main Assistant Agent") || langchainAgents[0];
+                                    setSelectedAgentForTesting(mainAgent);
+                                    toast({
+                                      title: "Test Mode Activated",
+                                      description: `Agent "${mainAgent.name}" is ready for testing.`,
+                                      variant: "default"
+                                    });
+                                  } else {
+                                    toast({
+                                      title: "Agent data not available",
+                                      description: "Could not load agent details. Please try again.",
+                                      variant: "destructive"
+                                    });
+                                  }
+                                }}
+                              >
+                                <PlayCircle className="h-4 w-4 mr-1" />
+                                Test Agent
+                              </Button>
+                              <Button 
                                 variant="outline" 
                                 size="sm" 
                                 className="text-slate-400"
                                 onClick={() => {
-                                  setSelectedAgent({
-                                    id: 1,
-                                    name: "Main Assistant Agent",
-                                    description: "Primary agent for user interactions using GPT-4o and custom tools",
-                                    modelName: "gpt-4o",
-                                    temperature: 0.7,
-                                    tools: 2
-                                  });
-                                  // Open agent details modal
-                                  toast({
-                                    title: "Agent details",
-                                    description: "This would show agent details in a modal"
-                                  });
+                                  // Use the actual agent data from langchainAgents
+                                  if (langchainAgents && langchainAgents.length > 0) {
+                                    // Find the agent with name "Main Assistant Agent"
+                                    const mainAgent = langchainAgents.find(agent => agent.name === "Main Assistant Agent") || langchainAgents[0];
+                                    setSelectedAgent(mainAgent);
+                                    // Open agent modal in read-only mode
+                                    setIsAgentModalOpen(true);
+                                  } else {
+                                    toast({
+                                      title: "Agent data not available",
+                                      description: "Could not load agent details. Please try again.",
+                                      variant: "destructive"
+                                    });
+                                  }
                                 }}
                               >
                                 View Details
@@ -1739,19 +1773,20 @@ export default function SettingsPage() {
                                 size="sm" 
                                 className="text-blue-400"
                                 onClick={() => {
-                                  setSelectedAgent({
-                                    id: 1,
-                                    name: "Main Assistant Agent",
-                                    description: "Primary agent for user interactions using GPT-4o and custom tools",
-                                    modelName: "gpt-4o",
-                                    temperature: 0.7,
-                                    tools: 2
-                                  });
-                                  // Open agent edit modal
-                                  toast({
-                                    title: "Edit agent",
-                                    description: "This would open an edit agent form"
-                                  });
+                                  // Use the actual agent data from langchainAgents
+                                  if (langchainAgents && langchainAgents.length > 0) {
+                                    // Find the agent with name "Main Assistant Agent"
+                                    const mainAgent = langchainAgents.find(agent => agent.name === "Main Assistant Agent") || langchainAgents[0];
+                                    setSelectedAgent(mainAgent);
+                                    // Open agent modal for editing
+                                    setIsAgentModalOpen(true);
+                                  } else {
+                                    toast({
+                                      title: "Agent data not available",
+                                      description: "Could not load agent details for editing. Please try again.",
+                                      variant: "destructive"
+                                    });
+                                  }
                                 }}
                               >
                                 Edit
@@ -1760,6 +1795,85 @@ export default function SettingsPage() {
                           </div>
                         </CardContent>
                       </Card>
+
+                      {/* Dynamic agent cards - render additional agents from the database */}
+                      {langchainAgents && langchainAgents.filter(agent => 
+                        agent.name !== "Main Assistant Agent" // Skip the main agent since it's already rendered above
+                      ).map((agent) => (
+                        <Card key={agent.id} className="overflow-hidden">
+                          <CardHeader className="bg-gradient-to-r from-slate-900 to-slate-800 pb-3">
+                            <div className="flex justify-between items-center">
+                              <CardTitle className="flex items-center gap-2 text-white">
+                                <Zap className="h-5 w-5 text-indigo-400" />
+                                {agent.name}
+                              </CardTitle>
+                              {agent.enabled ? (
+                                <Badge variant="outline" className="bg-green-950 text-green-300 border-green-800">Active</Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-slate-950 text-slate-300 border-slate-800">Inactive</Badge>
+                              )}
+                            </div>
+                            <CardDescription className="text-slate-300">
+                              {agent.description || "Custom LangChain agent with specialized capabilities"}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="pt-5 bg-gradient-to-b from-slate-950 to-slate-900">
+                            <div className="space-y-4">
+                              <div className="grid sm:grid-cols-2 gap-4">
+                                <div className="rounded-md border p-3 bg-slate-900">
+                                  <div className="text-xs font-medium text-muted-foreground mb-2">Model</div>
+                                  <div className="text-sm">{agent.model || "GPT-4o"}</div>
+                                </div>
+                                <div className="rounded-md border p-3 bg-slate-900">
+                                  <div className="text-xs font-medium text-muted-foreground mb-2">Tools</div>
+                                  <div className="text-sm">{agent.toolCount || "0"} configured</div>
+                                </div>
+                              </div>
+                              
+                              <div className="flex justify-end gap-2 mt-4">
+                                <Button 
+                                  variant="secondary" 
+                                  size="sm" 
+                                  className="text-indigo-600 bg-indigo-100 hover:bg-indigo-200"
+                                  onClick={() => {
+                                    setSelectedAgentForTesting(agent);
+                                    toast({
+                                      title: "Test Mode Activated",
+                                      description: `Agent "${agent.name}" is ready for testing.`,
+                                      variant: "default"
+                                    });
+                                  }}
+                                >
+                                  <PlayCircle className="h-4 w-4 mr-1" />
+                                  Test Agent
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="text-slate-400"
+                                  onClick={() => {
+                                    setSelectedAgent(agent);
+                                    setIsAgentModalOpen(true);
+                                  }}
+                                >
+                                  View Details
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="text-slate-400"
+                                  onClick={() => {
+                                    setSelectedAgent(agent);
+                                    setIsAgentModalOpen(true);
+                                  }}
+                                >
+                                  Edit
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
                   </div>
                 </TabsContent>
@@ -1773,11 +1887,8 @@ export default function SettingsPage() {
                         variant="outline" 
                         className="flex items-center gap-2"
                         onClick={() => {
-                          setIsToolModalOpen(true);
-                          toast({
-                            title: "Create Tool",
-                            description: "This would open a create tool form"
-                          });
+                          setSelectedTool(null); // Reset any selected tool
+                          setIsToolModalOpen(true); // Open the create tool modal
                         }}
                       >
                         <Zap className="h-4 w-4" />
@@ -1821,12 +1932,16 @@ export default function SettingsPage() {
                             </div>
                             
                             <div className="flex justify-end gap-2 mt-4">
-                              <Button variant="outline" size="sm" className="text-slate-400">
-                                View Schema
-                              </Button>
-                              <Button variant="outline" size="sm" className="text-blue-400">
-                                Configure
-                              </Button>
+                              <ViewSchemaButton 
+                                toolName="ReadFromDB" 
+                                setSelectedTool={setSelectedTool} 
+                                setIsToolModalOpen={setIsToolModalOpen} 
+                              />
+                              <ConfigureButton 
+                                toolName="ReadFromDB" 
+                                setSelectedTool={setSelectedTool} 
+                                setIsToolModalOpen={setIsToolModalOpen} 
+                              />
                             </div>
                           </div>
                         </CardContent>
@@ -1868,12 +1983,16 @@ export default function SettingsPage() {
                             </div>
                             
                             <div className="flex justify-end gap-2 mt-4">
-                              <Button variant="outline" size="sm" className="text-slate-400">
-                                View Schema
-                              </Button>
-                              <Button variant="outline" size="sm" className="text-blue-400">
-                                Configure
-                              </Button>
+                              <ViewSchemaButton 
+                                toolName="CompileReport" 
+                                setSelectedTool={setSelectedTool} 
+                                setIsToolModalOpen={setIsToolModalOpen} 
+                              />
+                              <ConfigureButton 
+                                toolName="CompileReport" 
+                                setSelectedTool={setSelectedTool} 
+                                setIsToolModalOpen={setIsToolModalOpen} 
+                              />
                             </div>
                           </div>
                         </CardContent>
