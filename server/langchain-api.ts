@@ -220,7 +220,8 @@ export class LangChainApiService {
         output: completion.choices[0].message.content || "",
         startTime: new Date(),
         endTime: new Date(),
-        status: 'success'
+        status: 'success',
+        toolCalls: completion.choices[0].message.tool_calls ? completion.choices[0].message.tool_calls : null
       };
       
       const [run] = await db
