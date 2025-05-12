@@ -58,11 +58,11 @@ export function registerLangChainRoutes(app: Express) {
   // Update tool schemas to match the implementation
   app.post('/api/langchain/update-tools', requireAdmin, async (req: Request, res: Response) => {
     try {
-      // Update the ReadFromDB tool schema
+      // Update the ReadFromDB tool parameters to match the schema format
       await db
         .update(schema.langchainTools)
         .set({
-          schema: {
+          parameters: {
             type: 'object',
             properties: {
               input: {
@@ -76,11 +76,11 @@ export function registerLangChainRoutes(app: Express) {
         })
         .where(eq(schema.langchainTools.name, 'ReadFromDB'));
         
-      // Update the CompileReport tool schema
+      // Update the CompileReport tool parameters
       await db
         .update(schema.langchainTools)
         .set({
-          schema: {
+          parameters: {
             type: 'object',
             properties: {
               input: {

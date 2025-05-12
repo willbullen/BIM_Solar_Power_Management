@@ -40,10 +40,15 @@ export class CompileReportTool extends Tool {
   
   /**
    * Define the schema for the tool's input
-   * Using the format expected by LangChain.js for Tool schema
+   * Using the format expected by LangChain.js for OpenAI functions tools
    */
   schema = z.object({
     input: z.string().optional().describe("Report details in the format: 'TITLE: <report-title>; CONTENT: <markdown-content>; FORMAT: [markdown|pdf]'")
+  }).transform(input => {
+    if (typeof input === 'object' && input !== null && 'input' in input) {
+      return input.input || '';
+    }
+    return input as string || '';
   });
   
   /**

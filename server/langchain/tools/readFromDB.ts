@@ -95,10 +95,15 @@ export class ReadFromDBTool extends Tool {
   
   /**
    * Define the schema for the tool's input
-   * Using the format expected by LangChain.js for Tool schema
+   * Using the format expected by LangChain.js for OpenAI functions tools
    */
   schema = z.object({
     input: z.string().optional().describe("SQL query to execute. Format: 'QUERY: select * from table WHERE column = ?; PARAMS: [\"value\"]'")
+  }).transform(input => {
+    if (typeof input === 'object' && input !== null && 'input' in input) {
+      return input.input || '';
+    }
+    return input as string || '';
   });
   
   /**
