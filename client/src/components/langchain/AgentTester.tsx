@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Loader2, Check, AlertTriangle, Send, ActivitySquare, 
-  Clock, Zap, MessageSquare, Cpu, BarChart, Wrench
+  Clock, Zap, MessageSquare, Cpu, BarChart, Wrench, X
 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, getQueryFn } from "@/lib/queryClient";
@@ -22,6 +22,7 @@ import { Progress } from "@/components/ui/progress";
 
 interface AgentTesterProps {
   selectedAgent?: any;
+  onClearAgent?: () => void;
 }
 
 interface TestResult {
@@ -39,7 +40,7 @@ interface TestResult {
   hasToolCalls: boolean;
 }
 
-export function AgentTester({ selectedAgent }: AgentTesterProps) {
+export function AgentTester({ selectedAgent, onClearAgent }: AgentTesterProps) {
   const { toast } = useToast();
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
@@ -193,15 +194,39 @@ export function AgentTester({ selectedAgent }: AgentTesterProps) {
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                   />
-                  <Button 
-                    className="w-full"
-                    disabled={isLoading}
-                    onClick={handleTestAgent}
-                  >
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {!isLoading && <Send className="mr-2 h-4 w-4" />}
-                    Test Agent
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1"
+                      disabled={isLoading}
+                      onClick={handleTestAgent}
+                    >
+                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {!isLoading && <Send className="mr-2 h-4 w-4" />}
+                      Test Agent
+                    </Button>
+                    
+                    <Button 
+                      variant="outline"
+                      className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800"
+                      disabled={isLoading}
+                      onClick={() => {
+                        if (onClearAgent) {
+                          setPrompt("");
+                          setResponse("");
+                          setTestResult(null);
+                          onClearAgent();
+                          toast({
+                            title: "Test Mode Cancelled",
+                            description: "Agent testing has been cancelled.",
+                            variant: "default"
+                          });
+                        }
+                      }}
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Cancel Test
+                    </Button>
+                  </div>
                 </>
               )}
             </div>

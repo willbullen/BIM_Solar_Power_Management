@@ -1652,7 +1652,10 @@ export default function SettingsPage() {
                 <TabsContent value="agents">
                   <div className="space-y-6">
                     {/* Agent Tester Card */}
-                    <AgentTester selectedAgent={selectedAgentForTesting} />
+                    <AgentTester 
+                      selectedAgent={selectedAgentForTesting} 
+                      onClearAgent={() => setSelectedAgentForTesting(null)} 
+                    />
                   
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-medium">Agent Models</h3>
