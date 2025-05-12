@@ -2197,6 +2197,13 @@ export default function SettingsPage() {
         onClose={() => setIsPromptModalOpen(false)}
         promptTemplate={null}
       />
+      
+      {/* Agent Tester Modal */}
+      <AgentTester
+        isOpen={!!selectedAgentForTesting}
+        onClose={() => setSelectedAgentForTesting(null)}
+        agentId={selectedAgentForTesting?.id}
+      />
     </SharedLayout>
   );
 }

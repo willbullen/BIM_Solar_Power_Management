@@ -34,7 +34,13 @@ export function AgentTester({ isOpen, onClose, agentId }: AgentTesterProps) {
   });
 
   // Fetch system status
-  const { data: status } = useQuery({
+  const { data: status = { 
+      langchainConnected: false, 
+      openaiConnected: false, 
+      toolsAvailable: 0,
+      toolsCount: 0 
+    }
+  } = useQuery({
     queryKey: ['/api/langchain/status'],
     queryFn: getQueryFn(),
     enabled: isOpen,
