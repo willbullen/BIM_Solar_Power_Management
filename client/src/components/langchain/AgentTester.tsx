@@ -131,6 +131,7 @@ export function AgentTester({ selectedAgent }: AgentTesterProps) {
   // Determine agent status indicators
   const isAgentOnline = healthCheck?.status === 'healthy';
   const hasActiveAgent = selectedAgent?.enabled && selectedAgent?.id;
+  const isAgentSelected = !!selectedAgent;
   
   return (
     <Card className="mb-6">
@@ -152,14 +153,12 @@ export function AgentTester({ selectedAgent }: AgentTesterProps) {
               )}
             </Badge>
             
-            {selectedAgent && (
-              <Badge 
-                variant={hasActiveAgent ? "outline" : "secondary"}
-                className={hasActiveAgent ? "bg-blue-950 text-blue-400 border-blue-700" : ""}
-              >
-                {hasActiveAgent ? "Agent Active" : "Agent Inactive"}
-              </Badge>
-            )}
+            <Badge 
+              variant={isAgentSelected ? (hasActiveAgent ? "outline" : "secondary") : "secondary"}
+              className={hasActiveAgent ? "bg-blue-950 text-blue-400 border-blue-700" : ""}
+            >
+              {isAgentSelected ? (hasActiveAgent ? "Agent Active" : "Agent Inactive") : "No Agent Selected"}
+            </Badge>
           </div>
         </div>
         <CardDescription>
@@ -178,21 +177,33 @@ export function AgentTester({ selectedAgent }: AgentTesterProps) {
                   </div>
                 )}
               </div>
-              <Textarea 
-                placeholder="Enter a prompt to test the agent..."
-                className="min-h-[100px]"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-              />
-              <Button 
-                className="w-full"
-                disabled={isLoading || !selectedAgent}
-                onClick={handleTestAgent}
-              >
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {!isLoading && <Send className="mr-2 h-4 w-4" />}
-                Test Agent
-              </Button>
+              
+              {!selectedAgent ? (
+                <div className="border rounded-md p-4 text-center">
+                  <p className="text-sm text-muted-foreground mb-3">Please select an agent to test by clicking the "Test Agent" button on any agent card below</p>
+                  <span className="inline-flex items-center rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-slate-700">
+                    <Zap className="mr-1 h-3 w-3"/> Test Agent
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <Textarea 
+                    placeholder="Enter a prompt to test the agent..."
+                    className="min-h-[100px]"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                  />
+                  <Button 
+                    className="w-full"
+                    disabled={isLoading}
+                    onClick={handleTestAgent}
+                  >
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {!isLoading && <Send className="mr-2 h-4 w-4" />}
+                    Test Agent
+                  </Button>
+                </>
+              )}
             </div>
           </div>
           
