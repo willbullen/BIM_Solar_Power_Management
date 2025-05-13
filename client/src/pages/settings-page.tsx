@@ -164,7 +164,7 @@ export default function SettingsPage() {
   const { data: langchainRuns = [], isLoading: isLoadingRuns } = useQuery({
     queryKey: ['/api/langchain/runs'],
     queryFn: getQueryFn({ on401: 'throw' }),
-    enabled: activeTab === "langchain" && (activeLangchainTab === "runs" || activeLangchainTab === "agents")
+    enabled: activeTab === "langchain" && activeLangchainTab === "runs"
   }) as { data: any[], isLoading: boolean };
   
   // Create form for general settings
