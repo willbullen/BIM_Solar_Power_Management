@@ -2341,6 +2341,7 @@ export default function SettingsPage() {
         isOpen={isAgentModalOpen}
         onClose={() => setIsAgentModalOpen(false)}
         agent={selectedAgent}
+        activeTab={activeAgentModalTab}
       />
       
       <ToolModal

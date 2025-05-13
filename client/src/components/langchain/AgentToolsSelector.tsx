@@ -3,26 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, PlusCircle, Save, XCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { ArrowUp, ArrowDown, Save, Loader2 } from "lucide-react";
+import { getQueryFn } from "@/lib/queryClient"; 
+import { Card, CardContent } from "@/components/ui/card";
 
 interface Tool {
   id: number;
@@ -50,21 +36,28 @@ interface AgentToolsProps {
 }
 
 export function AgentToolsSelector({ agentId, onSuccess }: AgentToolsProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedTools, setSelectedTools] = useState<Map<number, boolean>>(new Map());
   const [toolPriorities, setToolPriorities] = useState<Map<number, number>>(new Map());
-  const [loading, setLoading] = useState(false);
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
+  
   // Fetch all available tools
-  const { data: tools, isLoading: isLoadingTools } = useQuery({
+  const { 
+    data: tools = [], 
+    isLoading: isLoadingTools 
+  } = useQuery({
     queryKey: ['/api/langchain/tools'],
+    queryFn: getQueryFn({ on401: "ignore" }),
     enabled: Boolean(agentId),
   });
-
-  // Fetch current agent tools
-  const { data: agentTools, isLoading: isLoadingAgentTools } = useQuery({
+  
+  // Fetch agent tools
+  const { 
+    data: agentTools = [], 
+    isLoading: isLoadingAgentTools 
+  } = useQuery({
     queryKey: ['/api/langchain/agent-tools', agentId],
+    queryFn: getQueryFn({ on401: "ignore" }),
     enabled: Boolean(agentId),
   });
 
@@ -100,21 +93,22 @@ export function AgentToolsSelector({ agentId, onSuccess }: AgentToolsProps) {
   const saveToolsMutation = useMutation({
     mutationFn: async (formData: { agentId: number, tools: { toolId: number, priority: number }[] }) => {
       return await apiRequest(`/api/langchain/agents/${agentId}/tools`, {
-        method: 'PUT',
+        method: "PUT",
         data: formData,
       });
     },
     onSuccess: () => {
       toast({
-        title: "Tools updated successfully",
-        description: "Agent tools have been updated.",
+        title: "Tools updated",
+        description: "The agent tools have been updated successfully.",
         variant: "default",
       });
       
-      // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ['/api/langchain/agent-tools', agentId] });
+      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/langchain/agents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/langchain/agent-tools', agentId] });
       
+      // Call the success callback if provided
       if (onSuccess) {
         onSuccess();
       }
@@ -129,139 +123,167 @@ export function AgentToolsSelector({ agentId, onSuccess }: AgentToolsProps) {
     },
   });
 
-  const handleToolToggle = (toolId: number) => {
-    setSelectedTools(prev => {
-      const newMap = new Map(prev);
-      newMap.set(toolId, !prev.get(toolId));
-      return newMap;
-    });
+  // Handle tool selection
+  const handleToolSelect = (toolId: number, isSelected: boolean) => {
+    setSelectedTools(new Map(selectedTools.set(toolId, isSelected)));
   };
 
+  // Handle priority change
   const handlePriorityChange = (toolId: number, priority: number) => {
-    setToolPriorities(prev => {
-      const newMap = new Map(prev);
-      newMap.set(toolId, priority);
-      return newMap;
-    });
+    setToolPriorities(new Map(toolPriorities.set(toolId, priority)));
   };
 
-  const handleSave = async () => {
-    setLoading(true);
-    
-    try {
-      // Format tools data for API
-      const toolsToSave = Array.from(selectedTools.entries())
-        .filter(([_, isSelected]) => isSelected)
-        .map(([toolId, _]) => ({
-          toolId,
-          priority: toolPriorities.get(toolId) || 100,
-        }));
-      
-      await saveToolsMutation.mutateAsync({
-        agentId,
-        tools: toolsToSave,
-      });
-    } catch (error) {
-      console.error("Error in handleSave", error);
-    } finally {
-      setLoading(false);
+  // Move priority up (lower number = higher priority)
+  const handlePriorityUp = (toolId: number) => {
+    const currentPriority = toolPriorities.get(toolId) || 100;
+    if (currentPriority > 1) {
+      handlePriorityChange(toolId, currentPriority - 1);
     }
+  };
+
+  // Move priority down
+  const handlePriorityDown = (toolId: number) => {
+    const currentPriority = toolPriorities.get(toolId) || 100;
+    handlePriorityChange(toolId, currentPriority + 1);
+  };
+
+  // Save changes
+  const handleSaveChanges = async () => {
+    // Prepare data for submission
+    const selectedToolsData = Array.from(selectedTools.entries())
+      .filter(([_, isSelected]) => isSelected)
+      .map(([toolId, _]) => ({
+        toolId,
+        priority: toolPriorities.get(toolId) || 100
+      }));
+
+    await saveToolsMutation.mutateAsync({
+      agentId,
+      tools: selectedToolsData
+    });
   };
 
   if (isLoadingTools || isLoadingAgentTools) {
     return (
-      <div className="flex items-center justify-center h-32">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-        <span className="ml-2 text-sm text-gray-500">Loading tools...</span>
+      <div className="flex justify-center items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="ml-2">Loading tools...</p>
       </div>
     );
   }
 
-  if (!tools || !Array.isArray(tools) || tools.length === 0) {
-    return (
-      <div className="p-4 bg-gray-50 rounded-md text-center">
-        <p className="text-gray-600 mb-2">No tools available</p>
-        <p className="text-sm text-gray-500">
-          Tools must be added to the system before they can be assigned to agents.
-        </p>
-      </div>
-    );
-  }
+  // Sort tools by priority for display (if they are selected)
+  const sortedTools = Array.isArray(tools) ? [...tools].sort((a, b) => {
+    const aPriority = selectedTools.get(a.id) ? (toolPriorities.get(a.id) || 100) : 999;
+    const bPriority = selectedTools.get(b.id) ? (toolPriorities.get(b.id) || 100) : 999;
+    return aPriority - bPriority;
+  }) : [];
 
   return (
     <div className="space-y-6">
       <div className="mb-4">
-        <h3 className="text-lg font-medium mb-1">Available Tools</h3>
-        <p className="text-sm text-gray-500 mb-4">
-          Select tools for this agent and set their priority (lower numbers will be tried first).
+        <h3 className="text-lg font-medium">Agent Tools Configuration</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Select which tools this agent can use, and set their priority order.
+          Tools with lower priority numbers will be tried first.
         </p>
-        
-        <div className="space-y-3">
-          {tools.map((tool: Tool) => (
-            <Card key={tool.id} className={`border ${selectedTools.get(tool.id) ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200'}`}>
-              <CardContent className="pt-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-2">
-                    <Checkbox 
-                      id={`tool-${tool.id}`} 
-                      checked={selectedTools.get(tool.id) || false}
-                      onCheckedChange={() => handleToolToggle(tool.id)}
-                      className="mt-1"
-                    />
-                    <div>
-                      <Label 
-                        htmlFor={`tool-${tool.id}`} 
-                        className="font-medium cursor-pointer"
-                      >
-                        {tool.name}
-                        <Badge 
-                          variant="outline" 
-                          className="ml-2 text-xs bg-gray-100 hover:bg-gray-200"
-                        >
-                          {tool.type}
-                        </Badge>
-                      </Label>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {tool.description}
-                      </p>
-                    </div>
+      </div>
+
+      <div className="grid gap-4">
+        {sortedTools.map((tool) => (
+          <Card key={tool.id} className={selectedTools.get(tool.id) ? "border-primary" : ""}>
+            <CardContent className="p-4">
+              <div className="flex items-start gap-4">
+                <div className="flex h-5 items-center pt-1">
+                  <Checkbox
+                    id={`tool-${tool.id}`}
+                    checked={selectedTools.get(tool.id) || false}
+                    onCheckedChange={(checked) => 
+                      handleToolSelect(tool.id, checked === true)
+                    }
+                  />
+                </div>
+                
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center">
+                    <Label
+                      htmlFor={`tool-${tool.id}`}
+                      className="font-medium cursor-pointer flex-1"
+                    >
+                      {tool.name}
+                    </Label>
+                    
+                    {selectedTools.get(tool.id) && (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          Priority:
+                        </span>
+                        <div className="flex items-center">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handlePriorityUp(tool.id)}
+                          >
+                            <ArrowUp className="h-4 w-4" />
+                          </Button>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="999"
+                            value={toolPriorities.get(tool.id) || 100}
+                            onChange={(e) => 
+                              handlePriorityChange(tool.id, parseInt(e.target.value) || 100)
+                            }
+                            className="h-8 w-16 text-center mx-1"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handlePriorityDown(tool.id)}
+                          >
+                            <ArrowDown className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  
-                  {selectedTools.get(tool.id) && (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs text-gray-500">Priority:</span>
-                      <Input 
-                        type="number" 
-                        min="1"
-                        max="1000"
-                        value={toolPriorities.get(tool.id) || 100}
-                        onChange={(e) => handlePriorityChange(tool.id, parseInt(e.target.value) || 100)}
-                        className="w-20 h-8 text-sm"
-                      />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {tool.description}
+                  </p>
+                  {tool.type && (
+                    <div className="text-xs text-gray-400 mt-1">
+                      Type: {tool.type}
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+
+        {Array.isArray(tools) && tools.length === 0 && (
+          <div className="text-center p-8 border border-dashed rounded-md">
+            <p className="text-gray-500">No tools available.</p>
+          </div>
+        )}
       </div>
-      
-      <div className="flex justify-end">
-        <Button 
-          onClick={handleSave} 
-          disabled={loading || saveToolsMutation.isPending}
-          className="w-full sm:w-auto"
+
+      <div className="flex justify-end mt-6">
+        <Button
+          onClick={handleSaveChanges}
+          disabled={saveToolsMutation.isPending}
         >
-          {(loading || saveToolsMutation.isPending) ? (
+          {saveToolsMutation.isPending ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Saving...
             </>
           ) : (
             <>
-              <Save className="mr-2 h-4 w-4" />
-              Save Tool Assignments
+              <Save className="h-4 w-4 mr-2" />
+              Save Tools Configuration
             </>
           )}
         </Button>
