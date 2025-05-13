@@ -1619,7 +1619,7 @@ export default function AgentPage() {
           {/* Enhanced Agent Interface Section with Proper Sizing */}
           <div className="bg-slate-950 rounded-xl shadow-lg mb-3 overflow-visible flex flex-col">
             <Tabs 
-              defaultValue="chat" 
+              defaultValue="tasks" 
               className="flex flex-col"
               onValueChange={(value) => setActiveTab(value)}
             >
@@ -1632,13 +1632,6 @@ export default function AgentPage() {
                   </span>
                   
                   <TabsList className="flex bg-slate-900/60 p-0.5 rounded-md border border-slate-800 h-7">
-                    <TabsTrigger 
-                      value="chat" 
-                      className="flex items-center justify-center gap-1.5 text-xs py-1 px-3 rounded-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-300"
-                    >
-                      <MessageSquare className="h-3.5 w-3.5" />
-                      <span className="font-medium">Chat</span>
-                    </TabsTrigger>
                     <TabsTrigger 
                       value="tasks" 
                       className="flex items-center justify-center gap-1.5 text-xs py-1 px-3 rounded-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-300"
@@ -1666,13 +1659,6 @@ export default function AgentPage() {
                     >
                       <Bot className="h-3.5 w-3.5" />
                       <span className="font-medium">AI Chat</span>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="settings" 
-                      className="flex items-center justify-center gap-1.5 text-xs py-1 px-3 rounded-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-300"
-                    >
-                      <Settings className="h-3.5 w-3.5" />
-                      <span className="font-medium">Settings</span>
                     </TabsTrigger>
                   </TabsList>
                 </div>
