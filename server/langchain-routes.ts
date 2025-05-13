@@ -424,6 +424,62 @@ export function registerLangChainRoutes(app: Express) {
       res.status(500).json({ error: 'Failed to update tool schemas' });
     }
   });
+  // Debug route for agent tools
+  app.get('/api/langchain/debug/agent-tools/:agentId', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const agentId = parseInt(req.params.agentId);
+      console.log(`DEBUG: Fetching tools for agent ID ${agentId}`);
+      
+      // Get the agent
+      const [agent] = await db
+        .select()
+        .from(schema.langchainAgents)
+        .where(eq(schema.langchainAgents.id, agentId));
+        
+      if (!agent) {
+        return res.status(404).json({ error: 'Agent not found' });
+      }
+      
+      // Get tools from the agent-tools junction table
+      const agentTools = await db
+        .select()
+        .from(schema.langchainAgentTools)
+        .where(eq(schema.langchainAgentTools.agentId, agentId));
+      
+      console.log(`DEBUG: Found ${agentTools.length} tools in junction table for agent ID ${agentId}`);
+      
+      // Get full tool details for each tool
+      const toolDetails = [];
+      for (const at of agentTools) {
+        const [tool] = await db
+          .select()
+          .from(schema.langchainTools)
+          .where(eq(schema.langchainTools.id, at.toolId));
+          
+        if (tool) {
+          toolDetails.push({
+            ...tool,
+            priority: at.priority
+          });
+        }
+      }
+      
+      console.log(`DEBUG: Found ${toolDetails.length} full tool details for agent ID ${agentId}`);
+      
+      // Return combined data
+      res.json({
+        agent,
+        agentTools,
+        toolDetails,
+        message: `Found ${toolDetails.length} tools for agent ${agent.name}`
+      });
+      
+    } catch (error) {
+      console.error('Error debugging agent tools:', error);
+      res.status(500).json({ error: 'Server error during tool debugging' });
+    }
+  });
+
   // Initialize LangChain API service
   const langchainIntegration = new LangChainIntegration(new AIService());
   const langchainApiService = new LangChainApiService(langchainIntegration);
@@ -442,16 +498,23 @@ export function registerLangChainRoutes(app: Express) {
   app.get('/api/langchain/agents/:id', requireAuth, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      console.log(`Fetching agent with ID: ${id}`);
+      
       const [agent] = await db
         .select()
         .from(schema.langchainAgents)
         .where(eq(schema.langchainAgents.id, id));
 
       if (!agent) {
+        console.log(`Agent with ID ${id} not found`);
         return res.status(404).json({ error: 'Agent not found' });
       }
+      
+      console.log(`Found agent: ${agent.name} (ID: ${agent.id})`);
 
       // Get associated tools
+      console.log(`Fetching tools for agent ID: ${id}`);
+      
       const tools = await db
         .select({
           tool: schema.langchainTools,
@@ -464,11 +527,20 @@ export function registerLangChainRoutes(app: Express) {
         )
         .where(eq(schema.langchainAgentTools.agentId, id))
         .orderBy(schema.langchainAgentTools.priority);
-
-      res.json({ 
+      
+      console.log(`Found ${tools.length} tools for agent ID ${id}`);
+      if (tools.length > 0) {
+        console.log('Tools found:', tools.map(t => `${t.tool.name} (priority: ${t.priority})`));
+      }
+      
+      // Prepare response with tools
+      const response = { 
         ...agent, 
         tools: tools.map(t => ({ ...t.tool, priority: t.priority }))
-      });
+      };
+      
+      console.log(`Sending response for agent ID ${id} with ${response.tools.length} tools`);
+      res.json(response);
     } catch (error) {
       console.error('Error fetching LangChain agent:', error);
       res.status(500).json({ error: 'Failed to fetch LangChain agent' });

@@ -57,20 +57,36 @@ export function AgentToolsSelector({ agentId, onToolsChange }: AgentToolsProps) 
   const agentQuery = useQuery<Agent>({ 
     queryKey: [`/api/langchain/agents/${agentId}`],
     enabled: !!agentId,
+    // Make sure we're not using stale data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
   
   // Query to get all available tools
   const toolsQuery = useQuery<Tool[]>({ 
-    queryKey: ['/api/langchain/tools']
+    queryKey: ['/api/langchain/tools'],
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0
   });
 
   // Log agent data for debugging
   useEffect(() => {
     if (agentQuery.data) {
-      console.log("Agent data loaded:", agentQuery.data);
-      console.log("Agent tools array:", agentQuery.data.tools);
+      console.log(`Agent data loaded for ID ${agentId}:`, JSON.stringify(agentQuery.data, null, 2));
+      
+      // Check if tools array exists and how many tools it contains
+      if (agentQuery.data.tools) {
+        console.log(`Agent has ${agentQuery.data.tools.length} tools:`, 
+          JSON.stringify(agentQuery.data.tools, null, 2));
+      } else {
+        console.warn("Agent data doesn't contain tools array");
+      }
+    } else if (agentQuery.error) {
+      console.error("Error fetching agent data:", agentQuery.error);
     }
-  }, [agentQuery.data]);
+  }, [agentQuery.data, agentQuery.error, agentId]);
 
   // Tools already assigned to the agent
   const assignedTools = agentQuery.data?.tools || [];
@@ -211,7 +227,13 @@ export function AgentToolsSelector({ agentId, onToolsChange }: AgentToolsProps) 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-sm font-medium mb-2">Assigned Tools</h3>
+        <div>
+          <h3 className="text-sm font-medium mb-1">Assigned Tools</h3>
+          <p className="text-xs text-muted-foreground">
+            {assignedTools.length} tools assigned | {agentQuery.isLoading ? "Loading..." : "Loaded"} 
+            | Agent ID: {agentId}
+          </p>
+        </div>
         <Button
           variant="outline"
           size="sm"
