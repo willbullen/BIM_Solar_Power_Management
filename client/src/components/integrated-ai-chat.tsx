@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRoute, useLocation } from "wouter";
-import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import { v4 as uuidv4 } from 'uuid';
 import { apiRequest } from "@/lib/query-client";
 import { useToast } from "@/hooks/use-toast";

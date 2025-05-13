@@ -1,0 +1,45 @@
+ rest-express@1.0.0 dev
+Starting Telegram integration database migration...
+Creating Telegram tables...
+Telegram tables already exist. Skipping creation.
+Telegram settings already exist. Skipping creation of defaults.
+Telegram integration database migration completed successfully.
+Telegram database migration completed successfully
+Starting LangChain integration database migration...
+Creating LangChain tables...
+langchain_agents table already exists
+langchain_tools table already exists
+langchain_agent_tools table already exists
+langchain_prompt_templates table already exists
+langchain_runs table already exists
+langchain_tool_executions table already exists
+LangChain tables created successfully
+LangChain agent and tools initialized successfully
+LangChain integration database migration completed successfully
+LangChain database migration completed successfully
+Initializing database tables and seed data...
+Initializing database...
+Database initialization complete
+Database initialization completed successfully
+[WebSocket] Server initialized and waiting for connections at unknown address with path /ws
+Registering AI Agent database functions...
+Database query and analysis functions registered successfully
+SQL execution functions registered successfully
+AI Agent database functions registered successfully
+Initializing Telegram bot @evirobot...
+Telegram bot initialized successfully
+Environment variables:
+PORT: 5000 (Using standard port for Replit compatibility)
+NODE_ENV: development
+REPL_ID: 0c6fe3fa-222f-48d4-8e4b-6ae65487088c
+REPL_OWNER: williambullen2
+REPLIT_DB_URL: set
+[WebSocket] HTTP Server is listening on 0.0.0.0:5000
+2:09:16 PM [express] serving on port 5000
+New connection established
+New connection established
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+New connection established
+2:09:20 PM [vite] Pre-transform error: Failed to resolve import "@/hooks/use-local-storage" from "client/src/components/integrated-ai-chat.tsx". Does the file exist?
