@@ -25,9 +25,10 @@ interface AgentModalProps {
   agent?: any; // Pass existing agent for editing
 }
 
-export function AgentModal({ isOpen, onClose, agent }: AgentModalProps) {
+export function AgentModal({ isOpen, onClose, agent: initialAgent }: AgentModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [agent, setAgent] = useState(initialAgent);
   const isEditing = !!agent;
   const [activeTab, setActiveTab] = useState<string>("settings");
   const [toolsUpdated, setToolsUpdated] = useState<boolean>(false);
@@ -49,6 +50,13 @@ export function AgentModal({ isOpen, onClose, agent }: AgentModalProps) {
     },
   });
   
+  // Update agent state when initialAgent prop changes
+  useEffect(() => {
+    if (initialAgent) {
+      setAgent(initialAgent);
+    }
+  }, [initialAgent]);
+
   // Update form values when agent changes (e.g., when selecting a different agent to edit)
   useEffect(() => {
     if (agent) {
@@ -105,13 +113,13 @@ export function AgentModal({ isOpen, onClose, agent }: AgentModalProps) {
               method: 'GET'
             });
             console.log("Full agent data fetched:", fullAgent);
-            // This ensures the agent ref is updated with the complete data structure
+            // This ensures the agent state is updated with the complete data structure
             // including the empty tools array that the component expects
-            agent = fullAgent;
+            setAgent(fullAgent);
           } catch (error) {
             console.error("Error fetching full agent data:", error);
             // Fall back to the basic data if fetch fails
-            agent = data;
+            setAgent(data);
           }
           // Switch to the tools tab to allow tool assignment
           setActiveTab("tools");
@@ -432,11 +440,16 @@ export function AgentModal({ isOpen, onClose, agent }: AgentModalProps) {
                 </CardContent>
               </Card>
             ) : (
-              <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground">
-                  Save the agent first to assign tools.
-                </p>
-              </div>
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Save the agent first to assign tools.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Once the agent is created, you'll be able to assign tools like ReadFromDB and CompileReport.
+                  </p>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
         </Tabs>
