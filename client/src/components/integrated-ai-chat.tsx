@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { v4 as uuidv4 } from 'uuid';
-import { apiRequest } from "@/lib/query-client";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -120,7 +120,8 @@ export function IntegratedAIChat() {
   const messageEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [user] = useLocalStorage<{ id: number; username: string } | null>("user", null);
+  // Get user from auth context
+  const { user } = useAuth();
   
   // Chat stream handling
   const [isWebSocketConnected, setIsWebSocketConnected] = useState(false);
