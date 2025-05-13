@@ -63,7 +63,10 @@ export function registerLangChainRoutes(app: Express) {
       const agentId = parseInt(req.params.agentId);
       const { toolId, priority } = req.body;
       
+      console.log(`Received request to assign tool ${toolId} to agent ${agentId} with priority ${priority}`);
+      
       if (isNaN(agentId) || !toolId) {
+        console.log('Validation error: Agent ID or Tool ID missing or invalid');
         return res.status(400).json({ error: 'Agent ID and Tool ID are required' });
       }
       

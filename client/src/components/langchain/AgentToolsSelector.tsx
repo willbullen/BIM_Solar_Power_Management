@@ -56,13 +56,21 @@ export function AgentToolsSelector({ agentId, onToolsChange }: AgentToolsProps) 
   // Query to get the current agent and its tools
   const agentQuery = useQuery<Agent>({ 
     queryKey: [`/api/langchain/agents/${agentId}`],
-    enabled: !!agentId
+    enabled: !!agentId,
   });
   
   // Query to get all available tools
   const toolsQuery = useQuery<Tool[]>({ 
     queryKey: ['/api/langchain/tools']
   });
+
+  // Log agent data for debugging
+  useEffect(() => {
+    if (agentQuery.data) {
+      console.log("Agent data loaded:", agentQuery.data);
+      console.log("Agent tools array:", agentQuery.data.tools);
+    }
+  }, [agentQuery.data]);
 
   // Tools already assigned to the agent
   const assignedTools = agentQuery.data?.tools || [];
@@ -98,6 +106,7 @@ export function AgentToolsSelector({ agentId, onToolsChange }: AgentToolsProps) 
       setSelectedPriority("0");
     },
     onError: (error) => {
+      console.error("Error assigning tool:", error);
       toast({
         title: "Error assigning tool",
         description: error.message || "There was an error assigning the tool to the agent.",
@@ -166,6 +175,8 @@ export function AgentToolsSelector({ agentId, onToolsChange }: AgentToolsProps) 
       return;
     }
 
+    console.log(`Assigning tool ${selectedToolId} to agent ${agentId} with priority ${selectedPriority}`);
+    
     assignToolMutation.mutate({
       agentId,
       toolId: parseInt(selectedToolId),
