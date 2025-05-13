@@ -111,7 +111,7 @@ export function IntegratedAIChat() {
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newConversationTitle, setNewConversationTitle] = useState("");
-  const [selectedAgentId, setSelectedAgentId] = useState<string>(""); // For agent selection
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("default"); // For agent selection
   const [agents, setAgents] = useState<LangchainAgent[]>([]); // To store available agents
   const [manualMessages, setManualMessages] = useState<Message[]>([]);
   const [currentMessage, setCurrentMessage] = useState("");
@@ -354,7 +354,7 @@ export function IntegratedAIChat() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           title, 
-          agentId: agentId ? parseInt(agentId) : undefined 
+          agentId: (agentId && agentId !== "default") ? parseInt(agentId) : undefined 
         }),
       });
     },
@@ -362,7 +362,7 @@ export function IntegratedAIChat() {
       setActiveConversation(data);
       setShowCreateDialog(false);
       setNewConversationTitle("");
-      setSelectedAgentId("");
+      setSelectedAgentId("default");
       
       // Update conversations list
       queryClient.invalidateQueries({ queryKey: ['/api/agent/conversations'] });
@@ -965,7 +965,7 @@ export function IntegratedAIChat() {
                       <SelectValue placeholder="Select an agent" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-800 text-slate-200">
-                      <SelectItem value="">No specific agent</SelectItem>
+                      <SelectItem value="default">No specific agent</SelectItem>
                       {agents.map((agent) => (
                         <SelectItem key={agent.id} value={agent.id.toString()}>
                           {agent.name}
