@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -48,6 +48,25 @@ export function AgentModal({ isOpen, onClose, agent }: AgentModalProps) {
       enabled: agent?.enabled ?? true,
     },
   });
+  
+  // Update form values when agent changes (e.g., when selecting a different agent to edit)
+  useEffect(() => {
+    if (agent) {
+      // Reset form with the new agent values
+      form.reset({
+        name: agent.name || "",
+        description: agent.description || "",
+        modelName: agent.modelName || "gpt-4o",
+        temperature: agent.temperature || 0.7,
+        maxTokens: agent.maxTokens || 4000,
+        streaming: agent.streaming ?? true,
+        systemPrompt: agent.systemPrompt || "",
+        maxIterations: agent.maxIterations || 5,
+        verbose: agent.verbose ?? false,
+        enabled: agent.enabled ?? true,
+      });
+    }
+  }, [agent, form]);
 
   // Create or update agent mutation
   const mutation = useMutation({
@@ -166,7 +185,7 @@ export function AgentModal({ isOpen, onClose, agent }: AgentModalProps) {
                         <FormLabel>Model</FormLabel>
                         <Select 
                           onValueChange={field.onChange} 
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
