@@ -54,7 +54,7 @@ interface LangchainAgent {
   name: string;
   description: string;
   system_prompt: string;
-  is_active: boolean;
+  enabled: boolean;  // This is the correct field name from the database
   created_at: string;
   updated_at: string;
 }
@@ -276,15 +276,28 @@ export function IntegratedAIChat() {
     enabled: !!user,
     staleTime: 60 * 1000, // 1 minute
     refetchOnWindowFocus: false,
+    refetchInterval: 5000, // Force refetch every 5 seconds for debugging
     onSuccess: (data) => {
       console.log("Agents data from API:", data);
       if (Array.isArray(data)) {
-        setAgents(data.filter(a => a.enabled));
-        console.log("Filtered agents:", data.filter(a => a.enabled));
+        // Add more detailed logging
+        console.log("Field names on first agent:", data.length > 0 ? Object.keys(data[0]) : "No agents");
+        console.log("Enabled field exists:", data.length > 0 ? 'enabled' in data[0] : "No agents");
+        
+        // Fix field name - API returns 'enabled', not is_active or isEnabled
+        const filtered = data.filter(a => a.enabled === true);
+        setAgents(filtered);
+        console.log("Filtered agents:", filtered);
+      } else {
+        console.log("No agents data or not an array:", typeof data);
       }
     },
     onError: (error: Error) => {
       console.error("Error fetching agents:", error);
+      // Try to invalidate the query to force a retry
+      setTimeout(() => {
+        queryClient.invalidateQueries({queryKey: ['/api/langchain/agents']});
+      }, 2000);
     }
   });
   
