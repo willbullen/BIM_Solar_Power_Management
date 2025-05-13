@@ -515,6 +515,20 @@ export function registerLangChainRoutes(app: Express) {
       // Get associated tools
       console.log(`Fetching tools for agent ID: ${id}`);
       
+      // Step 1: Check the agent-tools junction table directly
+      const agentToolRelations = await db
+        .select()
+        .from(schema.langchainAgentTools)
+        .where(eq(schema.langchainAgentTools.agentId, id));
+      
+      console.log(`Found ${agentToolRelations.length} entries in the agent_tools junction table for agent ID ${id}`);
+      
+      // Log the raw agent-tools relationships 
+      if (agentToolRelations.length > 0) {
+        console.log('Raw agent-tool relations:', JSON.stringify(agentToolRelations));
+      }
+      
+      // Step 2: Get the full tool data with join
       const tools = await db
         .select({
           tool: schema.langchainTools,
@@ -528,18 +542,25 @@ export function registerLangChainRoutes(app: Express) {
         .where(eq(schema.langchainAgentTools.agentId, id))
         .orderBy(schema.langchainAgentTools.priority);
       
-      console.log(`Found ${tools.length} tools for agent ID ${id}`);
+      console.log(`Found ${tools.length} tools after join for agent ID ${id}`);
       if (tools.length > 0) {
-        console.log('Tools found:', tools.map(t => `${t.tool.name} (priority: ${t.priority})`));
+        console.log('Tools found after join:', tools.map(t => `${t.tool.name} (priority: ${t.priority})`));
       }
       
       // Prepare response with tools
+      const toolsWithPriority = tools.map(t => ({ 
+        ...t.tool, 
+        priority: t.priority 
+      }));
+      
       const response = { 
         ...agent, 
-        tools: tools.map(t => ({ ...t.tool, priority: t.priority }))
+        tools: toolsWithPriority
       };
       
       console.log(`Sending response for agent ID ${id} with ${response.tools.length} tools`);
+      console.log('Response tools data:', JSON.stringify(toolsWithPriority));
+      
       res.json(response);
     } catch (error) {
       console.error('Error fetching LangChain agent:', error);
