@@ -780,7 +780,11 @@ export function IntegratedAIChat() {
                             ) : msg.role === 'user' ? (
                               <p className="whitespace-pre-wrap">{msg.content}</p>
                             ) : (
-                              <EnhancedMessage role={msg.role} content={msg.content} timestamp={msg.timestamp || msg.createdAt} />
+                              <EnhancedMessage 
+                                role={msg.role === 'assistant' ? 'assistant' : (msg.role === 'user' ? 'user' : 'system')} 
+                                content={msg.content} 
+                                timestamp={msg.timestamp || msg.createdAt || new Date().toISOString()} 
+                              />
                             )}
                           </div>
                           
@@ -810,7 +814,11 @@ export function IntegratedAIChat() {
                         
                         <div className="flex flex-col space-y-2 max-w-[80%] items-start">
                           <div className="px-4 py-3 rounded-lg bg-slate-800 text-slate-100">
-                            <EnhancedMessage role="assistant" content={partialContent} timestamp={new Date().toISOString()} />
+                            <EnhancedMessage 
+                              role={"assistant" as "assistant" | "user" | "system"} 
+                              content={partialContent || ""} 
+                              timestamp={new Date().toISOString()} 
+                            />
                             <span className="inline-block w-1 h-4 bg-blue-400 animate-pulse ml-1"></span>
                           </div>
                           
