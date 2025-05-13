@@ -1728,10 +1728,29 @@ export default function SettingsPage() {
                             </div>
                             
                             {/* System Prompt Section */}
-                            <div className="rounded-md border p-3 bg-slate-900">
+                            <div className="rounded-md border p-3 bg-slate-900 mt-4">
                               <div className="text-xs font-medium text-slate-400 mb-2">System Prompt</div>
                               <div className="text-sm max-h-24 overflow-y-auto pr-2 text-slate-300">
-                                {langchainAgents?.find(a => a.name === "Main Assistant Agent")?.systemPrompt || "No system prompt defined."}
+                                {langchainAgents?.find(a => a.name === "Main Assistant Agent")?.systemPrompt || 
+                                  "You are an AI assistant that helps users with power monitoring and energy-related queries. You have access to real-time data and can generate reports and analyze trends."}
+                              </div>
+                            </div>
+                            
+                            {/* Tools Section */}
+                            <div className="mt-4">
+                              <div className="text-xs font-medium text-slate-400 mb-2">Assigned Tools</div>
+                              <div className="flex flex-wrap gap-2">
+                                {langchainAgents?.find(a => a.name === "Main Assistant Agent")?.tools?.map((tool, index) => (
+                                  <Badge 
+                                    key={tool.id} 
+                                    variant="secondary"
+                                    className="bg-blue-950/30 text-blue-300 border-blue-900"
+                                  >
+                                    {tool.name}
+                                  </Badge>
+                                )) || (
+                                  <div className="text-sm text-slate-500 italic">No tools assigned</div>
+                                )}
                               </div>
                             </div>
                             
