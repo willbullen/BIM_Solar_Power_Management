@@ -106,9 +106,8 @@ export function AgentToolsSelector({ agentId, onToolsChange }: AgentToolsProps) 
   // Mutation to remove a tool from the agent
   const removeToolMutation = useMutation({
     mutationFn: (data: { agentId: number; toolId: number }) => {
-      return apiRequest(`/api/langchain/agent-tools`, {
-        method: "DELETE",
-        data
+      return apiRequest(`/api/langchain/agents/${data.agentId}/tools/${data.toolId}`, {
+        method: "DELETE"
       });
     },
     onSuccess: () => {

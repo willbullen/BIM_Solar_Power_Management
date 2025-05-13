@@ -1821,11 +1821,19 @@ export default function SettingsPage() {
                               <div className="grid sm:grid-cols-2 gap-4">
                                 <div className="rounded-md border p-3 bg-slate-900">
                                   <div className="text-xs font-medium text-muted-foreground mb-2">Model</div>
-                                  <div className="text-sm">{agent.model || "GPT-4o"}</div>
+                                  <div className="text-sm">{agent.modelName || "GPT-4o"}</div>
                                 </div>
                                 <div className="rounded-md border p-3 bg-slate-900">
                                   <div className="text-xs font-medium text-muted-foreground mb-2">Tools</div>
-                                  <div className="text-sm">{agent.toolCount || "0"} configured</div>
+                                  <div className="text-sm">{agent.tools?.length || "0"} configured</div>
+                                </div>
+                              </div>
+                              
+                              {/* System Prompt Section */}
+                              <div className="rounded-md border p-3 bg-slate-900">
+                                <div className="text-xs font-medium text-muted-foreground mb-2">System Prompt</div>
+                                <div className="text-sm max-h-24 overflow-y-auto pr-2 text-slate-300">
+                                  {agent.systemPrompt || "No system prompt defined."}
                                 </div>
                               </div>
                               
