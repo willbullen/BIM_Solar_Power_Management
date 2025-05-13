@@ -100,6 +100,7 @@ export default function SettingsPage() {
   const [selectedAgent, setSelectedAgent] = useState<any>(null);
   const [selectedTool, setSelectedTool] = useState<any>(null);
   const [selectedAgentForTesting, setSelectedAgentForTesting] = useState<any>(null);
+  const [activeAgentModalTab, setActiveAgentModalTab] = useState<string>("settings");
   
   // Fetch current settings
   const { data: settings, isLoading: isLoadingSettings } = useQuery({
