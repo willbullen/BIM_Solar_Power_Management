@@ -57,6 +57,44 @@ export function registerLangChainRoutes(app: Express) {
   
   // API endpoint to manage agent-tool associations
   
+  // Debug endpoint for agent tool assignment
+  app.post('/api/langchain/debug/agent-tool', requireAuth, async (req: Request, res: Response) => {
+    try {
+      console.log("Debug tool assignment endpoint called with body:", req.body);
+      const { agentId, toolId, priority } = req.body;
+      
+      if (isNaN(agentId) || !toolId) {
+        console.log('Validation error: Agent ID or Tool ID missing or invalid');
+        return res.status(400).json({ error: 'Agent ID and Tool ID are required' });
+      }
+      
+      console.log(`Creating new agent-tool association: Agent ${agentId}, Tool ${toolId}, Priority ${priority ?? 0}`);
+      
+      try {
+        const [newAssoc] = await db
+          .insert(schema.langchainAgentTools)
+          .values({
+            agentId: agentId,
+            toolId: toolId,
+            priority: priority ?? 0
+          })
+          .returning();
+          
+        console.log(`Successfully created agent-tool association:`, newAssoc);
+        return res.status(201).json(newAssoc);
+      } catch (insertError) {
+        console.error(`Error inserting agent-tool association:`, insertError);
+        return res.status(500).json({ 
+          error: 'Failed to create tool association', 
+          details: insertError.message 
+        });
+      }
+    } catch (error) {
+      console.error('Debug endpoint error:', error);
+      res.status(500).json({ error: 'Failed to assign tool to agent' });
+    }
+  });
+
   // Assign a tool to an agent (RESTful route)
   app.post('/api/langchain/agents/:agentId/tools', requireAuth, async (req: Request, res: Response) => {
     try {

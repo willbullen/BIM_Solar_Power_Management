@@ -83,12 +83,16 @@ export function AgentToolsSelector({ agentId, onToolsChange }: AgentToolsProps) 
     (tool: Tool) => !assignedTools.some((t: Tool) => t.id === tool.id)
   );
 
-  // Mutation to assign a tool to the agent
+  // Mutation to assign a tool to the agent (using debug endpoint)
   const assignToolMutation = useMutation({
     mutationFn: (data: { agentId: number; toolId: number; priority: number }) => {
-      return apiRequest(`/api/langchain/agents/${data.agentId}/tools`, {
+      console.log("Assigning tool with data:", data);
+      
+      // Use the debug endpoint that has extra logging
+      return apiRequest('/api/langchain/debug/agent-tool', {
         method: "POST",
         data: {
+          agentId: data.agentId,
           toolId: data.toolId,
           priority: data.priority
         }
