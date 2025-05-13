@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { MarkdownDisplay } from "@/components/markdown-display";
+import { EnhancedMessage } from "@/components/enhanced-message";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Loader2,
@@ -780,7 +780,7 @@ export function IntegratedAIChat() {
                             ) : msg.role === 'user' ? (
                               <p className="whitespace-pre-wrap">{msg.content}</p>
                             ) : (
-                              <MarkdownDisplay content={msg.content} />
+                              <EnhancedMessage role={msg.role} content={msg.content} timestamp={msg.timestamp || msg.createdAt} />
                             )}
                           </div>
                           
@@ -810,7 +810,7 @@ export function IntegratedAIChat() {
                         
                         <div className="flex flex-col space-y-2 max-w-[80%] items-start">
                           <div className="px-4 py-3 rounded-lg bg-slate-800 text-slate-100">
-                            <MarkdownDisplay content={partialContent} />
+                            <EnhancedMessage role="assistant" content={partialContent} timestamp={new Date().toISOString()} />
                             <span className="inline-block w-1 h-4 bg-blue-400 animate-pulse ml-1"></span>
                           </div>
                           
