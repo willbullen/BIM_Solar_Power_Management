@@ -278,19 +278,35 @@ export function IntegratedAIChat() {
     refetchOnWindowFocus: false,
     refetchInterval: 5000, // Force refetch every 5 seconds for debugging
     onSuccess: (data) => {
+      console.log("===== AGENTS DEBUG =====");
       console.log("Agents data from API:", data);
+      console.log("Auth status: user exists =", !!user);
+      
       if (Array.isArray(data)) {
         // Add more detailed logging
+        console.log("Total agents received:", data.length);
         console.log("Field names on first agent:", data.length > 0 ? Object.keys(data[0]) : "No agents");
-        console.log("Enabled field exists:", data.length > 0 ? 'enabled' in data[0] : "No agents");
+        console.log("Enabled field exists:", data.length > 0 ? ('enabled' in data[0]) : "No agents");
+        
+        // Dump all agent data for inspection
+        data.forEach((agent, i) => {
+          console.log(`Agent ${i+1}: id=${agent.id}, name=${agent.name}, enabled=${agent.enabled}`);
+        });
         
         // Fix field name - API returns 'enabled', not is_active or isEnabled
-        const filtered = data.filter(a => a.enabled === true);
-        setAgents(filtered);
+        const filtered = data.filter(a => {
+          // Debug each agent's value explicitly
+          console.log(`Filtering agent ${a.name} with enabled=${a.enabled}, type=${typeof a.enabled}`);
+          return a.enabled === true;
+        });
+        
+        console.log("Filtered agents count:", filtered.length);
         console.log("Filtered agents:", filtered);
+        setAgents(filtered);
       } else {
         console.log("No agents data or not an array:", typeof data);
       }
+      console.log("===== END AGENTS DEBUG =====");
     },
     onError: (error: Error) => {
       console.error("Error fetching agents:", error);
@@ -981,6 +997,8 @@ export function IntegratedAIChat() {
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-800 text-slate-200">
                       <SelectItem value="default">No specific agent</SelectItem>
+                      {/* Add debugging information */}
+                      {agents.length === 0 && <SelectItem value="no-agents-found">No agents found</SelectItem>}
                       {agents.map((agent) => (
                         <SelectItem key={agent.id} value={agent.id.toString()}>
                           {agent.name}

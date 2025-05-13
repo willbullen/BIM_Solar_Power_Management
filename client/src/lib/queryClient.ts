@@ -157,14 +157,29 @@ export const getQueryFn: <T>(options: {
     
     console.log(`Making query request: GET ${fullUrl}`);
     
+    // Special logging for langchain agents
+    const isLangchainAgentsRequest = url.includes('langchain/agents');
+    if (isLangchainAgentsRequest) {
+      console.log("LANGCHAIN AGENTS REQUEST FOUND - debugging request details");
+    }
+    
     // Get auth headers from local storage
     const authHeaders = getAuthHeaders();
     
     // Log authentication information for debug (don't log in production)
     if (Object.keys(authHeaders).length > 0) {
       console.log(`Query has auth headers: ${Object.keys(authHeaders).join(', ')}`);
+      
+      // Extra validation for langchain requests
+      if (isLangchainAgentsRequest) {
+        console.log("LANGCHAIN AUTH HEADERS:", authHeaders);
+      }
     } else {
       console.log('No auth headers present in query');
+      
+      if (isLangchainAgentsRequest) {
+        console.log("WARNING: NO AUTH HEADERS FOR LANGCHAIN REQUEST!");
+      }
     }
     
     try {
@@ -179,6 +194,36 @@ export const getQueryFn: <T>(options: {
       });
       
       console.log(`Query response status: ${res.status} ${res.statusText}`);
+      
+      // Special handling for Langchain agents response
+      if (isLangchainAgentsRequest) {
+        console.log("LANGCHAIN AGENTS RESPONSE HEADERS:", Object.fromEntries([...res.headers.entries()]));
+        
+        // Clone the response so we can read the body multiple times
+        const clonedResponse = res.clone();
+        
+        // Try to parse the body as JSON for debug
+        try {
+          const debugText = await clonedResponse.text();
+          console.log("LANGCHAIN AGENTS RAW RESPONSE:", debugText);
+          
+          try {
+            const debugJson = JSON.parse(debugText);
+            console.log("LANGCHAIN AGENTS JSON RESPONSE:", debugJson);
+            
+            // Check the enabled field status for each agent
+            if (Array.isArray(debugJson)) {
+              debugJson.forEach((agent, i) => {
+                console.log(`AGENT ${i+1}: ${agent.name}, enabled=${agent.enabled}, type=${typeof agent.enabled}`);
+              });
+            }
+          } catch (e) {
+            console.error("Failed to parse response as JSON:", e);
+          }
+        } catch (e) {
+          console.error("Failed to read response body:", e);
+        }
+      }
   
       if (res.status === 401) {
         console.log(`Auth error on ${url} - behavior: ${unauthorizedBehavior}`);
