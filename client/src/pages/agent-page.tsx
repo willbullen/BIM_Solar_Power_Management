@@ -1779,14 +1779,7 @@ export default function AgentPage() {
                     <span>Connect with Telegram to receive messages and notifications on your mobile device</span>
                   </>
                 )}
-                {activeTab === "settings" && (
-                  <>
-                    <div className="bg-indigo-100/80 dark:bg-indigo-900/20 p-1.5 rounded-md ring-1 ring-indigo-200/50 dark:ring-indigo-800/30">
-                      <Settings className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <span>Adjust model parameters to focus on specific data analysis priorities</span>
-                  </>
-                )}
+
                 {activeTab === "ai-chat" && (
                   <>
                     <div className="bg-green-100/80 dark:bg-green-900/20 p-1.5 rounded-md ring-1 ring-green-200/50 dark:ring-green-800/30">
