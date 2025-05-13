@@ -182,68 +182,91 @@ export class LangChainApiService {
   }
   
   /**
-   * Execute agent - stub implementation that uses OpenAI directly
-   * In a real implementation, this would use the LangChain integration
+   * Execute agent - uses the LangChain integration to invoke the agent with the proper tools
    */
   async executeAgent(agent: any, prompt: string, conversationId: number | null): Promise<any> {
-    if (!this.openai) {
-      throw new Error("OpenAI client not initialized");
-    }
-    
     try {
       console.log(`Testing agent "${agent.name}" with prompt: ${prompt}`);
       
-      // We'll use a simple completion as a fallback if the LangChain integration is not available
-      const completion = await this.openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        messages: [
-          {
-            role: "system",
-            content: `You are an AI assistant named ${agent.name} with the following description: ${agent.description || "No description provided."}`
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        max_tokens: 500
-      });
+      // Create a start timestamp for measuring execution time
+      const startTime = new Date();
       
-      // Create a run record in the database
-      // Note: We're setting userId to null for testing purposes which may require a cast
-      // Create run data without tokens field which is missing in the schema
-      // Convert JSON input/output to string for text columns
+      // Generate a unique run ID
+      const runId = `test-${Date.now()}`;
+      
+      // Create a run record with 'running' status first
       const runData = {
-        runId: `test-${Date.now()}`,
+        runId: runId,
         agentId: agent.id,
         userId: null as unknown as number, // Type cast to satisfy schema
         conversationId: typeof conversationId === 'number' ? conversationId : null,
         input: JSON.stringify({ prompt }), // Store as string since column is TEXT not JSONB
-        output: JSON.stringify({ response: completion.choices[0].message.content || "" }), // Store as string
-        startTime: new Date(),
-        endTime: new Date(),
-        status: 'success',
+        startTime: startTime,
+        status: 'running',
         run_type: 'test', // Required field per database schema
-        toolCalls: completion.choices[0].message.tool_calls ? completion.choices[0].message.tool_calls : null,
         metadata: { 
           testMode: true,
-          model: agent.modelName || "gpt-4o",
-          promptTokens: completion.usage?.prompt_tokens,
-          completionTokens: completion.usage?.completion_tokens,
-          totalTokens: completion.usage?.total_tokens,
-          cost: 0.0 // Cost calculated in the future based on token usage and model
+          model: agent.modelName || "gpt-4o"
         }
       };
       
-      // Use an array of values for the insert operation to fix type issues
-      const [run] = await db
+      // Create initial run record
+      await db
         .insert(schema.langchainRuns)
-        .values([runData as any]) // Type assertion to bypass TypeScript error
-        .returning();
+        .values([runData as any]);
+      
+      // Execute using LangChain integration
+      let response;
+      
+      if (this.langchainService) {
+        // Use the LangChain integration which will utilize the agent's tools
+        console.log(`Using LangChain integration to process prompt for agent ${agent.id}`);
+        response = await this.langchainService.processMessage(prompt, conversationId || 0, 0);
+      } else if (this.openai) {
+        // Fallback to direct OpenAI as a last resort
+        console.log(`LangChain integration not available, falling back to direct OpenAI call`);
+        const completion = await this.openai.chat.completions.create({
+          model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+          messages: [
+            {
+              role: "system",
+              content: `You are an AI assistant named ${agent.name} with the following description: ${agent.description || "No description provided."} ${agent.systemPrompt || ""}`
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          max_tokens: 500
+        });
+        
+        response = completion.choices[0].message.content;
+      } else {
+        throw new Error("Neither LangChain integration nor OpenAI client are available");
+      }
+      
+      // Calculate end time and duration
+      const endTime = new Date();
+      const durationMs = endTime.getTime() - startTime.getTime();
+      
+      // Update the run record with results
+      await db
+        .update(schema.langchainRuns)
+        .set({
+          endTime: endTime,
+          status: 'completed',
+          output: JSON.stringify({ response: response || "" }),
+          metadata: {
+            ...runData.metadata,
+            executionTimeMs: durationMs,
+            usedLangchainIntegration: !!this.langchainService
+          }
+        })
+        .where(eq(schema.langchainRuns.runId, runId));
       
       return {
-        text: completion.choices[0].message.content,
-        runId: run.runId
+        text: response,
+        runId: runId
       };
     } catch (error) {
       console.error("Error executing agent:", error);
