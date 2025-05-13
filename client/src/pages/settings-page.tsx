@@ -135,8 +135,15 @@ export default function SettingsPage() {
   const { data: langchainAgents = [], isLoading: isLoadingAgents } = useQuery({
     queryKey: ['/api/langchain/agents'],
     queryFn: getQueryFn({ on401: 'throw' }),
-    enabled: activeTab === "langchain"
+    // Always fetch agents so they're available when switching tabs
+    // enabled: activeTab === "langchain"
   }) as { data: any[], isLoading: boolean };
+  
+  // Add debugging for active tab and agent data
+  useEffect(() => {
+    console.log("Current active tab:", activeTab);
+    console.log("LangChain agents data:", langchainAgents);
+  }, [activeTab, langchainAgents]);
   
   // Fetch LangChain tools
   const { data: langchainTools = [], isLoading: isLoadingTools } = useQuery({
@@ -1808,9 +1815,12 @@ export default function SettingsPage() {
                       </Card>
 
                       {/* Dynamic agent cards - render additional agents from the database */}
-                      {langchainAgents && langchainAgents.filter(agent => 
-                        agent.name !== "Main Assistant Agent" // Skip the main agent since it's already rendered above
-                      ).map((agent) => (
+                      {console.log("Agents before filtering:", langchainAgents?.map(a => a.name))}
+                      {langchainAgents && langchainAgents.filter(agent => {
+                        const shouldInclude = agent.name !== "Main Assistant Agent"; // Skip the main agent since it's already rendered above
+                        console.log(`Agent ${agent.name} included: ${shouldInclude}`);
+                        return shouldInclude;
+                      }).map((agent) => (
                         <Card key={agent.id} className="overflow-hidden">
                           <CardHeader className="bg-gradient-to-r from-slate-900 to-slate-800 pb-3">
                             <div className="flex justify-between items-center">
