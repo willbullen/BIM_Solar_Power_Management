@@ -1815,10 +1815,13 @@ export default function SettingsPage() {
                       </Card>
 
                       {/* Dynamic agent cards - render additional agents from the database */}
-                      {console.log("Agents before filtering:", langchainAgents?.map(a => a.name))}
-                      {langchainAgents && langchainAgents.filter(agent => {
-                        const shouldInclude = agent.name !== "Main Assistant Agent"; // Skip the main agent since it's already rendered above
-                        console.log(`Agent ${agent.name} included: ${shouldInclude}`);
+                      {console.log("Agents before filtering:", langchainAgents?.map(a => a.name) || [])}
+                      {Array.isArray(langchainAgents) && langchainAgents.length > 0 && langchainAgents.filter(agent => {
+                        // Skip the main agent since it's already rendered above
+                        const shouldInclude = agent && agent.name && agent.name !== "Main Assistant Agent";
+                        if (agent && agent.name) {
+                          console.log(`Agent ${agent.name} included: ${shouldInclude}`);
+                        }
                         return shouldInclude;
                       }).map((agent) => (
                         <Card key={agent.id} className="overflow-hidden">
