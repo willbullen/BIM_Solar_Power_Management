@@ -1707,14 +1707,7 @@ export default function AgentPage() {
               
               {/* Improved Content Area without Restrictive Scrollbars */}
               <div className="bg-gradient-to-b from-slate-900 to-slate-950 flex-1">
-                <TabsContent 
-                  value="chat" 
-                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
-                >
-                  <div className="p-3">
-                    <ChatInterface />
-                  </div>
-                </TabsContent>
+
                 
                 <TabsContent 
                   value="tasks" 
@@ -1752,14 +1745,7 @@ export default function AgentPage() {
                   </div>
                 </TabsContent>
                 
-                <TabsContent 
-                  value="settings" 
-                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
-                >
-                  <div className="p-3">
-                    <AgentSettingsInterface />
-                  </div>
-                </TabsContent>
+
               </div>
             </Tabs>
           </div>
@@ -1768,14 +1754,7 @@ export default function AgentPage() {
           <div className="flex items-center justify-between bg-gradient-to-r from-slate-900/80 to-slate-800/80 dark:from-slate-950 dark:to-slate-900 py-2.5 px-4 rounded-lg mt-2 shadow-inner border border-slate-200/10 dark:border-slate-800">
             <div className="flex items-center">
               <div className="text-slate-600 dark:text-slate-400 flex items-center gap-2 text-xs">
-                {activeTab === "chat" && (
-                  <>
-                    <div className="bg-blue-100/80 dark:bg-blue-900/30 p-1.5 rounded-md ring-1 ring-blue-200/50 dark:ring-blue-800/30">
-                      <MessageSquare className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
-                    </div>
-                    <span>Ask questions about energy data and receive AI-powered insights</span>
-                  </>
-                )}
+
                 {activeTab === "tasks" && (
                   <>
                     <div className="bg-amber-100/80 dark:bg-amber-900/20 p-1.5 rounded-md ring-1 ring-amber-200/50 dark:ring-amber-800/30">
