@@ -52,6 +52,7 @@ export function AgentModal({ isOpen, onClose, agent }: AgentModalProps) {
   // Update form values when agent changes (e.g., when selecting a different agent to edit)
   useEffect(() => {
     if (agent) {
+      console.log("Agent data updated in modal:", agent);
       // Reset form with the new agent values
       form.reset({
         name: agent.name || "",
@@ -65,6 +66,11 @@ export function AgentModal({ isOpen, onClose, agent }: AgentModalProps) {
         verbose: agent.verbose ?? false,
         enabled: agent.enabled ?? true,
       });
+      
+      // If agent has tools, log them
+      if (agent.tools && agent.tools.length > 0) {
+        console.log(`Agent has ${agent.tools.length} tools assigned:`, agent.tools);
+      }
     }
   }, [agent, form]);
 
@@ -91,10 +97,27 @@ export function AgentModal({ isOpen, onClose, agent }: AgentModalProps) {
       queryClient.invalidateQueries({ queryKey: ['/api/langchain/agents'] });
       
       if (!isEditing && data?.id) {
-        // If this is a new agent, update the agent reference with the newly created data
-        // and switch to the tools tab instead of closing the modal
-        agent = data;
-        setActiveTab("tools");
+        console.log("New agent created:", data);
+        // For new agents, we need to fetch the full agent details with proper typing
+        const fetchFullAgent = async () => {
+          try {
+            const fullAgent = await apiRequest(`/api/langchain/agents/${data.id}`, {
+              method: 'GET'
+            });
+            console.log("Full agent data fetched:", fullAgent);
+            // This ensures the agent ref is updated with the complete data structure
+            // including the empty tools array that the component expects
+            agent = fullAgent;
+          } catch (error) {
+            console.error("Error fetching full agent data:", error);
+            // Fall back to the basic data if fetch fails
+            agent = data;
+          }
+          // Switch to the tools tab to allow tool assignment
+          setActiveTab("tools");
+        };
+        
+        fetchFullAgent();
       } else {
         onClose();
       }
@@ -387,6 +410,15 @@ export function AgentModal({ isOpen, onClose, agent }: AgentModalProps) {
             {isEditing && agent?.id ? (
               <Card>
                 <CardContent className="p-4">
+                  <div className="mb-4">
+                    <h3 className="text-base font-medium">Manage Tools for {agent.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Assign tools to your agent and set their execution priority. Tools will be available for the agent to use during conversations.
+                    </p>
+                  </div>
+                  
+                  <Separator className="my-4" />
+                  
                   <AgentToolsSelector 
                     agentId={agent.id} 
                     onToolsChange={() => setToolsUpdated(true)}

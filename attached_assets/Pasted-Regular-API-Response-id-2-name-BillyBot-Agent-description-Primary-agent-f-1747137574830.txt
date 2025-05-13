@@ -1,0 +1,161 @@
+Regular API Response:
+{
+  "id": 2,
+  "name": "BillyBot Agent",
+  "description": "Primary agent for user interactions using GPT-4o and custom tools",
+  "modelName": "gpt-4o",
+  "temperature": 0.7,
+  "maxTokens": 4000,
+  "streaming": true,
+  "systemPrompt": "You are an advanced AI assistant with access to database querying and report generation capabilities. Help users analyze data and create reports. You should be concise and direct in your responses.",
+  "maxIterations": 5,
+  "verbose": false,
+  "enabled": true,
+  "createdAt": "2025-05-12T21:01:42.763Z",
+  "updatedAt": "2025-05-13T11:32:12.557Z",
+  "createdBy": null,
+  "metadata": {},
+  "tools": [
+    {
+      "id": 1,
+      "name": "ReadFromDB",
+      "description": "Execute SQL queries to the database with protection against SQL injection. Can list database tables, get table schemas, and execute SELECT queries.",
+      "toolType": "database",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "input"
+        ],
+        "properties": {
+          "input": {
+            "type": "string",
+            "description": "For listing all database tables, input one of these exact phrases: \"list tables\", \"show tables\", or \"get tables\". For other database queries, format as: QUERY: select * from table WHERE column = ?; PARAMS: [\"value\"]"
+          }
+        }
+      },
+      "implementation": "ReadFromDBTool",
+      "enabled": true,
+      "createdAt": "2025-05-12T02:39:52.297Z",
+      "updatedAt": "2025-05-12T14:39:27.937Z",
+      "createdBy": null,
+      "isBuiltIn": true,
+      "metadata": {},
+      "priority": 0
+    },
+    {
+      "id": 2,
+      "name": "CompileReport",
+      "description": "Generate Markdown and PDF reports from structured data",
+      "toolType": "report",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "input"
+        ],
+        "properties": {
+          "input": {
+            "type": "string",
+            "description": "Report details in the format: 'TITLE: <report-title>; CONTENT: <markdown-content>; FORMAT: [markdown|pdf]'"
+          }
+        }
+      },
+      "implementation": "CompileReportTool",
+      "enabled": true,
+      "createdAt": "2025-05-12T02:39:52.347Z",
+      "updatedAt": "2025-05-12T14:39:27.960Z",
+      "createdBy": null,
+      "isBuiltIn": true,
+      "metadata": {},
+      "priority": 1
+    }
+  ]
+}
+Debug API Response:
+{
+  "agent": {
+    "id": 2,
+    "name": "BillyBot Agent",
+    "description": "Primary agent for user interactions using GPT-4o and custom tools",
+    "modelName": "gpt-4o",
+    "temperature": 0.7,
+    "maxTokens": 4000,
+    "streaming": true,
+    "systemPrompt": "You are an advanced AI assistant with access to database querying and report generation capabilities. Help users analyze data and create reports. You should be concise and direct in your responses.",
+    "maxIterations": 5,
+    "verbose": false,
+    "enabled": true,
+    "createdAt": "2025-05-12T21:01:42.763Z",
+    "updatedAt": "2025-05-13T11:32:12.557Z",
+    "createdBy": null,
+    "metadata": {}
+  },
+  "agentTools": [
+    {
+      "id": 4,
+      "agentId": 2,
+      "toolId": 2,
+      "priority": 1
+    },
+    {
+      "id": 5,
+      "agentId": 2,
+      "toolId": 1,
+      "priority": 0
+    }
+  ],
+  "toolDetails": [
+    {
+      "id": 2,
+      "name": "CompileReport",
+      "description": "Generate Markdown and PDF reports from structured data",
+      "toolType": "report",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "input"
+        ],
+        "properties": {
+          "input": {
+            "type": "string",
+            "description": "Report details in the format: 'TITLE: <report-title>; CONTENT: <markdown-content>; FORMAT: [markdown|pdf]'"
+          }
+        }
+      },
+      "implementation": "CompileReportTool",
+      "enabled": true,
+      "createdAt": "2025-05-12T02:39:52.347Z",
+      "updatedAt": "2025-05-12T14:39:27.960Z",
+      "createdBy": null,
+      "isBuiltIn": true,
+      "metadata": {},
+      "priority": 1
+    },
+    {
+      "id": 1,
+      "name": "ReadFromDB",
+      "description": "Execute SQL queries to the database with protection against SQL injection. Can list database tables, get table schemas, and execute SELECT queries.",
+      "toolType": "database",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "input"
+        ],
+        "properties": {
+          "input": {
+            "type": "string",
+            "description": "For listing all database tables, input one of these exact phrases: \"list tables\", \"show tables\", or \"get tables\". For other database queries, format as: QUERY: select * from table WHERE column = ?; PARAMS: [\"value\"]"
+          }
+        }
+      },
+      "implementation": "ReadFromDBTool",
+      "enabled": true,
+      "createdAt": "2025-05-12T02:39:52.297Z",
+      "updatedAt": "2025-05-12T14:39:27.937Z",
+      "createdBy": null,
+      "isBuiltIn": true,
+      "metadata": {},
+      "priority": 0
+    }
+  ],
+  "message": "Found 2 tools for agent BillyBot Agent"
+}
