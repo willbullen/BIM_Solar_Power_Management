@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { EnhancedMessage } from "@/components/ui/enhanced-message";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Loader2,
   MessageSquare,
@@ -46,6 +47,17 @@ interface Conversation {
   title: string;
   createdAt: string;
   updatedAt: string;
+  agentId?: number;
+}
+
+interface LangchainAgent {
+  id: number;
+  name: string;
+  description: string;
+  system_prompt: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 // Message interface that matches the server's schema
