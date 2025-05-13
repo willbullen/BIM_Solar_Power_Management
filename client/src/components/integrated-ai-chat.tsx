@@ -277,8 +277,10 @@ export function IntegratedAIChat() {
     staleTime: 60 * 1000, // 1 minute
     refetchOnWindowFocus: false,
     onSuccess: (data) => {
+      console.log("Agents data from API:", data);
       if (Array.isArray(data)) {
-        setAgents(data.filter(a => a.is_active));
+        setAgents(data.filter(a => a.enabled));
+        console.log("Filtered agents:", data.filter(a => a.enabled));
       }
     },
     onError: (error: Error) => {
