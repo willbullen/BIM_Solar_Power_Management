@@ -138,6 +138,7 @@ export function IntegratedAIChat() {
   const [message, setMessage] = useState("");
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [newConversationTitle, setNewConversationTitle] = useState("");
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [uploading, setUploading] = useState(false);
   
@@ -149,6 +150,13 @@ export function IntegratedAIChat() {
   // Integrated UI state
   const [activeTab, setActiveTab] = useState<"ai" | "telegram">("ai");
   
+  // Fetch available agents
+  const { data: agents = [], isLoading: loadingAgents } = useQuery<LangchainAgent[]>({
+    queryKey: ['/api/langchain/agents'],
+    retry: false,
+    enabled: !!user // Only fetch agents when the user is authenticated
+  });
+
   // Fetch conversations
   const { data: conversations = [], isLoading: loadingConversations, refetch: refetchConversations } = useQuery<Conversation[]>({
     queryKey: ['/api/agent/conversations'],
@@ -542,10 +550,10 @@ export function IntegratedAIChat() {
   
   // Create a new conversation
   const createConversation = useMutation({
-    mutationFn: (title: string) => 
+    mutationFn: (payload: { title: string, agentId?: number }) => 
       apiRequest('/api/agent/conversations', {
         method: 'POST',
-        data: { title }
+        data: payload
       }),
     onSuccess: (data) => {
       setActiveConversation(data);
@@ -956,7 +964,13 @@ export function IntegratedAIChat() {
   const handleCreateConversation = (e: React.FormEvent) => {
     e.preventDefault();
     if (newConversationTitle.trim()) {
-      createConversation.mutate(newConversationTitle);
+      // Convert selectedAgentId to a number if it exists
+      const agentId = selectedAgentId ? parseInt(selectedAgentId, 10) : undefined;
+      
+      createConversation.mutate({
+        title: newConversationTitle,
+        agentId: agentId
+      });
     }
   };
   
@@ -968,7 +982,7 @@ export function IntegratedAIChat() {
     if (!activeConversation) {
       // Create a new conversation first, then send message
       const defaultTitle = `Conversation ${new Date().toLocaleString()}`;
-      createConversation.mutate(defaultTitle, {
+      createConversation.mutate({ title: defaultTitle }, {
         onSuccess: (newConversation) => {
           // Now we can send the message
           setTimeout(() => {
@@ -1700,6 +1714,23 @@ export function IntegratedAIChat() {
                   className="col-span-3 bg-slate-950 border-slate-800"
                   autoFocus
                 />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="agent">Agent (Optional)</Label>
+                <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
+                  <SelectTrigger className="bg-slate-950 border-slate-800 text-slate-200">
+                    <SelectValue placeholder="Select an agent" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-800 text-slate-200">
+                    <SelectItem value="">No specific agent</SelectItem>
+                    {agents.map((agent) => (
+                      <SelectItem key={agent.id} value={agent.id.toString()}>
+                        {agent.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <DialogFooter>
