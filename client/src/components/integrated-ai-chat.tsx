@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useQueryParams } from "wouter/use-location";
+import { useRoute, useLocation } from "wouter";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { v4 as uuidv4 } from 'uuid';
 import { apiRequest } from "@/lib/query-client";
@@ -100,8 +100,9 @@ interface AgentWebSocketMessage {
  * This component provides a unified chat experience with AI agents.
  */
 export function IntegratedAIChat() {
-  const [queryParams] = useQueryParams();
-  const initialConversationId = queryParams?.id ? parseInt(queryParams.id as string) : null;
+  const [location] = useLocation();
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialConversationId = urlParams.get('id') ? parseInt(urlParams.get('id') as string) : null;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -435,10 +436,13 @@ export function IntegratedAIChat() {
   // Handle conversation selection
   const handleSelectConversation = (conversation: Conversation) => {
     setActiveConversation(conversation);
-    // Update URL without reloading
-    const url = new URL(window.location.href);
-    url.searchParams.set('id', conversation.id.toString());
-    window.history.pushState({}, '', url.toString());
+    
+    // Create new path with conversation ID
+    const base = window.location.pathname;
+    const newPath = `${base}?id=${conversation.id}`;
+    
+    // Update URL without navigation
+    window.history.pushState(null, '', newPath);
   };
   
   // Handle creating a new conversation
