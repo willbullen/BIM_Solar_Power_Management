@@ -1837,7 +1837,7 @@ export default function SettingsPage() {
                                 </div>
                                 <div className="rounded-md border p-3 bg-slate-900">
                                   <div className="text-xs font-medium text-muted-foreground mb-2">Tools</div>
-                                  <div className="text-sm">{agent.tools?.length || "0"} configured</div>
+                                  <div className="text-sm">{agent.tools && agent.tools.length > 0 ? `${agent.tools.length} active` : "0 configured"}</div>
                                 </div>
                               </div>
                               

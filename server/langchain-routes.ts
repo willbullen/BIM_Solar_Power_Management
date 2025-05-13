@@ -486,10 +486,40 @@ export function registerLangChainRoutes(app: Express) {
   // Get all LangChain agents
   app.get('/api/langchain/agents', requireAuth, async (req: Request, res: Response) => {
     try {
+      // Fetch all agents
       const agents = await db.select().from(schema.langchainAgents).orderBy(desc(schema.langchainAgents.updatedAt));
-      res.json(agents);
+      
+      // For each agent, fetch its associated tools
+      const agentsWithTools = await Promise.all(agents.map(async (agent) => {
+        // Get tool associations for this agent
+        const toolAssociations = await db
+          .select()
+          .from(schema.langchainAgentTools)
+          .where(eq(schema.langchainAgentTools.agentId, agent.id))
+          .orderBy(asc(schema.langchainAgentTools.priority));
+        
+        // Fetch the actual tool data for each association
+        const tools = await Promise.all(
+          toolAssociations.map(async (assoc) => {
+            const [tool] = await db
+              .select()
+              .from(schema.langchainTools)
+              .where(eq(schema.langchainTools.id, assoc.toolId));
+            
+            return tool ? { ...tool, priority: assoc.priority } : null;
+          })
+        );
+        
+        // Filter out any null tools and add them to the agent
+        return {
+          ...agent,
+          tools: tools.filter(Boolean)
+        };
+      }));
+      
+      res.json(agentsWithTools);
     } catch (error) {
-      console.error('Error fetching LangChain agents:', error);
+      console.error('Error fetching LangChain agents with tools:', error);
       res.status(500).json({ error: 'Failed to fetch LangChain agents' });
     }
   });
