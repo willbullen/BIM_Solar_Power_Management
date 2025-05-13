@@ -270,52 +270,55 @@ export function IntegratedAIChat() {
     }
   }, [user, queryClient, toast, activeConversation]);
   
-  // Query for available agents
-  const agentsQuery = useQuery({
-    queryKey: ['/api/langchain/agents'],
-    enabled: !!user,
-    staleTime: 60 * 1000, // 1 minute
-    refetchOnWindowFocus: false,
-    refetchInterval: 5000, // Force refetch every 5 seconds for debugging
-    onSuccess: (data) => {
+  // Function to directly fetch agents instead of using a query
+  const fetchLangchainAgents = useCallback(() => {
+    if (!user) return;
+
+    console.log("Directly fetching langchain agents...");
+    
+    // Direct fetch for agents
+    fetch(`${window.location.origin}/api/langchain/agents`, {
+      headers: {
+        'Accept': 'application/json',
+        'X-Auth-User-Id': user.id.toString(),
+        'X-Auth-Username': user.username
+      }
+    })
+    .then(response => {
+      console.log("Direct agent fetch response status:", response.status);
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
       console.log("===== AGENTS DEBUG =====");
-      console.log("Agents data from API:", data);
-      console.log("Auth status: user exists =", !!user);
+      console.log("Agents data from direct fetch:", data);
       
       if (Array.isArray(data)) {
-        // Add more detailed logging
+        // Log all agent data
         console.log("Total agents received:", data.length);
-        console.log("Field names on first agent:", data.length > 0 ? Object.keys(data[0]) : "No agents");
-        console.log("Enabled field exists:", data.length > 0 ? ('enabled' in data[0]) : "No agents");
         
-        // Dump all agent data for inspection
         data.forEach((agent, i) => {
           console.log(`Agent ${i+1}: id=${agent.id}, name=${agent.name}, enabled=${agent.enabled}`);
         });
         
-        // Fix field name - API returns 'enabled', not is_active or isEnabled
-        const filtered = data.filter(a => {
-          // Debug each agent's value explicitly
-          console.log(`Filtering agent ${a.name} with enabled=${a.enabled}, type=${typeof a.enabled}`);
-          return a.enabled === true;
-        });
-        
+        // Filter enabled agents
+        const filtered = data.filter(agent => agent.enabled === true);
         console.log("Filtered agents count:", filtered.length);
-        console.log("Filtered agents:", filtered);
         setAgents(filtered);
-      } else {
-        console.log("No agents data or not an array:", typeof data);
       }
       console.log("===== END AGENTS DEBUG =====");
-    },
-    onError: (error: Error) => {
-      console.error("Error fetching agents:", error);
-      // Try to invalidate the query to force a retry
-      setTimeout(() => {
-        queryClient.invalidateQueries({queryKey: ['/api/langchain/agents']});
-      }, 2000);
-    }
-  });
+    })
+    .catch(error => {
+      console.error("Error directly fetching agents:", error);
+    });
+  }, [user]);
+  
+  // Fetch agents when user changes
+  useEffect(() => {
+    fetchLangchainAgents();
+  }, [fetchLangchainAgents]);
   
   // Query for conversations
   const conversationsQuery = useQuery({
