@@ -1886,6 +1886,35 @@ export default function SettingsPage() {
                                 </div>
                               </div>
                               
+                              {/* Tools Section - display assigned tools */}
+                              {agent.tools && agent.tools.length > 0 && (
+                                <div className="rounded-md border p-3 bg-slate-900">
+                                  <div className="text-xs font-medium text-muted-foreground mb-2">
+                                    Assigned Tools ({agent.tools.length})
+                                  </div>
+                                  <div className="grid grid-cols-1 gap-2">
+                                    {agent.tools.map((tool: any) => (
+                                      <div key={tool.id} className="bg-slate-800 rounded p-2 flex items-center justify-between">
+                                        <div className="flex items-center">
+                                          <div className="flex-shrink-0 h-6 w-6 flex items-center justify-center bg-indigo-900 rounded-full mr-2">
+                                            <span className="text-xs font-semibold text-indigo-300">{tool.priority || 0}</span>
+                                          </div>
+                                          <div>
+                                            <div className="text-sm font-medium">{tool.name}</div>
+                                            <div className="text-xs text-muted-foreground">{tool.toolType || "custom"}</div>
+                                          </div>
+                                        </div>
+                                        <Badge 
+                                          variant="outline" 
+                                          className="text-xs bg-blue-900/40 text-blue-300 border-blue-800 font-mono">
+                                          {tool.id}
+                                        </Badge>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
                               <div className="flex justify-end gap-2 mt-4">
                                 <Button 
                                   variant="secondary" 
@@ -1904,15 +1933,19 @@ export default function SettingsPage() {
                                   Test Agent
                                 </Button>
                                 <Button 
-                                  variant="outline" 
+                                  variant="secondary" 
                                   size="sm" 
-                                  className="text-slate-400"
+                                  className="text-emerald-600 bg-emerald-100 hover:bg-emerald-200"
                                   onClick={() => {
                                     setSelectedAgent(agent);
                                     setIsAgentModalOpen(true);
+                                    // Set the active tab to "tools" by directly passing the parameter to the AgentModal
+                                    // This will be handled by the AgentModal to initially show the tools tab
+                                    setActiveAgentModalTab("tools");
                                   }}
                                 >
-                                  View Details
+                                  <Settings className="h-4 w-4 mr-1" />
+                                  Configure Tools
                                 </Button>
                                 <Button 
                                   variant="outline" 
@@ -1921,6 +1954,8 @@ export default function SettingsPage() {
                                   onClick={() => {
                                     setSelectedAgent(agent);
                                     setIsAgentModalOpen(true);
+                                    // Set the active tab to "settings"
+                                    setActiveAgentModalTab("settings");
                                   }}
                                 >
                                   Edit
