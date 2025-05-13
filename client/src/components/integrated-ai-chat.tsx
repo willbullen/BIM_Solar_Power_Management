@@ -1155,7 +1155,7 @@ export function IntegratedAIChat() {
           <ScrollArea className="h-[calc(100vh-16rem)]">
             <div className="space-y-2 p-2">
               <Tabs defaultValue="ai" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 h-8">
+                <TabsList className="grid w-full grid-cols-1 h-8">
                   <TabsTrigger 
                     value="ai"
                     className="text-xs"
@@ -1163,14 +1163,6 @@ export function IntegratedAIChat() {
                   >
                     <Bot className="h-4 w-4 mr-1" />
                     AI Chat
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="telegram"
-                    className="text-xs"
-                    onClick={() => setActiveTab("telegram")}
-                  >
-                    <MessageCircle className="h-4 w-4 mr-1" />
-                    Telegram
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
