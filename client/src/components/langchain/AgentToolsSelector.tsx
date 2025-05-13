@@ -1,21 +1,16 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { Loader2, X, Plus, Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -23,363 +18,254 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, PlusCircle, Save, XCircle } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Tool {
   id: number;
   name: string;
   description: string;
-  toolType: string;
+  type: string;
+  function_def?: string;
   enabled: boolean;
-  priority?: number;
+  created_at: string;
+  updated_at: string;
 }
 
-interface Agent {
-  id: number;
-  name: string;
-  description?: string;
-  tools: Tool[];
-  [key: string]: any;
+interface AgentTool {
+  id?: number;
+  agentId: number;
+  toolId: number;
+  priority: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface AgentToolsProps {
   agentId: number;
-  onToolsChange?: () => void;
+  onSuccess?: () => void;
 }
 
-export function AgentToolsSelector({ agentId, onToolsChange }: AgentToolsProps) {
-  const { toast } = useToast();
+export function AgentToolsSelector({ agentId, onSuccess }: AgentToolsProps) {
+  const [selectedTools, setSelectedTools] = useState<Map<number, boolean>>(new Map());
+  const [toolPriorities, setToolPriorities] = useState<Map<number, number>>(new Map());
+  const [loading, setLoading] = useState(false);
   const queryClient = useQueryClient();
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-  const [selectedToolId, setSelectedToolId] = useState<string>("");
-  const [selectedPriority, setSelectedPriority] = useState<string>("0");
-  
-  // Query to get the current agent and its tools
-  const agentQuery = useQuery<Agent>({ 
-    queryKey: [`/api/langchain/agents/${agentId}`],
-    enabled: !!agentId,
-    // Make sure we're not using stale data
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    staleTime: 0,
-  });
-  
-  // Query to get all available tools
-  const toolsQuery = useQuery<Tool[]>({ 
+  const { toast } = useToast();
+
+  // Fetch all available tools
+  const { data: tools, isLoading: isLoadingTools } = useQuery({
     queryKey: ['/api/langchain/tools'],
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    staleTime: 0
+    enabled: Boolean(agentId),
   });
 
-  // Log agent data for debugging
+  // Fetch current agent tools
+  const { data: agentTools, isLoading: isLoadingAgentTools } = useQuery({
+    queryKey: ['/api/langchain/agent-tools', agentId],
+    enabled: Boolean(agentId),
+  });
+
+  // Initialize selectedTools and priorities from fetched data
   useEffect(() => {
-    if (agentQuery.data) {
-      console.log(`Agent data loaded for ID ${agentId}:`, JSON.stringify(agentQuery.data, null, 2));
+    if (tools && agentTools && !isLoadingTools && !isLoadingAgentTools) {
+      // Initialize all tools as unselected
+      const toolSelections = new Map<number, boolean>();
+      const priorities = new Map<number, number>();
       
-      // Check if tools array exists and how many tools it contains
-      if (agentQuery.data.tools) {
-        console.log(`Agent has ${agentQuery.data.tools.length} tools:`, 
-          JSON.stringify(agentQuery.data.tools, null, 2));
-        
-        // Notify parent component if tools were updated
-        if (onToolsChange && agentQuery.data.tools.length > 0) {
-          onToolsChange();
-        }
-      } else {
-        console.warn("Agent data doesn't contain tools array");
+      // Mark all tools as unselected initially
+      if (Array.isArray(tools)) {
+        tools.forEach((tool: Tool) => {
+          toolSelections.set(tool.id, false);
+          priorities.set(tool.id, 100); // Default priority
+        });
       }
-    } else if (agentQuery.error) {
-      console.error("Error fetching agent data:", agentQuery.error);
-    }
-  }, [agentQuery.data, agentQuery.error, agentId, onToolsChange]);
-
-  // Tools already assigned to the agent
-  const assignedTools = agentQuery.data?.tools || [];
-  
-  // All available tools
-  const allTools = toolsQuery.data || [];
-  
-  // Tools that are not yet assigned to the agent
-  const unassignedTools = allTools.filter(
-    (tool: Tool) => !assignedTools.some((t: Tool) => t.id === tool.id)
-  );
-
-  // Mutation to assign a tool to the agent (using debug endpoint)
-  const assignToolMutation = useMutation({
-    mutationFn: (data: { agentId: number; toolId: number; priority: number }) => {
-      console.log("Assigning tool with data:", data);
       
-      // Use the debug endpoint that has extra logging
-      return apiRequest('/api/langchain/debug/agent-tool', {
-        method: "POST",
-        data: {
-          agentId: data.agentId,
-          toolId: data.toolId,
-          priority: data.priority
-        }
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/langchain/agents/${agentId}`] });
-      toast({
-        title: "Tool assigned",
-        description: "The tool has been assigned to the agent successfully.",
-      });
-      if (onToolsChange) onToolsChange();
-      setIsAssignDialogOpen(false);
-      setSelectedToolId("");
-      setSelectedPriority("0");
-    },
-    onError: (error) => {
-      console.error("Error assigning tool:", error);
-      toast({
-        title: "Error assigning tool",
-        description: error.message || "There was an error assigning the tool to the agent.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Mutation to remove a tool from the agent
-  const removeToolMutation = useMutation({
-    mutationFn: (data: { agentId: number; toolId: number }) => {
-      return apiRequest(`/api/langchain/agents/${data.agentId}/tools/${data.toolId}`, {
-        method: "DELETE"
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/langchain/agents/${agentId}`] });
-      toast({
-        title: "Tool removed",
-        description: "The tool has been removed from the agent successfully.",
-      });
-      if (onToolsChange) onToolsChange();
-    },
-    onError: (error) => {
-      toast({
-        title: "Error removing tool",
-        description: error.message || "There was an error removing the tool from the agent.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Mutation to update a tool's priority
-  const updatePriorityMutation = useMutation({
-    mutationFn: (data: { agentId: number; toolId: number; priority: number }) => {
-      return apiRequest(`/api/langchain/agents/${data.agentId}/tools/${data.toolId}/priority`, {
-        method: "PATCH",
-        data: { priority: data.priority }
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/langchain/agents/${agentId}`] });
-      toast({
-        title: "Priority updated",
-        description: "The tool priority has been updated successfully.",
-      });
-      if (onToolsChange) onToolsChange();
-    },
-    onError: (error) => {
-      toast({
-        title: "Error updating priority",
-        description: error.message || "There was an error updating the tool priority.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Handle assigning a tool to the agent
-  const handleAssignTool = () => {
-    if (!selectedToolId) {
-      toast({
-        title: "No tool selected",
-        description: "Please select a tool to assign to the agent.",
-        variant: "destructive",
-      });
-      return;
+      // Update with the actual agent tool selections
+      if (Array.isArray(agentTools)) {
+        agentTools.forEach((agentTool: AgentTool) => {
+          toolSelections.set(agentTool.toolId, true);
+          priorities.set(agentTool.toolId, agentTool.priority);
+        });
+      }
+      
+      setSelectedTools(toolSelections);
+      setToolPriorities(priorities);
     }
+  }, [tools, agentTools, isLoadingTools, isLoadingAgentTools]);
 
-    console.log(`Assigning tool ${selectedToolId} to agent ${agentId} with priority ${selectedPriority}`);
+  // Save tools mutation
+  const saveToolsMutation = useMutation({
+    mutationFn: async (formData: { agentId: number, tools: { toolId: number, priority: number }[] }) => {
+      return await apiRequest(`/api/langchain/agents/${agentId}/tools`, {
+        method: 'PUT',
+        data: formData,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Tools updated successfully",
+        description: "Agent tools have been updated.",
+        variant: "default",
+      });
+      
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ['/api/langchain/agent-tools', agentId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/langchain/agents'] });
+      
+      if (onSuccess) {
+        onSuccess();
+      }
+    },
+    onError: (error: Error) => {
+      console.error("Failed to update agent tools", error);
+      toast({
+        title: "Failed to update tools",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleToolToggle = (toolId: number) => {
+    setSelectedTools(prev => {
+      const newMap = new Map(prev);
+      newMap.set(toolId, !prev.get(toolId));
+      return newMap;
+    });
+  };
+
+  const handlePriorityChange = (toolId: number, priority: number) => {
+    setToolPriorities(prev => {
+      const newMap = new Map(prev);
+      newMap.set(toolId, priority);
+      return newMap;
+    });
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
     
-    assignToolMutation.mutate({
-      agentId,
-      toolId: parseInt(selectedToolId),
-      priority: parseInt(selectedPriority),
-    });
+    try {
+      // Format tools data for API
+      const toolsToSave = Array.from(selectedTools.entries())
+        .filter(([_, isSelected]) => isSelected)
+        .map(([toolId, _]) => ({
+          toolId,
+          priority: toolPriorities.get(toolId) || 100,
+        }));
+      
+      await saveToolsMutation.mutateAsync({
+        agentId,
+        tools: toolsToSave,
+      });
+    } catch (error) {
+      console.error("Error in handleSave", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Handle removing a tool from the agent
-  const handleRemoveTool = (toolId: number) => {
-    removeToolMutation.mutate({
-      agentId,
-      toolId,
-    });
-  };
+  if (isLoadingTools || isLoadingAgentTools) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        <span className="ml-2 text-sm text-gray-500">Loading tools...</span>
+      </div>
+    );
+  }
 
-  // Handle updating a tool's priority
-  const handlePriorityChange = (toolId: number, priority: string) => {
-    updatePriorityMutation.mutate({
-      agentId,
-      toolId,
-      priority: parseInt(priority),
-    });
-  };
-
-  // Check if loading
-  const isLoading = agentQuery.isLoading || toolsQuery.isLoading;
+  if (!tools || !Array.isArray(tools) || tools.length === 0) {
+    return (
+      <div className="p-4 bg-gray-50 rounded-md text-center">
+        <p className="text-gray-600 mb-2">No tools available</p>
+        <p className="text-sm text-gray-500">
+          Tools must be added to the system before they can be assigned to agents.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-sm font-medium mb-1">Assigned Tools</h3>
-          <p className="text-xs text-muted-foreground">
-            {assignedTools.length} tools assigned | {agentQuery.isLoading ? "Loading..." : "Loaded"} 
-            | Agent ID: {agentId}
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsAssignDialogOpen(true)}
-          disabled={unassignedTools.length === 0}
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          Assign Tool
-        </Button>
-      </div>
-
-      {isLoading ? (
-        <div className="flex justify-center p-4">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      ) : assignedTools.length === 0 ? (
-        <div className="text-center p-4 border rounded-md bg-slate-50 dark:bg-slate-900">
-          <p className="text-sm text-muted-foreground">
-            No tools assigned to this agent yet
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {assignedTools
-            .sort((a: Tool, b: Tool) => (a.priority || 0) - (b.priority || 0))
-            .map((tool: Tool) => (
-              <Card key={tool.id} className="overflow-hidden">
-                <CardContent className="p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Badge 
-                        variant={tool.enabled ? "default" : "secondary"}
-                        className="px-2 py-0 h-5"
+    <div className="space-y-6">
+      <div className="mb-4">
+        <h3 className="text-lg font-medium mb-1">Available Tools</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Select tools for this agent and set their priority (lower numbers will be tried first).
+        </p>
+        
+        <div className="space-y-3">
+          {tools.map((tool: Tool) => (
+            <Card key={tool.id} className={`border ${selectedTools.get(tool.id) ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200'}`}>
+              <CardContent className="pt-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-2">
+                    <Checkbox 
+                      id={`tool-${tool.id}`} 
+                      checked={selectedTools.get(tool.id) || false}
+                      onCheckedChange={() => handleToolToggle(tool.id)}
+                      className="mt-1"
+                    />
+                    <div>
+                      <Label 
+                        htmlFor={`tool-${tool.id}`} 
+                        className="font-medium cursor-pointer"
                       >
-                        {tool.toolType}
-                      </Badge>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{tool.name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {tool.description}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Select
-                        value={String(tool.priority || 0)}
-                        onValueChange={(value) => handlePriorityChange(tool.id, value)}
-                      >
-                        <SelectTrigger className="w-20 h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[...Array(10)].map((_, i) => (
-                            <SelectItem key={i} value={String(i)}>
-                              Priority {i}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveTool(tool.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                        {tool.name}
+                        <Badge 
+                          variant="outline" 
+                          className="ml-2 text-xs bg-gray-100 hover:bg-gray-200"
+                        >
+                          {tool.type}
+                        </Badge>
+                      </Label>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {tool.description}
+                      </p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                  
+                  {selectedTools.get(tool.id) && (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500">Priority:</span>
+                      <Input 
+                        type="number" 
+                        min="1"
+                        max="1000"
+                        value={toolPriorities.get(tool.id) || 100}
+                        onChange={(e) => handlePriorityChange(tool.id, parseInt(e.target.value) || 100)}
+                        className="w-20 h-8 text-sm"
+                      />
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-      )}
-
-      {/* Dialog for assigning a new tool */}
-      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assign Tool to Agent</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="tool">Select Tool</Label>
-              <Select
-                value={selectedToolId}
-                onValueChange={setSelectedToolId}
-              >
-                <SelectTrigger id="tool">
-                  <SelectValue placeholder="Select a tool" />
-                </SelectTrigger>
-                <SelectContent>
-                  {unassignedTools.map((tool: Tool) => (
-                    <SelectItem key={tool.id} value={String(tool.id)}>
-                      {tool.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Select
-                value={selectedPriority}
-                onValueChange={setSelectedPriority}
-              >
-                <SelectTrigger id="priority">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[...Array(10)].map((_, i) => (
-                    <SelectItem key={i} value={String(i)}>
-                      Priority {i}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Lower priority tools are considered first by the agent
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsAssignDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              onClick={handleAssignTool}
-              disabled={assignToolMutation.isPending || !selectedToolId}
-            >
-              {assignToolMutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Assign Tool
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </div>
+      
+      <div className="flex justify-end">
+        <Button 
+          onClick={handleSave} 
+          disabled={loading || saveToolsMutation.isPending}
+          className="w-full sm:w-auto"
+        >
+          {(loading || saveToolsMutation.isPending) ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="mr-2 h-4 w-4" />
+              Save Tool Assignments
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

@@ -483,6 +483,72 @@ export function registerLangChainRoutes(app: Express) {
       res.status(500).json({ error: 'Failed to update tool schemas' });
     }
   });
+  // Get all tools for a specific agent
+  app.get('/api/langchain/agent-tools/:agentId', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { agentId } = req.params;
+      
+      const agentTools = await db
+        .select()
+        .from(schema.langchainAgentTools)
+        .where(eq(schema.langchainAgentTools.agentId, parseInt(agentId)));
+      
+      res.json(agentTools);
+    } catch (error) {
+      console.error('Error fetching agent tools:', error);
+      res.status(500).json({ error: 'Failed to fetch agent tools' });
+    }
+  });
+  
+  // Update all tools for an agent (bulk update)
+  app.put('/api/langchain/agents/:agentId/tools', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { agentId } = req.params;
+      const { tools } = req.body;
+      
+      if (!Array.isArray(tools)) {
+        return res.status(400).json({ error: 'Tools must be an array' });
+      }
+      
+      console.log(`Updating tools for agent ${agentId}. Received ${tools.length} tool assignments.`);
+      
+      // Start a transaction
+      await db.transaction(async (tx) => {
+        // First, remove all existing tool associations
+        await tx
+          .delete(schema.langchainAgentTools)
+          .where(eq(schema.langchainAgentTools.agentId, parseInt(agentId)));
+        
+        // Then insert the new ones
+        if (tools.length > 0) {
+          const toolsToInsert = tools.map(tool => ({
+            agentId: parseInt(agentId),
+            toolId: tool.toolId,
+            priority: tool.priority || 100,
+          }));
+          
+          await tx.insert(schema.langchainAgentTools).values(toolsToInsert);
+        }
+      });
+      
+      // Fetch the updated tools
+      const updatedTools = await db
+        .select()
+        .from(schema.langchainAgentTools)
+        .where(eq(schema.langchainAgentTools.agentId, parseInt(agentId)));
+      
+      res.json({ 
+        success: true, 
+        message: 'Agent tools updated successfully', 
+        toolsCount: updatedTools.length,
+        tools: updatedTools 
+      });
+    } catch (error) {
+      console.error('Error updating agent tools:', error);
+      res.status(500).json({ error: 'Failed to update agent tools' });
+    }
+  });
+  
   // Debug route for agent tools
   app.get('/api/langchain/debug/agent-tools/:agentId', requireAuth, async (req: Request, res: Response) => {
     try {

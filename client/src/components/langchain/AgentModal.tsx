@@ -1,458 +1,221 @@
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { agentSchema, type AgentFormValues } from "@/lib/langchain-schemas";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { AgentToolsSelector } from "./AgentToolsSelector";
+import { Loader2, Save, X } from "lucide-react";
 
 interface AgentModalProps {
+  agent: any;
   isOpen: boolean;
   onClose: () => void;
-  agent?: any; // Pass existing agent for editing
+  activeTab?: string;
 }
 
-export function AgentModal({ isOpen, onClose, agent: initialAgent }: AgentModalProps) {
-  const { toast } = useToast();
+export function AgentModal({ agent, isOpen, onClose, activeTab = "settings" }: AgentModalProps) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [systemPrompt, setSystemPrompt] = useState("");
+  const [enabled, setEnabled] = useState(false);
+  const [currentTab, setCurrentTab] = useState(activeTab);
   const queryClient = useQueryClient();
-  const [agent, setAgent] = useState(initialAgent);
-  const isEditing = !!agent;
-  const [activeTab, setActiveTab] = useState<string>("settings");
-  const [toolsUpdated, setToolsUpdated] = useState<boolean>(false);
-  
-  // Create form
-  const form = useForm<AgentFormValues>({
-    resolver: zodResolver(agentSchema),
-    defaultValues: {
-      name: agent?.name || "",
-      description: agent?.description || "",
-      modelName: agent?.modelName || "gpt-4o",
-      temperature: agent?.temperature || 0.7,
-      maxTokens: agent?.maxTokens || 4000,
-      streaming: agent?.streaming ?? true,
-      systemPrompt: agent?.systemPrompt || "",
-      maxIterations: agent?.maxIterations || 5,
-      verbose: agent?.verbose ?? false,
-      enabled: agent?.enabled ?? true,
-    },
-  });
-  
-  // Update agent state when initialAgent prop changes
-  useEffect(() => {
-    if (initialAgent) {
-      setAgent(initialAgent);
-    }
-  }, [initialAgent]);
+  const { toast } = useToast();
 
-  // Update form values when agent changes (e.g., when selecting a different agent to edit)
+  // Initialize form when agent changes
   useEffect(() => {
     if (agent) {
-      console.log("Agent data updated in modal:", agent);
-      // Reset form with the new agent values
-      form.reset({
-        name: agent.name || "",
-        description: agent.description || "",
-        modelName: agent.modelName || "gpt-4o",
-        temperature: agent.temperature || 0.7,
-        maxTokens: agent.maxTokens || 4000,
-        streaming: agent.streaming ?? true,
-        systemPrompt: agent.systemPrompt || "",
-        maxIterations: agent.maxIterations || 5,
-        verbose: agent.verbose ?? false,
-        enabled: agent.enabled ?? true,
-      });
-      
-      // If agent has tools, log them
-      if (agent.tools && agent.tools.length > 0) {
-        console.log(`Agent has ${agent.tools.length} tools assigned:`, agent.tools);
-      }
+      setName(agent.name || "");
+      setDescription(agent.description || "");
+      setSystemPrompt(agent.system_prompt || "");
+      setEnabled(agent.enabled || false);
     }
-  }, [agent, form]);
+  }, [agent]);
 
-  // Create or update agent mutation
-  const mutation = useMutation({
-    mutationFn: async (data: AgentFormValues) => {
-      if (isEditing) {
-        return await apiRequest(`/api/langchain/agents/${agent.id}`, {
-          method: 'PATCH',
-          data,
-        });
-      } else {
-        return await apiRequest('/api/langchain/agents', {
-          method: 'POST',
-          data,
-        });
-      }
-    },
-    onSuccess: (data) => {
-      toast({
-        title: `Agent ${isEditing ? 'updated' : 'created'} successfully`,
-        description: `The agent "${form.getValues().name}" has been ${isEditing ? 'updated' : 'created'}.`,
+  // Set current tab when activeTab changes
+  useEffect(() => {
+    if (activeTab) {
+      setCurrentTab(activeTab);
+    }
+  }, [activeTab]);
+
+  // Update agent mutation
+  const updateAgentMutation = useMutation({
+    mutationFn: async (formData: any) => {
+      return await apiRequest(`/api/langchain/agents/${agent.id}`, {
+        method: "PATCH",
+        data: formData,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/langchain/agents'] });
-      
-      if (!isEditing && data?.id) {
-        console.log("New agent created:", data);
-        // For new agents, we need to fetch the full agent details with proper typing
-        const fetchFullAgent = async () => {
-          try {
-            const fullAgent = await apiRequest(`/api/langchain/agents/${data.id}`, {
-              method: 'GET'
-            });
-            console.log("Full agent data fetched:", fullAgent);
-            // This ensures the agent state is updated with the complete data structure
-            // including the empty tools array that the component expects
-            setAgent(fullAgent);
-          } catch (error) {
-            console.error("Error fetching full agent data:", error);
-            // Fall back to the basic data if fetch fails
-            setAgent(data);
-          }
-          // Switch to the tools tab to allow tool assignment
-          setActiveTab("tools");
-        };
-        
-        fetchFullAgent();
-      } else {
-        onClose();
-      }
     },
-    onError: (error: any) => {
+    onSuccess: () => {
       toast({
-        title: `Failed to ${isEditing ? 'update' : 'create'} agent`,
-        description: error.message || `There was an error ${isEditing ? 'updating' : 'creating'} the agent.`,
+        title: "Agent updated",
+        description: "The agent has been updated successfully.",
+        variant: "default",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/langchain/agents"] });
+      onClose();
+    },
+    onError: (error: Error) => {
+      console.error("Failed to update agent", error);
+      toast({
+        title: "Failed to update agent",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
     },
   });
 
-  // Form submission
-  const onSubmit = (data: AgentFormValues) => {
-    mutation.mutate(data);
+  const handleSubmit = async () => {
+    if (!name) {
+      toast({
+        title: "Name is required",
+        description: "Please provide a name for the agent.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    await updateAgentMutation.mutateAsync({
+      name,
+      description,
+      system_prompt: systemPrompt,
+      enabled,
+    });
+  };
+
+  const handleToolsChange = () => {
+    // Just invalidate the queries when tools are changed
+    queryClient.invalidateQueries({ queryKey: ["/api/langchain/agents"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/langchain/agent-tools", agent?.id] });
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit' : 'Create'} LangChain Agent</DialogTitle>
+          <DialogTitle className="text-xl">
+            {agent ? `Edit Agent: ${agent.name}` : "Add New Agent"}
+          </DialogTitle>
           <DialogDescription>
-            {isEditing 
-              ? 'Update the configuration for this LangChain agent and assign tools.' 
-              : 'Create a new LangChain agent for AI interactions.'}
+            Configure the agent's settings and tools.
           </DialogDescription>
         </DialogHeader>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="settings">Agent Settings</TabsTrigger>
-            <TabsTrigger value="tools" disabled={!isEditing}>
-              Tools {toolsUpdated && "✓"}
-            </TabsTrigger>
-          </TabsList>
-          
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-4 mt-4">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Agent Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="My Agent" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        A unique name for this agent
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="This agent helps with..." 
-                          className="min-h-[80px]" 
-                          {...field} 
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Brief description of the agent's purpose
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="modelName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Model</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a model" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                            <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Language model to use
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="maxTokens"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Max Tokens</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min={100} 
-                            max={8000} 
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
-                            value={field.value}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Maximum response length
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <FormField
-                  control={form.control}
-                  name="temperature"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Temperature: {field.value.toFixed(1)}</FormLabel>
-                      <FormControl>
-                        <Slider
-                          min={0}
-                          max={1}
-                          step={0.1}
-                          value={[field.value]}
-                          onValueChange={(values) => field.onChange(values[0])}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Lower values for more deterministic responses, higher for more creativity
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="systemPrompt"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>System Prompt</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="You are an AI assistant that..." 
-                          className="min-h-[120px]" 
-                          {...field} 
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Instructions that define the agent's behavior
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="maxIterations"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Max Iterations</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min={1} 
-                            max={10} 
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
-                            value={field.value}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Maximum steps for chain execution
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="streaming"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                        <div className="space-y-0.5">
-                          <FormLabel>Streaming</FormLabel>
-                          <FormDescription>
-                            Enable streaming responses
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="verbose"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                        <div className="space-y-0.5">
-                          <FormLabel>Verbose Mode</FormLabel>
-                          <FormDescription>
-                            Show detailed logs
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <FormField
-                  control={form.control}
-                  name="enabled"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                      <div className="space-y-0.5">
-                        <FormLabel>Enabled</FormLabel>
-                        <FormDescription>
-                          Agent is available for use
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
-                <DialogFooter>
-                  <Button variant="outline" type="button" onClick={onClose}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={mutation.isPending}>
-                    {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isEditing ? 'Update' : 'Create'} Agent
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </TabsContent>
-          
-          {/* Tools Tab */}
-          <TabsContent value="tools" className="space-y-4 mt-4">
-            {isEditing && agent?.id ? (
-              <Card>
-                <CardContent className="p-4">
-                  <div className="mb-4">
-                    <h3 className="text-base font-medium">Manage Tools for {agent.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Assign tools to your agent and set their execution priority. Tools will be available for the agent to use during conversations.
-                    </p>
-                  </div>
-                  
-                  <Separator className="my-4" />
-                  
-                  <AgentToolsSelector 
-                    agentId={agent.id} 
-                    onToolsChange={() => setToolsUpdated(true)}
+        {agent && (
+          <Tabs value={currentTab} onValueChange={setCurrentTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsTrigger value="tools">Tools</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="settings" className="py-4">
+              <div className="grid gap-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="agent-name" className="text-right">
+                    Name
+                  </Label>
+                  <Input
+                    id="agent-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="col-span-3"
                   />
-                  
-                  <div className="mt-6 flex justify-end">
-                    <Button variant="outline" onClick={onClose}>
-                      Close
-                    </Button>
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="agent-description" className="text-right">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="agent-description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="col-span-3 min-h-[80px]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label htmlFor="agent-system-prompt" className="text-right pt-2">
+                    System Prompt
+                  </Label>
+                  <Textarea
+                    id="agent-system-prompt"
+                    value={systemPrompt}
+                    onChange={(e) => setSystemPrompt(e.target.value)}
+                    className="col-span-3 min-h-[200px] font-mono text-sm"
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="agent-enabled" className="text-right">
+                    Enabled
+                  </Label>
+                  <div className="flex items-center space-x-2 col-span-3">
+                    <Switch
+                      id="agent-enabled"
+                      checked={enabled}
+                      onCheckedChange={setEnabled}
+                    />
+                    <Label htmlFor="agent-enabled" className="cursor-pointer">
+                      {enabled ? "Active" : "Inactive"}
+                    </Label>
                   </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="py-8 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Save the agent first to assign tools.
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Once the agent is created, you'll be able to assign tools like ReadFromDB and CompileReport.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
+                </div>
+              </div>
+
+              <DialogFooter className="mt-6">
+                <Button
+                  variant="outline"
+                  onClick={onClose}
+                  className="mr-2"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={updateAgentMutation.isPending}
+                >
+                  {updateAgentMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+
+            <TabsContent value="tools" className="py-4">
+              {agent && agent.id && (
+                <AgentToolsSelector 
+                  agentId={agent.id} 
+                  onSuccess={handleToolsChange}
+                />
+              )}
+            </TabsContent>
+          </Tabs>
+        )}
       </DialogContent>
     </Dialog>
   );
