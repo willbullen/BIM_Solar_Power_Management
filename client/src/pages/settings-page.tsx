@@ -1690,29 +1690,41 @@ export default function SettingsPage() {
                                 <div className="flex items-center justify-between">
                                   <div className="font-medium text-sm text-slate-400">Model</div>
                                   <div className="text-sm font-mono text-white bg-blue-950 px-2 py-0.5 rounded-full">
-                                    gpt-4o
+                                    {langchainAgents?.find(a => a.name === "Main Assistant Agent")?.modelName || "gpt-4o"}
                                   </div>
                                 </div>
                               </div>
                               <div className="rounded-md border p-3 bg-slate-900">
                                 <div className="flex items-center justify-between">
                                   <div className="font-medium text-sm text-slate-400">Temperature</div>
-                                  <div className="text-sm font-mono text-white">0.7</div>
+                                  <div className="text-sm font-mono text-white">
+                                    {langchainAgents?.find(a => a.name === "Main Assistant Agent")?.temperature?.toFixed(1) || "0.7"}
+                                  </div>
                                 </div>
                               </div>
                               <div className="rounded-md border p-3 bg-slate-900">
                                 <div className="flex items-center justify-between">
                                   <div className="font-medium text-sm text-slate-400">Tools</div>
-                                  <div className="text-sm font-mono text-white">2 active</div>
+                                  <div className="text-sm font-mono text-white">
+                                    {langchainAgents?.find(a => a.name === "Main Assistant Agent")?.tools?.length || 0} active
+                                  </div>
                                 </div>
                               </div>
                               <div className="rounded-md border p-3 bg-slate-900">
                                 <div className="flex items-center justify-between">
                                   <div className="font-medium text-sm text-slate-400">Status</div>
                                   <Badge variant="outline" className="bg-green-950 text-green-400 border-green-800">
-                                    Active
+                                    {langchainAgents?.find(a => a.name === "Main Assistant Agent")?.enabled ? "Active" : "Inactive"}
                                   </Badge>
                                 </div>
+                              </div>
+                            </div>
+                            
+                            {/* System Prompt Section */}
+                            <div className="rounded-md border p-3 bg-slate-900">
+                              <div className="text-xs font-medium text-slate-400 mb-2">System Prompt</div>
+                              <div className="text-sm max-h-24 overflow-y-auto pr-2 text-slate-300">
+                                {langchainAgents?.find(a => a.name === "Main Assistant Agent")?.systemPrompt || "No system prompt defined."}
                               </div>
                             </div>
                             

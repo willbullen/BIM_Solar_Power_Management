@@ -57,7 +57,120 @@ export function registerLangChainRoutes(app: Express) {
   
   // API endpoint to manage agent-tool associations
   
-  // Assign a tool to an agent
+  // Assign a tool to an agent (RESTful route)
+  app.post('/api/langchain/agents/:agentId/tools', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const agentId = parseInt(req.params.agentId);
+      const { toolId, priority } = req.body;
+      
+      if (isNaN(agentId) || !toolId) {
+        return res.status(400).json({ error: 'Agent ID and Tool ID are required' });
+      }
+      
+      // Validate that the agent exists
+      const [agent] = await db
+        .select()
+        .from(schema.langchainAgents)
+        .where(eq(schema.langchainAgents.id, agentId));
+        
+      if (!agent) {
+        return res.status(404).json({ error: 'Agent not found' });
+      }
+      
+      // Validate that the tool exists
+      const [tool] = await db
+        .select()
+        .from(schema.langchainTools)
+        .where(eq(schema.langchainTools.id, toolId));
+        
+      if (!tool) {
+        return res.status(404).json({ error: 'Tool not found' });
+      }
+      
+      // Check if the association already exists
+      const [existingAssoc] = await db
+        .select()
+        .from(schema.langchainAgentTools)
+        .where(
+          and(
+            eq(schema.langchainAgentTools.agentId, agentId),
+            eq(schema.langchainAgentTools.toolId, toolId)
+          )
+        );
+      
+      if (existingAssoc) {
+        // Update the priority of the existing association
+        const [updated] = await db
+          .update(schema.langchainAgentTools)
+          .set({ 
+            priority: priority ?? existingAssoc.priority 
+          })
+          .where(eq(schema.langchainAgentTools.id, existingAssoc.id))
+          .returning();
+          
+        return res.json(updated);
+      } else {
+        // Create a new association
+        const [newAssoc] = await db
+          .insert(schema.langchainAgentTools)
+          .values({
+            agentId: agentId,
+            toolId: toolId,
+            priority: priority ?? 0
+          })
+          .returning();
+          
+        return res.status(201).json(newAssoc);
+      }
+    } catch (error) {
+      console.error('Error assigning tool to agent:', error);
+      res.status(500).json({ error: 'Failed to assign tool to agent' });
+    }
+  });
+  
+  // Update a tool's priority for an agent (RESTful route)
+  app.patch('/api/langchain/agents/:agentId/tools/:toolId/priority', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const agentId = parseInt(req.params.agentId);
+      const toolId = parseInt(req.params.toolId);
+      const { priority } = req.body;
+      
+      if (isNaN(agentId) || isNaN(toolId) || priority === undefined) {
+        return res.status(400).json({ error: 'Agent ID, Tool ID, and priority are required' });
+      }
+      
+      // Check if the association exists
+      const [existingAssoc] = await db
+        .select()
+        .from(schema.langchainAgentTools)
+        .where(
+          and(
+            eq(schema.langchainAgentTools.agentId, agentId),
+            eq(schema.langchainAgentTools.toolId, toolId)
+          )
+        );
+      
+      if (!existingAssoc) {
+        return res.status(404).json({ error: 'Agent-Tool association not found' });
+      }
+      
+      // Update the priority
+      const [updated] = await db
+        .update(schema.langchainAgentTools)
+        .set({ priority })
+        .where(eq(schema.langchainAgentTools.id, existingAssoc.id))
+        .returning();
+        
+      return res.json(updated);
+    } catch (error) {
+      console.error('Error updating tool priority:', error);
+      res.status(500).json({ error: 'Failed to update tool priority' });
+    }
+  });
+  
+  // Backward compatibility for older endpoints
+  
+  // Assign a tool to an agent (deprecated)
   app.post('/api/langchain/agent-tools', requireAuth, async (req: Request, res: Response) => {
     try {
       const { agentId, toolId, priority } = req.body;
@@ -165,7 +278,34 @@ export function registerLangChainRoutes(app: Express) {
     }
   });
   
-  // Remove a tool from an agent
+  // Remove a tool from an agent (RESTful route)
+  app.delete('/api/langchain/agents/:agentId/tools/:toolId', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const agentId = parseInt(req.params.agentId);
+      const toolId = parseInt(req.params.toolId);
+      
+      if (isNaN(agentId) || isNaN(toolId)) {
+        return res.status(400).json({ error: 'Agent ID and Tool ID must be valid numbers' });
+      }
+      
+      // Delete the association
+      await db
+        .delete(schema.langchainAgentTools)
+        .where(
+          and(
+            eq(schema.langchainAgentTools.agentId, agentId),
+            eq(schema.langchainAgentTools.toolId, toolId)
+          )
+        );
+        
+      return res.json({ success: true });
+    } catch (error) {
+      console.error('Error removing tool from agent:', error);
+      res.status(500).json({ error: 'Failed to remove tool from agent' });
+    }
+  });
+  
+  // Support for older version (deprecated)
   app.delete('/api/langchain/agent-tools', requireAuth, async (req: Request, res: Response) => {
     try {
       const { agentId, toolId } = req.body;

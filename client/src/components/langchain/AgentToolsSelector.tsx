@@ -78,9 +78,12 @@ export function AgentToolsSelector({ agentId, onToolsChange }: AgentToolsProps) 
   // Mutation to assign a tool to the agent
   const assignToolMutation = useMutation({
     mutationFn: (data: { agentId: number; toolId: number; priority: number }) => {
-      return apiRequest(`/api/langchain/agent-tools`, {
+      return apiRequest(`/api/langchain/agents/${data.agentId}/tools`, {
         method: "POST",
-        data
+        data: {
+          toolId: data.toolId,
+          priority: data.priority
+        }
       });
     },
     onSuccess: () => {
@@ -130,9 +133,9 @@ export function AgentToolsSelector({ agentId, onToolsChange }: AgentToolsProps) 
   // Mutation to update a tool's priority
   const updatePriorityMutation = useMutation({
     mutationFn: (data: { agentId: number; toolId: number; priority: number }) => {
-      return apiRequest(`/api/langchain/agent-tools`, {
+      return apiRequest(`/api/langchain/agents/${data.agentId}/tools/${data.toolId}/priority`, {
         method: "PATCH",
-        data
+        data: { priority: data.priority }
       });
     },
     onSuccess: () => {
