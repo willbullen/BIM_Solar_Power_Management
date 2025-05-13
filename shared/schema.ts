@@ -337,6 +337,7 @@ export const agentConversations = pgTable("agent_conversations", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(), // Foreign key to users
   title: text("title").notNull(),
+  agentId: integer("agent_id"), // Foreign key to langchain_agents (optional)
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   context: jsonb("context"), // Conversation context/state
@@ -347,6 +348,10 @@ export const agentConversationsRelations = relations(agentConversations, ({ one,
   user: one(users, {
     fields: [agentConversations.userId],
     references: [users.id],
+  }),
+  agent: one(langchainAgents, {
+    fields: [agentConversations.agentId],
+    references: [langchainAgents.id],
   }),
   messages: many(agentMessages),
 }));
@@ -786,6 +791,10 @@ export const agentConversationsRelationsWithFiles = relations(agentConversations
   user: one(users, {
     fields: [agentConversations.userId],
     references: [users.id],
+  }),
+  agent: one(langchainAgents, {
+    fields: [agentConversations.agentId],
+    references: [langchainAgents.id],
   }),
   messages: many(agentMessages),
   files: many(fileAttachments),

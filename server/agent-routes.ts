@@ -19,6 +19,7 @@ const agentService = new AgentService();
 // Validation schemas
 const conversationSchema = z.object({
   title: z.string().min(1).max(100),
+  agentId: z.number().optional(),
 });
 
 const messageSchema = z.object({
@@ -226,7 +227,11 @@ export function registerAgentRoutes(app: Express) {
       const userId = req.session!.userId;
       const validatedData = conversationSchema.parse(req.body);
       
-      const conversation = await agentService.createConversation(userId, validatedData.title);
+      const conversation = await agentService.createConversation(
+        userId, 
+        validatedData.title,
+        validatedData.agentId
+      );
       
       res.status(201).json(conversation);
     } catch (error) {

@@ -29,12 +29,16 @@ export class AgentService {
 
   /**
    * Create a new conversation with the AI agent
+   * @param userId - The user ID who created the conversation
+   * @param title - The title of the conversation
+   * @param agentId - Optional agent ID to associate with this conversation
    */
-  async createConversation(userId: number, title: string): Promise<schema.AgentConversation> {
+  async createConversation(userId: number, title: string, agentId?: number): Promise<schema.AgentConversation> {
     const [conversation] = await db.insert(schema.agentConversations)
       .values({
         userId,
         title,
+        agentId: agentId || null, // Use provided agent ID or null for default
         context: {},
         status: "active"
       })
