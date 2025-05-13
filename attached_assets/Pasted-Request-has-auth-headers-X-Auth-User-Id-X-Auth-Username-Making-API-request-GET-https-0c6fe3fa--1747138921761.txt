@@ -1,0 +1,75 @@
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/environmental-data/latest
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/settings
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+*** REFRESH RATE PROVIDER INITIALIZED: 10000ms ***
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Query response status: 200 OK
+API response status: 200 OK
+Query request error: 
+SyntaxError {}
+message: "Unexpected token '<', "<!DOCTYPE "... is not valid JSON"
+stack: "SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Query response status: 200 OK
+API response status: 200 OK
+Latest data fetched successfully
+Refresh interval or connection status changed, updating polling
+REST API polling already active, not starting additional polling
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications/unread/count
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+API response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications/unread/count
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+API response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications/unread/count
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+API response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications/unread/count
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+API response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications/unread/count
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+API response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications/unread/count
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+API response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications/unread/count
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+API response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/langchain/agents
+Query has auth headers: X-Auth-User-Id, X-Auth-Username
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/langchain/tools
+Query has auth headers: X-Auth-User-Id, X-Auth-Username
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/langchain/prompts
+Query has auth headers: X-Auth-User-Id, X-Auth-Username

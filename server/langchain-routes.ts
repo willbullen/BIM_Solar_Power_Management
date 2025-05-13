@@ -2,7 +2,7 @@ import { Express, Request, Response } from 'express';
 import { z } from 'zod';
 import { db } from './db';
 import * as schema from '@shared/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, asc } from 'drizzle-orm';
 import { LangChainIntegration } from './langchain-integration';
 import { LangChainApiService } from './langchain-api';
 import { AIService } from './ai-service';
@@ -486,17 +486,30 @@ export function registerLangChainRoutes(app: Express) {
   // Get all LangChain agents
   app.get('/api/langchain/agents', requireAuth, async (req: Request, res: Response) => {
     try {
+      console.log("Starting LangChain agents fetch with tools...");
+      
       // Fetch all agents
       const agents = await db.select().from(schema.langchainAgents).orderBy(desc(schema.langchainAgents.updatedAt));
+      console.log(`Found ${agents.length} agents in database`);
+      
+      if (agents.length > 0) {
+        // Log the names of agents for debugging
+        console.log("Agent names:", agents.map(agent => `${agent.name} (ID: ${agent.id})`));
+      }
       
       // For each agent, fetch its associated tools
       const agentsWithTools = await Promise.all(agents.map(async (agent) => {
+        console.log(`Processing agent: ${agent.name} (ID: ${agent.id})`);
+        
         // Get tool associations for this agent
         const toolAssociations = await db
           .select()
           .from(schema.langchainAgentTools)
           .where(eq(schema.langchainAgentTools.agentId, agent.id))
-          .orderBy(asc(schema.langchainAgentTools.priority));
+          // Use simple sort order instead of asc() function that's causing issues
+          .orderBy(schema.langchainAgentTools.priority);
+        
+        console.log(`Found ${toolAssociations.length} tool associations for agent: ${agent.name}`);
         
         // Fetch the actual tool data for each association
         const tools = await Promise.all(
@@ -506,17 +519,27 @@ export function registerLangChainRoutes(app: Express) {
               .from(schema.langchainTools)
               .where(eq(schema.langchainTools.id, assoc.toolId));
             
-            return tool ? { ...tool, priority: assoc.priority } : null;
+            if (tool) {
+              console.log(`Found tool ${tool.name} (ID: ${tool.id}) for agent ${agent.name}`);
+              return { ...tool, priority: assoc.priority };
+            } else {
+              console.warn(`Tool with ID ${assoc.toolId} not found but was associated with agent ${agent.name}`);
+              return null;
+            }
           })
         );
+        
+        const validTools = tools.filter(Boolean);
+        console.log(`Processed agent ${agent.name} with ${validTools.length} valid tools`);
         
         // Filter out any null tools and add them to the agent
         return {
           ...agent,
-          tools: tools.filter(Boolean)
+          tools: validTools
         };
       }));
       
+      console.log(`Returning ${agentsWithTools.length} agents with their tools`);
       res.json(agentsWithTools);
     } catch (error) {
       console.error('Error fetching LangChain agents with tools:', error);
