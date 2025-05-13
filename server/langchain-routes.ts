@@ -1022,6 +1022,8 @@ export function registerLangChainRoutes(app: Express) {
   // Get all execution runs
   app.get('/api/langchain/runs', requireAuth, async (req: Request, res: Response) => {
     try {
+      console.log('[LangChain] Fetching execution runs...');
+      
       // Check if table exists
       const { rows: tableExists } = await db.execute(`
         SELECT EXISTS (
@@ -1031,14 +1033,25 @@ export function registerLangChainRoutes(app: Express) {
         );
       `);
       
+      console.log('[LangChain] Table exists check:', tableExists[0].exists);
+      
       if (!tableExists[0].exists) {
         // Return empty array if table doesn't exist yet
+        console.log('[LangChain] Table does not exist, returning empty array');
         return res.json([]);
       }
+      
+      // Get count of runs for debugging
+      const { rows: countRows } = await db.execute(`
+        SELECT COUNT(*) FROM langchain_runs;
+      `);
+      console.log('[LangChain] Total runs in database:', countRows[0].count);
       
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
       const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
       const status = req.query.status as string;
+      
+      console.log(`[LangChain] Query params - limit: ${limit}, offset: ${offset}, status: ${status || 'all'}`);
       
       let query = db.select().from(schema.langchainRuns);
       
@@ -1050,6 +1063,11 @@ export function registerLangChainRoutes(app: Express) {
         .orderBy(desc(schema.langchainRuns.startTime))
         .limit(limit)
         .offset(offset);
+      
+      console.log(`[LangChain] Found ${runs.length} runs`);
+      if (runs.length > 0) {
+        console.log('[LangChain] Sample run data:', JSON.stringify(runs[0]).substring(0, 200) + '...');
+      }
       
       res.json(runs);
     } catch (error) {
