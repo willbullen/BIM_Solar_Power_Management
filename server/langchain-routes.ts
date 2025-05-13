@@ -2,7 +2,7 @@ import { Express, Request, Response } from 'express';
 import { z } from 'zod';
 import { db } from './db';
 import * as schema from '@shared/schema';
-import { eq, desc, and, asc } from 'drizzle-orm';
+import { eq, desc, and, asc, sql } from 'drizzle-orm';
 import { LangChainIntegration } from './langchain-integration';
 import { LangChainApiService } from './langchain-api';
 import { AIService } from './ai-service';
@@ -57,7 +57,7 @@ export function registerLangChainRoutes(app: Express) {
   
   // API endpoint to manage agent-tool associations
   
-  // Debug endpoint for agent tool assignment
+  // Debug endpoint for agent tool assignment with enhanced logging and error handling
   app.post('/api/langchain/debug/agent-tool', requireAuth, async (req: Request, res: Response) => {
     try {
       console.log("Debug tool assignment endpoint called with body:", req.body);
@@ -66,6 +66,54 @@ export function registerLangChainRoutes(app: Express) {
       if (isNaN(agentId) || !toolId) {
         console.log('Validation error: Agent ID or Tool ID missing or invalid');
         return res.status(400).json({ error: 'Agent ID and Tool ID are required' });
+      }
+      
+      // Verify agent exists
+      const agentExists = await db.select({ count: sql`count(*)` })
+        .from(schema.langchainAgents)
+        .where(eq(schema.langchainAgents.id, agentId));
+      
+      if (!agentExists || agentExists[0].count === 0) {
+        console.error(`Agent with ID ${agentId} not found`);
+        return res.status(404).json({ error: `Agent with ID ${agentId} not found` });
+      }
+      
+      // Verify tool exists
+      const toolExists = await db.select({ count: sql`count(*)` })
+        .from(schema.langchainTools)
+        .where(eq(schema.langchainTools.id, toolId));
+      
+      if (!toolExists || toolExists[0].count === 0) {
+        console.error(`Tool with ID ${toolId} not found`);
+        return res.status(404).json({ error: `Tool with ID ${toolId} not found` });
+      }
+      
+      // Check if association already exists
+      const existingAssoc = await db.select()
+        .from(schema.langchainAgentTools)
+        .where(and(
+          eq(schema.langchainAgentTools.agentId, agentId),
+          eq(schema.langchainAgentTools.toolId, toolId)
+        ));
+      
+      if (existingAssoc && existingAssoc.length > 0) {
+        console.log(`Tool association already exists, updating priority to ${priority ?? 0}`);
+        
+        // Update existing association priority
+        const [updated] = await db
+          .update(schema.langchainAgentTools)
+          .set({ priority: priority ?? 0 })
+          .where(and(
+            eq(schema.langchainAgentTools.agentId, agentId),
+            eq(schema.langchainAgentTools.toolId, toolId)
+          ))
+          .returning();
+          
+        console.log(`Updated existing agent-tool association:`, updated);
+        return res.status(200).json({ 
+          ...updated, 
+          message: 'Tool association updated successfully'
+        });
       }
       
       console.log(`Creating new agent-tool association: Agent ${agentId}, Tool ${toolId}, Priority ${priority ?? 0}`);
@@ -81,7 +129,18 @@ export function registerLangChainRoutes(app: Express) {
           .returning();
           
         console.log(`Successfully created agent-tool association:`, newAssoc);
-        return res.status(201).json(newAssoc);
+        
+        // Get tool details for better user feedback
+        const [tool] = await db
+          .select()
+          .from(schema.langchainTools)
+          .where(eq(schema.langchainTools.id, toolId));
+          
+        return res.status(201).json({
+          ...newAssoc,
+          toolName: tool?.name || 'Unknown Tool',
+          message: 'Tool assigned successfully'
+        });
       } catch (insertError) {
         console.error(`Error inserting agent-tool association:`, insertError);
         return res.status(500).json({ 

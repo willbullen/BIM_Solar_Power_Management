@@ -80,13 +80,18 @@ export function AgentToolsSelector({ agentId, onToolsChange }: AgentToolsProps) 
       if (agentQuery.data.tools) {
         console.log(`Agent has ${agentQuery.data.tools.length} tools:`, 
           JSON.stringify(agentQuery.data.tools, null, 2));
+        
+        // Notify parent component if tools were updated
+        if (onToolsChange && agentQuery.data.tools.length > 0) {
+          onToolsChange();
+        }
       } else {
         console.warn("Agent data doesn't contain tools array");
       }
     } else if (agentQuery.error) {
       console.error("Error fetching agent data:", agentQuery.error);
     }
-  }, [agentQuery.data, agentQuery.error, agentId]);
+  }, [agentQuery.data, agentQuery.error, agentId, onToolsChange]);
 
   // Tools already assigned to the agent
   const assignedTools = agentQuery.data?.tools || [];
