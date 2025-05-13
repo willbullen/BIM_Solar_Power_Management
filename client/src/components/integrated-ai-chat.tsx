@@ -320,6 +320,16 @@ export function IntegratedAIChat() {
     fetchLangchainAgents();
   }, [fetchLangchainAgents]);
   
+  // Fetch agents when dialog opens
+  useEffect(() => {
+    if (showCreateDialog && user) {
+      console.log("Dialog opened - fetching agents");
+      setNewConversationTitle("");
+      setSelectedAgentId("default");
+      fetchLangchainAgents();
+    }
+  }, [showCreateDialog, user, fetchLangchainAgents]);
+  
   // Query for conversations
   const conversationsQuery = useQuery({
     queryKey: ['/api/agent/conversations'],
