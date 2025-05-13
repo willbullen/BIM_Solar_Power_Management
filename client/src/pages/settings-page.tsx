@@ -1746,15 +1746,17 @@ export default function SettingsPage() {
                             <div className="mt-4">
                               <div className="text-xs font-medium text-slate-400 mb-2">Assigned Tools</div>
                               <div className="flex flex-wrap gap-2">
-                                {langchainAgents?.find(a => a.name === "Main Assistant Agent")?.tools?.map((tool, index) => (
-                                  <Badge 
-                                    key={tool.id} 
-                                    variant="secondary"
-                                    className="bg-blue-950/30 text-blue-300 border-blue-900"
-                                  >
-                                    {tool.name}
-                                  </Badge>
-                                )) || (
+                                {langchainAgents?.find(a => a.name === "Main Assistant Agent")?.tools?.length > 0 ? (
+                                  langchainAgents?.find(a => a.name === "Main Assistant Agent")?.tools?.map((tool, index) => (
+                                    <Badge 
+                                      key={tool.id || index} 
+                                      variant="secondary"
+                                      className="bg-blue-950/30 text-blue-300 border-blue-900"
+                                    >
+                                      {tool.name}
+                                    </Badge>
+                                  ))
+                                ) : (
                                   <div className="text-sm text-slate-500 italic">No tools assigned</div>
                                 )}
                               </div>
@@ -1888,30 +1890,39 @@ export default function SettingsPage() {
                               </div>
                               
                               {/* Tools Section - display assigned tools */}
-                              {agent.tools && agent.tools.length > 0 && (
+                              {agent.tools && agent.tools.length > 0 ? (
                                 <div className="rounded-md border p-3 bg-slate-900">
-                                  <div className="text-xs font-medium text-muted-foreground mb-2">
-                                    Assigned Tools ({agent.tools.length})
+                                  <div className="flex justify-between items-center mb-2">
+                                    <div className="text-xs font-medium text-muted-foreground">
+                                      Assigned Tools
+                                    </div>
+                                    <Badge 
+                                      variant="secondary"
+                                      className="bg-indigo-900/30 text-indigo-300 border-indigo-800"
+                                    >
+                                      {agent.tools.length} tools
+                                    </Badge>
                                   </div>
-                                  <div className="grid grid-cols-1 gap-2">
+                                  <div className="flex flex-wrap gap-2">
                                     {agent.tools.map((tool: any) => (
-                                      <div key={tool.id} className="bg-slate-800 rounded p-2 flex items-center justify-between">
-                                        <div className="flex items-center">
-                                          <div className="flex-shrink-0 h-6 w-6 flex items-center justify-center bg-indigo-900 rounded-full mr-2">
-                                            <span className="text-xs font-semibold text-indigo-300">{tool.priority || 0}</span>
-                                          </div>
-                                          <div>
-                                            <div className="text-sm font-medium">{tool.name}</div>
-                                            <div className="text-xs text-muted-foreground">{tool.toolType || "custom"}</div>
-                                          </div>
+                                      <div key={tool.id || tool.name} 
+                                        className="bg-slate-800 rounded-full px-3 py-1 flex items-center text-sm"
+                                      >
+                                        <div className="flex-shrink-0 h-4 w-4 flex items-center justify-center bg-indigo-900 rounded-full mr-2">
+                                          <span className="text-xs font-semibold text-indigo-300">{tool.priority || 0}</span>
                                         </div>
-                                        <Badge 
-                                          variant="outline" 
-                                          className="text-xs bg-blue-900/40 text-blue-300 border-blue-800 font-mono">
-                                          {tool.id}
-                                        </Badge>
+                                        <span className="mr-1">{tool.name}</span>
                                       </div>
                                     ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="rounded-md border p-3 bg-slate-900">
+                                  <div className="text-xs font-medium text-muted-foreground mb-2">
+                                    Assigned Tools
+                                  </div>
+                                  <div className="text-sm text-slate-400 italic">
+                                    No tools assigned to this agent
                                   </div>
                                 </div>
                               )}

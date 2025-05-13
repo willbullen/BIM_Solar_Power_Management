@@ -1,0 +1,628 @@
+
+> rest-express@1.0.0 dev
+Starting Telegram integration database migration...
+Creating Telegram tables...
+Telegram tables already exist. Skipping creation.
+Telegram settings already exist. Skipping creation of defaults.
+Telegram integration database migration completed successfully.
+Telegram database migration completed successfully
+Starting LangChain integration database migration...
+Creating LangChain tables...
+langchain_agents table already exists
+langchain_tools table already exists
+langchain_agent_tools table already exists
+langchain_prompt_templates table already exists
+langchain_runs table already exists
+langchain_tool_executions table already exists
+LangChain tables created successfully
+LangChain agent and tools initialized successfully
+LangChain integration database migration completed successfully
+LangChain database migration completed successfully
+Initializing database tables and seed data...
+Initializing database...
+Database initialization complete
+Database initialization completed successfully
+[WebSocket] Server initialized and waiting for connections at unknown address with path /ws
+Registering AI Agent database functions...
+Database query and analysis functions registered successfully
+SQL execution functions registered successfully
+AI Agent database functions registered successfully
+Environment variables:
+PORT: 5000 (Using standard port for Replit compatibility)
+NODE_ENV: development
+REPL_ID: 0c6fe3fa-222f-48d4-8e4b-6ae65487088c
+REPL_OWNER: williambullen2
+REPLIT_DB_URL: set
+[WebSocket] HTTP Server is listening on 0.0.0.0:5000
+2:55:59 PM [express] serving on port 5000
+Initializing Telegram bot @evirobot...
+Telegram bot initialized successfully
+New connection established
+New connection established
+New connection established
+New connection established
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Using fallback environmental data due to Solcast API issues
+New connection established
+Created environmental data from Solcast API
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+Auth check - Session: exists
+Auth check - UserId: none
+Auth check - IsAuthenticated: no
+Auth check - Session: exists
+Auth check - UserId: none
+Auth check - IsAuthenticated: no
+2:56:15 PM [express] GET /api/agent/notifications 401 in 55ms :: {"error":"Not authenticated"}
+2:56:15 PM [express] GET /api/agent/notifications/unread/count 401 in 62ms :: {"error":"Not authenti…
+2:56:15 PM [express] GET /api/environmental-data 200 in 125ms :: [{"id":32680,"timestamp":"2025-05-1…
+2:56:15 PM [express] GET /api/environmental-data/latest 200 in 98ms :: {"id":32680,"timestamp":"2025…
+Auth check - Session: exists
+Auth check - UserId: none
+Auth check - IsAuthenticated: no
+2:56:15 PM [express] GET /api/settings 304 in 208ms :: {"id":1,"dataSource":"live","scenarioProfile"…
+2:56:15 PM [express] GET /api/user 401 in 88ms :: {"message":"Not authenticated"}
+Auth check - Session: exists
+Auth check - UserId: none
+Auth check - IsAuthenticated: no
+2:56:15 PM [express] GET /api/power-data/latest 200 in 269ms :: {"id":343342,"timestamp":"2025-05-13…
+2:56:15 PM [express] GET /api/user 401 in 65ms :: {"message":"Not authenticated"}
+2:56:15 PM [express] GET /api/settings 304 in 75ms :: {"id":1,"dataSource":"live","scenarioProfile":…
+2:56:15 PM [express] GET /api/power-data 200 in 291ms :: [{"id":343342,"timestamp":"2025-05-13T14:56…
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+Auth check - Session: exists
+Auth check - UserId: none
+Auth check - IsAuthenticated: no
+2:57:01 PM [express] GET /api/agent/notifications/unread/count 401 in 48ms :: {"error":"Not authenti…
+Auth check - Session: exists
+Auth check - UserId: none
+Auth check - IsAuthenticated: no
+2:57:01 PM [express] GET /api/environmental-data 200 in 127ms :: [{"id":32685,"timestamp":"2025-05-1…
+2:57:01 PM [express] GET /api/environmental-data/latest 200 in 78ms :: {"id":32685,"timestamp":"2025…
+Auth check - Session: exists
+Auth check - UserId: none
+Auth check - IsAuthenticated: no
+2:57:01 PM [express] GET /api/agent/notifications 401 in 167ms :: {"error":"Not authenticated"}
+2:57:01 PM [express] GET /api/user 401 in 45ms :: {"message":"Not authenticated"}
+2:57:01 PM [express] GET /api/settings 304 in 210ms :: {"id":1,"dataSource":"live","scenarioProfile"…
+2:57:01 PM [express] GET /api/power-data/latest 200 in 269ms :: {"id":343347,"timestamp":"2025-05-13…
+Auth check - Session: exists
+Auth check - UserId: none
+Auth check - IsAuthenticated: no
+2:57:01 PM [express] GET /api/settings 304 in 78ms :: {"id":1,"dataSource":"live","scenarioProfile":…
+2:57:01 PM [express] GET /api/user 401 in 40ms :: {"message":"Not authenticated"}
+New connection established
+2:57:01 PM [express] GET /api/power-data 200 in 443ms :: [{"id":343347,"timestamp":"2025-05-13T14:56…
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Using fallback environmental data due to Solcast API issues
+New connection established
+Created environmental data from Solcast API
+^ANew connection established
+^ANew connection established
+New connection established
+New connection established
+New connection established
+New connection established
+Auth check - Session: exists
+Auth check - UserId: 1
+Auth check - IsAuthenticated: yes (session)
+Auth check - Session: exists
+Auth check - UserId: 1
+Auth check - IsAuthenticated: yes (session)
+2:58:20 PM [express] GET /api/agent/notifications 304 in 1211ms :: []
+2:58:20 PM [express] GET /api/environmental-data 200 in 1360ms :: [{"id":32692,"timestamp":"2025-05-…
+2:58:20 PM [express] GET /api/power-data/latest 200 in 1369ms :: {"id":343354,"timestamp":"2025-05-1…
+2:58:20 PM [express] GET /api/settings 304 in 1431ms :: {"id":1,"dataSource":"live","scenarioProfile…
+2:58:20 PM [express] GET /api/agent/notifications/unread/count 304 in 1554ms :: {"count":0}
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+2:58:21 PM [express] GET /api/power-data 200 in 2288ms :: [{"id":343354,"timestamp":"2025-05-13T14:5…
+2:58:22 PM [express] GET /api/environmental-data/latest 200 in 1917ms :: {"id":32693,"timestamp":"20…
+2:58:23 PM [express] GET /api/settings 304 in 2644ms :: {"id":1,"dataSource":"live","scenarioProfile…
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:479:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API

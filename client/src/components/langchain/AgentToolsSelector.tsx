@@ -92,6 +92,7 @@ export function AgentToolsSelector({ agentId, onSuccess }: AgentToolsProps) {
   // Save tools mutation
   const saveToolsMutation = useMutation({
     mutationFn: async (formData: { agentId: number, tools: { toolId: number, priority: number }[] }) => {
+      console.log('Saving tools configuration:', formData);
       return await apiRequest(`/api/langchain/agents/${agentId}/tools`, {
         method: "PUT",
         data: formData,
@@ -157,10 +158,20 @@ export function AgentToolsSelector({ agentId, onSuccess }: AgentToolsProps) {
         priority: toolPriorities.get(toolId) || 100
       }));
 
-    await saveToolsMutation.mutateAsync({
-      agentId,
-      tools: selectedToolsData
-    });
+    // Sort by priority to make order more predictable in the UI
+    selectedToolsData.sort((a, b) => a.priority - b.priority);
+    
+    console.log('Tools to save:', selectedToolsData);
+
+    try {
+      await saveToolsMutation.mutateAsync({
+        agentId,
+        tools: selectedToolsData
+      });
+      console.log('Tools saved successfully');
+    } catch (error) {
+      console.error('Error saving tools:', error);
+    }
   };
 
   if (isLoadingTools || isLoadingAgentTools) {

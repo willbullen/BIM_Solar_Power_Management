@@ -378,6 +378,99 @@ export function registerLangChainRoutes(app: Express) {
     }
   });
   
+  // Bulk update all tools for an agent (new GUI-based approach)
+  app.put('/api/langchain/agents/:agentId/tools', requireAuth, async (req: Request, res: Response) => {
+    try {
+      console.log('Bulk updating tools for agent');
+      const agentId = parseInt(req.params.agentId);
+      const { tools } = req.body;
+      
+      if (!Array.isArray(tools)) {
+        return res.status(400).json({ error: 'Tools must be an array' });
+      }
+      
+      console.log(`Updating ${tools.length} tools for agent ID ${agentId}`);
+      
+      // Validate agent exists
+      const [agent] = await db
+        .select()
+        .from(schema.langchainAgents)
+        .where(eq(schema.langchainAgents.id, agentId));
+        
+      if (!agent) {
+        return res.status(404).json({ error: 'Agent not found' });
+      }
+      
+      // First, get existing tool associations for this agent
+      const existingAssociations = await db
+        .select()
+        .from(schema.langchainAgentTools)
+        .where(eq(schema.langchainAgentTools.agentId, agentId));
+      
+      console.log(`Found ${existingAssociations.length} existing tool associations`);
+      
+      // For tracking which tools should remain
+      const toolIdsToKeep = tools.map(t => t.toolId);
+      
+      // Create a transaction to handle all database changes atomically
+      const result = await db.transaction(async (tx) => {
+        // 1. Remove associations that are no longer needed
+        for (const assoc of existingAssociations) {
+          if (!toolIdsToKeep.includes(assoc.toolId)) {
+            console.log(`Removing tool ID ${assoc.toolId} from agent ID ${agentId}`);
+            await tx
+              .delete(schema.langchainAgentTools)
+              .where(eq(schema.langchainAgentTools.id, assoc.id));
+          }
+        }
+        
+        // 2. Add or update each tool in the request
+        const updatedTools = [];
+        for (const tool of tools) {
+          // Check if this association already exists
+          const existingAssoc = existingAssociations.find(a => a.toolId === tool.toolId);
+          
+          if (existingAssoc) {
+            // Update existing association
+            console.log(`Updating tool ID ${tool.toolId} priority to ${tool.priority}`);
+            const [updated] = await tx
+              .update(schema.langchainAgentTools)
+              .set({ priority: tool.priority })
+              .where(eq(schema.langchainAgentTools.id, existingAssoc.id))
+              .returning();
+            
+            updatedTools.push(updated);
+          } else {
+            // Create new association
+            console.log(`Adding new tool ID ${tool.toolId} with priority ${tool.priority}`);
+            const [newAssoc] = await tx
+              .insert(schema.langchainAgentTools)
+              .values({
+                agentId: agentId,
+                toolId: tool.toolId,
+                priority: tool.priority
+              })
+              .returning();
+            
+            updatedTools.push(newAssoc);
+          }
+        }
+        
+        return updatedTools;
+      });
+      
+      console.log(`Successfully updated tools for agent ID ${agentId}`);
+      return res.json({ 
+        success: true, 
+        message: `Updated ${result.length} tools for agent ${agent.name}`,
+        tools: result
+      });
+    } catch (error) {
+      console.error('Error bulk updating agent tools:', error);
+      res.status(500).json({ error: 'Failed to update agent tools' });
+    }
+  });
+  
   // Remove a tool from an agent (RESTful route)
   app.delete('/api/langchain/agents/:agentId/tools/:toolId', requireAuth, async (req: Request, res: Response) => {
     try {
