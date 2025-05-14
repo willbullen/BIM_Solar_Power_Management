@@ -398,6 +398,7 @@ export class AgentService {
           await db.insert(schema.agentMessages).values({
             conversationId,
             role: "function",
+            name: functionName, // Required field for function role messages
             content: JSON.stringify(functionResult),
             metadata: { 
               functionName,
@@ -463,6 +464,7 @@ export class AgentService {
           await db.insert(schema.agentMessages).values({
             conversationId,
             role: "function",
+            name: functionName, // Required field for function role messages
             content: JSON.stringify(functionResult),
             metadata: { 
               functionName,
