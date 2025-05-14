@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { migrate as migrateTelegram } from "./migrate-telegram";
 import { migrate as migrateLangChain } from "./migrate-langchain";
 import { setupUnifiedFunctionSystem, runMigration, migrateAgentFunctions } from "./migrate-function-system";
+import { migrate as removeAgentFunctionsTable } from "./remove-agent-functions-table";
 import cors from 'cors';
 
 const app = express();
@@ -78,6 +79,16 @@ app.use((req, res, next) => {
       console.log('Starting complete migration of agent_functions to langchain_tools...');
       await migrateAgentFunctions();
       console.log('Complete migration of agent_functions to langchain_tools finished successfully');
+      
+      // After successful migration, remove the agent_functions table
+      try {
+        console.log('Starting removal of agent_functions table...');
+        await removeAgentFunctionsTable();
+        console.log('agent_functions table removed successfully');
+      } catch (removalError) {
+        console.error('Error during agent_functions table removal:', removalError);
+        // Continue with server startup even if table removal fails
+      }
     } catch (migrationError) {
       console.error('Error during complete function migration:', migrationError);
       // Continue with server startup even if migration fails
