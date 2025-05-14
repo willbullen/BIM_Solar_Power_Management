@@ -60,11 +60,12 @@ export async function removeAgentFunctionsTable(force: boolean = false): Promise
 
 /**
  * Main migration function
+ * @param {boolean} force - Whether to force removal even if functions exist in the table
  */
-export async function migrate(): Promise<void> {
+export async function migrate(force: boolean = false): Promise<void> {
   try {
     console.log('Starting agent_functions removal migration...');
-    await removeAgentFunctionsTable();
+    await removeAgentFunctionsTable(force);
     console.log('agent_functions removal migration completed successfully.');
   } catch (error) {
     console.error('Error during agent_functions removal migration:', error);

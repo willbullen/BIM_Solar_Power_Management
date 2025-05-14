@@ -80,10 +80,11 @@ app.use((req, res, next) => {
       await migrateAgentFunctions();
       console.log('Complete migration of agent_functions to langchain_tools finished successfully');
       
-      // After successful migration, remove the agent_functions table
+      // After successful migration, remove the agent_functions table (force removal even if functions exist)
       try {
         console.log('Starting removal of agent_functions table...');
-        await removeAgentFunctionsTable();
+        // Use removeAgentFunctionsTable directly with force=true parameter
+        await removeAgentFunctionsTable(true); 
         console.log('agent_functions table removed successfully');
       } catch (removalError) {
         console.error('Error during agent_functions table removal:', removalError);
