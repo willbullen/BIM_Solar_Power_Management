@@ -6,8 +6,12 @@
  */
 
 import { UnifiedFunctionRegistry } from './unified-function-registry';
-import { schema, db } from '../../shared/schema';
+import * as schemaObj from '../../shared/schema';
+import { db } from '../db';
 import { eq, sql, asc, desc } from 'drizzle-orm';
+
+// Create a reference to the schema object for easier access
+const schema = schemaObj;
 
 /**
  * Register all database-related functions for the AI agent

@@ -313,6 +313,10 @@ export const issuesRelations = relations(issues, ({ one, many }) => ({
 // AI Agent Schemas
 
 // Agent Functions Registry schema
+// DEPRECATED: agent_functions table has been removed and replaced by langchain_tools table
+// Keeping these definitions commented for reference, but they are no longer used in the application
+
+/*
 export const agentFunctions = pgTable("agent_functions", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
@@ -331,6 +335,7 @@ export const insertAgentFunctionSchema = createInsertSchema(agentFunctions).omit
 
 export type InsertAgentFunction = z.infer<typeof insertAgentFunctionSchema>;
 export type AgentFunction = typeof agentFunctions.$inferSelect;
+*/
 
 // Agent Conversations schema
 export const agentConversations = pgTable("agent_conversations", {
