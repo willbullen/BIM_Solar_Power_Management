@@ -5,16 +5,15 @@
  * and analyze data from the database.
  */
 
-import { db } from '../db';
 import { UnifiedFunctionRegistry } from './unified-function-registry';
-import { count, desc, eq, sql, and } from 'drizzle-orm';
-import * as schema from '@shared/schema';
+import { schema, db } from '../../shared/schema';
+import { eq, sql, asc, desc } from 'drizzle-orm';
 
 /**
  * Register all database-related functions for the AI agent
  */
 export async function registerDatabaseFunctions() {
-  // Register ReadFromDB function - to handle the Telegram bot using this function name
+  // Basic database query function to read data
   await UnifiedFunctionRegistry.registerFunction({
     name: 'ReadFromDB',
     description: 'Execute database queries to retrieve information, including listing tables',
@@ -29,145 +28,104 @@ export async function registerDatabaseFunctions() {
         if (typeof params.input === 'string') {
           const inputLower = params.input.toLowerCase().trim();
           
-          if (inputLower === 'list tables' || 
-              inputLower === 'show tables' || 
-              inputLower.includes('list all tables') ||
-              inputLower.includes('all tables')) {
-                
-            console.log("ReadFromDB: Processing 'list tables' command");
+          if (inputLower === 'list tables') {
+            // Get all available tables from schema
+            const tables = Object.keys(schema).filter(key => 
+              typeof schema[key] === 'object' && schema[key]?.name);
             
-            // Use the listAllTables function for this request
-            return await UnifiedFunctionRegistry.executeFunction(
-              'listAllTables', 
-              { includeSystemTables: false },
-              context
-            );
+            return {
+              tables,
+              count: tables.length
+            };
           }
-        }
-        
-        // For any other SQL queries, you can implement them here
-        // This is just a basic implementation to handle the list tables command
-        return {
-          error: "Only 'list tables' command is supported currently. For complex queries, please use explicit SQL.",
-          message: "Please use 'list tables' to see available tables."
-        };
-      } catch (error) {
-        console.error("ReadFromDB function error:", error);
-        return { error: String(error) };
-      }
-    `
-  });
-
-  // Register listAllTables function
-  await UnifiedFunctionRegistry.registerFunction({
-    name: 'listAllTables',
-    description: 'List all tables in the database',
-    toolType: 'database',
-    implementation: 'ListAllTablesTool',
-    metadata: {
-      returnType: 'object',
-      accessLevel: 'User',
-      implementationCode: `
-      try {
-        // Check if the input is a shortcut command like "list tables"
-        if (typeof params === 'string' && (params.toLowerCase() === 'list tables' || params.toLowerCase() === 'show tables')) {
-          // Shortcut command detected
-          const tableNames = [];
           
-          // Get table names from schema
-          for (const key in schema) {
-            if (typeof schema[key] === 'object' && schema[key]?.name) {
-              tableNames.push(schema[key].name);
+          if (inputLower.startsWith('describe table ')) {
+            const tableName = inputLower.replace('describe table ', '').trim();
+            
+            // Check if table exists
+            const availableTables = Object.keys(schema).filter(key => 
+              typeof schema[key] === 'object' && schema[key]?.name);
+            
+            if (!availableTables.includes(tableName)) {
+              return {
+                error: \`Table '\${tableName}' does not exist or is not accessible\`
+              };
             }
+            
+            // Get column information for the table
+            const table = schema[tableName];
+            const columns = Object.keys(table)
+              .filter(key => typeof key === 'string' && key !== 'name' && !key.startsWith('_'))
+              .map(key => {
+                const column = table[key];
+                return {
+                  name: key,
+                  type: column?.dataType || 'unknown',
+                  nullable: column?.notNull === false
+                };
+              });
+            
+            return {
+              table: tableName,
+              columns,
+              columnCount: columns.length
+            };
           }
           
-          // Filter system tables
-          const userTables = tableNames.filter(name => 
-            !name.startsWith('pg_') && 
-            !name.startsWith('information_schema') &&
-            !name.startsWith('sql_')
-          );
-          
-          return { 
-            tables: userTables,
-            count: userTables.length,
-            message: \`Found \${userTables.length} tables in the database\`
-          };
+          if (inputLower.startsWith('count ')) {
+            const tableName = inputLower.replace('count ', '').trim();
+            
+            // Check if table exists
+            const availableTables = Object.keys(schema).filter(key => 
+              typeof schema[key] === 'object' && schema[key]?.name);
+            
+            if (!availableTables.includes(tableName)) {
+              return {
+                error: \`Table '\${tableName}' does not exist or is not accessible\`
+              };
+            }
+            
+            // Get the count
+            const table = schema[tableName];
+            const result = await db.select({ count: sql\`count(*)\` }).from(table);
+            
+            return {
+              table: tableName,
+              count: Number(result[0]?.count || 0)
+            };
+          }
         }
         
-        // Regular execution path
-        const { includeSystemTables = false } = params || {};
-        
-        // Get available tables from the schema
-        const availableTables = Object.keys(schema)
-          .filter(key => typeof schema[key] === 'object' && schema[key]?.name)
-          .map(key => schema[key].name);
-        
-        // If includeSystemTables is false, filter out system tables
-        const filteredTables = includeSystemTables 
-          ? availableTables 
-          : availableTables.filter(name => 
-              !name.startsWith('pg_') && 
-              !name.startsWith('information_schema') &&
-              !name.startsWith('sql_')
-            );
-        
-        return { 
-          tables: filteredTables,
-          count: filteredTables.length,
-          message: \`Found \${filteredTables.length} tables in the database\`
+        // Return an error if no valid command was given
+        return {
+          error: "Please provide a valid command. Try 'list tables', 'describe table [tableName]', or 'count [tableName]'."
         };
       } catch (error) {
-        console.error('Error in listAllTables function:', error);
         return {
-          tables: [],
-          count: 0,
-          error: error.message,
-          message: 'Error listing tables. Please check logs for details.'
+          error: \`Database error: \${error.message}\`
         };
       }
-    `
-  });
-  
-  // Register database query functions
-  await UnifiedFunctionRegistry.registerFunction({
-    name: 'queryTable',
-    description: 'Query data from a database table with optional filters and sorting',
-    toolType: 'database',
-    implementation: 'QueryTableTool',
-    metadata: {
-      returnType: 'array',
-      accessLevel: 'User'
+      `
     },
     enabled: true,
     parameters: {
       type: 'object',
       properties: {
-        tableName: {
+        input: {
           type: 'string',
-          description: 'Name of the table to query'
-        },
-        filters: {
-          type: 'object',
-          description: 'Optional filter conditions as key-value pairs',
-          additionalProperties: true
-        },
-        limit: {
-          type: 'number',
-          description: 'Maximum number of records to return'
-        },
-        orderBy: {
-          type: 'string',
-          description: 'Column to sort results by'
-        },
-        orderDirection: {
-          type: 'string',
-          enum: ['asc', 'desc'],
-          description: 'Sort direction (asc or desc)'
+          description: "Text command or SQL query. Use 'list tables' to show all tables."
         }
       },
-      required: ['tableName']
-    },
+      required: ['input']
+    }
+  });
+
+  // Function to query a specific table with filters
+  await UnifiedFunctionRegistry.registerFunction({
+    name: 'queryTable',
+    description: 'Query a specific table with optional filters, sorting and limits',
+    toolType: 'database',
+    implementation: 'TableQueryTool',
     metadata: {
       returnType: 'array',
       accessLevel: 'User',
@@ -179,7 +137,7 @@ export async function registerDatabaseFunctions() {
         typeof schema[key] === 'object' && schema[key]?.name);
       
       if (!availableTables.includes(tableName)) {
-        throw new Error(`Table '${tableName}' does not exist or is not accessible`);
+        throw new Error(\`Table '\${tableName}' does not exist or is not accessible\`);
       }
       
       // Get the table object
@@ -201,35 +159,111 @@ export async function registerDatabaseFunctions() {
         if (whereConditions.length === 1) {
           query = query.where(whereConditions[0]);
         } else {
-          query = query.where(and(...whereConditions));
+          query = query.where(sql\`\${whereConditions.join(' AND ')}\`);
         }
       }
       
       // Add order by if specified
       if (orderBy && table[orderBy]) {
-        query = query.orderBy(
-          orderDirection === 'desc' ? desc(table[orderBy]) : table[orderBy]
-        );
+        if (orderDirection.toLowerCase() === 'asc') {
+          query = query.orderBy(asc(table[orderBy]));
+        } else {
+          query = query.orderBy(desc(table[orderBy]));
+        }
       }
       
       // Add limit
-      query = query.limit(limit);
+      if (limit && limit > 0) {
+        query = query.limit(limit);
+      }
       
       // Execute query
       const results = await query;
       return results;
+      `
+    },
+    enabled: true,
+    parameters: {
+      type: 'object',
+      properties: {
+        tableName: {
+          type: 'string',
+          description: 'Name of the table to query'
+        },
+        filters: {
+          type: 'object',
+          description: 'Filters to apply to the query (column-value pairs)'
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of records to return'
+        },
+        orderBy: {
+          type: 'string',
+          description: 'Column to sort results by'
+        },
+        orderDirection: {
+          type: 'string',
+          enum: ['asc', 'desc'],
+          description: 'Sort direction (asc or desc)'
+        }
+      },
+      required: ['tableName']
     }
   });
-  
-  // Register count function
+
+  // Count records in a table with filters
   await UnifiedFunctionRegistry.registerFunction({
     name: 'countRecords',
-    description: 'Count records in a database table with optional filters',
+    description: 'Count records in a table with optional filters',
     toolType: 'database',
-    implementation: 'CountRecordsTool',
+    implementation: 'TableCountTool',
     metadata: {
       returnType: 'object',
-      accessLevel: 'User'
+      accessLevel: 'User',
+      implementationCode: `
+      const { tableName, filters = {} } = params;
+      
+      // Check if table exists in schema
+      const availableTables = Object.keys(schema).filter(key => 
+        typeof schema[key] === 'object' && schema[key]?.name);
+      
+      if (!availableTables.includes(tableName)) {
+        throw new Error(\`Table '\${tableName}' does not exist or is not accessible\`);
+      }
+      
+      // Get the table object
+      const table = schema[tableName];
+      
+      // Create where conditions
+      const whereConditions = [];
+      for (const [key, value] of Object.entries(filters)) {
+        if (table[key]) {
+          whereConditions.push(eq(table[key], value));
+        }
+      }
+      
+      // Prepare query
+      let query = db.select({ count: sql\`count(*)\` }).from(table);
+      
+      // Add where conditions if any
+      if (whereConditions.length > 0) {
+        if (whereConditions.length === 1) {
+          query = query.where(whereConditions[0]);
+        } else {
+          query = query.where(sql\`\${whereConditions.join(' AND ')}\`);
+        }
+      }
+      
+      // Execute query
+      const result = await query;
+      
+      return {
+        table: tableName,
+        count: Number(result[0]?.count || 0),
+        filters: Object.keys(filters).length > 0 ? filters : 'none'
+      };
+      `
     },
     enabled: true,
     parameters: {
@@ -241,27 +275,101 @@ export async function registerDatabaseFunctions() {
         },
         filters: {
           type: 'object',
-          description: 'Optional filter conditions as key-value pairs',
-          additionalProperties: true
+          description: 'Filters to apply to the count (column-value pairs)'
         }
       },
       required: ['tableName']
-    },
-    functionCode: async function(params, context) {
-      const { tableName, filters = {} } = params;
+    }
+  });
+
+  // Function to get latest records from a table
+  await UnifiedFunctionRegistry.registerFunction({
+    name: 'getLatestRecords',
+    description: 'Get the latest records from a table based on a timestamp column',
+    toolType: 'database',
+    implementation: 'LatestRecordsTool',
+    metadata: {
+      returnType: 'array',
+      accessLevel: 'User',
+      implementationCode: `
+      const { tableName, timestampColumn = 'createdAt', limit = 10 } = params;
       
       // Check if table exists in schema
       const availableTables = Object.keys(schema).filter(key => 
         typeof schema[key] === 'object' && schema[key]?.name);
       
       if (!availableTables.includes(tableName)) {
-        throw new Error(`Table '${tableName}' does not exist or is not accessible`);
+        throw new Error(\`Table '\${tableName}' does not exist or is not accessible\`);
       }
       
       // Get the table object
       const table = schema[tableName];
       
-      // Create where conditions
+      // Check if timestamp column exists
+      if (!table[timestampColumn]) {
+        throw new Error(\`Column '\${timestampColumn}' does not exist in table '\${tableName}'\`);
+      }
+      
+      // Query the latest records
+      const results = await db
+        .select()
+        .from(table)
+        .orderBy(desc(table[timestampColumn]))
+        .limit(limit);
+      
+      return results;
+      `
+    },
+    enabled: true,
+    parameters: {
+      type: 'object',
+      properties: {
+        tableName: {
+          type: 'string',
+          description: 'Name of the table to query'
+        },
+        timestampColumn: {
+          type: 'string',
+          description: 'Name of the timestamp column to sort by (default: createdAt)'
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of records to return (default: 10)'
+        }
+      },
+      required: ['tableName']
+    }
+  });
+
+  // Function to perform aggregate operations on a table
+  await UnifiedFunctionRegistry.registerFunction({
+    name: 'aggregateData',
+    description: 'Perform aggregate operations (sum, avg, min, max, count) on a table column',
+    toolType: 'database',
+    implementation: 'DataAggregationTool',
+    metadata: {
+      returnType: 'object',
+      accessLevel: 'User',
+      implementationCode: `
+      const { tableName, column, operation, filters = {} } = params;
+      
+      // Check if table exists in schema
+      const availableTables = Object.keys(schema).filter(key => 
+        typeof schema[key] === 'object' && schema[key]?.name);
+      
+      if (!availableTables.includes(tableName)) {
+        throw new Error(\`Table '\${tableName}' does not exist or is not accessible\`);
+      }
+      
+      // Get the table object
+      const table = schema[tableName];
+      
+      // Check if column exists
+      if (!table[column]) {
+        throw new Error(\`Column '\${column}' does not exist in table '\${tableName}'\`);
+      }
+      
+      // Create where conditions for filters
       const whereConditions = [];
       for (const [key, value] of Object.entries(filters)) {
         if (table[key]) {
@@ -269,33 +377,52 @@ export async function registerDatabaseFunctions() {
         }
       }
       
-      // Prepare query
-      let query = db.select({ count: count() }).from(table);
+      // Prepare aggregate operation
+      let aggregateQuery;
+      const aggregateColumn = table[column];
+      
+      switch (operation.toLowerCase()) {
+        case 'sum':
+          aggregateQuery = sql\`SUM(\${aggregateColumn})\`;
+          break;
+        case 'avg':
+          aggregateQuery = sql\`AVG(\${aggregateColumn})\`;
+          break;
+        case 'min':
+          aggregateQuery = sql\`MIN(\${aggregateColumn})\`;
+          break;
+        case 'max':
+          aggregateQuery = sql\`MAX(\${aggregateColumn})\`;
+          break;
+        case 'count':
+          aggregateQuery = sql\`COUNT(\${aggregateColumn})\`;
+          break;
+        default:
+          throw new Error(\`Unsupported operation: \${operation}\`);
+      }
+      
+      // Build and execute query
+      let query = db.select({ result: aggregateQuery }).from(table);
       
       // Add where conditions if any
       if (whereConditions.length > 0) {
         if (whereConditions.length === 1) {
           query = query.where(whereConditions[0]);
         } else {
-          query = query.where(and(...whereConditions));
+          query = query.where(sql\`\${whereConditions.join(' AND ')}\`);
         }
       }
       
-      // Execute query
       const result = await query;
-      return { count: result[0]?.count || 0 };
-    }
-  });
-  
-  // Register database schema info function
-  await UnifiedFunctionRegistry.registerFunction({
-    name: 'getDatabaseSchemaInfo',
-    description: 'Get information about the database schema including tables and their columns',
-    toolType: 'database',
-    implementation: 'DatabaseSchemaInfoTool',
-    metadata: {
-      returnType: 'object',
-      accessLevel: 'User'
+      
+      return {
+        table: tableName,
+        column,
+        operation: operation.toLowerCase(),
+        result: result[0]?.result,
+        filters: Object.keys(filters).length > 0 ? filters : 'none'
+      };
+      `
     },
     enabled: true,
     parameters: {
@@ -303,164 +430,25 @@ export async function registerDatabaseFunctions() {
       properties: {
         tableName: {
           type: 'string',
-          description: 'Optional table name to get specific table schema info'
-        }
-      }
-    },
-    functionCode: async function(params, context) {
-      const { tableName } = params;
-      
-      // Get available tables
-      const availableTables = Object.keys(schema)
-        .filter(key => typeof schema[key] === 'object' && schema[key]?.name)
-        .map(key => ({
-          name: schema[key].name,
-          columns: Object.keys(schema[key])
-            .filter(col => col !== 'name' && typeof schema[key][col] === 'object')
-            .map(col => ({
-              name: col,
-              type: schema[key][col].dataType || 'unknown'
-            }))
-        }));
-      
-      if (tableName) {
-        const tableInfo = availableTables.find(t => t.name === tableName);
-        if (!tableInfo) {
-          throw new Error(`Table '${tableName}' does not exist or is not accessible`);
-        }
-        return tableInfo;
-      }
-      
-      return { tables: availableTables };
-    }
-  });
-  
-  // Register data aggregation function
-  await UnifiedFunctionRegistry.registerFunction({
-    name: 'aggregateData',
-    description: 'Perform aggregation operations on table data (sum, avg, min, max, count)',
-    toolType: 'database',
-    implementation: 'AggregateDataTool',
-    metadata: {
-      returnType: 'object',
-      accessLevel: 'User'
-    },
-    enabled: true,
-    parameters: {
-      type: 'object',
-      properties: {
-        tableName: {
-          type: 'string',
-          description: 'Name of the table to aggregate data from'
+          description: 'Name of the table to query'
         },
-        aggregateColumn: {
+        column: {
           type: 'string',
-          description: 'Column to aggregate'
+          description: 'Column to perform the aggregate operation on'
         },
         operation: {
           type: 'string',
           enum: ['sum', 'avg', 'min', 'max', 'count'],
-          description: 'Aggregation operation to perform'
-        },
-        groupByColumn: {
-          type: 'string',
-          description: 'Optional column to group results by'
+          description: 'Aggregate operation to perform'
         },
         filters: {
           type: 'object',
-          description: 'Optional filter conditions as key-value pairs',
-          additionalProperties: true
+          description: 'Filters to apply to the query (column-value pairs)'
         }
       },
-      required: ['tableName', 'aggregateColumn', 'operation']
-    },
-    functionCode: async function(params, context) {
-      const { tableName, aggregateColumn, operation, groupByColumn, filters = {} } = params;
-      
-      // Check if table exists in schema
-      const availableTables = Object.keys(schema).filter(key => 
-        typeof schema[key] === 'object' && schema[key]?.name);
-      
-      if (!availableTables.includes(tableName)) {
-        throw new Error(`Table '${tableName}' does not exist or is not accessible`);
-      }
-      
-      // Get the table object
-      const table = schema[tableName];
-      
-      // Verify columns exist
-      if (!table[aggregateColumn]) {
-        throw new Error(`Column '${aggregateColumn}' does not exist in table '${tableName}'`);
-      }
-      
-      if (groupByColumn && !table[groupByColumn]) {
-        throw new Error(`Column '${groupByColumn}' does not exist in table '${tableName}'`);
-      }
-      
-      // Create where conditions
-      const whereConditions = [];
-      for (const [key, value] of Object.entries(filters)) {
-        if (table[key]) {
-          whereConditions.push(eq(table[key], value));
-        }
-      }
-      
-      // Create aggregate function
-      let aggregateFunc;
-      switch (operation) {
-        case 'sum':
-          aggregateFunc = sql`SUM(${table[aggregateColumn]})`;
-          break;
-        case 'avg':
-          aggregateFunc = sql`AVG(${table[aggregateColumn]})`;
-          break;
-        case 'min':
-          aggregateFunc = sql`MIN(${table[aggregateColumn]})`;
-          break;
-        case 'max':
-          aggregateFunc = sql`MAX(${table[aggregateColumn]})`;
-          break;
-        case 'count':
-          aggregateFunc = sql`COUNT(${table[aggregateColumn]})`;
-          break;
-        default:
-          throw new Error(`Unsupported operation: ${operation}`);
-      }
-      
-      // Prepare query
-      let query;
-      
-      if (groupByColumn) {
-        query = db.select({
-          groupValue: table[groupByColumn],
-          result: aggregateFunc
-        }).from(table);
-      } else {
-        query = db.select({
-          result: aggregateFunc
-        }).from(table);
-      }
-      
-      // Add where conditions if any
-      if (whereConditions.length > 0) {
-        if (whereConditions.length === 1) {
-          query = query.where(whereConditions[0]);
-        } else {
-          query = query.where(and(...whereConditions));
-        }
-      }
-      
-      // Add group by if specified
-      if (groupByColumn) {
-        query = query.groupBy(table[groupByColumn]);
-      }
-      
-      // Execute query
-      const results = await query;
-      
-      return results;
+      required: ['tableName', 'column', 'operation']
     }
   });
-  
-  console.log('Database query and analysis functions registered successfully');
+
+  console.log('Database query functions registered successfully');
 }
