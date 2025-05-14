@@ -133,7 +133,7 @@ export class FunctionRegistry {
    * @returns Function execution result
    */
   static async executeFunction(
-    name: string,
+    name: string | undefined,
     parameters: any,
     context: {
       userId: number;
@@ -141,6 +141,13 @@ export class FunctionRegistry {
     }
   ): Promise<any> {
     try {
+      // Fix for "Missing parameter 'name'" error in Telegram bot
+      // Ensure name is never undefined and log the issue
+      if (!name) {
+        console.warn(`[Function Registry] Function name is undefined, using default name`);
+        name = 'unnamed_function';
+      }
+      
       console.log(`[Function Registry] Executing function: ${name} with parameters:`, 
         typeof parameters === 'object' ? JSON.stringify(parameters) : parameters);
       
@@ -156,13 +163,25 @@ export class FunctionRegistry {
       }
       
       // Get the function definition
+      // Handle the case where name might be undefined (typescript check)
+      const functionName = name || 'unnamed_function';
       const functionDef = await db.query.agentFunctions.findFirst({
-        where: (fields, { eq }) => eq(fields.name, name)
+        where: (fields, { eq }) => eq(fields.name, functionName)
       });
       
       if (!functionDef) {
-        console.error(`[Function Registry] Function ${name} not found`);
-        throw new Error(`Function ${name} not found`);
+        console.error(`[Function Registry] Function ${functionName} not found`);
+        
+        // Special case for unnamed functions to avoid complete failure
+        if (functionName === 'unnamed_function') {
+          return {
+            error: 'Function name was missing or undefined',
+            success: false,
+            message: 'Could not execute function because name was missing'
+          };
+        }
+        
+        throw new Error(`Function ${functionName} not found`);
       }
       
       console.log(`[Function Registry] Found function definition for ${name}`);
