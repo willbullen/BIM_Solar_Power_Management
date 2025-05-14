@@ -70,9 +70,13 @@ export async function registerDatabaseFunctions() {
   await UnifiedFunctionRegistry.registerFunction({
     name: 'listAllTables',
     description: 'List all tables in the database',
-    module: 'database',
-    returnType: 'object',
-    accessLevel: 'User',
+    toolType: 'database',
+    implementation: 'ListAllTablesTool',
+    metadata: {
+      returnType: 'object',
+      accessLevel: 'User'
+    },
+    enabled: true,
     parameters: {
       type: 'object',
       properties: {
@@ -148,9 +152,13 @@ export async function registerDatabaseFunctions() {
   await UnifiedFunctionRegistry.registerFunction({
     name: 'queryTable',
     description: 'Query data from a database table with optional filters and sorting',
-    module: 'database',
-    returnType: 'array',
-    accessLevel: 'User',
+    toolType: 'database',
+    implementation: 'QueryTableTool',
+    metadata: {
+      returnType: 'array',
+      accessLevel: 'User'
+    },
+    enabled: true,
     parameters: {
       type: 'object',
       properties: {
@@ -230,12 +238,16 @@ export async function registerDatabaseFunctions() {
   });
   
   // Register count function
-  await FunctionRegistry.registerFunction({
+  await UnifiedFunctionRegistry.registerFunction({
     name: 'countRecords',
     description: 'Count records in a database table with optional filters',
-    module: 'database',
-    returnType: 'object',
-    accessLevel: 'User',
+    toolType: 'database',
+    implementation: 'CountRecordsTool',
+    metadata: {
+      returnType: 'object',
+      accessLevel: 'User'
+    },
+    enabled: true,
     parameters: {
       type: 'object',
       properties: {
@@ -292,11 +304,16 @@ export async function registerDatabaseFunctions() {
   });
   
   // Register database schema info function
-  await FunctionRegistry.registerFunction({
+  await UnifiedFunctionRegistry.registerFunction({
     name: 'getDatabaseSchemaInfo',
     description: 'Get information about the database schema including tables and their columns',
-    module: 'database',
-    returnType: 'object',
+    toolType: 'database',
+    implementation: 'DatabaseSchemaInfoTool',
+    metadata: {
+      returnType: 'object',
+      accessLevel: 'User'
+    },
+    enabled: true,
     accessLevel: 'User',
     parameters: {
       type: 'object',
