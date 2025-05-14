@@ -476,11 +476,13 @@ Try asking questions about power usage, environmental data, or request reports.`
             1000,       // Default max tokens
             agentId     // Pass the agent ID to use for processing
           );
-        } catch (generateError) {
+        } catch (error) {
+          // Cast the unknown error to an object with message property
+          const generateError = error as { message?: string };
           console.error('Error during AI response generation:', generateError);
           
           // Check for the specific function name parameter error
-          if (generateError.message && generateError.message.includes('Missing parameter \'name\'')) {
+          if (generateError?.message && generateError.message.includes('Missing parameter \'name\'')) {
             console.error('Function name parameter error detected in Telegram message processing');
             
             // Log additional debugging information

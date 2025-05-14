@@ -485,13 +485,29 @@ export class AgentService {
         }
       } else if (assistantResponse?.function_call) {
         // Legacy format with function_call
-        const functionName = assistantResponse.function_call.name;
+        // Ensure function name is always defined
+        let functionName = assistantResponse.function_call.name;
+        if (!functionName) {
+          console.warn(`Missing function name in function_call. Using fallback name.`);
+          functionName = 'unnamed_function';
+        }
+        
         let functionArgs = {};
         
         try {
-          functionArgs = JSON.parse(assistantResponse.function_call.arguments);
+          functionArgs = JSON.parse(assistantResponse.function_call.arguments || '{}');
         } catch (e) {
           console.error("Failed to parse function arguments:", e);
+          console.log("Raw arguments:", assistantResponse.function_call.arguments);
+        }
+        
+        // Special handling for listAllTables without parameters
+        if (functionName === 'listAllTables' && (
+          !functionArgs || 
+          Object.keys(functionArgs).length === 0
+        )) {
+          console.log('Setting default parameters for listAllTables function (legacy format)');
+          functionArgs = { includeSystemTables: false };
         }
         
         // Save the function call to the database
