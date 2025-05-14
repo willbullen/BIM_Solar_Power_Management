@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { AgentMcpTasksPage } from "@/pages/agent-mcp-tasks";
-import { TelegramChat } from "@/components/telegram-chat";
+// Telegram chat import removed as requested
 import { EnhancedMessage } from "@/components/enhanced-message";
 import { MessageSearch } from "@/components/message-search";
 import { AIChat } from "@/components/ai-chat";
@@ -1454,8 +1454,7 @@ export default function AgentPage() {
   useEffect(() => {
     const handleSwitchToTelegramTab = () => {
       console.log('Switching to Telegram tab from event');
-      // Set the active tab to Telegram
-      setActiveTab("telegram");
+      // Telegram tab activation removed as requested
     };
     
     // Add the event listener
@@ -1610,7 +1609,7 @@ export default function AgentPage() {
               <Bot className="h-7 w-7 text-blue-500 dark:text-blue-200" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white px-3 py-1.5 rounded-md bg-blue-50/90 dark:bg-blue-900/70 shadow-sm border border-transparent dark:border-blue-500/30">AI Agent Architect</h1>
+              <h1 className="text-2xl font-bold text-white px-3 py-1.5 rounded-md bg-slate-900 shadow-sm border border-slate-700/50">AI Agent Architect</h1>
               <p className="text-sm text-slate-600 dark:text-slate-200 mt-1 ml-1">
                 Your intelligent assistant for energy monitoring and optimization
               </p>
@@ -1647,13 +1646,7 @@ export default function AgentPage() {
                       <Cpu className="h-3.5 w-3.5" />
                       <span className="font-medium">MCP</span>
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="telegram" 
-                      className="flex items-center justify-center gap-1.5 text-xs py-1 px-3 rounded-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-300"
-                    >
-                      <MessageCircle className="h-3.5 w-3.5" />
-                      <span className="font-medium">Telegram</span>
-                    </TabsTrigger>
+                    {/* Telegram tab removed as requested */}
                     <TabsTrigger 
                       value="ai-chat" 
                       className="flex items-center justify-center gap-1.5 text-xs py-1 px-3 rounded-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-300"
@@ -1728,14 +1721,7 @@ export default function AgentPage() {
                   </div>
                 </TabsContent>
                 
-                <TabsContent 
-                  value="telegram" 
-                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
-                >
-                  <div className="p-3">
-                    <TelegramChat />
-                  </div>
-                </TabsContent>
+                {/* Telegram tab content removed as requested */}
                 
                 <TabsContent 
                   value="ai-chat" 
