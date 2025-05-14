@@ -530,7 +530,8 @@ export class AgentService {
         
         // Execute the function
         try {
-          const functionResult = await FunctionRegistry.executeFunction(
+          console.log(`Executing with UnifiedFunctionRegistry: ${functionName}`);
+          const functionResult = await UnifiedFunctionRegistry.executeFunction(
             functionName,
             functionArgs,
             { userId, userRole }
@@ -741,8 +742,8 @@ export class AgentService {
   /**
    * Register a new function
    */
-  async registerFunction(functionData: Omit<schema.InsertAgentFunction, "id">): Promise<schema.AgentFunction> {
-    return await FunctionRegistry.registerFunction(functionData);
+  async registerFunction(functionData: Omit<schema.InsertTool, "id">): Promise<schema.Tool> {
+    return await UnifiedFunctionRegistry.registerFunction(functionData);
   }
 
   /**

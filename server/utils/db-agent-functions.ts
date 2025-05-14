@@ -6,7 +6,7 @@
  */
 
 import { db } from '../db';
-import { FunctionRegistry } from './function-registry';
+import { UnifiedFunctionRegistry } from './unified-function-registry';
 import { count, desc, eq, sql, and } from 'drizzle-orm';
 import * as schema from '@shared/schema';
 
