@@ -12,7 +12,7 @@ import { db } from '../db';
 import { SQL, sql, eq, and, desc, count, asc } from 'drizzle-orm';
 import * as schema from '@shared/schema';
 import { SqlExecutor } from '../sql-executor';
-import { FunctionRegistry } from './function-registry';
+import { UnifiedFunctionRegistry } from './unified-function-registry';
 
 /**
  * Core Database Utilities
@@ -393,7 +393,7 @@ export class DbAgentFunctions {
    */
   static async registerDatabaseFunctions() {
     // Register database query functions
-    await FunctionRegistry.registerFunction({
+    await UnifiedFunctionRegistry.registerFunction({
       name: 'queryTable',
       description: 'Query data from a database table with optional filters and sorting',
       module: 'database',
