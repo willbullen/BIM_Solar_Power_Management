@@ -1605,12 +1605,12 @@ export default function AgentPage() {
           
           {/* Title Section with Enhanced Dark Mode Styling */}
           <div className="flex items-center gap-3 mb-6">
-            <div className="h-14 w-14 rounded-full bg-blue-900/20 dark:bg-blue-900/30 flex items-center justify-center ring-1 ring-blue-500/20 dark:ring-blue-800/40">
-              <Bot className="h-7 w-7 text-blue-500 dark:text-blue-400" />
+            <div className="h-14 w-14 rounded-full bg-blue-900/30 dark:bg-blue-700/50 flex items-center justify-center ring-1 ring-blue-500/30 dark:ring-blue-500/60 shadow-lg shadow-blue-900/10">
+              <Bot className="h-7 w-7 text-blue-400 dark:text-blue-300" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">AI Agent Architect</h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 bg-gradient-to-r from-transparent to-slate-900/10 dark:from-transparent dark:to-blue-900/20 p-1 rounded">AI Agent Architect</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-300">
                 Your intelligent assistant for energy monitoring and optimization
               </p>
             </div>
