@@ -69,27 +69,44 @@ export class TelegramService {
       // If no agent ID provided, try to find the Main Assistant Agent
       if (!agentId) {
         try {
-          // First try to find the Main Assistant Agent
-          const mainAssistantAgent = await db.select()
+          // First try to find the Main Assistant Agent using type-safe Drizzle queries
+          const mainAssistantAgent = await db.select({
+            id: schema.langchainAgents.id,
+            name: schema.langchainAgents.name,
+            description: schema.langchainAgents.description
+          })
             .from(schema.langchainAgents)
-            .where(sql`name = 'Main Assistant Agent' AND enabled = true`)
+            .where(and(
+              eq(schema.langchainAgents.name, 'Main Assistant Agent'),
+              eq(schema.langchainAgents.enabled, true)
+            ))
             .limit(1);
             
           if (mainAssistantAgent.length > 0) {
             agentId = mainAssistantAgent[0].id;
-            console.log(`Using Main Assistant Agent for test message: ID ${agentId}`);
+            console.log(`Using Main Assistant Agent for Telegram: ID ${agentId}, Name: ${mainAssistantAgent[0].name}`);
             
             // Check if this agent has associated tools
-            const agentTools = await db.select()
+            const agentTools = await db.select({
+              toolId: schema.langchainAgentTools.toolId,
+              priority: schema.langchainAgentTools.priority
+            })
               .from(schema.langchainAgentTools)
               .where(eq(schema.langchainAgentTools.agentId, agentId));
               
             console.log(`Found ${agentTools.length} tool associations for agent ID ${agentId}`);
+            
+            // Log tool IDs for better debugging
+            if (agentTools.length > 0) {
+              const toolIds = agentTools.map(t => t.toolId);
+              console.log(`Tool IDs assigned to agent: ${toolIds.join(', ')}`);
+            }
           } else {
-            console.warn('Main Assistant Agent not found for test message, using default agent');
+            console.warn('Main Assistant Agent not found for Telegram message, falling back to default agent');
           }
         } catch (error) {
           console.error('Error finding Main Assistant Agent:', error);
+          // Continue with default agent
         }
       }
       

@@ -606,10 +606,20 @@ export class AgentService {
           
           // Get the actual tools
           const toolIds = toolAssociations.map(assoc => assoc.toolId);
+          console.log(`Fetching tools with IDs: ${toolIds.join(', ')}`);
+          
+          // Check if we have any tool IDs
+          if (toolIds.length === 0) {
+            console.log(`No tool associations found for agent ID: ${agentId}`);
+            return functions; // Return standard functions
+          }
+          
+          // Use the updated inArray syntax that accepts string array
           const langchainTools = await db
             .select()
             .from(schema.langchainTools)
             .where(and(
+              // Use type-safe SQL in operator for IDs
               inArray(schema.langchainTools.id, toolIds),
               eq(schema.langchainTools.enabled, true)
             ));
