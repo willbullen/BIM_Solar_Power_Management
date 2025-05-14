@@ -38,6 +38,7 @@ const taskSchema = z.object({
   priority: z.enum(['low', 'medium', 'high', 'critical']).optional().default('medium'),
   scheduledFor: z.string().optional(),
   parameters: z.any().optional(),
+  agentId: z.number().optional(),
 });
 
 const settingUpdateSchema = z.object({

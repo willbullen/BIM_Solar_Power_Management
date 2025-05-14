@@ -749,9 +749,33 @@ export class AgentService {
   /**
    * Create a new task for the agent to execute
    */
-  async createTask(taskData: Omit<schema.InsertAgentTask, 'createdAt' | 'updatedAt'>): Promise<schema.AgentTask> {
+  async createTask(taskData: any): Promise<schema.AgentTask> {
+    // Transform old schema to new schema if necessary
+    let insertData: Omit<schema.InsertAgentTask, 'createdAt' | 'updatedAt'>;
+    
+    // Check if we're using old schema format (with title, description fields)
+    if (taskData.title && !taskData.task) {
+      insertData = {
+        userId: taskData.createdBy,
+        agentId: taskData.agentId || null,
+        task: taskData.title,
+        status: taskData.status || 'pending',
+        data: {
+          description: taskData.description,
+          type: taskData.type,
+          priority: taskData.priority || 'medium',
+          parameters: taskData.parameters || {},
+          scheduledFor: taskData.scheduledFor ? new Date(taskData.scheduledFor).toISOString() : null
+        },
+        result: null
+      };
+    } else {
+      // Already in new format
+      insertData = taskData;
+    }
+    
     const [task] = await db.insert(schema.agentTasks)
-      .values(taskData)
+      .values(insertData)
       .returning();
     
     return task;
