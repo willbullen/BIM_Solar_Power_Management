@@ -469,6 +469,8 @@ Try asking questions about power usage, environmental data, or request reports.`
       }
       
       try {
+        console.log(`Generating AI response for Telegram - Conversation: ${conversationId}, User: ${user[0].userId}, Agent: ${agentId || 'default'}`);
+        
         // Generate AI response using the selected Langchain agent
         const aiResponse = await this.agentService.generateResponse(
           conversationId,
@@ -480,10 +482,13 @@ Try asking questions about power usage, environmental data, or request reports.`
         
         // Verify AI response
         if (!aiResponse) {
-          console.error('No AI response generated');
+          console.error('No AI response generated for Telegram message');
           await this.bot?.sendMessage(chatId, "I'm sorry, but I encountered an error processing your message. Please try again later.");
           return;
         }
+        
+        console.log(`Received AI response for Telegram: "${aiResponse.content?.substring(0, 100)}..."`);
+        
         
         // Store outbound message
         await db.insert(telegramMessages)
