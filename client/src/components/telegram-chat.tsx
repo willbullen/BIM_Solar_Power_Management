@@ -472,7 +472,8 @@ export function TelegramChat() {
               </div>
             ) : messages && messages.length > 0 ? (
               <div className="space-y-4">
-                {messages.map((message) => (
+                {/* Reverse the array to display oldest first */}
+                {[...messages].reverse().map((message) => (
                   <div 
                     key={message.id}
                     className={`flex ${message.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
