@@ -201,8 +201,12 @@ export class AgentService {
       content: msg.content,
     }));
 
-    // Get available functions based on user role
-    const availableFunctions = await this.getAvailableFunctions(userRole);
+    // Get available functions based on user role and agent ID if provided
+    const availableFunctions = await this.getAvailableFunctions(userRole, agentId);
+    
+    // Log the available functions for debugging
+    console.log(`Available functions for user ${userId} with role ${userRole}:`, 
+      availableFunctions.map(f => f.name).join(', '));
     
     // Create function definitions for OpenAI in the expected format
     const functions = availableFunctions.map(func => ({
@@ -261,16 +265,55 @@ export class AgentService {
       } else {
         // Try to find the Main Assistant Agent to use by default
         try {
-          const mainAssistantAgent = await db.select()
-            .from(sql`"langchain_agents"`)
-            .where(sql`"name" = 'Main Assistant Agent' AND "enabled" = true`)
-            .limit(1);
+          // Cast the result to the correct type to avoid TypeScript errors
+          const mainAssistantAgent = await db.select({
+            id: schema.langchainAgents.id,
+            name: schema.langchainAgents.name,
+            modelName: schema.langchainAgents.modelName,
+            temperature: schema.langchainAgents.temperature,
+            maxTokens: schema.langchainAgents.maxTokens,
+            systemPrompt: schema.langchainAgents.systemPrompt
+          })
+          .from(schema.langchainAgents)
+          .where(and(
+            eq(schema.langchainAgents.name, 'Main Assistant Agent'), 
+            eq(schema.langchainAgents.enabled, true)
+          ))
+          .limit(1);
           
           if (mainAssistantAgent.length > 0) {
             console.log(`Using Langchain Main Assistant Agent by default: ${mainAssistantAgent[0].id}`);
-            modelToUse = mainAssistantAgent[0].modelName || modelToUse;
-            temperature = mainAssistantAgent[0].temperature || temperature;
-            tokensToUse = mainAssistantAgent[0].maxTokens || tokensToUse;
+            
+            // Get the first (and should be only) agent
+            const agent = mainAssistantAgent[0];
+            
+            // Get the agent ID to pass to getAvailableFunctions
+            const mainAgentId = agent.id;
+            
+            // Set model parameters from the agent
+            modelToUse = agent.modelName || modelToUse;
+            temperature = agent.temperature || temperature;
+            tokensToUse = agent.maxTokens || tokensToUse;
+            
+            // Use systemPrompt if available
+            if (agent.systemPrompt) {
+              systemPromptOverride = agent.systemPrompt;
+            }
+            
+            // Get tools specifically for this agent
+            if (mainAgentId) {
+              console.log(`Fetching tools for Main Assistant Agent ID ${mainAgentId}`);
+              const agentTools = await this.getAvailableFunctions(userRole, mainAgentId);
+              
+              // Update the functions array with agent-specific tools
+              functions = agentTools.map(func => ({
+                name: func.name,
+                description: func.description,
+                parameters: func.parameters as any
+              }));
+            }
+          } else {
+            console.log('Main Assistant Agent not found, using default model settings');
           }
         } catch (agentError) {
           console.error('Error finding Main Assistant Agent:', agentError);
@@ -507,7 +550,7 @@ export class AgentService {
   /**
    * Get a list of available agent functions
    */
-  async getAvailableFunctions(userRole: string = 'user'): Promise<schema.AgentFunction[]> {
+  async getAvailableFunctions(userRole: string = 'user', agentId?: number): Promise<schema.AgentFunction[]> {
     let accessLevels: string[] = ['public'];
     
     // Add role-specific levels based on user role
@@ -519,9 +562,54 @@ export class AgentService {
       accessLevels.push('user'); // Users can access user functions
     }
     
+    // Start with standard functions based on user role
     const functions = await db.query.agentFunctions.findMany({
       where: (fields, { inArray }) => inArray(fields.accessLevel, accessLevels)
     });
+
+    // If an agent ID is provided, add tools associated with that agent
+    if (agentId) {
+      console.log(`Getting LangChain tools for agent ID: ${agentId}`);
+      try {
+        // Get tool associations for this agent
+        const toolAssociations = await db
+          .select()
+          .from(schema.langchainAgentTools)
+          .where(eq(schema.langchainAgentTools.agentId, agentId));
+        
+        if (toolAssociations.length > 0) {
+          console.log(`Found ${toolAssociations.length} tool associations for agent ID: ${agentId}`);
+          
+          // Get the actual tools
+          const toolIds = toolAssociations.map(assoc => assoc.toolId);
+          const langchainTools = await db
+            .select()
+            .from(schema.langchainTools)
+            .where(sql`id IN (${toolIds.join(',')}) AND enabled = true`);
+          
+          console.log(`Found ${langchainTools.length} enabled tools for agent ID: ${agentId}`);
+          
+          // Convert LangChain tools to agent functions format
+          const langchainFunctions = langchainTools.map(tool => ({
+            id: tool.id,
+            name: tool.name,
+            description: tool.description || "",
+            module: "langchain",
+            parameters: tool.parameters || {},
+            returnType: "json",
+            functionCode: tool.implementation || "",
+            accessLevel: "public",
+            tags: null
+          }));
+          
+          // Add LangChain tools to available functions
+          functions.push(...langchainFunctions);
+          console.log(`Total available functions after adding LangChain tools: ${functions.length}`);
+        }
+      } catch (error) {
+        console.error(`Error getting LangChain tools for agent ID ${agentId}:`, error);
+      }
+    }
 
     return functions;
   }
