@@ -65,12 +65,16 @@ export async function registerSqlFunctions() {
   });
   
   // Register a function to get database schema information
-  await FunctionRegistry.registerFunction({
+  await UnifiedFunctionRegistry.registerFunction({
     name: 'getDatabaseInfo',
     description: 'Get information about database tables and columns',
-    module: 'database',
-    returnType: 'array',
-    accessLevel: 'User',
+    toolType: 'database',
+    implementation: 'DatabaseInfoTool',
+    metadata: {
+      returnType: 'array',
+      accessLevel: 'User'
+    },
+    enabled: true,
     parameters: {
       type: 'object',
       properties: {
@@ -110,12 +114,16 @@ export async function registerSqlFunctions() {
   });
   
   // Register a function to analyze table data
-  await FunctionRegistry.registerFunction({
+  await UnifiedFunctionRegistry.registerFunction({
     name: 'analyzeTableData',
     description: 'Analyze table data with common statistical queries',
-    module: 'database',
-    returnType: 'object',
-    accessLevel: 'User',
+    toolType: 'database',
+    implementation: 'TableAnalysisTool',
+    metadata: {
+      returnType: 'object',
+      accessLevel: 'User'
+    },
+    enabled: true,
     parameters: {
       type: 'object',
       properties: {

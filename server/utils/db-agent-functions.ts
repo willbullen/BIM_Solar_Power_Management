@@ -18,9 +18,13 @@ export async function registerDatabaseFunctions() {
   await UnifiedFunctionRegistry.registerFunction({
     name: 'ReadFromDB',
     description: 'Execute database queries to retrieve information, including listing tables',
-    module: 'database',
-    returnType: 'object',
-    accessLevel: 'User',
+    toolType: 'database',
+    implementation: 'DatabaseReaderTool',
+    metadata: {
+      returnType: 'object',
+      accessLevel: 'User'
+    },
+    enabled: true,
     parameters: {
       type: 'object',
       properties: {
@@ -86,7 +90,7 @@ export async function registerDatabaseFunctions() {
         }
       }
     },
-    functionCode: `
+    implementation: `
       try {
         // Check if the input is a shortcut command like "list tables"
         if (typeof params === 'string' && (params.toLowerCase() === 'list tables' || params.toLowerCase() === 'show tables')) {
