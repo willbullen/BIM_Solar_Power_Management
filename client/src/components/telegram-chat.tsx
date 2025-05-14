@@ -13,6 +13,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Tabs,
   TabsContent,
   TabsList,
@@ -29,7 +36,8 @@ import {
   QrCode,
   Copy,
   ArrowRight,
-  Zap
+  Zap,
+  BrainCircuit
 } from "lucide-react";
 
 // Message types
@@ -88,18 +96,28 @@ export function TelegramChat() {
   const [showVerificationDialog, setShowVerificationDialog] = useState(false);
   const [verificationDetails, setVerificationDetails] = useState<TelegramVerificationResponse | null>(null);
   const [mainAssistantAgent, setMainAssistantAgent] = useState<LangchainAgent | null>(null);
+  const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null);
+  const [availableAgents, setAvailableAgents] = useState<LangchainAgent[]>([]);
 
-  // Fetch Langchain agents to get the Main Assistant Agent
+  // Fetch Langchain agents to get the Main Assistant Agent and other available agents
   const { data: langchainAgents, isLoading: loadingAgents } = useQuery<LangchainAgent[]>({
     queryKey: ['/api/langchain/agents'],
     retry: false,
     onSuccess: (data) => {
       if (data) {
+        // Store all available agents for the dropdown
+        setAvailableAgents(data.filter(agent => agent.enabled));
+        
         // Find the Main Assistant Agent
         const mainAgent = data.find(agent => agent.name === 'Main Assistant Agent' && agent.enabled);
         if (mainAgent) {
           setMainAssistantAgent(mainAgent);
+          // Set the Main Assistant Agent as the default selected agent
+          setSelectedAgentId(mainAgent.id);
           console.log('Found Main Assistant Agent:', mainAgent);
+        } else if (data.length > 0 && data[0].enabled) {
+          // If no Main Assistant Agent is found, select the first available agent
+          setSelectedAgentId(data[0].id);
         }
       }
     },
