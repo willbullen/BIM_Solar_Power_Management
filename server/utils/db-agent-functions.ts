@@ -31,27 +31,64 @@ export async function registerDatabaseFunctions() {
       }
     },
     functionCode: `
-      const { includeSystemTables = false } = params;
-      
-      // Get available tables from the schema
-      const availableTables = Object.keys(schema)
-        .filter(key => typeof schema[key] === 'object' && schema[key]?.name)
-        .map(key => schema[key].name);
-      
-      // If includeSystemTables is false, filter out system tables
-      const filteredTables = includeSystemTables 
-        ? availableTables 
-        : availableTables.filter(name => 
+      try {
+        // Check if the input is a shortcut command like "list tables"
+        if (typeof params === 'string' && (params.toLowerCase() === 'list tables' || params.toLowerCase() === 'show tables')) {
+          // Shortcut command detected
+          const tableNames = [];
+          
+          // Get table names from schema
+          for (const key in schema) {
+            if (typeof schema[key] === 'object' && schema[key]?.name) {
+              tableNames.push(schema[key].name);
+            }
+          }
+          
+          // Filter system tables
+          const userTables = tableNames.filter(name => 
             !name.startsWith('pg_') && 
             !name.startsWith('information_schema') &&
             !name.startsWith('sql_')
           );
-      
-      return { 
-        tables: filteredTables,
-        count: filteredTables.length,
-        message: \`Found \${filteredTables.length} tables in the database\`
-      };
+          
+          return { 
+            tables: userTables,
+            count: userTables.length,
+            message: \`Found \${userTables.length} tables in the database\`
+          };
+        }
+        
+        // Regular execution path
+        const { includeSystemTables = false } = params || {};
+        
+        // Get available tables from the schema
+        const availableTables = Object.keys(schema)
+          .filter(key => typeof schema[key] === 'object' && schema[key]?.name)
+          .map(key => schema[key].name);
+        
+        // If includeSystemTables is false, filter out system tables
+        const filteredTables = includeSystemTables 
+          ? availableTables 
+          : availableTables.filter(name => 
+              !name.startsWith('pg_') && 
+              !name.startsWith('information_schema') &&
+              !name.startsWith('sql_')
+            );
+        
+        return { 
+          tables: filteredTables,
+          count: filteredTables.length,
+          message: \`Found \${filteredTables.length} tables in the database\`
+        };
+      } catch (error) {
+        console.error('Error in listAllTables function:', error);
+        return {
+          tables: [],
+          count: 0,
+          error: error.message,
+          message: 'Error listing tables. Please check logs for details.'
+        };
+      }
     `
   });
   

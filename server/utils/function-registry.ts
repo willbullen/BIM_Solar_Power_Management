@@ -141,32 +141,58 @@ export class FunctionRegistry {
     }
   ): Promise<any> {
     try {
+      console.log(`[Function Registry] Executing function: ${name} with parameters:`, 
+        typeof parameters === 'object' ? JSON.stringify(parameters) : parameters);
+      
+      // Handle special case for listAllTables coming from Telegram or other text interfaces
+      if (name === 'listAllTables' && (
+          typeof parameters === 'string' || 
+          parameters === null || 
+          parameters === undefined ||
+          (typeof parameters === 'object' && Object.keys(parameters).length === 0)
+      )) {
+        console.log('[Function Registry] Converting string/empty parameter to object for listAllTables');
+        parameters = { includeSystemTables: false };
+      }
+      
       // Get the function definition
       const functionDef = await db.query.agentFunctions.findFirst({
         where: (fields, { eq }) => eq(fields.name, name)
       });
       
       if (!functionDef) {
+        console.error(`[Function Registry] Function ${name} not found`);
         throw new Error(`Function ${name} not found`);
       }
       
+      console.log(`[Function Registry] Found function definition for ${name}`);
+      
       // Check if user has permission to execute this function
       if (!FunctionRegistry.hasExecutePermission(functionDef, context.userRole)) {
+        console.error(`[Function Registry] Insufficient permissions for user ${context.userId} with role ${context.userRole} to execute function ${name}`);
         throw new Error(`Insufficient permissions to execute function ${name}`);
       }
       
       // Validate parameters against function schema
       const validParams = FunctionRegistry.validateParameters(parameters, functionDef.parameters);
+      console.log(`[Function Registry] Parameters validated successfully for ${name}`);
       
       // Create a secure execution sandbox that supports async functions
       const secureExecute = async (funcCode: string, params: any, dbUtils: any) => {
+        console.log(`[Function Registry] Creating execution sandbox for ${name}`);
         // Wrap the function code in an async function to support await
         const asyncWrapper = `
-          return (async function() { 
-            ${funcCode}
-          })();
+          try {
+            return (async function() { 
+              ${funcCode}
+            })();
+          } catch (error) {
+            console.error('[Function Execution Error]', error);
+            return { error: error.message, success: false };
+          }
         `;
         const func = new Function('params', 'dbUtils', 'context', asyncWrapper);
+        console.log(`[Function Registry] Executing ${name} in sandbox`);
         return await func(params, dbUtils, context);
       };
       
