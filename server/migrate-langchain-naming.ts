@@ -76,7 +76,13 @@ async function checkExistingTables(): Promise<string[]> {
     )
   `);
   
-  return result.rows.map(row => row.table_name);
+  const existingTables: string[] = [];
+  for (const row of result.rows) {
+    if (row && typeof row === 'object' && 'table_name' in row) {
+      existingTables.push(String(row.table_name));
+    }
+  }
+  return existingTables;
 }
 
 /**

@@ -5,6 +5,7 @@ import { migrate as migrateTelegram } from "./migrate-telegram";
 import { migrate as migrateLangChain } from "./migrate-langchain";
 import { setupUnifiedFunctionSystem, runMigration, migrateAgentFunctions } from "./migrate-function-system";
 import { migrate as removeAgentFunctionsTable } from "./remove-agent-functions-table";
+import { migrateLangchainNaming } from "./migrate-langchain-naming";
 import cors from 'cors';
 
 const app = express();
@@ -89,6 +90,16 @@ app.use((req, res, next) => {
       } catch (removalError) {
         console.error('Error during agent_functions table removal:', removalError);
         // Continue with server startup even if table removal fails
+      }
+
+      // Run the migration to rename agent tables to use langchain prefix
+      try {
+        console.log('Starting migration to rename agent tables to langchain prefix...');
+        await migrateLangchainNaming(true);
+        console.log('Table renaming migration completed successfully');
+      } catch (renamingError) {
+        console.error('Error during table renaming migration:', renamingError);
+        // Continue with server startup even if renaming fails
       }
     } catch (migrationError) {
       console.error('Error during complete function migration:', migrationError);

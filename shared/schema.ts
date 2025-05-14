@@ -670,7 +670,7 @@ export type InsertTelegramUser = z.infer<typeof insertTelegramUserSchema>;
 export type TelegramUser = typeof telegramUsers.$inferSelect;
 
 // Telegram message history
-export const telegramMessages = pgTable("telegram_messages", {
+export const telegramMessages = pgTable("langchain_telegram_messages", {
   id: serial("id").primaryKey(),
   telegramUserId: integer("telegram_user_id").notNull().references(() => telegramUsers.id),
   direction: text("direction").notNull(), // "inbound" or "outbound"
@@ -700,7 +700,7 @@ export type InsertTelegramMessage = z.infer<typeof insertTelegramMessageSchema>;
 export type TelegramMessage = typeof telegramMessages.$inferSelect;
 
 // Telegram settings for the system
-export const telegramSettings = pgTable("telegram_settings", {
+export const telegramSettings = pgTable("langchain_telegram_settings", {
   id: serial("id").primaryKey(),
   botToken: text("bot_token").notNull(),
   botUsername: text("bot_username").notNull(),
