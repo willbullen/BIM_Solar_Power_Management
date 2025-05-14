@@ -90,10 +90,10 @@ export function registerTelegramRoutes(app: Express) {
       
       const validatedData = updateSchema.parse(req.body);
       
-      // Update updatedBy field
+      // Create update data
       const updateData = {
-        ...validatedData,
-        updatedBy: req.session.userId
+        ...validatedData
+        // updatedBy field removed as it doesn't exist in the schema
       };
       
       await telegramService.updateSettings(updateData);
