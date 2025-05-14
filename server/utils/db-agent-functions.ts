@@ -22,20 +22,8 @@ export async function registerDatabaseFunctions() {
     implementation: 'DatabaseReaderTool',
     metadata: {
       returnType: 'object',
-      accessLevel: 'User'
-    },
-    enabled: true,
-    parameters: {
-      type: 'object',
-      properties: {
-        input: {
-          type: 'string',
-          description: "Text command or SQL query. Use 'list tables' to show all tables."
-        }
-      },
-      required: ['input']
-    },
-    functionCode: `
+      accessLevel: 'User',
+      implementationCode: `
       try {
         // Check for special commands like list tables
         if (typeof params.input === 'string') {
@@ -78,19 +66,8 @@ export async function registerDatabaseFunctions() {
     implementation: 'ListAllTablesTool',
     metadata: {
       returnType: 'object',
-      accessLevel: 'User'
-    },
-    enabled: true,
-    parameters: {
-      type: 'object',
-      properties: {
-        includeSystemTables: {
-          type: 'boolean',
-          description: 'Whether to include system tables (default: false)'
-        }
-      }
-    },
-    implementation: `
+      accessLevel: 'User',
+      implementationCode: `
       try {
         // Check if the input is a shortcut command like "list tables"
         if (typeof params === 'string' && (params.toLowerCase() === 'list tables' || params.toLowerCase() === 'show tables')) {
@@ -191,7 +168,10 @@ export async function registerDatabaseFunctions() {
       },
       required: ['tableName']
     },
-    functionCode: async function(params, context) {
+    metadata: {
+      returnType: 'array',
+      accessLevel: 'User',
+      implementationCode: `
       const { tableName, filters = {}, limit = 100, orderBy, orderDirection = 'desc' } = params;
       
       // Check if table exists in schema
