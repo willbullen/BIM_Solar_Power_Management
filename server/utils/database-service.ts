@@ -389,27 +389,6 @@ export class DbQueryTools {
  */
 export class DbAgentFunctions {
   /**
-   * Get a list of all database tables
-   * @returns Array of table names
-   */
-  static async listAllTables(): Promise<string[]> {
-    try {
-      const query = `
-        SELECT tablename 
-        FROM pg_catalog.pg_tables 
-        WHERE schemaname = 'public'
-        ORDER BY tablename;
-      `;
-      
-      const result = await DbCore.executeRaw<{tablename: string}>(query);
-      return result.map(row => row.tablename);
-    } catch (error) {
-      console.error("Error listing database tables:", error);
-      throw error;
-    }
-  }
-
-  /**
    * Register all database-related functions for the AI agent
    */
   static async registerDatabaseFunctions() {
@@ -707,40 +686,10 @@ export class DbAgentFunctions {
         required: ['query']
       }
     });
-    
-    // Register function to list all database tables
-    await FunctionRegistry.registerFunction({
-      name: 'listAllTables',
-      description: 'Get a list of all tables in the database',
-      module: 'database',
-      returnType: 'object',
-      accessLevel: 'user', // Readable by users with basic access
-      parameters: {
-        type: 'object',
-        properties: {},
-        required: []
-      },
-      functionCode: `
-        try {
-          const tables = await DatabaseService.AgentFunctions.listAllTables();
-          return {
-            success: true,
-            tables: tables,
-            count: tables.length
-          };
-        } catch (error) {
-          return {
-            success: false,
-            error: error.message
-          };
-        }
-      `
-    });
 
     console.log('Database query and analysis functions registered successfully');
     console.log('SQL execution functions registered successfully');
   }
-
 }
 
 // Export the combined service
