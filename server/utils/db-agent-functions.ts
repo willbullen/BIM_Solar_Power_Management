@@ -14,6 +14,47 @@ import * as schema from '@shared/schema';
  * Register all database-related functions for the AI agent
  */
 export async function registerDatabaseFunctions() {
+  // Register listAllTables function
+  await FunctionRegistry.registerFunction({
+    name: 'listAllTables',
+    description: 'List all tables in the database',
+    module: 'database',
+    returnType: 'object',
+    accessLevel: 'User',
+    parameters: {
+      type: 'object',
+      properties: {
+        includeSystemTables: {
+          type: 'boolean',
+          description: 'Whether to include system tables (default: false)'
+        }
+      }
+    },
+    functionCode: `
+      const { includeSystemTables = false } = params;
+      
+      // Get available tables from the schema
+      const availableTables = Object.keys(schema)
+        .filter(key => typeof schema[key] === 'object' && schema[key]?.name)
+        .map(key => schema[key].name);
+      
+      // If includeSystemTables is false, filter out system tables
+      const filteredTables = includeSystemTables 
+        ? availableTables 
+        : availableTables.filter(name => 
+            !name.startsWith('pg_') && 
+            !name.startsWith('information_schema') &&
+            !name.startsWith('sql_')
+          );
+      
+      return { 
+        tables: filteredTables,
+        count: filteredTables.length,
+        message: \`Found \${filteredTables.length} tables in the database\`
+      };
+    `
+  });
+  
   // Register database query functions
   await FunctionRegistry.registerFunction({
     name: 'queryTable',
