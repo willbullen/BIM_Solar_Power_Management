@@ -384,7 +384,13 @@ export function registerTelegramRoutes(app: Express) {
               console.log('Main Assistant Agent not found, using default or any available agent');
             }
           } catch (error) {
-            console.error('Error looking up Main Assistant Agent:', error);
+            console.error('Error looking up Main Assistant Agent in test-message:', error);
+            
+            // Log more detailed information about the error
+            if (error instanceof Error) {
+              console.error(`Error details: ${error.message}`);
+              console.error(`Error stack: ${error.stack}`);
+            }
           }
         }
         

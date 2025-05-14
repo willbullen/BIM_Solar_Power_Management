@@ -69,11 +69,14 @@ export class TelegramService {
       // If no agent ID provided, try to find the Main Assistant Agent
       if (!agentId) {
         try {
+          console.log("Finding Main Assistant Agent for test message in sendMessageWithAgent");
+          
           // First try to find the Main Assistant Agent using type-safe Drizzle queries
           const mainAssistantAgent = await db.select({
             id: schema.langchainAgents.id,
             name: schema.langchainAgents.name,
-            description: schema.langchainAgents.description
+            description: schema.langchainAgents.description,
+            modelName: schema.langchainAgents.modelName
           })
             .from(schema.langchainAgents)
             .where(and(
@@ -105,7 +108,14 @@ export class TelegramService {
             console.warn('Main Assistant Agent not found for Telegram message, falling back to default agent');
           }
         } catch (error) {
-          console.error('Error finding Main Assistant Agent:', error);
+          console.error('Error finding Main Assistant Agent in sendMessageWithAgent:', error);
+          
+          // Log more detailed information about the error
+          if (error instanceof Error) {
+            console.error(`Error details: ${error.message}`);
+            console.error(`Error stack: ${error.stack}`);
+          }
+          
           // Continue with default agent
         }
       }
@@ -414,6 +424,8 @@ Try asking questions about power usage, environmental data, or request reports.`
       // Find the Main Assistant Agent by name - this is more reliable than hardcoding IDs
       let agentId: number | undefined;
       try {
+        console.log("Finding Main Assistant Agent for Telegram message processing");
+        
         // First try to find the Main Assistant Agent using proper DB query technique
         const mainAssistantAgent = await db.select({
           id: schema.langchainAgents.id,
@@ -482,7 +494,14 @@ Try asking questions about power usage, environmental data, or request reports.`
           }
         }
       } catch (error) {
-        console.error("Error finding agent for Telegram:", error);
+        console.error("Error finding agent for Telegram incoming message:", error);
+        
+        // Log more detailed information about the error
+        if (error instanceof Error) {
+          console.error(`Error details: ${error.message}`);
+          console.error(`Error stack: ${error.stack}`);
+        }
+        
         agentId = undefined; // Will use default agent in agent-service.ts
       }
       
