@@ -195,7 +195,9 @@ export class AgentService {
       throw new Error(`Conversation with ID ${conversationId} not found`);
     }
 
-    // Prepare the messages for the OpenAI API
+    // Prepare the messages for the OpenAI API with enhanced debugging
+    console.log(`Preparing ${messages.length} messages for OpenAI API call`);
+    
     const openaiMessages = messages.map(msg => {
       // Basic message structure
       const openaiMsg: any = {
@@ -206,8 +208,12 @@ export class AgentService {
       // For 'function' role messages, we MUST include the name parameter
       // This fixes the "Missing parameter 'name': messages with role 'function' must have a 'name'" error
       if (msg.role === 'function' && msg.name) {
+        console.log(`Adding name parameter to function message: ${msg.name}`);
         openaiMsg.name = msg.name;
       }
+      
+      // Log the message structure
+      console.log(`Prepared message - Role: ${msg.role}, Content length: ${msg.content?.length || 0}, Has name: ${!!openaiMsg.name}`);
       
       return openaiMsg;
     });
