@@ -399,13 +399,29 @@ export class AgentService {
           throw new Error(`Unsupported tool type: ${toolCall.type}`);
         }
         
-        const functionName = toolCall.function.name;
+        // Ensure function name is always defined - important for Telegram compatibility
+        let functionName = toolCall.function.name;
+        if (!functionName) {
+          console.warn(`Missing function name in toolCall. Using fallback name. Tool call:`, JSON.stringify(toolCall));
+          functionName = 'unnamed_function';
+        }
+        
         let functionArgs = {};
         
         try {
-          functionArgs = JSON.parse(toolCall.function.arguments);
+          functionArgs = JSON.parse(toolCall.function.arguments || '{}');
         } catch (e) {
           console.error("Failed to parse function arguments:", e);
+          console.log("Raw arguments:", toolCall.function.arguments);
+        }
+        
+        // Special handling for listAllTables which may come in without proper parameters
+        if (functionName === 'listAllTables' && (
+          !functionArgs || 
+          Object.keys(functionArgs).length === 0
+        )) {
+          console.log('Setting default parameters for listAllTables function');
+          functionArgs = { includeSystemTables: false };
         }
         
         // Save the function call to the database
@@ -424,6 +440,7 @@ export class AgentService {
         
         // Execute the function
         try {
+          console.log(`Executing function "${functionName}" with args:`, JSON.stringify(functionArgs));
           const functionResult = await FunctionRegistry.executeFunction(
             functionName,
             functionArgs,

@@ -466,13 +466,41 @@ Try asking questions about power usage, environmental data, or request reports.`
         console.log(`Generating AI response for Telegram - Conversation: ${conversationId}, User: ${user[0].userId}, Agent: ${agentId || 'default'}`);
         
         // Generate AI response using the selected Langchain agent
-        const aiResponse = await this.agentService.generateResponse(
-          conversationId,
-          user[0].userId,
-          'user',     // Default user role
-          1000,       // Default max tokens
-          agentId     // Pass the agent ID to use for processing
-        );
+        // Add extensive try/catch to properly handle function call-related errors
+        let aiResponse;
+        try {
+          aiResponse = await this.agentService.generateResponse(
+            conversationId,
+            user[0].userId,
+            'user',     // Default user role
+            1000,       // Default max tokens
+            agentId     // Pass the agent ID to use for processing
+          );
+        } catch (generateError) {
+          console.error('Error during AI response generation:', generateError);
+          
+          // Check for the specific function name parameter error
+          if (generateError.message && generateError.message.includes('Missing parameter \'name\'')) {
+            console.error('Function name parameter error detected in Telegram message processing');
+            
+            // Log additional debugging information
+            console.log('Function call error context:', {
+              conversationId,
+              userId: user[0].userId,
+              telegramUserId: user[0].id
+            });
+            
+            // Inform the user with a more specific error message
+            await this.bot?.sendMessage(chatId, 
+              "I encountered an issue while trying to execute a function. " +
+              "This is likely a temporary problem. Please try again with a different request or later."
+            );
+            return;
+          }
+          
+          // Re-throw for general error handling
+          throw generateError;
+        }
         
         // Verify AI response
         if (!aiResponse) {
