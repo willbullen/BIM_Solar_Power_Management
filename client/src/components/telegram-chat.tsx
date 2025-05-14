@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { 
+  useQuery, 
+  useMutation, 
+  UseQueryOptions, 
+  UseQueryResult, 
+  QueryKey 
+} from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -101,35 +107,47 @@ export function TelegramChat() {
 
   // Fetch Langchain agents to get the Main Assistant Agent and other available agents
   const { data: langchainAgents, isLoading: loadingAgents } = useQuery<LangchainAgent[]>({
-    queryKey: ['/api/langchain/agents'],
-    retry: false,
-    onSuccess: (data) => {
-      if (data) {
+    queryKey: ['/api/langchain/agents'] as const,
+    retry: 3,
+    staleTime: 30000
+  });
+
+  // Effect to handle agent data changes
+  useEffect(() => {
+    if (langchainAgents) {
+      console.log("===== AGENTS DEBUG =====");
+      console.log("Raw agents data:", langchainAgents);
+      console.log("Total agents received:", langchainAgents?.length || 0);
+      
+      if (langchainAgents && Array.isArray(langchainAgents) && langchainAgents.length > 0) {
+        // Log each agent for debugging
+        langchainAgents.forEach((agent, idx) => {
+          console.log(`Agent ${idx+1}: id=${agent.id}, name=${agent.name}, enabled=${agent.enabled}`);
+        });
+        
         // Store all available agents for the dropdown
-        setAvailableAgents(data.filter(agent => agent.enabled));
+        const filtered = langchainAgents.filter(agent => agent.enabled);
+        console.log("Filtered agents count:", filtered.length);
+        setAvailableAgents(filtered);
         
         // Find the Main Assistant Agent
-        const mainAgent = data.find(agent => agent.name === 'Main Assistant Agent' && agent.enabled);
+        const mainAgent = langchainAgents.find(agent => agent.name === 'Main Assistant Agent' && agent.enabled);
         if (mainAgent) {
           setMainAssistantAgent(mainAgent);
           // Set the Main Assistant Agent as the default selected agent
           setSelectedAgentId(mainAgent.id);
-          console.log('Found Main Assistant Agent:', mainAgent);
-        } else if (data.length > 0 && data[0].enabled) {
+          console.log('Found Main Assistant Agent:', mainAgent.id);
+        } else if (filtered.length > 0) {
           // If no Main Assistant Agent is found, select the first available agent
-          setSelectedAgentId(data[0].id);
+          setSelectedAgentId(filtered[0].id);
+          console.log('Using first available agent:', filtered[0].id);
         }
+      } else {
+        console.log("No agents received or invalid data format");
       }
-    },
-    onError: (error) => {
-      console.error('Error fetching Langchain agents:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load Langchain agents. Some functionality might be limited."
-      });
+      console.log("===== END AGENTS DEBUG =====");
     }
-  });
+  }, [langchainAgents]);
 
   // Fetch Telegram status and connection info
   const { data: telegramUser, isLoading: loadingUser, refetch: refetchUser } = useQuery<TelegramUser | null>({
@@ -277,6 +295,16 @@ export function TelegramChat() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+  
+  // Function to reload the agents if needed
+  const reloadAgents = () => {
+    console.log("Manually reloading Langchain agents");
+    queryClient.invalidateQueries({ queryKey: ['/api/langchain/agents'] });
+    toast({
+      title: "Reloading agents",
+      description: "Refreshing the list of available AI agents..."
+    });
+  };
 
   // Function to handle verification button click
   const handleVerify = () => {
@@ -333,7 +361,7 @@ export function TelegramChat() {
 
       {/* Message History */}
       <Card className="flex-grow overflow-hidden bg-slate-900 border-slate-800 shadow-md">
-        <CardHeader className="pb-2 border-b border-slate-800">
+        <CardHeader className="pb-3 border-b border-slate-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Avatar className="h-8 w-8 bg-blue-700">
@@ -372,39 +400,67 @@ export function TelegramChat() {
             </div>
           </div>
           
-          {/* Agent Selector */}
-          {isTelegramConnected && availableAgents.length > 0 && (
-            <div className="mt-2 pt-2 border-t border-slate-800">
+          {/* Agent Selector - Enhanced visibility */}
+          {isTelegramConnected && (
+            <div className="mt-3 pt-3 border-t border-slate-800">
               <div className="flex items-center">
-                <Label htmlFor="agent-selector" className="text-xs text-gray-400 mr-2 shrink-0">
+                <Label htmlFor="agent-selector" className="text-xs text-gray-300 mr-2 shrink-0 font-medium">
                   AI Agent:
                 </Label>
                 <Select 
                   value={selectedAgentId?.toString() || ""} 
                   onValueChange={(value) => setSelectedAgentId(parseInt(value))}
                 >
-                  <SelectTrigger className="h-7 text-xs bg-slate-800 border-slate-700 focus:ring-blue-600">
+                  <SelectTrigger id="agent-selector" className="h-8 text-xs bg-slate-800 border-slate-700 focus:ring-blue-600">
                     <SelectValue placeholder="Select an agent" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                    {availableAgents.map(agent => (
-                      <SelectItem 
-                        key={agent.id} 
-                        value={agent.id.toString()}
-                        className="text-xs focus:bg-slate-700 focus:text-white"
-                      >
-                        <div className="flex items-center">
-                          <span>{agent.name}</span>
-                          {agent.name === 'Main Assistant Agent' && (
-                            <Badge variant="outline" className="ml-2 h-4 px-1 py-0 text-[10px] bg-blue-900/30 text-blue-300 border-blue-800">
-                              Default
-                            </Badge>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {availableAgents && availableAgents.length > 0 ? (
+                      availableAgents.map(agent => (
+                        <SelectItem 
+                          key={agent.id} 
+                          value={agent.id.toString()}
+                          className="text-xs focus:bg-slate-700 focus:text-white"
+                        >
+                          <div className="flex items-center">
+                            <span>{agent.name}</span>
+                            {agent.name === 'Main Assistant Agent' && (
+                              <Badge variant="outline" className="ml-2 h-4 px-1 py-0 text-[10px] bg-blue-900/30 text-blue-300 border-blue-800">
+                                Default
+                              </Badge>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="none" disabled>No agents available</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="flex justify-between items-center mt-1">
+                {loadingAgents ? (
+                  <div className="flex items-center text-xs text-blue-400">
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    <span>Loading agents...</span>
+                  </div>
+                ) : (
+                  <div className="text-xs text-gray-500">
+                    {availableAgents.length > 0 
+                      ? `${availableAgents.length} agent${availableAgents.length > 1 ? 's' : ''} available` 
+                      : 'No agents available'}
+                  </div>
+                )}
+                
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 px-2 py-0 text-[10px] text-blue-400 hover:text-blue-300"
+                  onClick={reloadAgents}
+                >
+                  <Loader2 className="h-2.5 w-2.5 mr-1" />
+                  Reload
+                </Button>
               </div>
             </div>
           )}

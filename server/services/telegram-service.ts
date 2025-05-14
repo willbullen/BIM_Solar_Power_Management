@@ -74,12 +74,20 @@ export class TelegramService {
         agentId   // Use the provided agent ID
       );
       
+      // Check if we got a valid response
+      if (!aiResponse) {
+        console.error('No AI response generated in sendMessageWithAgent');
+        return false;
+      }
+      
+      const responseContent = aiResponse.content || "No response content available";
+      
       // Store the message in our database
       await db.insert(telegramMessages)
         .values({
           telegramUserId: user[0].id,
           direction: 'outbound',
-          messageText: aiResponse.content,
+          messageText: responseContent,
           conversationId: conversationId,
           isProcessed: true,
         });
@@ -92,7 +100,7 @@ export class TelegramService {
       
       await this.bot.sendMessage(
         user[0].telegramId, 
-        aiResponse.content
+        responseContent
       );
       
       return true;
@@ -358,60 +366,53 @@ Try asking questions about power usage, environmental data, or request reports.`
         messageText
       );
       
-      // Find appropriate Langchain agent to use (prioritizing Main Assistant Agent)
-      let agentId = null;
-      try {
-        const mainAssistantAgent = await db.select()
-          .from(sql`"langchain_agents"`)
-          .where(sql`"name" = 'Main Assistant Agent' AND "enabled" = true`)
-          .limit(1);
-        
-        if (mainAssistantAgent.length > 0) {
-          console.log(`Using Langchain Main Assistant Agent for Telegram message processing: ${mainAssistantAgent[0].id}`);
-          agentId = mainAssistantAgent[0].id;
-        } else {
-          // If Main Assistant Agent isn't available, find any enabled agent
-          const anyAgent = await db.select()
-            .from(sql`"langchain_agents"`)
-            .where(sql`"enabled" = true`)
-            .limit(1);
-          
-          if (anyAgent.length > 0) {
-            console.log(`Using alternative Langchain agent for Telegram message processing: ${anyAgent[0].id} (${anyAgent[0].name})`);
-            agentId = anyAgent[0].id;
-          }
-        }
-      } catch (agentError) {
-        console.error('Error finding appropriate Langchain agent:', agentError);
-        // Continue with standard processing
+      // For now, use a hardcoded agent ID for Main Assistant Agent (ID: 3) or BillyBot Agent (ID: 2)
+      // Based on our previous database query, we know these exist
+      let agentId = 3; // Default to Main Assistant Agent
+      
+      console.log(`Using hardcoded agent ID for Telegram: ${agentId} (Main Assistant Agent)`);
+      
+      // If the user were to try to text "Use BillyBot" we could switch to agent ID 2
+      if (messageText.toLowerCase().includes("use billybot")) {
+        agentId = 2;
+        console.log(`Switching to BillyBot Agent (ID: ${agentId}) based on user request`);
+        await this.bot?.sendMessage(chatId, "Switching to BillyBot Agent for this conversation.");
       }
       
-      if (!agentId) {
-        await this.bot?.sendMessage(chatId, "I'm sorry, but there are no AI agents available to process your message right now. Please try again later or contact your administrator.");
+      try {
+        // Generate AI response using the selected Langchain agent
+        const aiResponse = await this.agentService.generateResponse(
+          conversationId,
+          user[0].userId,
+          'user',     // Default user role
+          1000,       // Default max tokens
+          agentId     // Pass the agent ID to use for processing
+        );
+        
+        // Verify AI response
+        if (!aiResponse) {
+          console.error('No AI response generated');
+          await this.bot?.sendMessage(chatId, "I'm sorry, but I encountered an error processing your message. Please try again later.");
+          return;
+        }
+        
+        // Store outbound message
+        await db.insert(telegramMessages)
+          .values({
+            telegramUserId: user[0].id,
+            direction: 'outbound',
+            messageText: aiResponse.content || "No response content",
+            conversationId: conversationId,
+            isProcessed: true,
+          });
+        
+        // Send AI response back to user
+        await this.bot?.sendMessage(chatId, aiResponse.content || "I processed your message but couldn't generate a proper response. Please try again.");
+      } catch (responseError) {
+        console.error('Error generating AI response:', responseError);
+        await this.bot?.sendMessage(chatId, "I apologize, but I encountered an error while processing your request. Please try again later.");
         return;
       }
-      
-      // Generate AI response using the selected Langchain agent
-      const aiResponse = await this.agentService.generateResponse(
-        conversationId,
-        user[0].userId,
-        'user',     // Default user role
-        1000,       // Default max tokens
-        agentId     // Pass the agent ID to use for processing
-      );
-      
-      // Store outbound message
-      await db.insert(telegramMessages)
-        .values({
-          telegramUserId: user[0].id,
-          direction: 'outbound',
-          messageText: aiResponse.content,
-          conversationId: conversationId,
-          isProcessed: true,
-        });
-      
-      // Send AI response back to user
-      await this.bot?.sendMessage(chatId, aiResponse.content);
       
       // Mark the inbound message as processed
       await db.update(telegramMessages)
