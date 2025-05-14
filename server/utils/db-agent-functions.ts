@@ -15,7 +15,7 @@ import * as schema from '@shared/schema';
  */
 export async function registerDatabaseFunctions() {
   // Register ReadFromDB function - to handle the Telegram bot using this function name
-  await FunctionRegistry.registerFunction({
+  await UnifiedFunctionRegistry.registerFunction({
     name: 'ReadFromDB',
     description: 'Execute database queries to retrieve information, including listing tables',
     module: 'database',
@@ -45,7 +45,7 @@ export async function registerDatabaseFunctions() {
             console.log("ReadFromDB: Processing 'list tables' command");
             
             // Use the listAllTables function for this request
-            return await FunctionRegistry.executeFunction(
+            return await UnifiedFunctionRegistry.executeFunction(
               'listAllTables', 
               { includeSystemTables: false },
               context
@@ -67,7 +67,7 @@ export async function registerDatabaseFunctions() {
   });
 
   // Register listAllTables function
-  await FunctionRegistry.registerFunction({
+  await UnifiedFunctionRegistry.registerFunction({
     name: 'listAllTables',
     description: 'List all tables in the database',
     module: 'database',
@@ -145,7 +145,7 @@ export async function registerDatabaseFunctions() {
   });
   
   // Register database query functions
-  await FunctionRegistry.registerFunction({
+  await UnifiedFunctionRegistry.registerFunction({
     name: 'queryTable',
     description: 'Query data from a database table with optional filters and sorting',
     module: 'database',
