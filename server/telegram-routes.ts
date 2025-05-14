@@ -349,12 +349,11 @@ export function registerTelegramRoutes(app: Express) {
       if (validatedData.useAgent && validatedData.agentId) {
         console.log(`Using Langchain agent ${validatedData.agentId} for Telegram message`);
         
-        // TODO: In the future, integrate with Langchain agent for processing before sending
-        // For now, just pass through the message
-        success = await telegramService.sendNotification(
+        // Process using the selected Langchain agent
+        success = await telegramService.sendMessageWithAgent(
           userId,
-          `[AI Agent] ${validatedData.message}`,
-          'Telegram Message via Langchain'
+          validatedData.message,
+          validatedData.agentId
         );
       } else {
         // Regular message sending without agent processing

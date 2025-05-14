@@ -21,6 +21,86 @@ export class TelegramService {
   constructor() {
     this.agentService = new AgentService();
   }
+  
+  /**
+   * Send a message to the user's Telegram account with agent processing
+   * 
+   * @param userId The ID of the user in the system
+   * @param message The message to send
+   * @param agentId The ID of the Langchain agent to use for processing
+   * @returns Whether the message was sent successfully
+   */
+  async sendMessageWithAgent(userId: number, message: string, agentId: number): Promise<boolean> {
+    try {
+      // Look up the user's Telegram info
+      const user = await db.select().from(telegramUsers)
+        .where(eq(telegramUsers.userId, userId))
+        .limit(1);
+      
+      if (user.length === 0 || !user[0].isVerified || !user[0].telegramId) {
+        console.log('User does not have a verified Telegram account');
+        return false;
+      }
+      
+      // Create a new conversation or find an existing one
+      let conversationId = null;
+      const existingConvo = await db.select().from(agentConversations)
+        .where(and(
+          eq(agentConversations.userId, userId),
+          eq(agentConversations.title, 'Telegram Conversation')
+        ))
+        .limit(1);
+      
+      if (existingConvo.length > 0) {
+        conversationId = existingConvo[0].id;
+      } else {
+        // Create a new conversation
+        const newConversation = await this.agentService.createConversation(
+          userId, 
+          'Telegram Conversation'
+        );
+        conversationId = newConversation.id;
+      }
+      
+      // Add user message to conversation
+      await this.agentService.addUserMessage(conversationId, message);
+      
+      // Generate AI response using the specified Langchain agent
+      const aiResponse = await this.agentService.generateResponse(
+        conversationId,
+        userId,
+        'user',
+        1000,     // Default max tokens
+        agentId   // Use the provided agent ID
+      );
+      
+      // Store the message in our database
+      await db.insert(telegramMessages)
+        .values({
+          telegramUserId: user[0].id,
+          direction: 'outbound',
+          messageText: aiResponse.content,
+          conversationId: conversationId,
+          isProcessed: true,
+        });
+      
+      // Send the AI response back to the user via Telegram
+      if (!this.bot) {
+        console.error('Telegram bot not initialized');
+        return false;
+      }
+      
+      await this.bot.sendMessage(
+        user[0].telegramId, 
+        aiResponse.content
+      );
+      
+      return true;
+    } catch (error) {
+      console.error('Error sending message with agent:', error);
+      return false;
+    }
+  }
 
   /**
    * Initialize the Telegram bot with settings from the database

@@ -202,23 +202,25 @@ export function TelegramChat() {
     }
   });
 
-  // Send test message using Langchain Main Assistant Agent
+  // Send test message using selected Langchain Agent
   const sendTestMessage = useMutation({
     mutationFn: (message: string) => {
-      // Check if Main Assistant Agent is available
-      if (mainAssistantAgent) {
-        console.log('Using Main Assistant Agent for message processing:', mainAssistantAgent.name);
+      // Check if we have a selected agent
+      if (selectedAgentId && availableAgents.length > 0) {
+        const selectedAgent = availableAgents.find(a => a.id === selectedAgentId);
+        console.log(`Using Langchain Agent for message processing: ${selectedAgent?.name} (ID: ${selectedAgentId})`);
+        
         return apiRequest('/api/telegram/test-message', {
           method: 'POST',
           data: { 
             message,
-            agentId: mainAssistantAgent.id, // Include the agent ID to use for processing
+            agentId: selectedAgentId, // Include the selected agent ID
             useAgent: true
           }
         });
       } else {
-        // Fall back to regular message sending if agent not available
-        console.log('Main Assistant Agent not available, using default processing');
+        // Fall back to regular message sending if no agent selected
+        console.log('No Langchain Agent selected, using default processing');
         return apiRequest('/api/telegram/test-message', {
           method: 'POST',
           data: { message }
@@ -344,18 +346,20 @@ export function TelegramChat() {
                   {isTelegramConnected 
                     ? `Connected as ${telegramUser.telegramUsername || 'User'}`
                     : 'Not connected'}
-                  {mainAssistantAgent && isTelegramConnected && (
+                  {selectedAgentId && isTelegramConnected && availableAgents.length > 0 && (
                     <span className="block mt-1">
-                      Using <span className="text-blue-400">{mainAssistantAgent.name}</span>
+                      Using <span className="text-blue-400">
+                        {availableAgents.find(a => a.id === selectedAgentId)?.name || 'AI Agent'}
+                      </span>
                     </span>
                   )}
                 </CardDescription>
               </div>
             </div>
             <div className="flex gap-2">
-              {mainAssistantAgent && isTelegramConnected && (
+              {selectedAgentId && isTelegramConnected && (
                 <Badge variant="outline" className="bg-blue-900/30 text-blue-300 border-blue-800 px-2 py-0 text-xs">
-                  <Zap className="h-3 w-3 mr-1 text-blue-500" />
+                  <BrainCircuit className="h-3 w-3 mr-1 text-blue-500" />
                   Langchain
                 </Badge>
               )}
@@ -367,6 +371,43 @@ export function TelegramChat() {
               )}
             </div>
           </div>
+          
+          {/* Agent Selector */}
+          {isTelegramConnected && availableAgents.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-slate-800">
+              <div className="flex items-center">
+                <Label htmlFor="agent-selector" className="text-xs text-gray-400 mr-2 shrink-0">
+                  AI Agent:
+                </Label>
+                <Select 
+                  value={selectedAgentId?.toString() || ""} 
+                  onValueChange={(value) => setSelectedAgentId(parseInt(value))}
+                >
+                  <SelectTrigger className="h-7 text-xs bg-slate-800 border-slate-700 focus:ring-blue-600">
+                    <SelectValue placeholder="Select an agent" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700 text-white">
+                    {availableAgents.map(agent => (
+                      <SelectItem 
+                        key={agent.id} 
+                        value={agent.id.toString()}
+                        className="text-xs focus:bg-slate-700 focus:text-white"
+                      >
+                        <div className="flex items-center">
+                          <span>{agent.name}</span>
+                          {agent.name === 'Main Assistant Agent' && (
+                            <Badge variant="outline" className="ml-2 h-4 px-1 py-0 text-[10px] bg-blue-900/30 text-blue-300 border-blue-800">
+                              Default
+                            </Badge>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
         </CardHeader>
         
         <CardContent className="p-0 overflow-hidden">
