@@ -5,7 +5,7 @@
  * with proper security controls and permissions.
  */
 
-import { FunctionRegistry } from './function-registry';
+import { UnifiedFunctionRegistry } from './unified-function-registry';
 import { SqlExecutor } from '../sql-executor';
 
 /**
@@ -13,12 +13,16 @@ import { SqlExecutor } from '../sql-executor';
  */
 export async function registerSqlFunctions() {
   // Register the executeSql function for direct SQL query execution
-  await FunctionRegistry.registerFunction({
+  await UnifiedFunctionRegistry.registerFunction({
     name: 'executeSqlQuery',
     description: 'Execute a SQL query with parameterized values for security',
-    module: 'database',
-    returnType: 'object',
-    accessLevel: 'admin', // Only admins can execute raw SQL - use lowercase for consistency
+    toolType: 'database',
+    implementation: 'SqlQueryExecutorTool',
+    metadata: {
+      returnType: 'object',
+      accessLevel: 'admin' // Only admins can execute raw SQL - use lowercase for consistency
+    },
+    enabled: true,
     parameters: {
       type: 'object',
       properties: {

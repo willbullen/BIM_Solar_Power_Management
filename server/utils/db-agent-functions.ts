@@ -352,12 +352,16 @@ export async function registerDatabaseFunctions() {
   });
   
   // Register data aggregation function
-  await FunctionRegistry.registerFunction({
+  await UnifiedFunctionRegistry.registerFunction({
     name: 'aggregateData',
     description: 'Perform aggregation operations on table data (sum, avg, min, max, count)',
-    module: 'database',
-    returnType: 'object',
-    accessLevel: 'User',
+    toolType: 'database',
+    implementation: 'AggregateDataTool',
+    metadata: {
+      returnType: 'object',
+      accessLevel: 'User'
+    },
+    enabled: true,
     parameters: {
       type: 'object',
       properties: {
