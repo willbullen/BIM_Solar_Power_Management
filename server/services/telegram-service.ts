@@ -267,11 +267,15 @@ export class TelegramService {
       
       if (existingUser.length > 0) {
         // User exists, send welcome back message
+        // Cast to TelegramUserMetadata for proper typing
+        const metadata = existingUser[0].metadata as TelegramUserMetadata || {};
+        const isVerified = metadata.isVerified === true;
+        
         const welcomeMessage = `Welcome back to the Emporium Power Monitoring AI Agent!
         
-Your account is ${existingUser[0].isVerified ? 'verified' : 'not verified yet'}.
+Your account is ${isVerified ? 'verified' : 'not verified yet'}.
         
-${existingUser[0].isVerified ? 'You can ask me questions about power usage, environmental data, or request reports.' : 'Please verify your account using /verify YOUR_CODE to start using the AI Agent.'}`;
+${isVerified ? 'You can ask me questions about power usage, environmental data, or request reports.' : 'Please verify your account using /verify YOUR_CODE to start using the AI Agent.'}`;
         
         await this.bot?.sendMessage(chatId, welcomeMessage);
       } else {
@@ -309,17 +313,17 @@ To get started, you need to verify your account. Please ask your system administ
       
       // Find the user with matching verification code
       const pendingVerification = users.filter(user => {
-        const metadata = user.metadata || {};
+        const metadata = user.metadata as TelegramUserMetadata || {};
         return metadata.verificationCode === verificationCode && 
                metadata.isVerified !== true;
       });
       
       if (pendingVerification.length > 0) {
         const user = pendingVerification[0];
-        const currentMetadata = user.metadata || {};
+        const currentMetadata = user.metadata as TelegramUserMetadata || {};
         
         // Create updated metadata with verification status
-        const updatedMetadata = {
+        const updatedMetadata: TelegramUserMetadata = {
           ...currentMetadata,
           isVerified: true,
           verificationCode: null, // Clear verification code
@@ -593,10 +597,10 @@ Try asking questions about power usage, environmental data, or request reports.`
       
       if (existingUser.length > 0) {
         // Get current metadata
-        const currentMetadata = existingUser[0].metadata || {};
+        const currentMetadata = existingUser[0].metadata as TelegramUserMetadata || {};
         
         // Update metadata with verification info
-        const updatedMetadata = {
+        const updatedMetadata: TelegramUserMetadata = {
           ...currentMetadata,
           verificationCode: verificationCode,
           verificationExpires: expirationDate.toISOString(),
@@ -612,7 +616,7 @@ Try asking questions about power usage, environmental data, or request reports.`
           .where(eq(telegramUsers.id, existingUser[0].id));
       } else {
         // Create initial metadata
-        const metadata = {
+        const metadata: TelegramUserMetadata = {
           verificationCode: verificationCode,
           verificationExpires: expirationDate.toISOString(),
           isVerified: false,
@@ -626,7 +630,7 @@ Try asking questions about power usage, environmental data, or request reports.`
           .values({
             userId: userId,
             telegramId: 'pending_verification',
-            firstName: '',
+            firstName: 'pending_verification', // Required field, will be updated after verification
             lastName: null,
             username: null,
             languageCode: null,
