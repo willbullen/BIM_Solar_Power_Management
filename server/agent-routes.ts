@@ -466,7 +466,7 @@ export function registerAgentRoutes(app: Express) {
         },
         status: 'pending',
         userId: userId, // Previously createdBy/assignedTo now combined in userId
-        agentId: validatedData.agentId
+        agentId: validatedData.agentId || 2  // Default to "BillyBot Agent" if no agent specified
       };
       
       const task = await agentService.createTask(taskData);
