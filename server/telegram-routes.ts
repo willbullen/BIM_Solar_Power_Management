@@ -166,23 +166,27 @@ export function registerTelegramRoutes(app: Express) {
       
       const user = telegramUser[0];
       
-      let status = 'Not connected';
-      if (user.isVerified) {
-        status = 'Connected and verified';
-      } else if (user.verificationCode) {
+      // In the new schema, we consider a user connected if they have a record
+      // and we'll store verification status in metadata
+      const metadata = user.metadata || {};
+      const isVerified = metadata.isVerified === true;
+      const notificationsEnabled = metadata.notificationsEnabled !== false;
+      
+      let status = isVerified ? 'Connected and verified' : 'Connected';
+      if (metadata.verificationCode) {
         status = 'Pending verification';
       }
       
       res.json({
-        connected: user.isVerified,
+        connected: isVerified,
         status,
-        lastAccessed: user.lastAccessed,
-        notificationsEnabled: user.notificationsEnabled,
-        receiveAlerts: user.receiveAlerts,
-        receiveReports: user.receiveReports,
-        telegramUsername: user.telegramUsername,
-        verificationCode: user.verificationCode,
-        verificationExpires: user.verificationExpires
+        lastAccessed: metadata.lastAccessed,
+        notificationsEnabled: notificationsEnabled,
+        receiveAlerts: metadata.receiveAlerts !== false,
+        receiveReports: metadata.receiveReports !== false,
+        telegramUsername: user.username,
+        verificationCode: metadata.verificationCode,
+        verificationExpires: metadata.verificationExpires
       });
     } catch (error) {
       console.error('Error fetching Telegram status:', error);
@@ -235,9 +239,27 @@ export function registerTelegramRoutes(app: Express) {
         return res.status(404).json({ error: 'Telegram connection not found' });
       }
       
+      // We need to update the metadata field which is a JSON object
+      const currentUser = telegramUser[0];
+      const currentMetadata = currentUser.metadata || {};
+      
+      // Update the metadata with the new preferences
+      const updatedMetadata = {
+        ...currentMetadata,
+        notificationsEnabled: validatedData.notificationsEnabled !== undefined 
+          ? validatedData.notificationsEnabled 
+          : currentMetadata.notificationsEnabled,
+        receiveAlerts: validatedData.receiveAlerts !== undefined 
+          ? validatedData.receiveAlerts 
+          : currentMetadata.receiveAlerts,
+        receiveReports: validatedData.receiveReports !== undefined 
+          ? validatedData.receiveReports
+          : currentMetadata.receiveReports
+      };
+      
       await db.update(telegramUsers)
         .set({
-          ...validatedData,
+          metadata: updatedMetadata,
           updatedAt: new Date()
         })
         .where(eq(telegramUsers.id, telegramUser[0].id));

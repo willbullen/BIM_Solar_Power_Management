@@ -636,21 +636,15 @@ export type McpTask = typeof mcpTasks.$inferSelect;
 // Telegram integration schema
 export const telegramUsers = pgTable("langchain_telegram_users", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").references(() => users.id),
   telegramId: text("telegram_id").notNull().unique(),
-  telegramUsername: text("telegram_username"),
-  telegramFirstName: text("telegram_first_name"),
-  telegramLastName: text("telegram_last_name"),
-  chatId: text("chat_id").notNull(),
-  notificationsEnabled: boolean("notifications_enabled").notNull().default(true),
-  receiveAlerts: boolean("receive_alerts").notNull().default(true),
-  receiveReports: boolean("receive_reports").notNull().default(true),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name"),
+  username: text("username"),
+  languageCode: text("language_code"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  lastAccessed: timestamp("last_accessed"),
-  verificationCode: text("verification_code"),
-  verificationExpires: timestamp("verification_expires"),
-  isVerified: boolean("is_verified").notNull().default(false),
+  metadata: jsonb("metadata").default({}),
 });
 
 export const telegramUserRelations = relations(telegramUsers, ({ one }) => ({
