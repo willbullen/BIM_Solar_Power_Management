@@ -66,46 +66,27 @@ export class TelegramService {
       // Add user message to conversation
       await this.agentService.addUserMessage(conversationId, message);
       
-      // If no agent ID provided, try to find the Main Assistant Agent
+      // If no agent ID provided, try to find the Main Assistant Agent - USING EXACT APPROACH FROM SETTINGS PAGE
       if (!agentId) {
         try {
-          console.log("Finding Main Assistant Agent for test message in sendMessageWithAgent");
+          console.log("Finding Main Assistant Agent for Telegram message in sendMessageWithAgent");
           
-          // First try to find the Main Assistant Agent using type-safe Drizzle queries
-          const mainAssistantAgent = await db.select({
-            id: schema.langchainAgents.id,
-            name: schema.langchainAgents.name,
-            description: schema.langchainAgents.description,
-            modelName: schema.langchainAgents.modelName
-          })
-            .from(schema.langchainAgents)
-            .where(and(
-              eq(schema.langchainAgents.name, 'Main Assistant Agent'),
-              eq(schema.langchainAgents.enabled, true)
-            ))
-            .limit(1);
+          // Fetch all agents - mimicking the exact pattern used in the Settings page
+          console.log("Fetching all agents to find Main Assistant Agent");
+          const agents = await db.select().from(schema.langchainAgents).orderBy(desc(schema.langchainAgents.updatedAt));
+          console.log(`Found ${agents.length} agents in database`);
+          
+          if (agents.length > 0) {
+            // Log the names of agents for debugging
+            console.log("Agent names:", agents.map(agent => `${agent.name} (ID: ${agent.id})`));
             
-          if (mainAssistantAgent.length > 0) {
-            agentId = mainAssistantAgent[0].id;
-            console.log(`Using Main Assistant Agent for Telegram: ID ${agentId}, Name: ${mainAssistantAgent[0].name}`);
+            // Use the EXACT SAME APPROACH as the Settings page
+            const mainAgent = agents.find(agent => agent.name === 'Main Assistant Agent' && agent.enabled) || agents[0];
+            agentId = mainAgent.id;
             
-            // Check if this agent has associated tools
-            const agentTools = await db.select({
-              toolId: schema.langchainAgentTools.toolId,
-              priority: schema.langchainAgentTools.priority
-            })
-              .from(schema.langchainAgentTools)
-              .where(eq(schema.langchainAgentTools.agentId, agentId));
-              
-            console.log(`Found ${agentTools.length} tool associations for agent ID ${agentId}`);
-            
-            // Log tool IDs for better debugging
-            if (agentTools.length > 0) {
-              const toolIds = agentTools.map(t => t.toolId);
-              console.log(`Tool IDs assigned to agent: ${toolIds.join(', ')}`);
-            }
+            console.log(`Using agent "${mainAgent.name}" (ID: ${agentId}) for Telegram message`);
           } else {
-            console.warn('Main Assistant Agent not found for Telegram message, falling back to default agent');
+            console.log('No agents found in the database');
           }
         } catch (error) {
           console.error('Error finding Main Assistant Agent in sendMessageWithAgent:', error);
