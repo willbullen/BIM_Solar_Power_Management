@@ -9,7 +9,7 @@ import { db } from '../db';
 import { sql } from 'drizzle-orm';
 import * as schema from '../../shared/schema';
 import { telegramUsers, telegramMessages, telegramSettings, agentConversations, agentMessages } from '../../shared/schema';
-import { eq, and, desc, isNull } from 'drizzle-orm/expressions';
+import { eq, and, desc, isNull, inArray } from 'drizzle-orm/expressions';
 import { AgentService } from '../agent-service';
 import { randomUUID } from 'crypto';
 
@@ -397,18 +397,29 @@ Try asking questions about power usage, environmental data, or request reports.`
       // Find the Main Assistant Agent by name - this is more reliable than hardcoding IDs
       let agentId: number | undefined;
       try {
-        // First try to find the Main Assistant Agent
-        const mainAssistantAgent = await db.select()
+        // First try to find the Main Assistant Agent using proper DB query technique
+        const mainAssistantAgent = await db.select({
+          id: schema.langchainAgents.id,
+          name: schema.langchainAgents.name,
+          description: schema.langchainAgents.description,
+          modelName: schema.langchainAgents.modelName
+        })
           .from(schema.langchainAgents)
-          .where(sql`name = 'Main Assistant Agent' AND enabled = true`)
+          .where(and(
+            eq(schema.langchainAgents.name, 'Main Assistant Agent'),
+            eq(schema.langchainAgents.enabled, true)
+          ))
           .limit(1);
         
         if (mainAssistantAgent.length > 0) {
           agentId = mainAssistantAgent[0].id;
-          console.log(`Using Main Assistant Agent for Telegram: ID ${agentId}`);
+          console.log(`Using Main Assistant Agent for Telegram: "${mainAssistantAgent[0].name}" (ID: ${agentId})`);
           
           // Check if this agent has associated tools
-          const agentTools = await db.select()
+          const agentTools = await db.select({
+            toolId: schema.langchainAgentTools.toolId,
+            priority: schema.langchainAgentTools.priority
+          })
             .from(schema.langchainAgentTools)
             .where(eq(schema.langchainAgentTools.agentId, agentId));
           
@@ -417,22 +428,37 @@ Try asking questions about power usage, environmental data, or request reports.`
           // Log the tool names for debugging
           if (agentTools.length > 0) {
             const toolIds = agentTools.map(tool => tool.toolId);
-            const tools = await db.select()
+            
+            // Better SQL query with proper use of SQL parameter array
+            const tools = await db.select({
+              id: schema.langchainTools.id,
+              name: schema.langchainTools.name,
+              toolType: schema.langchainTools.toolType
+            })
               .from(schema.langchainTools)
-              .where(sql`id IN (${toolIds.join(',')})`);
+              .where(inArray(schema.langchainTools.id, toolIds));
               
-            console.log(`Tools for agent ID ${agentId}: ${tools.map(t => t.name).join(', ')}`);
+            if (tools.length > 0) {
+              console.log(`Tools available for agent "${mainAssistantAgent[0].name}": ${tools.map(t => t.name).join(', ')}`);
+            } else {
+              console.warn(`No tools found for agent ID ${agentId} despite having ${agentTools.length} tool associations`);
+            }
           }
         } else {
+          console.warn(`Main Assistant Agent not found in the database, searching for any enabled agent`);
+          
           // If Main Assistant isn't found, fall back to any enabled agent
-          const fallbackAgent = await db.select()
+          const fallbackAgent = await db.select({
+            id: schema.langchainAgents.id,
+            name: schema.langchainAgents.name
+          })
             .from(schema.langchainAgents)
             .where(eq(schema.langchainAgents.enabled, true))
             .limit(1);
             
           if (fallbackAgent.length > 0) {
             agentId = fallbackAgent[0].id;
-            console.log(`Main Assistant Agent not found, using fallback agent ID: ${agentId}`);
+            console.log(`Using fallback agent: "${fallbackAgent[0].name}" (ID: ${agentId})`);
           } else {
             console.warn("No enabled agents found in the database");
             agentId = undefined; // Will use default agent in agent-service.ts

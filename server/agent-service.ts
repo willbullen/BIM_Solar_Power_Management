@@ -305,12 +305,16 @@ export class AgentService {
               console.log(`Fetching tools for Main Assistant Agent ID ${mainAgentId}`);
               const agentTools = await this.getAvailableFunctions(userRole, mainAgentId);
               
-              // Update the functions array with agent-specific tools
-              functions = agentTools.map(func => ({
+              // Create a new functions array with agent-specific tools
+              const agentSpecificFunctions = agentTools.map(func => ({
                 name: func.name,
                 description: func.description,
                 parameters: func.parameters as any
               }));
+              
+              // Replace the functions array
+              functions.length = 0;  // Clear the array
+              agentSpecificFunctions.forEach(func => functions.push(func));
             }
           } else {
             console.log('Main Assistant Agent not found, using default model settings');
