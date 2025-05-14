@@ -196,10 +196,21 @@ export class AgentService {
     }
 
     // Prepare the messages for the OpenAI API
-    const openaiMessages = messages.map(msg => ({
-      role: msg.role as any,
-      content: msg.content,
-    }));
+    const openaiMessages = messages.map(msg => {
+      // Basic message structure
+      const openaiMsg: any = {
+        role: msg.role as any,
+        content: msg.content,
+      };
+      
+      // For 'function' role messages, we MUST include the name parameter
+      // This fixes the "Missing parameter 'name': messages with role 'function' must have a 'name'" error
+      if (msg.role === 'function' && msg.name) {
+        openaiMsg.name = msg.name;
+      }
+      
+      return openaiMsg;
+    });
 
     // Get available functions based on user role and agent ID if provided
     const availableFunctions = await this.getAvailableFunctions(userRole, agentId);
