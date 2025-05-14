@@ -23,7 +23,7 @@ function hasTablePermission(tableName: string, userRole?: string, operation: 're
   }
   
   // Restricted tables that require admin access
-  const adminOnlyTables = ['users', 'user_sessions', 'agent_settings'];
+  const adminOnlyTables = ['users', 'user_sessions', 'langchain_agents'];
   if (adminOnlyTables.includes(tableName)) {
     return false;
   }

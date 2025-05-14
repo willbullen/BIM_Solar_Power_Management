@@ -456,19 +456,18 @@ export function registerAgentRoutes(app: Express) {
       const validatedData = taskSchema.parse(req.body);
       
       const taskData: Omit<schema.InsertAgentTask, 'createdAt' | 'updatedAt'> = {
-        title: validatedData.title,
-        description: validatedData.description,
+        task: validatedData.title, // Map title to task field
+        data: {  // Map description and other metadata to data JSON field
+          description: validatedData.description,
+          type: validatedData.type,
+          priority: validatedData.priority,
+          parameters: validatedData.parameters || {},
+          scheduledFor: validatedData.scheduledFor ? new Date(validatedData.scheduledFor).toISOString() : null
+        },
         status: 'pending',
-        type: validatedData.type,
-        priority: validatedData.priority,
-        createdBy: userId,
-        assignedTo: userId, // Assign to the creator by default
-        parameters: validatedData.parameters || {},
+        userId: userId, // Previously createdBy/assignedTo now combined in userId
+        agentId: validatedData.agentId
       };
-      
-      if (validatedData.scheduledFor) {
-        taskData.scheduledFor = new Date(validatedData.scheduledFor);
-      }
       
       const task = await agentService.createTask(taskData);
       

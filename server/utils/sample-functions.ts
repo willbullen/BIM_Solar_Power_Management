@@ -434,7 +434,7 @@ export async function registerSampleFunctions() {
         switch (diagnosticType) {
           case 'database': {
             // Check database statistics
-            const tables = ['power_data', 'environmental_data', 'equipment', 'users', 'agent_conversations', 'agent_messages'];
+            const tables = ['power_data', 'environmental_data', 'equipment', 'users', 'langchain_agent_conversations', 'langchain_agent_messages'];
             const stats = {};
             
             for (const table of tables) {
