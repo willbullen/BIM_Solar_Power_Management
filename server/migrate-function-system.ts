@@ -109,15 +109,5 @@ export async function runMigration() {
   }
 }
 
-// Only run migrations when script is executed directly
-if (require.main === module) {
-  runMigration()
-    .then(() => {
-      console.log('Migration completed');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('Migration failed:', error);
-      process.exit(1);
-    });
-}
+// This code needs to be run from the run-function-migration.js file
+// not directly from here (ES module compatibility)

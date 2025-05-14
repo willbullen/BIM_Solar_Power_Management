@@ -5,6 +5,8 @@ import * as schema from "@shared/schema";
 import { AIService } from "./ai-service";
 import { DbUtils } from "./utils/db-utils";
 import { FunctionRegistry } from "./utils/function-registry";
+// Add the unified function registry - we'll use both during migration
+import { UnifiedFunctionRegistry } from "./utils/unified-function-registry";
 import { eq, and, or, asc, desc, sql, inArray } from "drizzle-orm";
 
 // Define the core agent capabilities and functions
@@ -441,11 +443,30 @@ export class AgentService {
         // Execute the function
         try {
           console.log(`Executing function "${functionName}" with args:`, JSON.stringify(functionArgs));
-          const functionResult = await FunctionRegistry.executeFunction(
-            functionName,
-            functionArgs,
-            { userId, userRole }
-          );
+          
+          // Try unified function registry first, fall back to legacy registry if not found
+          let functionResult;
+          try {
+            console.log(`Attempting to execute with UnifiedFunctionRegistry: ${functionName}`);
+            functionResult = await UnifiedFunctionRegistry.executeFunction(
+              functionName,
+              functionArgs,
+              { userId, userRole, agentId, conversationId }
+            );
+          } catch (error) {
+            // If function not found in unified registry, try legacy registry
+            if (error.message?.includes('not found')) {
+              console.log(`Function ${functionName} not found in unified registry, trying legacy registry`);
+              functionResult = await FunctionRegistry.executeFunction(
+                functionName,
+                functionArgs,
+                { userId, userRole }
+              );
+            } else {
+              // Re-throw other errors
+              throw error;
+            }
+          }
           
           // Save the function result
           await db.update(schema.agentMessages)

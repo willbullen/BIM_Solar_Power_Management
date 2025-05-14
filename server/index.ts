@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { migrate as migrateTelegram } from "./migrate-telegram";
 import { migrate as migrateLangChain } from "./migrate-langchain";
+import { setupUnifiedFunctionSystem } from "./migrate-function-system";
 import cors from 'cors';
 
 const app = express();
@@ -70,6 +71,15 @@ app.use((req, res, next) => {
     } catch (langChainError) {
       console.error('Error during LangChain database migration:', langChainError);
       // Continue with server startup even if LangChain migration fails
+    }
+    
+    // Set up the unified function system
+    try {
+      await setupUnifiedFunctionSystem();
+      console.log('Unified function system setup completed successfully');
+    } catch (functionError) {
+      console.error('Error setting up unified function system:', functionError);
+      // Continue with server startup even if function system setup fails
     }
   } catch (error) {
     console.error('Error during Telegram database migration:', error);
