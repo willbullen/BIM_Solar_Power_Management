@@ -10,7 +10,7 @@
 // Import the registration function
 const { registerDatabaseFunctions } = require('./server/utils/db-agent-functions');
 const { registerSqlFunctions } = require('./server/utils/sql-agent-functions');
-const { FunctionRegistry } = require('./server/utils/function-registry');
+const { UnifiedFunctionRegistry } = require('./server/utils/unified-function-registry');
 
 async function testDatabaseFunctions() {
   try {

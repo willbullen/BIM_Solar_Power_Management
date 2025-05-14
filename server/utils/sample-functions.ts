@@ -1,4 +1,4 @@
-import { FunctionRegistry } from './function-registry';
+import { UnifiedFunctionRegistry } from './unified-function-registry';
 
 /**
  * Sample functions for the AI agent
@@ -11,7 +11,7 @@ import { FunctionRegistry } from './function-registry';
 export async function registerSampleFunctions() {
   
   // Power data analysis function - public access
-  await FunctionRegistry.registerFunction({
+  await UnifiedFunctionRegistry.registerFunction({
     name: 'analyzePowerData',
     description: 'Analyze power data for a given time period to identify patterns and anomalies',
     module: 'power',
@@ -117,7 +117,7 @@ export async function registerSampleFunctions() {
   });
   
   // Environmental correlation function - requires user role
-  await FunctionRegistry.registerFunction({
+  await UnifiedFunctionRegistry.registerFunction({
     name: 'correlateEnvironmentalFactors',
     description: 'Correlate environmental factors with power production and consumption',
     module: 'environment',
@@ -283,7 +283,7 @@ export async function registerSampleFunctions() {
   });
   
   // Equipment management function - requires manager role
-  await FunctionRegistry.registerFunction({
+  await UnifiedFunctionRegistry.registerFunction({
     name: 'manageEquipment',
     description: 'Manage equipment settings and maintenance schedules',
     module: 'equipment',
@@ -386,7 +386,7 @@ export async function registerSampleFunctions() {
   });
   
   // System access function - requires admin role
-  await FunctionRegistry.registerFunction({
+  await UnifiedFunctionRegistry.registerFunction({
     name: 'systemDiagnostics',
     description: 'Run system diagnostics and perform administrative tasks',
     module: 'admin',
