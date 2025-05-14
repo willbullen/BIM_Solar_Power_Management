@@ -366,20 +366,78 @@ Try asking questions about power usage, environmental data, or request reports.`
         messageText
       );
       
-      // For now, use a hardcoded agent ID for Main Assistant Agent (ID: 3) or BillyBot Agent (ID: 2)
-      // Based on our previous database query, we know these exist
-      let agentId = 3; // Default to Main Assistant Agent
+      // Get the agent IDs dynamically from the database
+      let mainAssistantAgent = null;
+      let billyBotAgent = null;
+      let defaultAgentId = null;
       
-      console.log(`Using hardcoded agent ID for Telegram: ${agentId} (Main Assistant Agent)`);
+      // Use a try-catch to fetch the agent IDs
+      try {
+        // Find the Main Assistant Agent
+        const mainAgentResult = await db.select()
+          .from(sql`"langchain_agents"`)
+          .where(sql`"name" = 'Main Assistant Agent' AND "enabled" = true`);
+          
+        if (mainAgentResult.length > 0) {
+          mainAssistantAgent = mainAgentResult[0];
+          defaultAgentId = mainAssistantAgent.id;
+          console.log(`Found Main Assistant Agent with ID ${defaultAgentId}`);
+        } else {
+          console.warn('Main Assistant Agent not found in database');
+        }
+        
+        // Find BillyBot agent as alternative
+        const billyBotResult = await db.select()
+          .from(sql`"langchain_agents"`)
+          .where(sql`"name" = 'BillyBot Agent' AND "enabled" = true`);
+          
+        if (billyBotResult.length > 0) {
+          billyBotAgent = billyBotResult[0];
+          // If Main Assistant Agent wasn't found, use BillyBot as default
+          if (!defaultAgentId) {
+            defaultAgentId = billyBotAgent.id;
+            console.log(`Using BillyBot Agent with ID ${defaultAgentId} as default`);
+          }
+        }
+        
+        // If no agents found at all, try to get any enabled agent
+        if (!defaultAgentId) {
+          const anyAgentResult = await db.select()
+            .from(sql`"langchain_agents"`)
+            .where(sql`"enabled" = true`)
+            .limit(1);
+            
+          if (anyAgentResult.length > 0) {
+            defaultAgentId = anyAgentResult[0].id;
+            console.log(`Using fallback agent ID ${defaultAgentId} (${anyAgentResult[0].name})`);
+          }
+        }
+      } catch (agentError) {
+        console.error('Error finding Langchain agents:', agentError);
+      }
       
-      // If the user were to try to text "Use BillyBot" we could switch to agent ID 2
-      if (messageText.toLowerCase().includes("use billybot")) {
-        agentId = 2;
+      // If no agent ID could be found, inform the user
+      if (!defaultAgentId) {
+        console.error('No AI agents available');
+        await this.bot?.sendMessage(chatId, "I'm sorry, but there are no AI agents available to process your message right now. Please try again later or contact your administrator.");
+        return;
+      }
+      
+      // Set the agent ID to use
+      let agentId = defaultAgentId;
+      
+      console.log(`Using agent ID for Telegram: ${agentId}`);
+      
+      // Allow user to switch to BillyBot if available
+      if (billyBotAgent && messageText.toLowerCase().includes("use billybot")) {
+        agentId = billyBotAgent.id;
         console.log(`Switching to BillyBot Agent (ID: ${agentId}) based on user request`);
         await this.bot?.sendMessage(chatId, "Switching to BillyBot Agent for this conversation.");
       }
       
       try {
+        console.log(`Generating AI response using agent ID: ${agentId} for conversation ID: ${conversationId}`);
+        
         // Generate AI response using the selected Langchain agent
         const aiResponse = await this.agentService.generateResponse(
           conversationId,
@@ -391,25 +449,44 @@ Try asking questions about power usage, environmental data, or request reports.`
         
         // Verify AI response
         if (!aiResponse) {
-          console.error('No AI response generated');
+          console.error('No AI response generated (null response returned)');
           await this.bot?.sendMessage(chatId, "I'm sorry, but I encountered an error processing your message. Please try again later.");
           return;
         }
         
-        // Store outbound message
+        // Log the full aiResponse for debugging
+        console.log('Raw AI response:', JSON.stringify(aiResponse, null, 2));
+        
+        // Use type-safe access for logging
+        const hasContent = aiResponse && typeof aiResponse === 'object' && 'content' in aiResponse && aiResponse.content;
+        const responseId = aiResponse && typeof aiResponse === 'object' && 'id' in aiResponse ? aiResponse.id : 'unknown';
+        
+        console.log(`AI response processed - Has content: ${hasContent ? 'Yes' : 'No'}, ID: ${responseId}`);
+        
+        // Store outbound message - use safe access to content
+        const responseText = hasContent ? aiResponse.content : "No response content";
+        
         await db.insert(telegramMessages)
           .values({
             telegramUserId: user[0].id,
             direction: 'outbound',
-            messageText: aiResponse.content || "No response content",
+            messageText: responseText,
             conversationId: conversationId,
             isProcessed: true,
           });
         
         // Send AI response back to user
-        await this.bot?.sendMessage(chatId, aiResponse.content || "I processed your message but couldn't generate a proper response. Please try again.");
+        await this.bot?.sendMessage(chatId, responseText);
       } catch (responseError) {
         console.error('Error generating AI response:', responseError);
+        
+        // Add detailed error logging
+        if (responseError instanceof Error) {
+          console.error(`Error name: ${responseError.name}`);
+          console.error(`Error message: ${responseError.message}`);
+          console.error(`Error stack: ${responseError.stack}`);
+        }
+        
         await this.bot?.sendMessage(chatId, "I apologize, but I encountered an error while processing your request. Please try again later.");
         return;
       }
