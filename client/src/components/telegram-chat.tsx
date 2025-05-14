@@ -28,7 +28,8 @@ import {
   Clock,
   QrCode,
   Copy,
-  ArrowRight
+  ArrowRight,
+  Zap
 } from "lucide-react";
 
 // Message types
@@ -65,6 +66,19 @@ interface TelegramUser {
 interface TelegramVerificationResponse {
   verificationCode: string;
   instructions: string;
+}
+
+// Langchain Agent interface
+interface LangchainAgent {
+  id: number;
+  name: string;
+  description: string;
+  modelName: string;
+  temperature: number;
+  maxTokens: number;
+  systemPrompt: string;
+  enabled: boolean;
+  tools?: any[];
 }
 
 export function TelegramChat() {

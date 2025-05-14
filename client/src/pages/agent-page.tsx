@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { AgentMcpTasksPage } from "@/pages/agent-mcp-tasks";
-// Telegram chat import removed as requested
+import { TelegramChat } from "@/components/telegram-chat";
 import { EnhancedMessage } from "@/components/enhanced-message";
 import { MessageSearch } from "@/components/message-search";
 import { AIChat } from "@/components/ai-chat";
@@ -1646,7 +1646,13 @@ export default function AgentPage() {
                       <Cpu className="h-3.5 w-3.5" />
                       <span className="font-medium">MCP</span>
                     </TabsTrigger>
-                    {/* Telegram tab removed as requested */}
+                    <TabsTrigger 
+                      value="telegram" 
+                      className="flex items-center justify-center gap-1.5 text-xs py-1 px-3 rounded-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-300"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" />
+                      <span className="font-medium">Telegram</span>
+                    </TabsTrigger>
                     <TabsTrigger 
                       value="ai-chat" 
                       className="flex items-center justify-center gap-1.5 text-xs py-1 px-3 rounded-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-300"
@@ -1721,7 +1727,14 @@ export default function AgentPage() {
                   </div>
                 </TabsContent>
                 
-                {/* Telegram tab content removed as requested */}
+                <TabsContent 
+                  value="telegram" 
+                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
+                >
+                  <div className="p-3">
+                    <TelegramChat />
+                  </div>
+                </TabsContent>
                 
                 <TabsContent 
                   value="ai-chat" 
