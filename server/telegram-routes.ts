@@ -6,7 +6,13 @@ import { Express, Request, Response } from 'express';
 import { telegramService } from './services/telegram-service';
 import { db } from './db';
 import * as schema from '../shared/schema';
-import { telegramSettings, telegramUsers, telegramMessages } from '../shared/schema';
+import { 
+  telegramSettings, 
+  telegramUsers, 
+  telegramMessages, 
+  TelegramUserMetadata,
+  telegramUserMetadataSchema 
+} from '../shared/schema';
 import { eq, and, desc } from 'drizzle-orm/expressions';
 import { sql } from 'drizzle-orm';
 import { z } from 'zod';
@@ -168,7 +174,8 @@ export function registerTelegramRoutes(app: Express) {
       
       // In the new schema, we consider a user connected if they have a record
       // and we'll store verification status in metadata
-      const metadata = user.metadata || {};
+      // Cast the metadata to TelegramUserMetadata type for better type checking
+      const metadata = user.metadata as TelegramUserMetadata || {};
       const isVerified = metadata.isVerified === true;
       const notificationsEnabled = metadata.notificationsEnabled !== false;
       

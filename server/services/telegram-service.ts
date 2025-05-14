@@ -603,15 +603,28 @@ Try asking questions about power usage, environmental data, or request reports.`
           })
           .where(eq(telegramUsers.id, existingUser[0].id));
       } else {
+        // Create initial metadata
+        const metadata = {
+          verificationCode: verificationCode,
+          verificationExpires: expirationDate.toISOString(),
+          isVerified: false,
+          notificationsEnabled: true,
+          receiveReports: true,
+          receiveAlerts: true
+        };
+        
         // Create new user record with pending verification
         await db.insert(telegramUsers)
           .values({
             userId: userId,
             telegramId: 'pending_verification',
-            chatId: 'pending_verification',
-            verificationCode: verificationCode,
-            verificationExpires: expirationDate,
-            isVerified: false,
+            firstName: '',
+            lastName: null,
+            username: null,
+            languageCode: null,
+            metadata: metadata,
+            createdAt: new Date(),
+            updatedAt: new Date()
           });
       }
       

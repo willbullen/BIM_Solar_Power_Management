@@ -634,6 +634,20 @@ export type InsertMcpTask = z.infer<typeof insertMcpTaskSchema>;
 export type McpTask = typeof mcpTasks.$inferSelect;
 
 // Telegram integration schema
+// Define Telegram user metadata type
+export const telegramUserMetadataSchema = z.object({
+  isVerified: z.boolean().optional(),
+  verificationCode: z.string().nullable().optional(),
+  verificationExpires: z.string().nullable().optional(), // ISO string date
+  chatId: z.string().nullable().optional(),
+  lastAccessed: z.string().nullable().optional(), // ISO string date
+  notificationsEnabled: z.boolean().optional(),
+  receiveAlerts: z.boolean().optional(),
+  receiveReports: z.boolean().optional()
+});
+
+export type TelegramUserMetadata = z.infer<typeof telegramUserMetadataSchema>;
+
 export const telegramUsers = pgTable("langchain_telegram_users", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
