@@ -43,7 +43,7 @@ async function testDatabaseFunctions() {
 async function listAllFunctions() {
   try {
     // Get all functions from the database
-    const allFunctions = await FunctionRegistry.getAllFunctions();
+    const allFunctions = await UnifiedFunctionRegistry.getAllFunctions();
     return allFunctions;
   } catch (error) {
     console.error('Error listing functions:', error);

@@ -436,16 +436,6 @@ export class DbAgentFunctions {
           }
         },
         required: ['tableName']
-      },
-      handler: async (args: any) => {
-        const { tableName, filters = {}, limit, offset, orderBy } = args;
-        
-        const options: any = {};
-        if (limit) options.limit = limit;
-        if (offset) options.offset = offset;
-        if (orderBy) options.orderBy = orderBy;
-        
-        return await DbCore.select(tableName, filters, options);
       }
     });
 
