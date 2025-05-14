@@ -40,12 +40,13 @@ export async function migrate() {
 
 /**
  * Create all the AI agent related tables
+ * Note: agent_functions table has been completely removed
+ * All function execution now happens through langchain_tools
  */
 async function createAgentTables() {
-  // Agent Functions - DEPRECATED - Using langchain_tools exclusively
-  console.log('Skipping agent_functions table creation (deprecated)');
-  // We use langchain_tools exclusively - see server/migrate-function-system.ts
-  // and server/langchain-migration.ts for the new function system
+  // We no longer create agent_functions table - using langchain_tools exclusively
+  console.log('Agent functions now handled by langchain_tools');
+  // See server/migrate-function-system.ts for the new function system
   
   // Agent Conversations
   await db.execute(sql`

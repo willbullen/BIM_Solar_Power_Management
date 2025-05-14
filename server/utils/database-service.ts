@@ -396,9 +396,13 @@ export class DbAgentFunctions {
     await UnifiedFunctionRegistry.registerFunction({
       name: 'queryTable',
       description: 'Query data from a database table with optional filters and sorting',
-      module: 'database',
-      returnType: 'array',
-      accessLevel: 'User', // Will be compared case-insensitively
+      toolType: 'database',
+      implementation: 'QueryTableTool',
+      metadata: {
+        accessLevel: 'User', 
+        returnType: 'array'
+      },
+      enabled: true,
       parameters: {
         type: 'object',
         properties: {
@@ -449,9 +453,13 @@ export class DbAgentFunctions {
     await UnifiedFunctionRegistry.registerFunction({
       name: 'aggregateData',
       description: 'Perform aggregations (count, sum, avg, min, max) on database tables',
-      module: 'database',
-      returnType: 'array',
-      accessLevel: 'User', // Will be compared case-insensitively
+      toolType: 'database',
+      implementation: 'AggregateDataTool',
+      metadata: {
+        accessLevel: 'User',
+        returnType: 'array'
+      },
+      enabled: true,
       parameters: {
         type: 'object',
         properties: {
@@ -654,10 +662,13 @@ export class DbAgentFunctions {
     await UnifiedFunctionRegistry.registerFunction({
       name: 'executeSqlQuery',
       description: 'Execute a SQL query with parameterized values for security',
-      module: 'database',
-      returnType: 'object',
-      functionCode: 'return DatabaseService.AgentFunctions.executeSqlQuery(params, context)',
-      accessLevel: 'admin', // Will be compared case-insensitively 
+      toolType: 'database',
+      implementation: 'SqlExecutionTool',
+      metadata: {
+        accessLevel: 'admin', 
+        returnType: 'object'
+      },
+      enabled: true,
       parameters: {
         type: 'object',
         properties: {
