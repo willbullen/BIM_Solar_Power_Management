@@ -446,7 +446,7 @@ export class DbAgentFunctions {
     });
 
     // Register aggregation function
-    await FunctionRegistry.registerFunction({
+    await UnifiedFunctionRegistry.registerFunction({
       name: 'aggregateData',
       description: 'Perform aggregations (count, sum, avg, min, max) on database tables',
       module: 'database',
@@ -508,7 +508,7 @@ export class DbAgentFunctions {
     });
 
     // Register time series aggregation function
-    await FunctionRegistry.registerFunction({
+    await UnifiedFunctionRegistry.registerFunction({
       name: 'timeSeriesAggregate',
       description: 'Aggregate time series data by time intervals',
       module: 'database',
@@ -585,7 +585,7 @@ export class DbAgentFunctions {
     });
 
     // Register correlation analysis function
-    await FunctionRegistry.registerFunction({
+    await UnifiedFunctionRegistry.registerFunction({
       name: 'analyzeCorrelation',
       description: 'Analyze correlation between two numeric columns',
       module: 'database',
