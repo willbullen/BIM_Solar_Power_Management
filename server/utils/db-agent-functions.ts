@@ -14,6 +14,58 @@ import * as schema from '@shared/schema';
  * Register all database-related functions for the AI agent
  */
 export async function registerDatabaseFunctions() {
+  // Register ReadFromDB function - to handle the Telegram bot using this function name
+  await FunctionRegistry.registerFunction({
+    name: 'ReadFromDB',
+    description: 'Execute database queries to retrieve information, including listing tables',
+    module: 'database',
+    returnType: 'object',
+    accessLevel: 'User',
+    parameters: {
+      type: 'object',
+      properties: {
+        input: {
+          type: 'string',
+          description: "Text command or SQL query. Use 'list tables' to show all tables."
+        }
+      },
+      required: ['input']
+    },
+    functionCode: `
+      try {
+        // Check for special commands like list tables
+        if (typeof params.input === 'string') {
+          const inputLower = params.input.toLowerCase().trim();
+          
+          if (inputLower === 'list tables' || 
+              inputLower === 'show tables' || 
+              inputLower.includes('list all tables') ||
+              inputLower.includes('all tables')) {
+                
+            console.log("ReadFromDB: Processing 'list tables' command");
+            
+            // Use the listAllTables function for this request
+            return await FunctionRegistry.executeFunction(
+              'listAllTables', 
+              { includeSystemTables: false },
+              context
+            );
+          }
+        }
+        
+        // For any other SQL queries, you can implement them here
+        // This is just a basic implementation to handle the list tables command
+        return {
+          error: "Only 'list tables' command is supported currently. For complex queries, please use explicit SQL.",
+          message: "Please use 'list tables' to see available tables."
+        };
+      } catch (error) {
+        console.error("ReadFromDB function error:", error);
+        return { error: String(error) };
+      }
+    `
+  });
+
   // Register listAllTables function
   await FunctionRegistry.registerFunction({
     name: 'listAllTables',
