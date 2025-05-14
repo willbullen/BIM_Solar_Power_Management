@@ -354,34 +354,22 @@ export function registerTelegramRoutes(app: Express) {
         // If no specific agent ID is provided, try to find the Main Assistant Agent
         if (!agentId) {
           try {
-            // Look up the Main Assistant Agent by name using proper DB query technique
-            const mainAssistantAgent = await db.select({
-              id: schema.langchainAgents.id,
-              name: schema.langchainAgents.name,
-              description: schema.langchainAgents.description
-            })
-              .from(schema.langchainAgents)
-              .where(and(
-                eq(schema.langchainAgents.name, 'Main Assistant Agent'),
-                eq(schema.langchainAgents.enabled, true)
-              ))
-              .limit(1);
+            // Fetch all agents - mimicking the exact pattern used in the Settings page
+            console.log("Fetching all agents to find Main Assistant Agent");
+            const agents = await db.select().from(schema.langchainAgents).orderBy(desc(schema.langchainAgents.updatedAt));
+            console.log(`Found ${agents.length} agents in database`);
+            
+            if (agents.length > 0) {
+              // Log the names of agents for debugging
+              console.log("Agent names:", agents.map(agent => `${agent.name} (ID: ${agent.id})`));
               
-            if (mainAssistantAgent.length > 0) {
-              agentId = mainAssistantAgent[0].id;
-              console.log(`Using Main Assistant Agent for test message: ID ${agentId}`);
+              // Use the EXACT SAME APPROACH as the Settings page
+              const mainAgent = agents.find(agent => agent.name === 'Main Assistant Agent' && agent.enabled) || agents[0];
+              agentId = mainAgent.id;
               
-              // Check if this agent has associated tools
-              const agentTools = await db.select({
-                toolId: schema.langchainAgentTools.toolId,
-                priority: schema.langchainAgentTools.priority
-              })
-                .from(schema.langchainAgentTools)
-                .where(eq(schema.langchainAgentTools.agentId, agentId));
-                
-              console.log(`Found ${agentTools.length} tool associations for agent ID ${agentId}`);
+              console.log(`Using agent "${mainAgent.name}" (ID: ${agentId}) for test message`);
             } else {
-              console.log('Main Assistant Agent not found, using default or any available agent');
+              console.log('No agents found in the database');
             }
           } catch (error) {
             console.error('Error looking up Main Assistant Agent in test-message:', error);

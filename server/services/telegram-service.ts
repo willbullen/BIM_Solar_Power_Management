@@ -421,77 +421,28 @@ Try asking questions about power usage, environmental data, or request reports.`
         messageText
       );
       
-      // Find the Main Assistant Agent by name - this is more reliable than hardcoding IDs
+      // Find the Main Assistant Agent - USING EXACT APPROACH FROM SETTINGS PAGE
       let agentId: number | undefined;
       try {
         console.log("Finding Main Assistant Agent for Telegram message processing");
         
-        // First try to find the Main Assistant Agent using proper DB query technique
-        const mainAssistantAgent = await db.select({
-          id: schema.langchainAgents.id,
-          name: schema.langchainAgents.name,
-          description: schema.langchainAgents.description,
-          modelName: schema.langchainAgents.modelName
-        })
-          .from(schema.langchainAgents)
-          .where(and(
-            eq(schema.langchainAgents.name, 'Main Assistant Agent'),
-            eq(schema.langchainAgents.enabled, true)
-          ))
-          .limit(1);
+        // Fetch all agents - mimicking the exact pattern used in the Settings page
+        console.log("Fetching all agents to find Main Assistant Agent");
+        const agents = await db.select().from(schema.langchainAgents).orderBy(desc(schema.langchainAgents.updatedAt));
+        console.log(`Found ${agents.length} agents in database`);
         
-        if (mainAssistantAgent.length > 0) {
-          agentId = mainAssistantAgent[0].id;
-          console.log(`Using Main Assistant Agent for Telegram: "${mainAssistantAgent[0].name}" (ID: ${agentId})`);
+        if (agents.length > 0) {
+          // Log the names of agents for debugging
+          console.log("Agent names:", agents.map(agent => `${agent.name} (ID: ${agent.id})`));
           
-          // Check if this agent has associated tools
-          const agentTools = await db.select({
-            toolId: schema.langchainAgentTools.toolId,
-            priority: schema.langchainAgentTools.priority
-          })
-            .from(schema.langchainAgentTools)
-            .where(eq(schema.langchainAgentTools.agentId, agentId));
+          // Use the EXACT SAME APPROACH as the Settings page
+          const mainAgent = agents.find(agent => agent.name === 'Main Assistant Agent' && agent.enabled) || agents[0];
+          agentId = mainAgent.id;
           
-          console.log(`Found ${agentTools.length} tool associations for agent ID ${agentId}`);
-          
-          // Log the tool names for debugging
-          if (agentTools.length > 0) {
-            const toolIds = agentTools.map(tool => tool.toolId);
-            
-            // Better SQL query with proper use of SQL parameter array
-            const tools = await db.select({
-              id: schema.langchainTools.id,
-              name: schema.langchainTools.name,
-              toolType: schema.langchainTools.toolType
-            })
-              .from(schema.langchainTools)
-              .where(inArray(schema.langchainTools.id, toolIds));
-              
-            if (tools.length > 0) {
-              console.log(`Tools available for agent "${mainAssistantAgent[0].name}": ${tools.map(t => t.name).join(', ')}`);
-            } else {
-              console.warn(`No tools found for agent ID ${agentId} despite having ${agentTools.length} tool associations`);
-            }
-          }
+          console.log(`Using agent "${mainAgent.name}" (ID: ${agentId}) for Telegram message processing`);
         } else {
-          console.warn(`Main Assistant Agent not found in the database, searching for any enabled agent`);
-          
-          // If Main Assistant isn't found, fall back to any enabled agent
-          const fallbackAgent = await db.select({
-            id: schema.langchainAgents.id,
-            name: schema.langchainAgents.name
-          })
-            .from(schema.langchainAgents)
-            .where(eq(schema.langchainAgents.enabled, true))
-            .limit(1);
-            
-          if (fallbackAgent.length > 0) {
-            agentId = fallbackAgent[0].id;
-            console.log(`Using fallback agent: "${fallbackAgent[0].name}" (ID: ${agentId})`);
-          } else {
-            console.warn("No enabled agents found in the database");
-            agentId = undefined; // Will use default agent in agent-service.ts
-          }
+          console.log('No agents found in the database');
+          agentId = undefined; // Will use default agent in agent-service.ts
         }
       } catch (error) {
         console.error("Error finding agent for Telegram incoming message:", error);
