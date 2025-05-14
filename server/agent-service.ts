@@ -4,8 +4,7 @@ import { db } from "./db";
 import * as schema from "@shared/schema";
 import { AIService } from "./ai-service";
 import { DbUtils } from "./utils/db-utils";
-import { FunctionRegistry } from "./utils/function-registry";
-// Add the unified function registry - we'll use both during migration
+// Only use the unified function registry - no more legacy registry
 import { UnifiedFunctionRegistry } from "./utils/unified-function-registry";
 import { eq, and, or, asc, desc, sql, inArray } from "drizzle-orm";
 
@@ -444,29 +443,13 @@ export class AgentService {
         try {
           console.log(`Executing function "${functionName}" with args:`, JSON.stringify(functionArgs));
           
-          // Try unified function registry first, fall back to legacy registry if not found
-          let functionResult;
-          try {
-            console.log(`Attempting to execute with UnifiedFunctionRegistry: ${functionName}`);
-            functionResult = await UnifiedFunctionRegistry.executeFunction(
-              functionName,
-              functionArgs,
-              { userId, userRole, agentId, conversationId }
-            );
-          } catch (error) {
-            // If function not found in unified registry, try legacy registry
-            if (error.message?.includes('not found')) {
-              console.log(`Function ${functionName} not found in unified registry, trying legacy registry`);
-              functionResult = await FunctionRegistry.executeFunction(
-                functionName,
-                functionArgs,
-                { userId, userRole }
-              );
-            } else {
-              // Re-throw other errors
-              throw error;
-            }
-          }
+          // Use only the unified function registry - no more fallback to legacy
+          console.log(`Executing with UnifiedFunctionRegistry: ${functionName}`);
+          const functionResult = await UnifiedFunctionRegistry.executeFunction(
+            functionName,
+            functionArgs,
+            { userId, userRole, agentId, conversationId }
+          );
           
           // Save the function result
           await db.update(schema.agentMessages)

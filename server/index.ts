@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { migrate as migrateTelegram } from "./migrate-telegram";
 import { migrate as migrateLangChain } from "./migrate-langchain";
-import { setupUnifiedFunctionSystem } from "./migrate-function-system";
+import { setupUnifiedFunctionSystem, runMigration, migrateAgentFunctions } from "./migrate-function-system";
 import cors from 'cors';
 
 const app = express();
@@ -73,7 +73,17 @@ app.use((req, res, next) => {
       // Continue with server startup even if LangChain migration fails
     }
     
-    // Set up the unified function system
+    // Run the agent function migration - completely move all functions to langchain_tools
+    try {
+      console.log('Starting complete migration of agent_functions to langchain_tools...');
+      await migrateAgentFunctions();
+      console.log('Complete migration of agent_functions to langchain_tools finished successfully');
+    } catch (migrationError) {
+      console.error('Error during complete function migration:', migrationError);
+      // Continue with server startup even if migration fails
+    }
+    
+    // Set up the unified function system (which now only uses langchain_tools)
     try {
       await setupUnifiedFunctionSystem();
       console.log('Unified function system setup completed successfully');
