@@ -283,7 +283,11 @@ async function dropOldTables() {
 /**
  * Run the migration directly if this script is executed as a standalone module
  */
-if (require.main === module) {
+// For ESM, we need a different approach to check if this is the main module
+const isMainModule = import.meta.url.startsWith('file:') && 
+  process.argv[1] && import.meta.url.endsWith(process.argv[1]);
+
+if (isMainModule) {
   migrateLangchainNaming()
     .then(() => {
       console.log('Migration script executed successfully');
