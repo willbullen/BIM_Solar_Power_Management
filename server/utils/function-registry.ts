@@ -158,10 +158,16 @@ export class FunctionRegistry {
       // Validate parameters against function schema
       const validParams = FunctionRegistry.validateParameters(parameters, functionDef.parameters);
       
-      // Create a secure execution sandbox
-      const secureExecute = (funcCode: string, params: any, dbUtils: any) => {
-        const func = new Function('params', 'dbUtils', 'context', funcCode);
-        return func(params, dbUtils, context);
+      // Create a secure execution sandbox that supports async functions
+      const secureExecute = async (funcCode: string, params: any, dbUtils: any) => {
+        // Wrap the function code in an async function to support await
+        const asyncWrapper = `
+          return (async function() { 
+            ${funcCode}
+          })();
+        `;
+        const func = new Function('params', 'dbUtils', 'context', asyncWrapper);
+        return await func(params, dbUtils, context);
       };
       
       // Create a database helper with user role restrictions

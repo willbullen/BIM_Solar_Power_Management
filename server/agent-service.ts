@@ -5,7 +5,7 @@ import * as schema from "@shared/schema";
 import { AIService } from "./ai-service";
 import { DbUtils } from "./utils/db-utils";
 import { FunctionRegistry } from "./utils/function-registry";
-import { eq, and, or, asc, desc, sql } from "drizzle-orm";
+import { eq, and, or, asc, desc, sql, inArray } from "drizzle-orm";
 
 // Define the core agent capabilities and functions
 export class AgentService {
@@ -589,8 +589,10 @@ export class AgentService {
           const langchainTools = await db
             .select()
             .from(schema.langchainTools)
-            .where(inArray(schema.langchainTools.id, toolIds))
-            .where(eq(schema.langchainTools.enabled, true));
+            .where(and(
+              inArray(schema.langchainTools.id, toolIds),
+              eq(schema.langchainTools.enabled, true)
+            ));
           
           console.log(`Found ${langchainTools.length} enabled tools for agent ID: ${agentId}`);
           
