@@ -278,6 +278,23 @@ Try asking questions about power usage, environmental data, or request reports.`
         messageText
       );
       
+      // Try to find the Main Assistant Agent in the database
+      // In future, this should be configurable
+      try {
+        const mainAssistantAgent = await db.select()
+          .from(sql`"langchain_agents"`)
+          .where(sql`"name" = 'Main Assistant Agent' AND "enabled" = true`)
+          .limit(1);
+        
+        if (mainAssistantAgent.length > 0) {
+          console.log(`Using Langchain Main Assistant Agent for Telegram message processing: ${mainAssistantAgent[0].id}`);
+          // In the future, we could use the agent's ID to customize processing
+        }
+      } catch (agentError) {
+        console.error('Error finding Main Assistant Agent:', agentError);
+        // Continue with standard processing
+      }
+      
       // Generate AI response
       const aiResponse = await this.agentService.generateResponse(
         conversationId,

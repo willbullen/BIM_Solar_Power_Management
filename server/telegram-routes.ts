@@ -328,23 +328,42 @@ export function registerTelegramRoutes(app: Express) {
   });
 
   /**
-   * Send a test message via Telegram
+   * Send a test message via Telegram, with optional Langchain Agent integration
    */
   app.post('/api/telegram/test-message', requireAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.session.userId!;
       
+      // Updated schema to include optional agentId and useAgent flag
       const messageSchema = z.object({
-        message: z.string().min(1).max(4096)
+        message: z.string().min(1).max(4096),
+        agentId: z.number().optional(),
+        useAgent: z.boolean().optional()
       });
       
       const validatedData = messageSchema.parse(req.body);
       
-      const success = await telegramService.sendNotification(
-        userId,
-        validatedData.message,
-        'Test Message'
-      );
+      let success = false;
+      
+      // If useAgent flag is true and agentId is provided, use the Langchain agent
+      if (validatedData.useAgent && validatedData.agentId) {
+        console.log(`Using Langchain agent ${validatedData.agentId} for Telegram message`);
+        
+        // TODO: In the future, integrate with Langchain agent for processing before sending
+        // For now, just pass through the message
+        success = await telegramService.sendNotification(
+          userId,
+          `[AI Agent] ${validatedData.message}`,
+          'Telegram Message via Langchain'
+        );
+      } else {
+        // Regular message sending without agent processing
+        success = await telegramService.sendNotification(
+          userId,
+          validatedData.message,
+          'Test Message'
+        );
+      }
       
       if (success) {
         res.json({ success: true });
