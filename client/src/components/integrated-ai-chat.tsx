@@ -324,14 +324,9 @@ export function IntegratedAIChat() {
   useEffect(() => {
     if (showCreateDialog && user) {
       console.log("Dialog opened - fetching agents");
-      // Make sure we have a clean form
-      setNewConversationTitle(""); 
+      setNewConversationTitle("");
       setSelectedAgentId("default");
-      
-      // Fetch available agents for the dropdown
       fetchLangchainAgents();
-      
-      console.log("Conversation dialog initialized");
     }
   }, [showCreateDialog, user, fetchLangchainAgents]);
   
@@ -398,21 +393,13 @@ export function IntegratedAIChat() {
   // Create a new conversation
   const createConversation = useMutation({
     mutationFn: async ({ title, agentId }: { title: string, agentId?: string }) => {
-      console.log("Creating conversation with data:", { title, agentId });
-      
-      // Prepare payload with proper type conversion
-      const payload: { title: string; agentId?: number } = { title };
-      
-      // Only add agentId if it's a valid selection (not default and not empty)
-      if (agentId && agentId !== "default" && agentId !== "no-agents-found") {
-        payload.agentId = parseInt(agentId, 10);
-      }
-      
-      console.log("Final payload:", payload);
-      
       return apiRequest('/api/agent/conversations', {
         method: 'POST',
-        data: payload
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          title, 
+          agentId: (agentId && agentId !== "default") ? parseInt(agentId) : undefined 
+        }),
       });
     },
     onSuccess: (data) => {
@@ -506,30 +493,12 @@ export function IntegratedAIChat() {
   // Handle creating a new conversation
   const handleCreateConversation = (e: FormEvent) => {
     e.preventDefault();
+    if (!newConversationTitle.trim()) return;
     
-    // Validate that we have a title
-    if (!newConversationTitle.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a conversation name",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    console.log("Creating conversation with title:", newConversationTitle);
-    
-    // Only include agentId if it's not "default" and not empty
-    const payload: { title: string, agentId?: string } = {
-      title: newConversationTitle
-    };
-    
-    if (selectedAgentId && selectedAgentId !== "default" && selectedAgentId !== "no-agents-found") {
-      payload.agentId = selectedAgentId;
-      console.log("Using agent ID:", payload.agentId);
-    }
-    
-    createConversation.mutate(payload);
+    createConversation.mutate({ 
+      title: newConversationTitle,
+      agentId: selectedAgentId || undefined
+    });
   };
   
   // Handle sending a message
@@ -811,18 +780,13 @@ export function IntegratedAIChat() {
                       <p className="text-xs text-blue-400">
                         Beginning of conversation - {manualMessages.length} messages
                       </p>
-                      
-                      {activeConversation?.agentId && (
-                        <div className="bg-slate-800 inline-flex items-center gap-1 px-2 py-1 rounded-full mt-2 mb-1 text-xs">
-                          <Bot className="h-3 w-3 text-blue-400" />
-                          <span className="font-medium text-blue-400">
-                            {agents.find(a => a.id === activeConversation.agentId)?.name || 'Agent'}
-                          </span>
-                        </div>
-                      )}
-                      
                       <p className="text-xs text-gray-500 mt-1">
                         Conversation ID: {activeConversation?.id}
+                        {activeConversation?.agentId && (
+                          <span className="ml-1">
+                            • Using: <span className="text-blue-400">{agents.find(a => a.id === activeConversation.agentId)?.name || 'Agent'}</span>
+                          </span>
+                        )}
                       </p>
                     </div>
                     {allMessages.map((msg, index) => (
@@ -834,11 +798,7 @@ export function IntegratedAIChat() {
                         {msg.role !== 'user' && (
                           <Avatar className="h-8 w-8">
                             <AvatarImage src="/bot-avatar.png" alt="AI" />
-                            <AvatarFallback className="bg-blue-700 text-white">
-                              {activeConversation?.agentId ? (
-                                agents.find(a => a.id === activeConversation.agentId)?.name?.charAt(0) || 'AI'
-                              ) : 'AI'}
-                            </AvatarFallback>
+                            <AvatarFallback className="bg-blue-700 text-white">AI</AvatarFallback>
                           </Avatar>
                         )}
                         
@@ -874,11 +834,7 @@ export function IntegratedAIChat() {
                           
                           <div className="flex items-center text-xs text-slate-500">
                             <span>
-                              {msg.role === 'user' ? 'You' : (
-                                activeConversation?.agentId 
-                                  ? `${agents.find(a => a.id === activeConversation.agentId)?.name || 'AI'}`
-                                  : 'AI'
-                              )} • {new Date(msg.timestamp || msg.createdAt || "").toLocaleTimeString()}
+                              {msg.role === 'user' ? 'You' : 'AI'} • {new Date(msg.timestamp || msg.createdAt || "").toLocaleTimeString()}
                             </span>
                           </div>
                         </div>
