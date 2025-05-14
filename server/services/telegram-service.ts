@@ -38,7 +38,16 @@ export class TelegramService {
         .where(eq(telegramUsers.userId, userId))
         .limit(1);
       
-      if (user.length === 0 || !user[0].isVerified || !user[0].telegramId) {
+      if (user.length === 0 || !user[0].telegramId) {
+        console.log('User does not have a Telegram account');
+        return false;
+      }
+      
+      // Access verification status from metadata
+      const metadata = user[0].metadata || {};
+      const isVerified = metadata.isVerified === true;
+      
+      if (!isVerified) {
         console.log('User does not have a verified Telegram account');
         return false;
       }
@@ -285,30 +294,45 @@ To get started, you need to verify your account. Please ask your system administ
     const lastName = msg.from?.last_name || '';
     
     try {
-      // Check if verification code is valid
-      const pendingVerification = await db.select()
+      // Find users with verification code in their metadata
+      const users = await db.select()
         .from(telegramUsers)
-        .where(and(
-          eq(telegramUsers.verificationCode, verificationCode),
-          eq(telegramUsers.isVerified, false)
-        ))
-        .limit(1);
+        .limit(100);  // We'll need to search through metadata manually
+      
+      // Find the user with matching verification code
+      const pendingVerification = users.filter(user => {
+        const metadata = user.metadata || {};
+        return metadata.verificationCode === verificationCode && 
+               metadata.isVerified !== true;
+      });
       
       if (pendingVerification.length > 0) {
+        const user = pendingVerification[0];
+        const currentMetadata = user.metadata || {};
+        
+        // Create updated metadata with verification status
+        const updatedMetadata = {
+          ...currentMetadata,
+          isVerified: true,
+          verificationCode: null, // Clear verification code
+          chatId: chatId.toString(),
+          lastAccessed: new Date().toISOString(),
+          notificationsEnabled: true,
+          receiveAlerts: true,
+          receiveReports: true
+        };
+        
         // Update user record with verification and Telegram details
         await db.update(telegramUsers)
           .set({
-            isVerified: true,
-            telegramUsername: username,
-            telegramFirstName: firstName,
-            telegramLastName: lastName,
-            chatId: chatId.toString(),
-            telegramId: telegramId,
-            verificationCode: null,
-            updatedAt: new Date(),
-            lastAccessed: new Date()
+            username,
+            firstName,
+            lastName,
+            telegramId,
+            metadata: updatedMetadata,
+            updatedAt: new Date()
           })
-          .where(eq(telegramUsers.id, pendingVerification[0].id));
+          .where(eq(telegramUsers.id, user.id));
         
         await this.bot?.sendMessage(chatId, `Your account has been successfully verified! You can now interact with the AI Agent.
 
@@ -560,12 +584,21 @@ Try asking questions about power usage, environmental data, or request reports.`
         .limit(1);
       
       if (existingUser.length > 0) {
+        // Get current metadata
+        const currentMetadata = existingUser[0].metadata || {};
+        
+        // Update metadata with verification info
+        const updatedMetadata = {
+          ...currentMetadata,
+          verificationCode: verificationCode,
+          verificationExpires: expirationDate.toISOString(),
+          isVerified: false
+        };
+        
         // Update existing user
         await db.update(telegramUsers)
           .set({
-            verificationCode: verificationCode,
-            verificationExpires: expirationDate,
-            isVerified: false,
+            metadata: updatedMetadata,
             updatedAt: new Date()
           })
           .where(eq(telegramUsers.id, existingUser[0].id));
