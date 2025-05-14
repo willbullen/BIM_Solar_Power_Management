@@ -248,10 +248,28 @@ export class FunctionRegistry {
       };
       
       // Execute the function in the sandbox
-      return await secureExecute(functionDef.functionCode, validParams, dbHelper);
-    } catch (error) {
-      console.error(`Error executing function ${name}:`, error);
-      throw error;
+      console.log(`[Function Registry] Executing ${name} in the sandbox`);
+      try {
+        const result = await secureExecute(functionDef.functionCode, validParams, dbHelper);
+        console.log(`[Function Registry] ${name} executed successfully, result:`, typeof result === 'object' ? JSON.stringify(result) : result);
+        return result;
+      } catch (sandboxError: any) {
+        console.error(`[Function Registry] Error in sandbox execution of ${name}:`, sandboxError);
+        // Return a formatted error result instead of throwing
+        return {
+          error: sandboxError?.message || String(sandboxError),
+          success: false,
+          message: `Error executing function ${name}: ${sandboxError?.message || String(sandboxError)}`
+        };
+      }
+    } catch (error: any) {
+      console.error(`[Function Registry] Error executing function ${name}:`, error);
+      // Return a formatted error instead of throwing to prevent complete failure
+      return {
+        error: error?.message || String(error),
+        success: false,
+        message: `Error executing function ${name}: ${error?.message || String(error)}`
+      };
     }
   }
   

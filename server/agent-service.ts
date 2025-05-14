@@ -540,14 +540,34 @@ export class AgentService {
     userRole: string
   ): Promise<any> {
     try {
-      return await FunctionRegistry.executeFunction(
+      console.log(`[AgentService] Executing function: ${name} with params:`, 
+        typeof parameters === 'object' ? JSON.stringify(parameters) : parameters);
+      
+      // Special handling for listAllTables when called from Telegram
+      if (name === 'listAllTables' && 
+          (typeof parameters === 'string' || parameters === null || parameters === undefined)) {
+        console.log(`[AgentService] Converting string parameters for listAllTables: "${parameters}"`);
+        parameters = { includeSystemTables: false };
+      }
+      
+      const result = await FunctionRegistry.executeFunction(
         name,
         parameters,
         { userId, userRole }
       );
-    } catch (error) {
-      console.error(`Error executing function ${name}:`, error);
-      throw error;
+      
+      console.log(`[AgentService] Function ${name} execution result:`, 
+        typeof result === 'object' ? JSON.stringify(result) : result);
+      
+      return result;
+    } catch (error: any) {
+      console.error(`[AgentService] Error executing function ${name}:`, error);
+      // Return a formatted error response instead of throwing
+      return {
+        error: error?.message || String(error),
+        success: false,
+        message: `Error executing function ${name}: ${error?.message || String(error)}`
+      };
     }
   }
 
