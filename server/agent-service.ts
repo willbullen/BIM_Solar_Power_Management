@@ -438,13 +438,16 @@ export class AgentService {
             .where(eq(schema.agentMessages.id, functionCallMessage.id));
           
           // Add the function result as a new message
+          // Make sure the functionName is never undefined to avoid OpenAI API errors
+          const functionNameToUse = functionName || 'unnamed_function';
+          
           await db.insert(schema.agentMessages).values({
             conversationId,
             role: "function",
-            name: functionName, // Required field for function role messages
+            name: functionNameToUse, // Required field for function role messages
             content: JSON.stringify(functionResult),
             metadata: { 
-              functionName,
+              functionName: functionNameToUse,
               executedAt: new Date(),
               toolCallId: toolCall.id
             }
@@ -504,13 +507,16 @@ export class AgentService {
             .where(eq(schema.agentMessages.id, functionCallMessage.id));
           
           // Add the function result as a new message
+          // Make sure the functionName is never undefined to avoid OpenAI API errors
+          const functionNameToUse = functionName || 'unnamed_function';
+          
           await db.insert(schema.agentMessages).values({
             conversationId,
             role: "function",
-            name: functionName, // Required field for function role messages
+            name: functionNameToUse, // Required field for function role messages
             content: JSON.stringify(functionResult),
             metadata: { 
-              functionName,
+              functionName: functionNameToUse,
               executedAt: new Date()
             }
           });
