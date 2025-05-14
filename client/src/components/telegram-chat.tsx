@@ -361,7 +361,7 @@ export function TelegramChat() {
 
       {/* Message History */}
       <Card className="flex-grow overflow-hidden bg-slate-900 border-slate-800 shadow-md">
-        <CardHeader className="pb-3 border-b border-slate-800">
+        <CardHeader className="pb-2 border-b border-slate-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Avatar className="h-8 w-8 bg-blue-700">
@@ -374,13 +374,6 @@ export function TelegramChat() {
                   {isTelegramConnected 
                     ? `Connected as ${telegramUser.telegramUsername || 'User'}`
                     : 'Not connected'}
-                  {selectedAgentId && isTelegramConnected && availableAgents.length > 0 && (
-                    <span className="block mt-1">
-                      Using <span className="text-blue-400">
-                        {availableAgents.find(a => a.id === selectedAgentId)?.name || 'AI Agent'}
-                      </span>
-                    </span>
-                  )}
                 </CardDescription>
               </div>
             </div>
@@ -400,10 +393,10 @@ export function TelegramChat() {
             </div>
           </div>
           
-          {/* Agent Selector - Enhanced visibility */}
+          {/* Agent Selector - Compact and integrated */}
           {isTelegramConnected && (
-            <div className="mt-3 pt-3 border-t border-slate-800">
-              <div className="flex items-center">
+            <div className="mt-2 flex items-center justify-between">
+              <div className="flex items-center flex-grow">
                 <Label htmlFor="agent-selector" className="text-xs text-gray-300 mr-2 shrink-0 font-medium">
                   AI Agent:
                 </Label>
@@ -411,7 +404,7 @@ export function TelegramChat() {
                   value={selectedAgentId?.toString() || ""} 
                   onValueChange={(value) => setSelectedAgentId(parseInt(value))}
                 >
-                  <SelectTrigger id="agent-selector" className="h-8 text-xs bg-slate-800 border-slate-700 focus:ring-blue-600">
+                  <SelectTrigger id="agent-selector" className="h-7 text-xs bg-slate-800 border-slate-700 focus:ring-blue-600">
                     <SelectValue placeholder="Select an agent" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-700 text-white">
@@ -438,7 +431,7 @@ export function TelegramChat() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex justify-between items-center mt-1">
+              <div className="flex items-center ml-2">
                 {loadingAgents ? (
                   <div className="flex items-center text-xs text-blue-400">
                     <Loader2 className="h-3 w-3 mr-1 animate-spin" />
@@ -467,7 +460,7 @@ export function TelegramChat() {
         </CardHeader>
         
         <CardContent className="p-0 overflow-hidden">
-          <ScrollArea className="h-[calc(100vh-22rem)] p-4">
+          <ScrollArea className="h-[calc(100vh-26rem)] p-4">
             {loadingMessages ? (
               <div className="flex justify-center items-center h-40">
                 <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
