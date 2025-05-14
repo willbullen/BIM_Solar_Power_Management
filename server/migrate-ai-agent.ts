@@ -42,20 +42,10 @@ export async function migrate() {
  * Create all the AI agent related tables
  */
 async function createAgentTables() {
-  // Agent Functions
-  await db.execute(sql`
-    CREATE TABLE IF NOT EXISTS "agent_functions" (
-      "id" SERIAL PRIMARY KEY,
-      "name" VARCHAR(100) NOT NULL,
-      "description" TEXT NOT NULL,
-      "module" VARCHAR(50) NOT NULL,
-      "parameters" JSONB NOT NULL,
-      "return_type" VARCHAR(100) NOT NULL,
-      "function_code" TEXT NOT NULL,
-      "access_level" VARCHAR(20) NOT NULL DEFAULT 'public',
-      "tags" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]
-    );
-  `);
+  // Agent Functions - DEPRECATED - Using langchain_tools exclusively
+  console.log('Skipping agent_functions table creation (deprecated)');
+  // We use langchain_tools exclusively - see server/migrate-function-system.ts
+  // and server/langchain-migration.ts for the new function system
   
   // Agent Conversations
   await db.execute(sql`
