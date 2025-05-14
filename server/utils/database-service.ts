@@ -618,7 +618,7 @@ export class DbAgentFunctions {
     });
 
     // Get equipment list function
-    await FunctionRegistry.registerFunction({
+    await UnifiedFunctionRegistry.registerFunction({
       name: 'getEquipmentList',
       description: 'Get a list of all equipment in the system',
       module: 'database',
@@ -637,7 +637,7 @@ export class DbAgentFunctions {
     });
 
     // Get latest power data function
-    await FunctionRegistry.registerFunction({
+    await UnifiedFunctionRegistry.registerFunction({
       name: 'getLatestPowerData',
       description: 'Get the most recent power monitoring data',
       module: 'database',
@@ -651,7 +651,7 @@ export class DbAgentFunctions {
     });
 
     // Register SQL execution function for advanced users
-    await FunctionRegistry.registerFunction({
+    await UnifiedFunctionRegistry.registerFunction({
       name: 'executeSqlQuery',
       description: 'Execute a SQL query with parameterized values for security',
       module: 'database',

@@ -674,10 +674,9 @@ export class AgentService {
       accessLevels.push('user'); // Users can access user functions
     }
     
-    // Start with standard functions based on user role
-    const functions = await db.query.agentFunctions.findMany({
-      where: (fields, { inArray }) => inArray(fields.accessLevel, accessLevels)
-    });
+    // Initialize an empty array for functions
+    // We now use langchain_tools exclusively instead of agent_functions
+    const functions = [];
 
     // If an agent ID is provided, add tools associated with that agent
     if (agentId) {
