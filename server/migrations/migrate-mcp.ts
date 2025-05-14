@@ -1,9 +1,9 @@
 /**
  * This script migrates the database to add MCP tasks table
  */
-import { db } from './db';
-import { mcpTasks } from '../shared/schema';
-import { MCPService, TaskStatus, TaskPriority } from './services/mcp-service';
+import { db } from '../db';
+import { mcpTasks } from '../../shared/schema';
+import { db } from '../services/mcp-service';
 
 export async function migrate() {
   console.log('Starting MCP tasks migration...');

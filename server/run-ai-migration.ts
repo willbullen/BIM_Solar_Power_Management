@@ -3,7 +3,7 @@
  * and initial data for the AI agent architect functionality.
  */
 
-import { migrate as migrateAIAgent } from "./migrate-ai-agent";
+import { migrate as migrateAIAgent } from "./migrations/migrate-ai-agent";
 
 async function runMigration() {
   try {

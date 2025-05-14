@@ -1,7 +1,7 @@
-import { LangChainIntegration } from './langchain-integration';
-import { AIService } from './ai-service';
-import { db } from './db';
-import * as schema from '@shared/schema';
+import { LangChainIntegration } from '../langchain-integration';
+import { AIService } from '../ai-service';
+import { db } from '../db';
+import * as schema from '../../shared/schema';
 
 /**
  * Create LangChain database tables if they don't exist

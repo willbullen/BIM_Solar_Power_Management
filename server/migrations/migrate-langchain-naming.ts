@@ -18,7 +18,7 @@
  * 4. Drop old tables when complete
  */
 
-import { db } from './db';
+import { db } from '../db';
 import { sql } from 'drizzle-orm';
 
 /**

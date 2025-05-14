@@ -1,5 +1,5 @@
-import { db } from './db';
-import { settings } from '@shared/schema';
+import { db } from '../db';
+import { settings } from '../../shared/schema';
 import { sql } from 'drizzle-orm';
 
 /**

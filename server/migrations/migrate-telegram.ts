@@ -2,9 +2,9 @@
  * This script migrates the database to add Telegram integration tables
  */
 
-import { db } from './db';
+import { db } from '../db';
 import { sql } from 'drizzle-orm';
-import { telegramSettings, telegramUsers, telegramMessages } from '../shared/schema';
+import { telegramSettings, telegramUsers, telegramMessages } from '../../shared/schema';
 // Import for ES module main detection
 import { fileURLToPath } from 'url';
 

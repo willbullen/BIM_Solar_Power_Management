@@ -5,9 +5,9 @@
  * single, unified function system built on LangChain.
  */
 
-import { db } from './db';
+import { db } from '../db';
 import { eq, and, inArray, sql } from 'drizzle-orm';
-import * as schema from '@shared/schema';
+import * as schema from '../../shared/schema';
 
 /**
  * Migrate agent_functions to langchain_tools

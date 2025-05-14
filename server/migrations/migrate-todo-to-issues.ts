@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { db } from './db';
-import { issues } from '@shared/schema';
+import { db } from '../db';
+import { issues } from '../../shared/schema';
 import { sql } from 'drizzle-orm';
 
 /**

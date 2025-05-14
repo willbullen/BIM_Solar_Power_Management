@@ -1,4 +1,4 @@
-import { db } from './db';
+import { db } from '../db';
 import { 
   users, type User, type InsertUser, 
   settings, type Settings, type InsertSettings, 
@@ -7,10 +7,10 @@ import {
   equipment, type Equipment, type InsertEquipment,
   equipmentEfficiency, type EquipmentEfficiency, type InsertEquipmentEfficiency,
   maintenanceLog, type MaintenanceLog, type InsertMaintenanceLog
-} from '@shared/schema';
+} from '../../shared/schema';
 import { sql } from 'drizzle-orm';
 import { hash } from 'bcrypt';
-import { generateSyntheticData } from './data';
+import { db } from '../data';
 import { sub, add } from 'date-fns';
 
 /**

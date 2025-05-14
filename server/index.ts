@@ -1,11 +1,11 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { migrate as migrateTelegram } from "./migrate-telegram";
-import { migrate as migrateLangChain } from "./migrate-langchain";
-import { setupUnifiedFunctionSystem, runMigration, migrateAgentFunctions } from "./migrate-function-system";
-import { migrate as removeAgentFunctionsTable } from "./remove-agent-functions-table";
-import { migrateLangchainNaming } from "./migrate-langchain-naming";
+import { migrate as migrateTelegram } from "./migrations/migrate-telegram";
+import { migrate as migrateLangChain } from "./migrations/migrate-langchain";
+import { setupUnifiedFunctionSystem, runMigration, migrateAgentFunctions } from "./migrations/migrate-function-system";
+import { migrate as removeAgentFunctionsTable } from "./migrations/remove-agent-functions-table";
+import { migrateLangchainNaming } from "./migrations/migrate-langchain-naming";
 import cors from 'cors';
 
 const app = express();

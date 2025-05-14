@@ -1,8 +1,8 @@
 /**
  * This script migrates the database to add scheduled reports and report templates tables
  */
-import { db } from './db';
-import { scheduledReports, reportTemplates } from '../shared/schema';
+import { db } from '../db';
+import { scheduledReports, reportTemplates } from '../../shared/schema';
 
 export async function migrate() {
   console.log('Starting scheduled reports tables migration...');

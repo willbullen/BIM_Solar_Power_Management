@@ -1,5 +1,5 @@
-import { db } from './db';
-import * as schema from '../shared/schema';
+import { db } from '../db';
+import * as schema from '../../shared/schema';
 import { pgTable, serial, integer, text, boolean, timestamp, jsonb } from 'drizzle-orm/pg-core';
 
 /**

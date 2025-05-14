@@ -1,9 +1,9 @@
-import { db } from './db';
+import { db } from '../db';
 import { 
   equipment, 
   equipmentEfficiency, 
   maintenanceLog 
-} from '@shared/schema';
+} from '../../shared/schema';
 import { sql } from 'drizzle-orm';
 
 async function migrate() {
