@@ -338,7 +338,7 @@ export type AgentFunction = typeof agentFunctions.$inferSelect;
 */
 
 // Agent Conversations schema
-export const agentConversations = pgTable("agent_conversations", {
+export const agentConversations = pgTable("langchain_agent_conversations", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(), // Foreign key to users
   title: text("title").notNull(),
@@ -371,7 +371,7 @@ export type InsertAgentConversation = z.infer<typeof insertAgentConversationSche
 export type AgentConversation = typeof agentConversations.$inferSelect;
 
 // Agent Messages schema
-export const agentMessages = pgTable("agent_messages", {
+export const agentMessages = pgTable("langchain_agent_messages", {
   id: serial("id").primaryKey(),
   conversationId: integer("conversation_id").notNull(), // Foreign key to agent_conversations
   role: text("role").notNull(), // 'user', 'assistant', 'system'
@@ -398,7 +398,7 @@ export type InsertAgentMessage = z.infer<typeof insertAgentMessageSchema>;
 export type AgentMessage = typeof agentMessages.$inferSelect;
 
 // Agent Tasks schema
-export const agentTasks = pgTable("agent_tasks", {
+export const agentTasks = pgTable("langchain_agent_tasks", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
@@ -439,7 +439,7 @@ export type InsertAgentTask = z.infer<typeof insertAgentTaskSchema>;
 export type AgentTask = typeof agentTasks.$inferSelect;
 
 // Agent Settings schema
-export const agentSettings = pgTable("agent_settings", {
+export const agentSettings = pgTable("langchain_agent_settings", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   value: text("value"),
@@ -490,7 +490,7 @@ export type InsertSignalNotification = z.infer<typeof insertSignalNotificationSc
 export type SignalNotification = typeof signalNotifications.$inferSelect;
 
 // Agent Notifications schema
-export const agentNotifications = pgTable("agent_notifications", {
+export const agentNotifications = pgTable("langchain_agent_notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(), // Foreign key to users
   title: text("title").notNull(),
@@ -634,7 +634,7 @@ export type InsertMcpTask = z.infer<typeof insertMcpTaskSchema>;
 export type McpTask = typeof mcpTasks.$inferSelect;
 
 // Telegram integration schema
-export const telegramUsers = pgTable("telegram_users", {
+export const telegramUsers = pgTable("langchain_telegram_users", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   telegramId: text("telegram_id").notNull().unique(),
