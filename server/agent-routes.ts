@@ -496,10 +496,7 @@ export function registerAgentRoutes(app: Express) {
       } else {
         // Regular users can see only their tasks
         tasks = await db.query.agentTasks.findMany({
-          where: (fields, { eq, or }) => or(
-            eq(fields.createdBy, userId),
-            eq(fields.assignedTo, userId)
-          ),
+          where: (fields, { eq }) => eq(fields.userId, userId),
           orderBy: (fields, { desc }) => [desc(fields.createdAt)],
         });
       }

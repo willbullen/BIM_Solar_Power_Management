@@ -400,39 +400,31 @@ export type AgentMessage = typeof agentMessages.$inferSelect;
 // Agent Tasks schema
 export const agentTasks = pgTable("langchain_agent_tasks", {
   id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  status: text("status").notNull().default("pending"), // 'pending', 'in-progress', 'completed', 'failed'
-  type: text("type").notNull(), // 'scheduled', 'user-requested', 'system', 'recurring'
-  priority: text("priority").notNull().default("medium"), // 'low', 'medium', 'high', 'critical'
+  agentId: integer("agent_id"), // Agent ID that this task is associated with
+  userId: integer("user_id"), // User ID that this task belongs to
+  result: jsonb("result"), // Task result or output
+  data: jsonb("data"), // Task data including description, parameters, etc.
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  scheduledFor: timestamp("scheduled_for"), // For scheduled tasks
-  completedAt: timestamp("completed_at"), 
-  createdBy: integer("created_by"), // User ID or null for system
-  assignedTo: integer("assigned_to"), // User ID or null
-  parameters: jsonb("parameters"), // Task parameters
-  result: jsonb("result"), // Task result or output
+  task: text("task").notNull(), // Main task description/title
+  status: text("status").notNull().default("pending"), // 'pending', 'in-progress', 'completed', 'failed'
 });
 
 export const agentTasksRelations = relations(agentTasks, ({ one }) => ({
-  creator: one(users, {
-    fields: [agentTasks.createdBy],
+  user: one(users, {
+    fields: [agentTasks.userId],
     references: [users.id],
-    relationName: "creator",
   }),
-  assignee: one(users, {
-    fields: [agentTasks.assignedTo],
-    references: [users.id],
-    relationName: "task_assignee",
-  }),
+  agent: one(langchainAgents, {
+    fields: [agentTasks.agentId],
+    references: [langchainAgents.id],
+  })
 }));
 
 export const insertAgentTaskSchema = createInsertSchema(agentTasks).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  completedAt: true,
 });
 
 export type InsertAgentTask = z.infer<typeof insertAgentTaskSchema>;
