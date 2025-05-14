@@ -766,8 +766,7 @@ Try asking questions about power usage, environmental data, or request reports.`
     botToken?: string, 
     botUsername?: string, 
     webhookUrl?: string | null, 
-    isEnabled?: boolean,
-    updatedBy?: number // kept for backward compatibility but not used
+    isEnabled?: boolean
   }): Promise<void> {
     try {
       // Get current settings
@@ -784,7 +783,6 @@ Try asking questions about power usage, environmental data, or request reports.`
           botUsername: settings.botUsername || currentSettings[0].botUsername,
           webhookUrl: settings.webhookUrl !== undefined ? settings.webhookUrl : currentSettings[0].webhookUrl,
           isEnabled: settings.isEnabled !== undefined ? settings.isEnabled : currentSettings[0].isEnabled,
-          // updatedBy removed as it doesn't exist in schema
           updatedAt: new Date()
         })
         .where(eq(telegramSettings.id, currentSettings[0].id));

@@ -118,7 +118,6 @@ async function createDefaultSettings() {
         botUsername: 'emporium_agent_bot',
         webhookUrl: null,
         isEnabled: false
-        // updateBy was removed as it doesn't exist in the schema
       });
       
       console.log('Default Telegram settings created successfully.');
