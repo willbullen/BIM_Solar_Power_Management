@@ -400,8 +400,8 @@ export type AgentMessage = typeof agentMessages.$inferSelect;
 // Agent Tasks schema
 export const agentTasks = pgTable("langchain_agent_tasks", {
   id: serial("id").primaryKey(),
-  agentId: integer("agent_id"), // Agent ID that this task is associated with
-  userId: integer("user_id"), // User ID that this task belongs to
+  agentId: integer("agent_id").notNull(), // Agent ID that this task is associated with
+  userId: integer("user_id").notNull(), // User ID that this task belongs to
   result: jsonb("result"), // Task result or output
   data: jsonb("data"), // Task data including description, parameters, etc.
   createdAt: timestamp("created_at").notNull().defaultNow(),
