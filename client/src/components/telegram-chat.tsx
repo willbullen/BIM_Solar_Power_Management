@@ -223,25 +223,47 @@ export function TelegramChat() {
   // Send test message using selected Langchain Agent
   const sendTestMessage = useMutation({
     mutationFn: (message: string) => {
-      // Check if we have a selected agent
-      if (selectedAgentId && availableAgents.length > 0) {
-        const selectedAgent = availableAgents.find(a => a.id === selectedAgentId);
-        console.log(`Using Langchain Agent for message processing: ${selectedAgent?.name} (ID: ${selectedAgentId})`);
+      // Always use useAgent:true to ensure proper agent selection
+      // Selected agent or Main Assistant or Default
+      console.log(`Current agent selection: ${selectedAgentId || 'default'}`);
+      
+      // Find the name of the selected agent for better logging
+      const selectedAgent = selectedAgentId ? 
+        availableAgents.find(a => a.id === selectedAgentId) : 
+        mainAssistantAgent;
+        
+      if (selectedAgentId) {
+        console.log(`Using specific Langchain Agent for message: ${selectedAgent?.name} (ID: ${selectedAgentId})`);
         
         return apiRequest('/api/telegram/test-message', {
           method: 'POST',
           data: { 
             message,
-            agentId: selectedAgentId, // Include the selected agent ID
+            agentId: selectedAgentId,
+            useAgent: true
+          }
+        });
+      } else if (mainAssistantAgent) {
+        // If no specific agent selected but Main Assistant is available, use it
+        console.log(`Using Main Assistant Agent for message: ${mainAssistantAgent.name} (ID: ${mainAssistantAgent.id})`);
+        
+        return apiRequest('/api/telegram/test-message', {
+          method: 'POST',
+          data: { 
+            message,
+            agentId: mainAssistantAgent.id,
             useAgent: true
           }
         });
       } else {
-        // Fall back to regular message sending if no agent selected
-        console.log('No Langchain Agent selected, using default processing');
+        // Let the server find the Main Assistant Agent
+        console.log('Using server default agent selection (Main Assistant preferred)');
         return apiRequest('/api/telegram/test-message', {
           method: 'POST',
-          data: { message }
+          data: { 
+            message,
+            useAgent: true // Always use agent processing
+          }
         });
       }
     },
