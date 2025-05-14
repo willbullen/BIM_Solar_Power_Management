@@ -1,0 +1,46 @@
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/telegram/messages
+Query has auth headers: X-Auth-User-Id, X-Auth-Username
+Query response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications/unread/count
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+API response status: 200 OK
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/telegram/messages
+Query has auth headers: X-Auth-User-Id, X-Auth-Username
+Query response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Current agent selection: 3
+Using specific Langchain Agent for message: Main Assistant Agent (ID: 3)
+Making API request: POST https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/telegram/test-message
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+API response status: 200 OK
+Found user in local storage
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/telegram/messages
+Query has auth headers: X-Auth-User-Id, X-Auth-Username
+Query response status: 200 OK
+Found user in local storage
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/telegram/messages
+Query has auth headers: X-Auth-User-Id, X-Auth-Username
+Query response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/telegram/messages
+Query has auth headers: X-Auth-User-Id, X-Auth-Username
+Query response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/telegram/messages
+Query has auth headers: X-Auth-User-Id, X-Auth-Username
+Query response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/telegram/messages
+Query has auth headers: X-Auth-User-Id, X-Auth-Username
+Query response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications/unread/count
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+API response status: 200 OK
