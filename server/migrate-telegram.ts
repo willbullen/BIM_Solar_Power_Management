@@ -117,8 +117,8 @@ async function createDefaultSettings() {
         botToken: 'PLACEHOLDER_TOKEN',
         botUsername: 'emporium_agent_bot',
         webhookUrl: null,
-        isEnabled: false,
-        updatedBy: 1, // Admin user
+        isEnabled: false
+        // updateBy was removed as it doesn't exist in the schema
       });
       
       console.log('Default Telegram settings created successfully.');
