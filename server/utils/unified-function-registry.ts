@@ -189,30 +189,9 @@ export class UnifiedFunctionRegistry {
         };
       }
       else {
-        // For all other functions, check if they've been migrated
-        console.log(`[Unified Function Registry] Checking legacy function for: ${name}`);
-        
-        // Get the legacy function from agent_functions
-        const [legacyFunction] = await db
-          .select()
-          .from(schema.agentFunctions)
-          .where(eq(schema.agentFunctions.name, name));
-        
-        if (legacyFunction) {
-          console.log(`[Unified Function Registry] Found legacy function: ${name}`);
-          // Execute the legacy function code
-          try {
-            const functionCode = legacyFunction.functionCode;
-            // Replace params, context with their actual values
-            const evaluatedFunction = new Function('params', 'context', functionCode);
-            return await evaluatedFunction(params, context);
-          } catch (error) {
-            console.error(`Error executing legacy function ${name}:`, error);
-            return { error: String(error) };
-          }
-        }
-        
-        throw new Error(`No implementation found for function ${name}`);
+        // No fallback to legacy functions - all functions must be registered in langchain_tools
+        console.log(`[Unified Function Registry] Function not found: ${name}`);
+        throw new Error(`Function ${name} not found. All functions must be registered in langchain_tools.`);
       }
     } catch (error) {
       console.error(`[Unified Function Registry] Error executing function ${name}:`, error);

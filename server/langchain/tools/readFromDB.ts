@@ -61,7 +61,7 @@ export class ReadFromDBTool extends Tool {
           'agent_messages',
           'agent_tasks',
           'agent_settings',
-          'agent_functions',
+          // 'agent_functions', // removed - using langchain_tools exclusively
           'agent_notifications',
           'signal_notifications',
           'report_templates',
@@ -96,7 +96,7 @@ export class ReadFromDBTool extends Tool {
         'agent_messages',
         'agent_tasks',
         'agent_settings',
-        'agent_functions',
+        // 'agent_functions', // removed - using langchain_tools exclusively
         'agent_notifications',
         'signal_notifications',
         'langchain_agents',
