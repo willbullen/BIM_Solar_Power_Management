@@ -356,8 +356,13 @@ Try asking questions about power usage, environmental data, or request reports.`
           .where(eq(telegramUsers.telegramId, telegramId))
           .limit(1);
         
-        if (existingUser.length > 0 && existingUser[0].isVerified) {
-          await this.bot?.sendMessage(chatId, `Your account is already verified. You can continue using the AI Agent.`);
+        if (existingUser.length > 0) {
+          const metadata = existingUser[0].metadata as TelegramUserMetadata || {};
+          if (metadata.isVerified) {
+            await this.bot?.sendMessage(chatId, `Your account is already verified. You can continue using the AI Agent.`);
+          } else {
+            await this.bot?.sendMessage(chatId, `Invalid or expired verification code. Please contact your system administrator for a valid code.`);
+          }
         } else {
           await this.bot?.sendMessage(chatId, `Invalid or expired verification code. Please contact your system administrator for a valid code.`);
         }
@@ -385,14 +390,27 @@ Try asking questions about power usage, environmental data, or request reports.`
         .where(eq(telegramUsers.telegramId, telegramId))
         .limit(1);
       
-      if (user.length === 0 || !user[0].isVerified) {
+      if (user.length === 0) {
         await this.bot?.sendMessage(chatId, `You need to verify your account before using the AI Agent. Please use /verify YOUR_CODE to complete verification.`);
         return;
       }
       
+      // Check if user is verified via metadata
+      const metadata = user[0].metadata as TelegramUserMetadata || {};
+      if (!metadata.isVerified) {
+        await this.bot?.sendMessage(chatId, `You need to verify your account before using the AI Agent. Please use /verify YOUR_CODE to complete verification.`);
+        return;
+      }
+      
+      // Update metadata with current timestamp
+      const updatedMetadata: TelegramUserMetadata = {
+        ...metadata,
+        lastAccessed: new Date().toISOString()
+      };
+      
       // Update last accessed time
       await db.update(telegramUsers)
-        .set({ lastAccessed: new Date() })
+        .set({ metadata: updatedMetadata })
         .where(eq(telegramUsers.id, user[0].id));
       
       // Store the incoming message
@@ -660,22 +678,31 @@ Try asking questions about power usage, environmental data, or request reports.`
       // Find user's Telegram details
       const telegramUser = await db.select()
         .from(telegramUsers)
-        .where(and(
-          eq(telegramUsers.userId, userId),
-          eq(telegramUsers.isVerified, true),
-          eq(telegramUsers.notificationsEnabled, true)
-        ))
+        .where(eq(telegramUsers.userId, userId))
         .limit(1);
       
       if (telegramUser.length === 0) {
-        console.log(`No verified Telegram user found for userId ${userId}`);
+        console.log(`No Telegram user found for userId ${userId}`);
+        return false;
+      }
+      
+      // Check metadata for verification and notification preferences
+      const metadata = telegramUser[0].metadata as TelegramUserMetadata || {};
+      
+      if (!metadata.isVerified || metadata.notificationsEnabled === false) {
+        console.log(`Telegram user for userId ${userId} is not verified or has notifications disabled`);
+        return false;
+      }
+      
+      if (!metadata.chatId) {
+        console.log(`No chat ID found for Telegram user (userId ${userId})`);
         return false;
       }
       
       const fullMessage = title ? `${title}\n\n${message}` : message;
       
       // Send message to user
-      await this.bot.sendMessage(telegramUser[0].chatId, fullMessage);
+      await this.bot.sendMessage(metadata.chatId, fullMessage);
       
       // Store outbound message
       await db.insert(telegramMessages)
@@ -706,15 +733,24 @@ Try asking questions about power usage, environmental data, or request reports.`
       // Find user's Telegram details
       const telegramUser = await db.select()
         .from(telegramUsers)
-        .where(and(
-          eq(telegramUsers.userId, userId),
-          eq(telegramUsers.isVerified, true),
-          eq(telegramUsers.receiveReports, true)
-        ))
+        .where(eq(telegramUsers.userId, userId))
         .limit(1);
       
       if (telegramUser.length === 0) {
-        console.log(`No verified Telegram user configured for reports for userId ${userId}`);
+        console.log(`No Telegram user found for userId ${userId}`);
+        return false;
+      }
+      
+      // Check metadata for verification and reports preferences
+      const metadata = telegramUser[0].metadata as TelegramUserMetadata || {};
+      
+      if (!metadata.isVerified || metadata.receiveReports === false) {
+        console.log(`Telegram user for userId ${userId} is not verified or has reports disabled`);
+        return false;
+      }
+      
+      if (!metadata.chatId) {
+        console.log(`No chat ID found for Telegram user (userId ${userId})`);
         return false;
       }
       
@@ -722,7 +758,7 @@ Try asking questions about power usage, environmental data, or request reports.`
       const reportMessage = `📊 ${reportTitle}\n\n${reportContent}`;
       
       // Send message to user
-      await this.bot.sendMessage(telegramUser[0].chatId, reportMessage);
+      await this.bot.sendMessage(metadata.chatId, reportMessage);
       
       // Store outbound message
       await db.insert(telegramMessages)
