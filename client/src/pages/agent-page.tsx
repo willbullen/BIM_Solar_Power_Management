@@ -1109,31 +1109,7 @@ function TasksInterface() {
   );
 }
 
-function AgentSettingsInterface() {
-  const { toast } = useToast();
-  const [editingSetting, setEditingSetting] = useState<string | null>(null);
-  const [settingValue, setSettingValue] = useState<string>("");
-  
-  // Fetch settings
-  const { data: settings, isLoading, refetch: refetchSettings } = useQuery<any[]>({
-    queryKey: ['/api/agent/settings'],
-    retry: false,
-    onSuccess: (data) => {
-      // Success handler
-    },
-    onError: (error) => {
-      console.error('Error fetching agent settings:', error);
-      if (error instanceof Error && error.message.includes('401')) {
-        // If we get a 401, try refreshing the user data
-        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-        toast({
-          variant: "destructive",
-          title: "Authentication Error",
-          description: "Your session may have expired. Please refresh and log in again."
-        });
-      }
-    }
-  });
+// Settings interface removed as requested
   
   // Update setting
   const updateSetting = useMutation({
@@ -1446,7 +1422,7 @@ function AgentSettingsInterface() {
 
 export default function AgentPage() {
   const { user, loginMutation } = useAuth();
-  const [activeTab, setActiveTab] = useState("chat");
+  const [activeTab, setActiveTab] = useState("tasks"); // Changed to tasks as default
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   
@@ -1646,14 +1622,7 @@ export default function AgentPage() {
                       <Cpu className="h-3.5 w-3.5" />
                       <span className="font-medium">MCP</span>
                     </TabsTrigger>
-                    {/* Telegram tab removed as requested */}
-                    <TabsTrigger 
-                      value="ai-chat" 
-                      className="flex items-center justify-center gap-1.5 text-xs py-1 px-3 rounded-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-300"
-                    >
-                      <Bot className="h-3.5 w-3.5" />
-                      <span className="font-medium">AI Chat</span>
-                    </TabsTrigger>
+                    {/* Chat tab removed as requested */}
                   </TabsList>
                 </div>
                 
@@ -1723,14 +1692,7 @@ export default function AgentPage() {
                 
                 {/* Telegram tab content removed as requested */}
                 
-                <TabsContent 
-                  value="ai-chat" 
-                  className="m-0 p-0 focus-visible:outline-none focus-visible:ring-0 border-0"
-                >
-                  <div className="p-3">
-                    <IntegratedAIChat />
-                  </div>
-                </TabsContent>
+                {/* AI Chat content removed as requested */}
                 
 
               </div>
