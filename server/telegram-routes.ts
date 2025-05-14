@@ -248,10 +248,11 @@ export function registerTelegramRoutes(app: Express) {
       
       // We need to update the metadata field which is a JSON object
       const currentUser = telegramUser[0];
-      const currentMetadata = currentUser.metadata || {};
+      // Cast to TelegramUserMetadata for proper typing
+      const currentMetadata = currentUser.metadata as TelegramUserMetadata || {};
       
       // Update the metadata with the new preferences
-      const updatedMetadata = {
+      const updatedMetadata: TelegramUserMetadata = {
         ...currentMetadata,
         notificationsEnabled: validatedData.notificationsEnabled !== undefined 
           ? validatedData.notificationsEnabled 

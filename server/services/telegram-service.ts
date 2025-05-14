@@ -8,7 +8,15 @@ import type { Message, SendMessageOptions } from 'node-telegram-bot-api';
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
 import * as schema from '../../shared/schema';
-import { telegramUsers, telegramMessages, telegramSettings, agentConversations, agentMessages } from '../../shared/schema';
+import { 
+  telegramUsers, 
+  telegramMessages, 
+  telegramSettings, 
+  agentConversations, 
+  agentMessages,
+  TelegramUserMetadata,
+  telegramUserMetadataSchema
+} from '../../shared/schema';
 import { eq, and, desc, isNull, inArray } from 'drizzle-orm/expressions';
 import { AgentService } from '../agent-service';
 import { randomUUID } from 'crypto';
@@ -44,7 +52,7 @@ export class TelegramService {
       }
       
       // Access verification status from metadata
-      const metadata = user[0].metadata || {};
+      const metadata = user[0].metadata as TelegramUserMetadata || {};
       const isVerified = metadata.isVerified === true;
       
       if (!isVerified) {
