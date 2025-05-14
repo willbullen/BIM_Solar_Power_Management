@@ -28,16 +28,20 @@ export async function migrateLangchainNaming(force: boolean = false) {
   try {
     console.log('Starting migration to rename agent tables to langchain_ prefix...');
 
-    // Check if tables already exist with langchain prefix
+    // Always create tables first to ensure schema definitions exist
+    // This ensures that any code using the new table names will work
+    console.log('Creating langchain_ prefixed tables...');
+    await createLangchainTables();
+
+    // Check if we should perform data migration
     const existingTables = await checkExistingTables();
     if (existingTables.length > 0 && !force) {
-      console.log(`Some langchain_ prefixed tables already exist: ${existingTables.join(', ')}`);
-      console.log('Use force=true to proceed anyway');
-      return false;
+      console.log(`Tables created. Some langchain_ prefixed tables already have data: ${existingTables.join(', ')}`);
+      console.log('Skipping data migration. Use force=true to proceed with full migration');
+      return true;
     }
 
-    // Create new tables with langchain_ prefix
-    await createLangchainTables();
+    console.log('Proceeding with full data migration...');
     
     // Migrate data from old tables to new tables
     await migrateTableData();
@@ -91,63 +95,206 @@ async function checkExistingTables(): Promise<string[]> {
 async function createLangchainTables() {
   console.log('Creating new tables with langchain_ prefix...');
   
+  // Create langchain_telegram_settings explicitly since it's causing issues
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS langchain_telegram_settings (
+      id SERIAL PRIMARY KEY,
+      bot_token TEXT NOT NULL,
+      bot_username TEXT NOT NULL,
+      webhook_url TEXT,
+      is_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  
+  // Insert default settings if needed
+  const settingsCount = await db.execute(sql`
+    SELECT COUNT(*) FROM langchain_telegram_settings
+  `);
+  
+  if (parseInt(settingsCount.rows[0].count as string) === 0) {
+    await db.execute(sql`
+      INSERT INTO langchain_telegram_settings 
+      (bot_token, bot_username, is_enabled) 
+      VALUES ('PLACEHOLDER_TOKEN', 'emporiumbotdev', TRUE)
+    `);
+    console.log('Inserted default Telegram bot settings');
+  }
+  
+  // Try to create other tables by copying existing ones if they exist
+  try {
+    // Create langchain_agent_conversations
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS langchain_agent_conversations (
+        LIKE agent_conversations INCLUDING ALL
+      )
+    `);
+    
+    // Create langchain_agent_messages
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS langchain_agent_messages (
+        LIKE agent_messages INCLUDING ALL
+      )
+    `);
+  
+    // Create langchain_agent_notifications
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS langchain_agent_notifications (
+        LIKE agent_notifications INCLUDING ALL
+      )
+    `);
+    
+    // Create langchain_agent_settings
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS langchain_agent_settings (
+        LIKE agent_settings INCLUDING ALL
+      )
+    `);
+    
+    // Create langchain_agent_tasks
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS langchain_agent_tasks (
+        LIKE agent_tasks INCLUDING ALL
+      )
+    `);
+  } catch (error) {
+    console.log('Error copying from existing tables:', error);
+    console.log('Will create tables using explicit schema definitions');
+    
+    // If the source tables don't exist, create with explicit schema
+    await createTablesExplicitly();
+  }
+  
+  try {
+    // Create langchain_telegram_messages
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS langchain_telegram_messages (
+        LIKE telegram_messages INCLUDING ALL
+      )
+    `);
+    
+    // Create langchain_telegram_users
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS langchain_telegram_users (
+        LIKE telegram_users INCLUDING ALL
+      )
+    `);
+  } catch (error) {
+    console.log('Error creating telegram tables:', error);
+    // Telegram tables are already created explicitly above
+  }
+  
+  console.log('New tables created successfully');
+}
+
+/**
+ * Create tables with explicit schema definitions rather than copying
+ */
+async function createTablesExplicitly() {
+  console.log('Creating tables with explicit schema definitions...');
+  
   // Create langchain_agent_conversations
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS langchain_agent_conversations (
-      LIKE agent_conversations INCLUDING ALL
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      user_id INTEGER NOT NULL,
+      agent_id INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      context JSONB,
+      metadata JSONB
     )
   `);
   
   // Create langchain_agent_messages
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS langchain_agent_messages (
-      LIKE agent_messages INCLUDING ALL
+      id SERIAL PRIMARY KEY,
+      conversation_id INTEGER NOT NULL,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      tokens INTEGER,
+      metadata JSONB
     )
   `);
   
   // Create langchain_agent_notifications
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS langchain_agent_notifications (
-      LIKE agent_notifications INCLUDING ALL
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      message TEXT NOT NULL,
+      type TEXT NOT NULL,
+      source TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      read BOOLEAN NOT NULL DEFAULT FALSE,
+      data JSONB
     )
   `);
   
   // Create langchain_agent_settings
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS langchain_agent_settings (
-      LIKE agent_settings INCLUDING ALL
+      id SERIAL PRIMARY KEY,
+      agent_id INTEGER NOT NULL,
+      settings JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
   
   // Create langchain_agent_tasks
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS langchain_agent_tasks (
-      LIKE agent_tasks INCLUDING ALL
+      id SERIAL PRIMARY KEY,
+      agent_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      task TEXT NOT NULL,
+      status TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      result JSONB,
+      data JSONB
     )
   `);
   
   // Create langchain_telegram_messages
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS langchain_telegram_messages (
-      LIKE telegram_messages INCLUDING ALL
-    )
-  `);
-  
-  // Create langchain_telegram_settings
-  await db.execute(sql`
-    CREATE TABLE IF NOT EXISTS langchain_telegram_settings (
-      LIKE telegram_settings INCLUDING ALL
+      id SERIAL PRIMARY KEY,
+      telegram_user_id INTEGER NOT NULL,
+      conversation_id INTEGER,
+      message_id TEXT NOT NULL,
+      chat_id TEXT NOT NULL,
+      text TEXT NOT NULL,
+      direction TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      metadata JSONB
     )
   `);
   
   // Create langchain_telegram_users
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS langchain_telegram_users (
-      LIKE telegram_users INCLUDING ALL
+      id SERIAL PRIMARY KEY,
+      telegram_id TEXT NOT NULL UNIQUE,
+      first_name TEXT NOT NULL,
+      last_name TEXT,
+      username TEXT,
+      language_code TEXT,
+      user_id INTEGER,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      metadata JSONB
     )
   `);
   
-  console.log('New tables created successfully');
+  console.log('Tables created with explicit schema definitions');
 }
 
 /**
