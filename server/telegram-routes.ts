@@ -354,15 +354,32 @@ export function registerTelegramRoutes(app: Express) {
         // If no specific agent ID is provided, try to find the Main Assistant Agent
         if (!agentId) {
           try {
-            // Look up the Main Assistant Agent by name
-            const mainAssistantAgent = await db.select()
+            // Look up the Main Assistant Agent by name using proper DB query technique
+            const mainAssistantAgent = await db.select({
+              id: schema.langchainAgents.id,
+              name: schema.langchainAgents.name,
+              description: schema.langchainAgents.description
+            })
               .from(schema.langchainAgents)
-              .where(sql`name = 'Main Assistant Agent' AND enabled = true`)
+              .where(and(
+                eq(schema.langchainAgents.name, 'Main Assistant Agent'),
+                eq(schema.langchainAgents.enabled, true)
+              ))
               .limit(1);
               
             if (mainAssistantAgent.length > 0) {
               agentId = mainAssistantAgent[0].id;
               console.log(`Using Main Assistant Agent for test message: ID ${agentId}`);
+              
+              // Check if this agent has associated tools
+              const agentTools = await db.select({
+                toolId: schema.langchainAgentTools.toolId,
+                priority: schema.langchainAgentTools.priority
+              })
+                .from(schema.langchainAgentTools)
+                .where(eq(schema.langchainAgentTools.agentId, agentId));
+                
+              console.log(`Found ${agentTools.length} tool associations for agent ID ${agentId}`);
             } else {
               console.log('Main Assistant Agent not found, using default or any available agent');
             }
