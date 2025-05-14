@@ -167,12 +167,18 @@ export class AgentService {
 
   /**
    * Generate a response from the agent
+   * @param conversationId The ID of the conversation
+   * @param userId The ID of the user
+   * @param userRole The role of the user (e.g., 'user', 'admin')
+   * @param maxTokens The maximum number of tokens to generate
+   * @param agentId Optional Langchain agent ID to use for response generation
    */
   async generateResponse(
     conversationId: number, 
     userId: number,
     userRole: string,
-    maxTokens: number = 1000
+    maxTokens: number = 1000,
+    agentId?: number
   ): Promise<schema.AgentMessage | null> {
     // Get the conversation history
     const messages = await db.query.agentMessages.findMany({
@@ -206,8 +212,71 @@ export class AgentService {
     }));
 
     try {
-      // Call the OpenAI API with function calling capability
-      const modelToUse = "gpt-4o"; // Fallback to older model if needed
+      // Initialize default model settings
+      let modelToUse = "gpt-4o"; // Default model
+      let temperature = 0.7;     // Default temperature
+      let tokensToUse = maxTokens; // Default max tokens
+      let systemPromptOverride = null;
+
+      // If a specific Langchain agent ID is provided, use its settings
+      if (agentId) {
+        try {
+          // Find the requested agent in the database
+          const agent = await db.query.langchainAgents.findFirst({
+            where: (fields, { and, eq }) => and(
+              eq(fields.id, agentId),
+              eq(fields.enabled, true)
+            )
+          });
+
+          if (agent) {
+            console.log(`Using Langchain agent for response: ${agent.name} (ID: ${agent.id})`);
+            modelToUse = agent.modelName || modelToUse;
+            temperature = agent.temperature || temperature;
+            tokensToUse = agent.maxTokens || tokensToUse;
+            systemPromptOverride = agent.systemPrompt || null;
+
+            // If there's a system prompt override from the agent, update the system message
+            if (systemPromptOverride) {
+              // Find the system message in the conversation
+              const systemMessageIndex = messages.findIndex(msg => msg.role === 'system');
+              if (systemMessageIndex >= 0) {
+                // Update the system message content with the agent's prompt
+                await db.update(schema.agentMessages)
+                  .set({ content: systemPromptOverride })
+                  .where(eq(schema.agentMessages.id, messages[systemMessageIndex].id));
+                
+                // Update the message in our local array too
+                messages[systemMessageIndex].content = systemPromptOverride;
+                openaiMessages[systemMessageIndex].content = systemPromptOverride;
+              }
+            }
+          } else {
+            console.warn(`Langchain agent with ID ${agentId} not found or disabled, using default model settings`);
+          }
+        } catch (agentError) {
+          console.error(`Error fetching Langchain agent with ID ${agentId}:`, agentError);
+          // Continue with default settings
+        }
+      } else {
+        // Try to find the Main Assistant Agent to use by default
+        try {
+          const mainAssistantAgent = await db.select()
+            .from(sql`"langchain_agents"`)
+            .where(sql`"name" = 'Main Assistant Agent' AND "enabled" = true`)
+            .limit(1);
+          
+          if (mainAssistantAgent.length > 0) {
+            console.log(`Using Langchain Main Assistant Agent by default: ${mainAssistantAgent[0].id}`);
+            modelToUse = mainAssistantAgent[0].modelName || modelToUse;
+            temperature = mainAssistantAgent[0].temperature || temperature;
+            tokensToUse = mainAssistantAgent[0].maxTokens || tokensToUse;
+          }
+        } catch (agentError) {
+          console.error('Error finding Main Assistant Agent:', agentError);
+          // Continue with default settings
+        }
+      }
       
       // Set a timeout for the API call
       const timeoutPromise = new Promise((_, reject) => {
@@ -217,9 +286,10 @@ export class AgentService {
       // Make the API call with a timeout
       const response = await Promise.race([
         this.openai.chat.completions.create({
-          model: modelToUse, // The newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+          model: modelToUse,
           messages: openaiMessages,
-          max_tokens: maxTokens,
+          temperature: temperature,
+          max_tokens: tokensToUse,
           tools: functions.length > 0 ? functions.map(func => ({
             type: "function",
             function: func
