@@ -5,8 +5,10 @@
 import { Express, Request, Response } from 'express';
 import { telegramService } from './services/telegram-service';
 import { db } from './db';
+import * as schema from '../shared/schema';
 import { telegramSettings, telegramUsers, telegramMessages } from '../shared/schema';
 import { eq, and, desc } from 'drizzle-orm/expressions';
+import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 // Express session with user ID
@@ -345,15 +347,37 @@ export function registerTelegramRoutes(app: Express) {
       
       let success = false;
       
-      // If useAgent flag is true and agentId is provided, use the Langchain agent
-      if (validatedData.useAgent && validatedData.agentId) {
-        console.log(`Using Langchain agent ${validatedData.agentId} for Telegram message`);
+      // If useAgent flag is true, use the Langchain agent system
+      if (validatedData.useAgent) {
+        let agentId = validatedData.agentId;
         
-        // Process using the selected Langchain agent
+        // If no specific agent ID is provided, try to find the Main Assistant Agent
+        if (!agentId) {
+          try {
+            // Look up the Main Assistant Agent by name
+            const mainAssistantAgent = await db.select()
+              .from(schema.langchainAgents)
+              .where(sql`name = 'Main Assistant Agent' AND enabled = true`)
+              .limit(1);
+              
+            if (mainAssistantAgent.length > 0) {
+              agentId = mainAssistantAgent[0].id;
+              console.log(`Using Main Assistant Agent for test message: ID ${agentId}`);
+            } else {
+              console.log('Main Assistant Agent not found, using default or any available agent');
+            }
+          } catch (error) {
+            console.error('Error looking up Main Assistant Agent:', error);
+          }
+        }
+        
+        console.log(`Using Langchain agent ${agentId || 'default'} for Telegram test message`);
+        
+        // Process using the selected or default Langchain agent
         success = await telegramService.sendMessageWithAgent(
           userId,
           validatedData.message,
-          validatedData.agentId
+          agentId
         );
       } else {
         // Regular message sending without agent processing

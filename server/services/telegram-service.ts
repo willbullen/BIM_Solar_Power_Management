@@ -7,6 +7,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import type { Message, SendMessageOptions } from 'node-telegram-bot-api';
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
+import * as schema from '../../shared/schema';
 import { telegramUsers, telegramMessages, telegramSettings, agentConversations, agentMessages } from '../../shared/schema';
 import { eq, and, desc, isNull } from 'drizzle-orm/expressions';
 import { AgentService } from '../agent-service';
@@ -30,7 +31,7 @@ export class TelegramService {
    * @param agentId The ID of the Langchain agent to use for processing
    * @returns Whether the message was sent successfully
    */
-  async sendMessageWithAgent(userId: number, message: string, agentId: number): Promise<boolean> {
+  async sendMessageWithAgent(userId: number, message: string, agentId?: number): Promise<boolean> {
     try {
       // Look up the user's Telegram info
       const user = await db.select().from(telegramUsers)
@@ -65,13 +66,40 @@ export class TelegramService {
       // Add user message to conversation
       await this.agentService.addUserMessage(conversationId, message);
       
+      // If no agent ID provided, try to find the Main Assistant Agent
+      if (!agentId) {
+        try {
+          // First try to find the Main Assistant Agent
+          const mainAssistantAgent = await db.select()
+            .from(schema.langchainAgents)
+            .where(sql`name = 'Main Assistant Agent' AND enabled = true`)
+            .limit(1);
+            
+          if (mainAssistantAgent.length > 0) {
+            agentId = mainAssistantAgent[0].id;
+            console.log(`Using Main Assistant Agent for test message: ID ${agentId}`);
+            
+            // Check if this agent has associated tools
+            const agentTools = await db.select()
+              .from(schema.langchainAgentTools)
+              .where(eq(schema.langchainAgentTools.agentId, agentId));
+              
+            console.log(`Found ${agentTools.length} tool associations for agent ID ${agentId}`);
+          } else {
+            console.warn('Main Assistant Agent not found for test message, using default agent');
+          }
+        } catch (error) {
+          console.error('Error finding Main Assistant Agent:', error);
+        }
+      }
+      
       // Generate AI response using the specified Langchain agent
       const aiResponse = await this.agentService.generateResponse(
         conversationId,
         userId,
         'user',
         1000,     // Default max tokens
-        agentId   // Use the provided agent ID
+        agentId   // Use the provided agent ID (or undefined to use default)
       );
       
       // Check if we got a valid response
@@ -366,17 +394,78 @@ Try asking questions about power usage, environmental data, or request reports.`
         messageText
       );
       
-      // For now, use a hardcoded agent ID for Main Assistant Agent (ID: 3) or BillyBot Agent (ID: 2)
-      // Based on our previous database query, we know these exist
-      let agentId = 3; // Default to Main Assistant Agent
+      // Find the Main Assistant Agent by name - this is more reliable than hardcoding IDs
+      let agentId: number | undefined;
+      try {
+        // First try to find the Main Assistant Agent
+        const mainAssistantAgent = await db.select()
+          .from(schema.langchainAgents)
+          .where(sql`name = 'Main Assistant Agent' AND enabled = true`)
+          .limit(1);
+        
+        if (mainAssistantAgent.length > 0) {
+          agentId = mainAssistantAgent[0].id;
+          console.log(`Using Main Assistant Agent for Telegram: ID ${agentId}`);
+          
+          // Check if this agent has associated tools
+          const agentTools = await db.select()
+            .from(schema.langchainAgentTools)
+            .where(eq(schema.langchainAgentTools.agentId, agentId));
+          
+          console.log(`Found ${agentTools.length} tool associations for agent ID ${agentId}`);
+          
+          // Log the tool names for debugging
+          if (agentTools.length > 0) {
+            const toolIds = agentTools.map(tool => tool.toolId);
+            const tools = await db.select()
+              .from(schema.langchainTools)
+              .where(sql`id IN (${toolIds.join(',')})`);
+              
+            console.log(`Tools for agent ID ${agentId}: ${tools.map(t => t.name).join(', ')}`);
+          }
+        } else {
+          // If Main Assistant isn't found, fall back to any enabled agent
+          const fallbackAgent = await db.select()
+            .from(schema.langchainAgents)
+            .where(eq(schema.langchainAgents.enabled, true))
+            .limit(1);
+            
+          if (fallbackAgent.length > 0) {
+            agentId = fallbackAgent[0].id;
+            console.log(`Main Assistant Agent not found, using fallback agent ID: ${agentId}`);
+          } else {
+            console.warn("No enabled agents found in the database");
+            agentId = undefined; // Will use default agent in agent-service.ts
+          }
+        }
+      } catch (error) {
+        console.error("Error finding agent for Telegram:", error);
+        agentId = undefined; // Will use default agent in agent-service.ts
+      }
       
-      console.log(`Using hardcoded agent ID for Telegram: ${agentId} (Main Assistant Agent)`);
-      
-      // If the user were to try to text "Use BillyBot" we could switch to agent ID 2
-      if (messageText.toLowerCase().includes("use billybot")) {
-        agentId = 2;
-        console.log(`Switching to BillyBot Agent (ID: ${agentId}) based on user request`);
-        await this.bot?.sendMessage(chatId, "Switching to BillyBot Agent for this conversation.");
+      // Check for special commands
+      if (messageText.toLowerCase().startsWith("use agent")) {
+        const parts = messageText.split(/\s+/);
+        if (parts.length >= 3) {
+          const agentName = parts.slice(2).join(" ");
+          try {
+            // Find agent by name
+            const matchingAgents = await db.select()
+              .from(schema.langchainAgents)
+              .where(sql`name ILIKE ${`%${agentName}%`} AND enabled = true`)
+              .limit(1);
+              
+            if (matchingAgents.length > 0) {
+              agentId = matchingAgents[0].id;
+              await this.bot?.sendMessage(chatId, `Switching to ${matchingAgents[0].name} for this conversation.`);
+              return; // Exit early as this was just a command to switch agents
+            } else {
+              await this.bot?.sendMessage(chatId, `No enabled agent found matching "${agentName}". Using default agent.`);
+            }
+          } catch (error) {
+            console.error("Error switching agents:", error);
+          }
+        }
       }
       
       try {
