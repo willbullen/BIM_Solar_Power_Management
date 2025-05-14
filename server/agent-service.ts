@@ -342,26 +342,46 @@ export class AgentService {
         }
       }
       
+      console.log(`🧠 OpenAI Call - Using model: ${modelToUse}, Functions: ${functions.length}`);
+      
+      if (functions.length > 0) {
+        console.log(`🧠 Available tools: ${functions.map(f => f.name).join(', ')}`);
+      }
+      
       // Set a timeout for the API call
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error("OpenAI API call timed out after 30 seconds")), 30000);
       });
       
       // Make the API call with a timeout
-      const response = await Promise.race([
-        this.openai.chat.completions.create({
-          model: modelToUse,
-          messages: openaiMessages,
-          temperature: temperature,
-          max_tokens: tokensToUse,
-          tools: functions.length > 0 ? functions.map(func => ({
-            type: "function",
-            function: func
-          })) : undefined,
-          tool_choice: functions.length > 0 ? "auto" : "none",
-        }),
-        timeoutPromise
-      ]) as OpenAI.ChatCompletion;
+      let response;
+      try {
+        console.log(`🧠 Starting OpenAI API call with ${openaiMessages.length} messages`);
+        
+        response = await Promise.race([
+          this.openai.chat.completions.create({
+            model: modelToUse,
+            messages: openaiMessages,
+            temperature: temperature,
+            max_tokens: tokensToUse,
+            tools: functions.length > 0 ? functions.map(func => ({
+              type: "function",
+              function: func
+            })) : undefined,
+            tool_choice: functions.length > 0 ? "auto" : "none",
+          }),
+          timeoutPromise
+        ]) as OpenAI.ChatCompletion;
+        
+        console.log(`🧠 OpenAI API call successful - Response ID: ${response.id}`);
+        console.log(`🧠 Response - Tokens used: ${response.usage?.total_tokens || 'unknown'}`);
+      } catch (error) {
+        console.error(`🚨 OpenAI API call failed: ${error.message}`);
+        if (error.response) {
+          console.error(`🚨 API Error details: ${JSON.stringify(error.response.data || {})}`);
+        }
+        throw error;
+      }
 
       const assistantResponse = response.choices[0]?.message;
       

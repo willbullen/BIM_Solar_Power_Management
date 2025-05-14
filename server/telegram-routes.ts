@@ -351,45 +351,60 @@ export function registerTelegramRoutes(app: Express) {
       if (validatedData.useAgent) {
         let agentId = validatedData.agentId;
         
+        console.log(`📝 TEST MESSAGE REQUEST - Initial agentId from client: ${agentId || 'not provided'}`);
+        console.log(`📝 Request body: ${JSON.stringify(validatedData)}`);
+        
         // If no specific agent ID is provided, try to find the Main Assistant Agent
         if (!agentId) {
           try {
             // Fetch all agents - mimicking the exact pattern used in the Settings page
-            console.log("Fetching all agents to find Main Assistant Agent");
+            console.log("📝 Fetching all agents to find Main Assistant Agent for test message");
             const agents = await db.select().from(schema.langchainAgents).orderBy(desc(schema.langchainAgents.updatedAt));
-            console.log(`Found ${agents.length} agents in database`);
+            console.log(`📝 Found ${agents.length} agents in database`);
             
             if (agents.length > 0) {
               // Log the names of agents for debugging
-              console.log("Agent names:", agents.map(agent => `${agent.name} (ID: ${agent.id})`));
+              console.log("📝 Agent names:", agents.map(agent => `${agent.name} (ID: ${agent.id}, enabled: ${agent.enabled})`));
               
               // Use the EXACT SAME APPROACH as the Settings page
               const mainAgent = agents.find(agent => agent.name === 'Main Assistant Agent' && agent.enabled) || agents[0];
               agentId = mainAgent.id;
               
-              console.log(`Using agent "${mainAgent.name}" (ID: ${agentId}) for test message`);
+              console.log(`📝 Using agent "${mainAgent.name}" (ID: ${agentId}) for test message`);
             } else {
-              console.log('No agents found in the database');
+              console.log('📝 No agents found in the database');
             }
           } catch (error) {
-            console.error('Error looking up Main Assistant Agent in test-message:', error);
+            console.error('📝 Error looking up Main Assistant Agent in test-message:', error);
             
             // Log more detailed information about the error
             if (error instanceof Error) {
-              console.error(`Error details: ${error.message}`);
-              console.error(`Error stack: ${error.stack}`);
+              console.error(`📝 Error details: ${error.message}`);
+              console.error(`📝 Error stack: ${error.stack}`);
             }
           }
+        } else {
+          console.log(`📝 Using explicitly provided agent ID: ${agentId}`);
         }
         
         console.log(`Using Langchain agent ${agentId || 'default'} for Telegram test message`);
         
+        console.log(`📝 About to call telegramService.sendMessageWithAgent with userId: ${userId}, message: "${validatedData.message.substring(0, 30)}...", agentId: ${agentId || 'undefined'}`);
+        
         // Process using the selected or default Langchain agent
-        success = await telegramService.sendMessageWithAgent(
-          userId,
-          validatedData.message,
-          agentId
-        );
+        try {
+          success = await telegramService.sendMessageWithAgent(
+            userId,
+            validatedData.message,
+            agentId
+          );
+          
+          console.log(`📝 sendMessageWithAgent call completed with result: ${success}`);
+        } catch (error) {
+          console.error(`📝 Error in sendMessageWithAgent:`, error);
+          // Rethrow the error to be handled by the outer try/catch
+          throw error;
+        }
       } else {
         // Regular message sending without agent processing
         success = await telegramService.sendNotification(
