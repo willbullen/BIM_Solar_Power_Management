@@ -226,13 +226,13 @@ export class DbUtils {
       },
       "manager": {
         "read": ["*"],
-        "write": ["power_data", "environmental_data", "equipment", "agent_*"], 
-        "delete": ["agent_messages", "agent_tasks"]
+        "write": ["power_data", "environmental_data", "equipment", "langchain_*"], 
+        "delete": ["langchain_agent_messages", "langchain_agent_tasks"]
       },
       "user": {
-        "read": ["power_data", "environmental_data", "equipment", "agent_conversations", "agent_messages", "agent_tasks"],
-        "write": ["agent_conversations", "agent_messages", "agent_tasks"],
-        "delete": ["agent_messages"]
+        "read": ["power_data", "environmental_data", "equipment", "langchain_agent_conversations", "langchain_agent_messages", "langchain_agent_tasks"],
+        "write": ["langchain_agent_conversations", "langchain_agent_messages", "langchain_agent_tasks"],
+        "delete": ["langchain_agent_messages"]
       }
     };
     

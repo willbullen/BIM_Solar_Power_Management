@@ -57,12 +57,12 @@ export class ReadFromDBTool extends Tool {
           'maintenance_log',
           'issues',
           'issue_comments',
-          'agent_conversations',
-          'agent_messages',
-          'agent_tasks',
-          'agent_settings',
-          // 'agent_functions', // removed - using langchain_tools exclusively
-          'agent_notifications',
+          'langchain_agent_conversations',
+          'langchain_agent_messages',
+          'langchain_agent_tasks',
+          'langchain_agents', // renamed from agent_settings
+          'langchain_tools', // replaced agent_functions
+          'langchain_agent_notifications',
           'signal_notifications',
           'report_templates',
           'scheduled_reports',
@@ -92,12 +92,12 @@ export class ReadFromDBTool extends Tool {
         'maintenance_log',
         'issues',
         'issue_comments',
-        'agent_conversations',
-        'agent_messages',
-        'agent_tasks',
-        'agent_settings',
-        // 'agent_functions', // removed - using langchain_tools exclusively
-        'agent_notifications',
+        'langchain_agent_conversations',
+        'langchain_agent_messages',
+        'langchain_agent_tasks',
+        // 'agent_settings' is now 'langchain_agents', already included below
+        // 'agent_functions' is now 'langchain_tools', already included below
+        'langchain_agent_notifications',
         'signal_notifications',
         'langchain_agents',
         'langchain_agent_tools',
