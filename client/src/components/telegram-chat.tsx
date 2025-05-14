@@ -87,6 +87,31 @@ export function TelegramChat() {
   const [testMessage, setTestMessage] = useState("");
   const [showVerificationDialog, setShowVerificationDialog] = useState(false);
   const [verificationDetails, setVerificationDetails] = useState<TelegramVerificationResponse | null>(null);
+  const [mainAssistantAgent, setMainAssistantAgent] = useState<LangchainAgent | null>(null);
+
+  // Fetch Langchain agents to get the Main Assistant Agent
+  const { data: langchainAgents, isLoading: loadingAgents } = useQuery<LangchainAgent[]>({
+    queryKey: ['/api/langchain/agents'],
+    retry: false,
+    onSuccess: (data) => {
+      if (data) {
+        // Find the Main Assistant Agent
+        const mainAgent = data.find(agent => agent.name === 'Main Assistant Agent' && agent.enabled);
+        if (mainAgent) {
+          setMainAssistantAgent(mainAgent);
+          console.log('Found Main Assistant Agent:', mainAgent);
+        }
+      }
+    },
+    onError: (error) => {
+      console.error('Error fetching Langchain agents:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load Langchain agents. Some functionality might be limited."
+      });
+    }
+  });
 
   // Fetch Telegram status and connection info
   const { data: telegramUser, isLoading: loadingUser, refetch: refetchUser } = useQuery<TelegramUser | null>({
@@ -159,13 +184,29 @@ export function TelegramChat() {
     }
   });
 
-  // Send test message
+  // Send test message using Langchain Main Assistant Agent
   const sendTestMessage = useMutation({
-    mutationFn: (message: string) => 
-      apiRequest('/api/telegram/test-message', {
-        method: 'POST',
-        data: { message }
-      }),
+    mutationFn: (message: string) => {
+      // Check if Main Assistant Agent is available
+      if (mainAssistantAgent) {
+        console.log('Using Main Assistant Agent for message processing:', mainAssistantAgent.name);
+        return apiRequest('/api/telegram/test-message', {
+          method: 'POST',
+          data: { 
+            message,
+            agentId: mainAssistantAgent.id, // Include the agent ID to use for processing
+            useAgent: true
+          }
+        });
+      } else {
+        // Fall back to regular message sending if agent not available
+        console.log('Main Assistant Agent not available, using default processing');
+        return apiRequest('/api/telegram/test-message', {
+          method: 'POST',
+          data: { message }
+        });
+      }
+    },
     onSuccess: () => {
       toast({
         title: "Message Sent",
@@ -285,15 +326,28 @@ export function TelegramChat() {
                   {isTelegramConnected 
                     ? `Connected as ${telegramUser.telegramUsername || 'User'}`
                     : 'Not connected'}
+                  {mainAssistantAgent && isTelegramConnected && (
+                    <span className="block mt-1">
+                      Using <span className="text-blue-400">{mainAssistantAgent.name}</span>
+                    </span>
+                  )}
                 </CardDescription>
               </div>
             </div>
-            {isTelegramConnected && (
-              <Badge variant="outline" className="bg-green-900/30 text-green-300 border-green-800 px-2 py-0 text-xs">
-                <CheckCircle className="h-3 w-3 mr-1 text-green-500" />
-                Connected
-              </Badge>
-            )}
+            <div className="flex gap-2">
+              {mainAssistantAgent && isTelegramConnected && (
+                <Badge variant="outline" className="bg-blue-900/30 text-blue-300 border-blue-800 px-2 py-0 text-xs">
+                  <Zap className="h-3 w-3 mr-1 text-blue-500" />
+                  Langchain
+                </Badge>
+              )}
+              {isTelegramConnected && (
+                <Badge variant="outline" className="bg-green-900/30 text-green-300 border-green-800 px-2 py-0 text-xs">
+                  <CheckCircle className="h-3 w-3 mr-1 text-green-500" />
+                  Connected
+                </Badge>
+              )}
+            </div>
           </div>
         </CardHeader>
         
