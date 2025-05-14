@@ -638,7 +638,7 @@ export class AgentService {
         parameters = { includeSystemTables: false };
       }
       
-      const result = await FunctionRegistry.executeFunction(
+      const result = await UnifiedFunctionRegistry.executeFunction(
         name,
         parameters,
         { userId, userRole }
