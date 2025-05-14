@@ -14,24 +14,32 @@ import * as schema from '@shared/schema';
  */
 export async function migrateAgentFunctions() {
   try {
-    console.log('Starting migration of agent_functions to langchain_tools...');
+    console.log('Starting complete migration of agent_functions to langchain_tools...');
     
     // Get all agent functions
     const agentFunctions = await db.select().from(schema.agentFunctions);
     console.log(`Found ${agentFunctions.length} agent functions to migrate`);
     
+    // Get all existing tools for reference
+    const existingTools = await db.select().from(schema.langchainTools);
+    const existingToolNames = new Set(existingTools.map(tool => tool.name));
+    
+    console.log(`Found ${existingTools.length} existing tools in langchain_tools`);
+    
+    let migratedCount = 0;
+    let skippedCount = 0;
+    
     // For each agent function, check if it exists in langchain_tools
     for (const func of agentFunctions) {
       // Check if function exists in langchain_tools by name
-      const [existingTool] = await db
-        .select()
-        .from(schema.langchainTools)
-        .where(eq(schema.langchainTools.name, func.name));
-      
-      if (existingTool) {
+      if (existingToolNames.has(func.name)) {
         console.log(`Tool ${func.name} already exists in langchain_tools, skipping`);
+        skippedCount++;
         continue;
       }
+      
+      // Convert function parameters to LangChain format if needed
+      const parameters = func.parameters as any;
       
       // Create new langchain tool from agent function
       const [newTool] = await db
@@ -39,26 +47,30 @@ export async function migrateAgentFunctions() {
         .values({
           name: func.name,
           description: func.description,
-          toolType: func.module,
-          parameters: func.parameters as any,
-          implementation: func.name + 'Tool', // Add "Tool" suffix for consistency
+          toolType: func.module || 'custom',
+          parameters: parameters,
+          implementation: func.functionCode || `${func.name}Tool`, // Use actual code or naming convention
           enabled: true,
           createdAt: new Date(),
           updatedAt: new Date(),
-          isBuiltIn: true,
+          isBuiltIn: false, // Mark as non-built-in to distinguish from core tools
           metadata: {
             migrated: true,
-            legacyFunctionId: func.id,
+            originalId: func.id,
+            accessLevel: func.accessLevel,
+            tags: func.tags,
             returnType: func.returnType,
-            accessLevel: func.accessLevel
+            legacySource: 'agent_functions'
           }
         })
         .returning();
       
       console.log(`Migrated agent function ${func.name} to langchain tool with ID ${newTool.id}`);
+      migratedCount++;
     }
     
-    console.log('Migration of agent_functions completed successfully');
+    console.log(`Migration summary: ${migratedCount} functions migrated, ${skippedCount} functions skipped`);
+    console.log('Complete migration of agent_functions to langchain_tools finished successfully');
     return true;
   } catch (error) {
     console.error('Error migrating agent functions:', error);
