@@ -1454,7 +1454,8 @@ export default function AgentPage() {
   useEffect(() => {
     const handleSwitchToTelegramTab = () => {
       console.log('Switching to Telegram tab from event');
-      // Telegram tab activation removed as requested
+      // Set the active tab to Telegram
+      setActiveTab("telegram");
     };
     
     // Add the event listener
