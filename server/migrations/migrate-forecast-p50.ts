@@ -1,7 +1,7 @@
 /**
  * This script migrates the environmental_data table to add the forecast_p50 column
  */
-import { db } from "./db";
+import { db } from "../db";
 import { sql } from "drizzle-orm";
 
 async function migrateForecastP50() {

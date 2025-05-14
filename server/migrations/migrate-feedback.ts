@@ -1,11 +1,11 @@
 /**
  * This script migrates the database to add feedback and issue tracking functionality
  */
-import { db, pool } from "./db";
-import { issues, issueComments, todoItems, users } from "@shared/schema";
+import { db, pool } from "../db";
+import { issues, issueComments, todoItems, users } from "../../shared/schema";
 import { sql } from "drizzle-orm";
-import { log } from "./vite";
-import { parseMarkdownTasks } from "./utils";
+import { log } from "../vite";
+import { parseMarkdownTasks } from "../utils";
 import * as fs from 'fs';
 import * as path from 'path';
 

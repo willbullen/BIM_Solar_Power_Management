@@ -23,7 +23,7 @@ export async function migrate() {
     
     // Register sample functions for demonstration (dynamic import to avoid circular dependencies)
     try {
-      const { registerSampleFunctions } = await import('./utils/sample-functions');
+      const { registerSampleFunctions } = await import('../utils/sample-functions');
       console.log('Registering sample AI agent functions...');
       await registerSampleFunctions();
       console.log('Sample AI agent functions registered successfully');
