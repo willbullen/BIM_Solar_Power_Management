@@ -207,9 +207,15 @@ export class AgentService {
       
       // For 'function' role messages, we MUST include the name parameter
       // This fixes the "Missing parameter 'name': messages with role 'function' must have a 'name'" error
-      if (msg.role === 'function' && msg.name) {
-        console.log(`Adding name parameter to function message: ${msg.name}`);
-        openaiMsg.name = msg.name;
+      if (msg.role === 'function') {
+        if (msg.name) {
+          console.log(`Adding name parameter to function message: ${msg.name}`);
+          openaiMsg.name = msg.name;
+        } else {
+          // Always provide a name for function messages to avoid OpenAI API errors
+          console.warn(`Function message missing name parameter, adding default name`);
+          openaiMsg.name = 'unnamed_function';
+        }
       }
       
       // Log the message structure
