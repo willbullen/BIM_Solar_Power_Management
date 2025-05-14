@@ -93,6 +93,7 @@ app.use((req, res, next) => {
       }
 
       // Run the migration to rename agent tables to use langchain prefix
+      /*
       try {
         console.log('Starting migration to rename agent tables to langchain prefix...');
         await migrateLangchainNaming(true);
@@ -101,6 +102,7 @@ app.use((req, res, next) => {
         console.error('Error during table renaming migration:', renamingError);
         // Continue with server startup even if renaming fails
       }
+      */
     } catch (migrationError) {
       console.error('Error during complete function migration:', migrationError);
       // Continue with server startup even if migration fails
