@@ -428,7 +428,7 @@ Try asking questions about power usage, environmental data, or request reports.`
       let conversationId: number;
       const activeConversation = await db.select()
         .from(agentConversations)
-        .where(eq(agentConversations.userId, user[0].userId))
+        .where(user[0].userId ? eq(agentConversations.userId, user[0].userId) : sql`false`)
         .orderBy(desc(agentConversations.createdAt))
         .limit(1);
       
@@ -436,6 +436,11 @@ Try asking questions about power usage, environmental data, or request reports.`
         conversationId = activeConversation[0].id;
       } else {
         // Create a new conversation
+        // Only create a conversation if there's a userId
+        if (!user[0].userId) {
+          throw new Error('Cannot create conversation for Telegram user without associated system user ID');
+        }
+        
         const newConversation = await this.agentService.createConversation(
           user[0].userId, 
           'Telegram Conversation'
@@ -523,9 +528,14 @@ Try asking questions about power usage, environmental data, or request reports.`
         // Add extensive try/catch to properly handle function call-related errors
         let aiResponse;
         try {
+          // Only generate response if there's a userId
+          if (!user[0].userId) {
+            throw new Error('Cannot generate response for Telegram user without associated system user ID');
+          }
+          
           aiResponse = await this.agentService.generateResponse(
             conversationId,
-            user[0].userId,
+            user[0].userId!, // Non-null assertion as we checked above
             'user',     // Default user role
             1000,       // Default max tokens
             agentId     // Pass the agent ID to use for processing
@@ -786,17 +796,24 @@ Try asking questions about power usage, environmental data, or request reports.`
     }
     
     try {
-      // Get all verified users
-      const verifiedUsers = await db.select()
-        .from(telegramUsers)
-        .where(eq(telegramUsers.isVerified, true));
+      // Get all users - we'll filter for verified in the loop
+      const allUsers = await db.select()
+        .from(telegramUsers);
       
       let successCount = 0;
       
-      // Send message to each user
-      for (const user of verifiedUsers) {
+      // Send message to each verified user
+      for (const user of allUsers) {
         try {
-          await this.bot.sendMessage(user.chatId, message);
+          // Check metadata for verification
+          const metadata = user.metadata as TelegramUserMetadata || {};
+          
+          if (!metadata.isVerified || !metadata.chatId) {
+            // Skip users who are not verified or don't have a chat ID
+            continue;
+          }
+          
+          await this.bot.sendMessage(metadata.chatId, message);
           
           // Store outbound message
           await db.insert(telegramMessages)
@@ -825,9 +842,15 @@ Try asking questions about power usage, environmental data, or request reports.`
    */
   async getStatistics(): Promise<any> {
     try {
-      const totalUsers = await db.select({ count: sql`count(*)` })
-        .from(telegramUsers)
-        .where(eq(telegramUsers.isVerified, true));
+      // For verified users, we need to count users with isVerified: true in metadata
+      // First get all users
+      const allUsers = await db.select().from(telegramUsers);
+      
+      // Then count only those who have isVerified: true in their metadata
+      const verifiedUsersCount = allUsers.filter(user => {
+        const metadata = user.metadata as TelegramUserMetadata || {};
+        return metadata.isVerified === true;
+      }).length;
       
       const totalMessages = await db.select({ count: sql`count(*)` })
         .from(telegramMessages);
@@ -841,7 +864,7 @@ Try asking questions about power usage, environmental data, or request reports.`
         .where(eq(telegramMessages.direction, 'outbound'));
       
       return {
-        verifiedUsers: totalUsers[0]?.count || 0,
+        verifiedUsers: verifiedUsersCount,
         totalMessages: totalMessages[0]?.count || 0,
         inboundMessages: inboundMessages[0]?.count || 0,
         outboundMessages: outboundMessages[0]?.count || 0,
