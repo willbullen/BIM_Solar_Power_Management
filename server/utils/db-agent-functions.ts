@@ -314,7 +314,6 @@ export async function registerDatabaseFunctions() {
       accessLevel: 'User'
     },
     enabled: true,
-    accessLevel: 'User',
     parameters: {
       type: 'object',
       properties: {
