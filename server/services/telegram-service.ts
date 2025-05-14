@@ -358,8 +358,8 @@ Try asking questions about power usage, environmental data, or request reports.`
         messageText
       );
       
-      // Find the Main Assistant Agent in the database for use in processing
-      let mainAssistantAgentId = null;
+      // Find appropriate Langchain agent to use (prioritizing Main Assistant Agent)
+      let agentId = null;
       try {
         const mainAssistantAgent = await db.select()
           .from(sql`"langchain_agents"`)
@@ -368,20 +368,36 @@ Try asking questions about power usage, environmental data, or request reports.`
         
         if (mainAssistantAgent.length > 0) {
           console.log(`Using Langchain Main Assistant Agent for Telegram message processing: ${mainAssistantAgent[0].id}`);
-          mainAssistantAgentId = mainAssistantAgent[0].id;
+          agentId = mainAssistantAgent[0].id;
+        } else {
+          // If Main Assistant Agent isn't available, find any enabled agent
+          const anyAgent = await db.select()
+            .from(sql`"langchain_agents"`)
+            .where(sql`"enabled" = true`)
+            .limit(1);
+          
+          if (anyAgent.length > 0) {
+            console.log(`Using alternative Langchain agent for Telegram message processing: ${anyAgent[0].id} (${anyAgent[0].name})`);
+            agentId = anyAgent[0].id;
+          }
         }
       } catch (agentError) {
-        console.error('Error finding Main Assistant Agent:', agentError);
+        console.error('Error finding appropriate Langchain agent:', agentError);
         // Continue with standard processing
       }
       
-      // Generate AI response using the Main Assistant Agent if available
+      if (!agentId) {
+        await this.bot?.sendMessage(chatId, "I'm sorry, but there are no AI agents available to process your message right now. Please try again later or contact your administrator.");
+        return;
+      }
+      
+      // Generate AI response using the selected Langchain agent
       const aiResponse = await this.agentService.generateResponse(
         conversationId,
         user[0].userId,
-        'user',              // Default user role
-        1000,                // Default max tokens
-        mainAssistantAgentId // Pass the agent ID to use for processing
+        'user',     // Default user role
+        1000,       // Default max tokens
+        agentId     // Pass the agent ID to use for processing
       );
       
       // Store outbound message
