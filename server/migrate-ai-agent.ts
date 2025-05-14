@@ -175,89 +175,20 @@ async function createDefaultAgentSettings() {
 }
 
 /**
- * Create default agent functions
+ * Create default agent functions - DEPRECATED
+ * Now using langchain_tools exclusively - see server/migrate-function-system.ts
  */
 async function createDefaultAgentFunctions() {
-  // Create a temporary table to hold the default functions
-  await db.execute(sql`
-    CREATE TEMP TABLE temp_agent_functions (
-      name VARCHAR(100) NOT NULL,
-      description TEXT NOT NULL,
-      module VARCHAR(50) NOT NULL,
-      parameters JSONB NOT NULL,
-      return_type VARCHAR(100) NOT NULL,
-      function_code TEXT NOT NULL,
-      access_level VARCHAR(20) NOT NULL,
-      tags TEXT[] NOT NULL
-    );
-  `);
+  console.log('Skipping creation of default agent_functions (deprecated)');
+  console.log('Function creation now handled by migrate-function-system.ts and langchain_tools table');
   
-  // Insert default functions into the temporary table
-  await db.execute(sql`
-    INSERT INTO temp_agent_functions (name, description, module, parameters, return_type, function_code, access_level, tags) VALUES
-    (
-      'queryPowerData',
-      'Query power data from the database within a specific time range',
-      'data',
-      '{"type":"object","properties":{"startDate":{"type":"string","description":"Start date in ISO format (e.g. 2025-05-01T00:00:00Z)"},"endDate":{"type":"string","description":"End date in ISO format (e.g. 2025-05-08T00:00:00Z)"},"limit":{"type":"number","description":"Maximum number of records to return"}},"required":["startDate","endDate"]}',
-      'PowerData[]',
-      'async function queryPowerData(params) { const { startDate, endDate, limit = 100 } = params; return db.query.powerData.findMany({ where: (fields, { gte, lte }) => ({ and: [ gte(fields.timestamp, new Date(startDate)), lte(fields.timestamp, new Date(endDate)) ] }), limit }); }',
-      'restricted',
-      ARRAY['data', 'power', 'query']
-    ),
-    (
-      'queryEnvironmentalData',
-      'Query environmental data from the database within a specific time range',
-      'data',
-      '{"type":"object","properties":{"startDate":{"type":"string","description":"Start date in ISO format (e.g. 2025-05-01T00:00:00Z)"},"endDate":{"type":"string","description":"End date in ISO format (e.g. 2025-05-08T00:00:00Z)"},"limit":{"type":"number","description":"Maximum number of records to return"}},"required":["startDate","endDate"]}',
-      'EnvironmentalData[]',
-      'async function queryEnvironmentalData(params) { const { startDate, endDate, limit = 100 } = params; return db.query.environmentalData.findMany({ where: (fields, { gte, lte }) => ({ and: [ gte(fields.timestamp, new Date(startDate)), lte(fields.timestamp, new Date(endDate)) ] }), limit }); }',
-      'restricted',
-      ARRAY['data', 'environmental', 'query']
-    ),
-    (
-      'getEquipmentList',
-      'Get a list of all equipment in the system',
-      'equipment',
-      '{"type":"object","properties":{"active":{"type":"boolean","description":"Filter by active status"}}}',
-      'Equipment[]',
-      'async function getEquipmentList(params) { const { active } = params; if (active !== undefined) { return db.query.equipment.findMany({ where: (fields, { eq }) => eq(fields.active, active) }); } return db.query.equipment.findMany(); }',
-      'public',
-      ARRAY['equipment', 'query']
-    ),
-    (
-      'getEquipmentEfficiency',
-      'Get efficiency data for a specific piece of equipment',
-      'equipment',
-      '{"type":"object","properties":{"equipmentId":{"type":"number","description":"ID of the equipment to get efficiency data for"},"startDate":{"type":"string","description":"Start date in ISO format (optional)"},"endDate":{"type":"string","description":"End date in ISO format (optional)"}},"required":["equipmentId"]}',
-      'EquipmentEfficiency[]',
-      'async function getEquipmentEfficiency(params) { const { equipmentId, startDate, endDate } = params; let query = { where: (fields, { eq }) => eq(fields.equipmentId, equipmentId) }; if (startDate && endDate) { query.where = (fields, { eq, gte, lte }) => ({ and: [ eq(fields.equipmentId, equipmentId), gte(fields.timestamp, new Date(startDate)), lte(fields.timestamp, new Date(endDate)) ] }); } return db.query.equipmentEfficiency.findMany(query); }',
-      'restricted',
-      ARRAY['equipment', 'efficiency', 'query']
-    ),
-    (
-      'createEnergyInsight',
-      'Create a new energy insight record in the database',
-      'insights',
-      '{"type":"object","properties":{"title":{"type":"string","description":"Title of the insight"},"description":{"type":"string","description":"Detailed description of the insight"},"type":{"type":"string","description":"Type of insight (efficiency, anomaly, recommendation, prediction)"},"priority":{"type":"string","description":"Priority level (low, medium, high, critical)"},"metadata":{"type":"object","description":"Additional metadata for the insight"}},"required":["title","description","type"]}',
-      'Issue',
-      'async function createEnergyInsight(params) { const { title, description, type, priority = "medium", metadata = {} } = params; return db.insert(schema.issues).values({ title, description, status: "open", type: type || "feature", priority: priority, assigneeId: null, submitterId: 1, createdAt: new Date(), updatedAt: new Date(), metadata: metadata }).returning(); }',
-      'admin',
-      ARRAY['insights', 'create']
-    );
-  `);
+  // Note: All functions have been migrated to langchain_tools
+  // Please refer to server/migrate-function-system.ts for the new function system
+  // The LangChain tools-based migration provides more flexibility and integration
+  // with AI models and unifies the function execution mechanisms.
   
-  // Insert functions from temporary table to agent_functions if they don't already exist
-  await db.execute(sql`
-    INSERT INTO agent_functions (name, description, module, parameters, return_type, function_code, access_level, tags)
-    SELECT t.name, t.description, t.module, t.parameters, t.return_type, t.function_code, t.access_level, t.tags
-    FROM temp_agent_functions t
-    LEFT JOIN agent_functions a ON t.name = a.name
-    WHERE a.name IS NULL;
-  `);
-  
-  // Drop the temporary table
-  await db.execute(sql`DROP TABLE temp_agent_functions;`);
+  // No longer creating agent_functions as they have been completely replaced
+  return;
 }
 
 // Run the migration
