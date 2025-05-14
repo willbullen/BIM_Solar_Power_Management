@@ -589,7 +589,8 @@ export class AgentService {
           const langchainTools = await db
             .select()
             .from(schema.langchainTools)
-            .where(sql`id IN (${toolIds.join(',')}) AND enabled = true`);
+            .where(inArray(schema.langchainTools.id, toolIds))
+            .where(eq(schema.langchainTools.enabled, true));
           
           console.log(`Found ${langchainTools.length} enabled tools for agent ID: ${agentId}`);
           
