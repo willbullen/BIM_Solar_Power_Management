@@ -6,6 +6,8 @@ import { migrate as migrateLangChain } from "./migrations/migrate-langchain";
 import { setupUnifiedFunctionSystem, runMigration, migrateAgentFunctions } from "./migrations/migrate-function-system";
 import { migrate as removeAgentFunctionsTable } from "./migrations/remove-agent-functions-table";
 import { migrateLangchainNaming } from "./migrations/migrate-langchain-naming";
+import { removeTelegramSettings } from "./migrations/remove-telegram-settings";
+import { migrate as removeTelegramLegacyTables } from "./migrations/remove-telegram-legacy-tables";
 import cors from 'cors';
 
 const app = express();
@@ -89,6 +91,26 @@ app.use((req, res, next) => {
         console.log('agent_functions table removed successfully');
       } catch (removalError) {
         console.error('Error during agent_functions table removal:', removalError);
+        // Continue with server startup even if table removal fails
+      }
+      
+      // Remove old telegram_settings table which is now redundant
+      try {
+        console.log('Starting removal of old telegram_settings table...');
+        await removeTelegramSettings();
+        console.log('telegram_settings table removal completed');
+      } catch (telegramSettingsError) {
+        console.error('Error during telegram_settings removal:', telegramSettingsError);
+        // Continue with server startup even if table removal fails
+      }
+      
+      // Remove legacy telegram_users and telegram_messages tables
+      try {
+        console.log('Starting removal of legacy telegram tables...');
+        await removeTelegramLegacyTables();
+        console.log('Legacy telegram tables removal completed');
+      } catch (telegramLegacyError) {
+        console.error('Error during legacy telegram tables removal:', telegramLegacyError);
         // Continue with server startup even if table removal fails
       }
 

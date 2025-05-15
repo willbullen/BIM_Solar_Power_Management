@@ -14,7 +14,11 @@ export async function registerSampleFunctions() {
   await UnifiedFunctionRegistry.registerFunction({
     name: 'analyzePowerData',
     description: 'Analyze power data for a given time period to identify patterns and anomalies',
-    module: 'power',
+    toolType: 'custom',
+    metadata: { 
+      module: 'power',
+      returnType: 'PowerDataAnalysis'
+    },
     parameters: {
       type: 'object',
       properties: {
@@ -36,8 +40,7 @@ export async function registerSampleFunctions() {
       },
       required: ['startDate', 'endDate']
     },
-    returnType: 'PowerDataAnalysis',
-    functionCode: `
+    implementation: `
       async function analyzePowerData(params, dbUtils) {
         const { startDate, endDate, metrics = ['mainGridPower', 'solarOutput', 'totalLoad'] } = params;
         
@@ -112,15 +115,23 @@ export async function registerSampleFunctions() {
       
       return await analyzePowerData(params, dbUtils);
     `,
-    accessLevel: 'public',
-    tags: ['power', 'analytics', 'statistics']
+    isBuiltIn: true,
+    metadata: {
+      accessLevel: 'public',
+      tags: ['power', 'analytics', 'statistics']
+    }
   });
   
   // Environmental correlation function - requires user role
   await UnifiedFunctionRegistry.registerFunction({
     name: 'correlateEnvironmentalFactors',
     description: 'Correlate environmental factors with power production and consumption',
-    module: 'environment',
+    toolType: 'custom',
+    metadata: {
+      module: 'environment',
+      accessLevel: 'user',
+      returnType: 'CorrelationAnalysis'
+    },
     parameters: {
       type: 'object',
       properties: {
@@ -142,8 +153,7 @@ export async function registerSampleFunctions() {
       },
       required: ['startDate', 'endDate']
     },
-    returnType: 'object',
-    functionCode: `
+    implementation: `
       async function correlateEnvironmentalFactors(params, dbUtils) {
         const { startDate, endDate, factors = ['air_temp', 'ghi', 'dni'] } = params;
         
@@ -278,15 +288,23 @@ export async function registerSampleFunctions() {
       
       return await correlateEnvironmentalFactors(params, dbUtils);
     `,
-    accessLevel: 'user',
-    tags: ['environment', 'correlation', 'analytics']
+    isBuiltIn: true,
+    metadata: {
+      accessLevel: 'user',
+      tags: ['environment', 'correlation', 'analytics']
+    }
   });
   
   // Equipment management function - requires manager role
   await UnifiedFunctionRegistry.registerFunction({
     name: 'manageEquipment',
     description: 'Manage equipment settings and maintenance schedules',
-    module: 'equipment',
+    toolType: 'custom',
+    metadata: {
+      module: 'equipment',
+      accessLevel: 'manager',
+      returnType: 'EquipmentManagementResult'
+    },
     parameters: {
       type: 'object',
       properties: {
@@ -354,7 +372,7 @@ export async function registerSampleFunctions() {
             }
             
             // Schedule maintenance
-            const maintenanceTask = await dbUtils.insert('agent_tasks', {
+            const maintenanceTask = await dbUtils.insert('langchain_agent_tasks', {
               title: \`Maintenance for \${item.name}\`,
               description: \`Scheduled maintenance for equipment: \${item.name} (ID: \${item.id})\`,
               status: 'scheduled',
@@ -381,15 +399,23 @@ export async function registerSampleFunctions() {
       
       return await manageEquipment(params, dbUtils);
     `,
-    accessLevel: 'manager',
-    tags: ['equipment', 'maintenance', 'management']
+    isBuiltIn: true,
+    metadata: {
+      accessLevel: 'manager',
+      tags: ['equipment', 'maintenance', 'management']
+    }
   });
   
   // System access function - requires admin role
   await UnifiedFunctionRegistry.registerFunction({
     name: 'systemDiagnostics',
     description: 'Run system diagnostics and perform administrative tasks',
-    module: 'admin',
+    toolType: 'custom',
+    metadata: {
+      module: 'admin',
+      accessLevel: 'admin',
+      returnType: 'SystemDiagnosticsResult'
+    },
     parameters: {
       type: 'object',
       properties: {
@@ -591,7 +617,10 @@ export async function registerSampleFunctions() {
       
       return await systemDiagnostics(params, dbUtils);
     `,
-    accessLevel: 'admin',
-    tags: ['admin', 'diagnostics', 'system']
+    isBuiltIn: true,
+    metadata: {
+      accessLevel: 'admin',
+      tags: ['admin', 'diagnostics', 'system']
+    }
   });
 }

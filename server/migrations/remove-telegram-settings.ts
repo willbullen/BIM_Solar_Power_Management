@@ -47,5 +47,5 @@ async function checkTableExists(tableName: string): Promise<boolean> {
     )
   `);
   
-  return result.rows[0].exists;
+  return result.rows[0].exists === true;
 }

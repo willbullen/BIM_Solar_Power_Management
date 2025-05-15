@@ -36,8 +36,8 @@ function hasTablePermission(tableName: string, userRole?: string, operation: 're
     } else {
       // Users can only write to certain tables
       const userWritableTables = [
-        'agent_conversations', 
-        'agent_messages',
+        'langchain_agent_conversations', 
+        'langchain_agent_messages',
         'feedback',
         'issues',
         'todo_items'
@@ -61,27 +61,27 @@ export class FunctionRegistry {
    * @returns The registered function
    */
   static async registerFunction(
-    functionData: Omit<schema.InsertAgentFunction, "id">
-  ): Promise<schema.AgentFunction> {
+    functionData: Omit<schema.InsertLangchainTool, "id">
+  ): Promise<schema.LangchainTool> {
     try {
       // Check if function already exists
-      const existingFunction = await db.query.agentFunctions.findFirst({
+      const existingFunction = await db.query.langchainTools.findFirst({
         where: (fields, { eq }) => eq(fields.name, functionData.name)
       });
       
       if (existingFunction) {
         // Update existing function
-        const [updatedFunction] = await db.update(schema.agentFunctions)
+        const [updatedFunction] = await db.update(schema.langchainTools)
           .set({
             ...functionData
           })
-          .where(eq(schema.agentFunctions.name, functionData.name))
+          .where(eq(schema.langchainTools.name, functionData.name))
           .returning();
         
         return updatedFunction;
       } else {
         // Create new function
-        const [newFunction] = await db.insert(schema.agentFunctions)
+        const [newFunction] = await db.insert(schema.langchainTools)
           .values({
             ...functionData
           })
@@ -100,8 +100,8 @@ export class FunctionRegistry {
    * @param name Function name to retrieve
    * @returns The function or null if not found
    */
-  static async getFunction(name: string): Promise<schema.AgentFunction | null> {
-    const func = await db.query.agentFunctions.findFirst({
+  static async getFunction(name: string): Promise<schema.LangchainTool | null> {
+    const func = await db.query.langchainTools.findFirst({
       where: (fields, { eq }) => eq(fields.name, name)
     });
     return func || null;
@@ -112,14 +112,19 @@ export class FunctionRegistry {
    * @param accessLevel Optional access level filter
    * @returns Array of all registered functions
    */
-  static async getAllFunctions(accessLevel?: string): Promise<schema.AgentFunction[]> {
+  static async getAllFunctions(accessLevel?: string): Promise<schema.LangchainTool[]> {
+    // In the new schema, accessLevel is stored in metadata.accessLevel instead of a direct field
     if (accessLevel) {
-      return await db.query.agentFunctions.findMany({
-        where: (fields, { eq }) => eq(fields.accessLevel, accessLevel),
+      const allTools = await db.query.langchainTools.findMany({
         orderBy: (fields, { asc }) => [asc(fields.name)]
       });
+      // Filter tools by accessLevel in metadata
+      return allTools.filter(tool => {
+        const metadata = tool.metadata as any;
+        return metadata && metadata.accessLevel === accessLevel;
+      });
     } else {
-      return await db.query.agentFunctions.findMany({
+      return await db.query.langchainTools.findMany({
         orderBy: (fields, { asc }) => [asc(fields.name)]
       });
     }
@@ -165,7 +170,7 @@ export class FunctionRegistry {
       // Get the function definition
       // Handle the case where name might be undefined (typescript check)
       const functionName = name || 'unnamed_function';
-      const functionDef = await db.query.agentFunctions.findFirst({
+      const functionDef = await db.query.langchainTools.findFirst({
         where: (fields, { eq }) => eq(fields.name, functionName)
       });
       
@@ -269,7 +274,10 @@ export class FunctionRegistry {
       // Execute the function in the sandbox
       console.log(`[Function Registry] Executing ${name} in the sandbox`);
       try {
-        const result = await secureExecute(functionDef.functionCode, validParams, dbHelper);
+        if (!functionDef.implementation) {
+          throw new Error(`Function ${name} has no implementation defined`);
+        }
+        const result = await secureExecute(functionDef.implementation, validParams, dbHelper);
         console.log(`[Function Registry] ${name} executed successfully, result:`, typeof result === 'object' ? JSON.stringify(result) : result);
         return result;
       } catch (sandboxError: any) {
@@ -337,10 +345,14 @@ export class FunctionRegistry {
    * @param userRole User's role
    * @returns True if the user has permission, false otherwise
    */
-  private static hasExecutePermission(func: schema.AgentFunction, userRole: string): boolean {
+  private static hasExecutePermission(func: schema.LangchainTool, userRole: string): boolean {
     // Normalize roles for case-insensitive comparison
     const normalizedUserRole = userRole.toLowerCase();
-    const normalizedAccessLevel = func.accessLevel.toLowerCase();
+    
+    // Get access level from metadata
+    const metadata = func.metadata as any || {};
+    const accessLevel = metadata.accessLevel || 'public';
+    const normalizedAccessLevel = accessLevel.toLowerCase();
     
     // Admin can execute any function
     if (normalizedUserRole === "admin") {
@@ -366,7 +378,7 @@ export class FunctionRegistry {
         return normalizedUserRole === "admin" || normalizedUserRole === "manager";
       default:
         // Log unexpected access level for debugging
-        console.warn(`Unknown function access level: ${func.accessLevel} for function ${func.name}`);
+        console.warn(`Unknown function access level: ${accessLevel} for function ${func.name}`);
         return false;
     }
   }

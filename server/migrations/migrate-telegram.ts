@@ -87,7 +87,7 @@ async function createTelegramTables() {
           message_id TEXT,
           timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
           is_processed BOOLEAN NOT NULL DEFAULT FALSE,
-          conversation_id INTEGER REFERENCES agent_conversations(id)
+          conversation_id INTEGER REFERENCES langchain_agent_conversations(id)
         );
       `);
       
