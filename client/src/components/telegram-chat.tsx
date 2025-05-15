@@ -80,6 +80,7 @@ interface TelegramUser {
 interface TelegramVerificationResponse {
   verificationCode: string;
   instructions: string;
+  botUsername?: string;
 }
 
 // Langchain Agent interface
@@ -211,11 +212,14 @@ export function TelegramChat() {
 
   // Generate verification code for Telegram
   const generateVerification = useMutation({
-    mutationFn: () => 
-      apiRequest('/api/telegram/verify', {
+    mutationFn: () => {
+      console.log("Making verification code request");
+      return apiRequest('/api/telegram/verify', {
         method: 'POST'
-      }),
+      });
+    },
     onSuccess: (data: TelegramVerificationResponse) => {
+      console.log("Successfully generated verification code", data);
       setVerificationDetails(data);
       setShowVerificationDialog(true);
     },
@@ -339,6 +343,7 @@ export function TelegramChat() {
 
   // Function to handle verification button click
   const handleVerify = () => {
+    console.log("Starting Telegram verification process");
     generateVerification.mutate();
   };
 
@@ -622,7 +627,7 @@ export function TelegramChat() {
                 </h4>
                 <ol className="list-decimal list-inside space-y-2 text-sm text-slate-300">
                   <li>Open Telegram on your phone or desktop</li>
-                  <li>Search for the bot: <span className="font-mono bg-slate-700 px-1 rounded">@{botSettings?.botUsername || 'telegrambot'}</span></li>
+                  <li>Search for the bot: <span className="font-mono bg-slate-700 px-1 rounded">@{verificationDetails.botUsername || botSettings?.botUsername || 'envirobot'}</span></li>
                   <li>Start a chat with the bot by clicking "Start" or sending "/start"</li>
                   <li>Copy and send the verification command above</li>
                   <li>Once verified, you'll see a confirmation message</li>

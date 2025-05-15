@@ -164,16 +164,34 @@ export function registerTelegramRoutes(app: Express) {
    */
   app.post('/api/telegram/verify', requireAuth, async (req: Request, res: Response) => {
     try {
+      console.log('Generating verification code for user');
       const userId = req.session.userId!;
-      const verificationCode = await telegramService.createVerificationCode(userId);
+      console.log('User ID from session:', userId);
       
-      res.json({ 
+      // Check if we have a valid user ID
+      if (!userId) {
+        console.error('Missing user ID in session');
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
+      console.log('Starting verification code generation');
+      const verificationCode = await telegramService.createVerificationCode(userId);
+      console.log('Generated verification code:', verificationCode);
+      
+      const settings = await db.select().from(telegramSettings).limit(1);
+      const botUsername = settings.length > 0 ? settings[0].botUsername : 'envirobot';
+      
+      const response = { 
         verificationCode,
-        instructions: `To connect Telegram to your account, send the following message to our Telegram bot:\n\n/verify ${verificationCode}`
-      });
+        botUsername,
+        instructions: `To connect Telegram to your account, send the following message to our Telegram bot @${botUsername}:\n\n/verify ${verificationCode}`
+      };
+      
+      console.log('Sending verification response:', JSON.stringify(response, null, 2));
+      res.json(response);
     } catch (error) {
       console.error('Error generating verification code:', error);
-      res.status(500).json({ error: 'Failed to generate verification code' });
+      res.status(500).json({ error: 'Failed to generate verification code', details: String(error) });
     }
   });
 
