@@ -277,7 +277,9 @@ export class FunctionRegistry {
         if (!functionDef.implementation) {
           throw new Error(`Function ${name} has no implementation defined`);
         }
-        const result = await secureExecute(functionDef.implementation, validParams, dbHelper);
+        // Cast to string to satisfy TypeScript's type checking
+        const implementation = String(functionDef.implementation);
+        const result = await secureExecute(implementation, validParams, dbHelper);
         console.log(`[Function Registry] ${name} executed successfully, result:`, typeof result === 'object' ? JSON.stringify(result) : result);
         return result;
       } catch (sandboxError: any) {

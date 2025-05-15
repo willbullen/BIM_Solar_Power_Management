@@ -328,8 +328,7 @@ export async function registerSampleFunctions() {
       },
       required: ['action', 'equipmentId']
     },
-    returnType: 'object',
-    functionCode: `
+    implementation: `
       async function manageEquipment(params, dbUtils) {
         const { action, equipmentId, settings, maintenanceDate } = params;
         
@@ -432,8 +431,7 @@ export async function registerSampleFunctions() {
       },
       required: ['diagnosticType']
     },
-    returnType: 'object',
-    functionCode: `
+    implementation: `
       async function systemDiagnostics(params, dbUtils) {
         const { diagnosticType, timespan = 'day' } = params;
         
