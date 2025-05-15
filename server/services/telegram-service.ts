@@ -5,6 +5,7 @@
 
 import TelegramBot from 'node-telegram-bot-api';
 import type { Message, SendMessageOptions } from 'node-telegram-bot-api';
+import { randomUUID } from 'crypto';
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
 import * as schema from '../../shared/schema';
@@ -19,7 +20,6 @@ import {
 } from '../../shared/schema';
 import { eq, and, desc, isNull, inArray } from 'drizzle-orm/expressions';
 import { AgentService } from '../agent-service';
-import { randomUUID } from 'crypto';
 
 export class TelegramService {
   private bot: TelegramBot | null = null;
@@ -612,10 +612,14 @@ Try asking questions about power usage, environmental data, or request reports.`
    */
   async createVerificationCode(userId: number): Promise<string> {
     try {
+      console.log(`Generating verification code for user ID: ${userId}`);
+      
       // Generate a unique verification code
       const verificationCode = randomUUID().substring(0, 8);
       const expirationDate = new Date();
       expirationDate.setDate(expirationDate.getDate() + 7); // Code expires in 7 days
+      
+      console.log(`Generated verification code: ${verificationCode}, expires: ${expirationDate.toISOString()}`);
       
       // Check if user already has a Telegram account
       const existingUser = await db.select()
@@ -623,9 +627,12 @@ Try asking questions about power usage, environmental data, or request reports.`
         .where(eq(telegramUsers.userId, userId))
         .limit(1);
       
+      console.log(`Existing user check result: ${existingUser.length > 0 ? 'User found' : 'No user found'}`);
+      
       if (existingUser.length > 0) {
         // Get current metadata
         const currentMetadata = existingUser[0].metadata as TelegramUserMetadata || {};
+        console.log('Current metadata:', currentMetadata);
         
         // Update metadata with verification info
         const updatedMetadata: TelegramUserMetadata = {
@@ -635,6 +642,8 @@ Try asking questions about power usage, environmental data, or request reports.`
           isVerified: false
         };
         
+        console.log('Updating existing user with new metadata');
+        
         // Update existing user
         await db.update(telegramUsers)
           .set({
@@ -643,6 +652,8 @@ Try asking questions about power usage, environmental data, or request reports.`
           })
           .where(eq(telegramUsers.id, existingUser[0].id));
       } else {
+        console.log('Creating new Telegram user entry with pending verification');
+        
         // Create initial metadata
         const metadata: TelegramUserMetadata = {
           verificationCode: verificationCode,
@@ -654,20 +665,54 @@ Try asking questions about power usage, environmental data, or request reports.`
         };
         
         // Create new user record with pending verification
-        await db.insert(telegramUsers)
-          .values({
-            userId: userId,
-            telegramId: 'pending_verification',
-            firstName: 'pending_verification', // Required field, will be updated after verification
-            lastName: null,
-            username: null,
-            languageCode: null,
-            metadata: metadata,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          });
+        console.log('Inserting new telegram user record with pending verification');
+        try {
+          await db.insert(telegramUsers)
+            .values({
+              userId: userId,
+              telegramId: 'pending_verification',
+              firstName: 'pending_verification', // Required field, will be updated after verification
+              lastName: null,
+              username: null,
+              languageCode: null,
+              metadata: metadata,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            });
+          console.log('Successfully created new user record');
+        } catch (error) {
+          const insertError = error as { message?: string };
+          console.error('Failed to insert telegram user:', insertError);
+          // If it fails due to duplicate key, we'll try to update instead
+          if (insertError.message?.includes('duplicate key') || 
+              insertError.message?.includes('unique constraint')) {
+            console.log('Trying to update existing record due to constraint violation');
+            
+            // Try to find the record by userId
+            const existingRecord = await db.select()
+              .from(telegramUsers)
+              .where(eq(telegramUsers.userId, userId))
+              .limit(1);
+              
+            if (existingRecord.length > 0) {
+              console.log('Found existing record to update');
+              await db.update(telegramUsers)
+                .set({
+                  metadata: metadata,
+                  updatedAt: new Date()
+                })
+                .where(eq(telegramUsers.userId, userId));
+              console.log('Successfully updated existing record');
+            } else {
+              throw error; // Re-throw if we can't handle it
+            }
+          } else {
+            throw error; // Re-throw if it's not a constraint error
+          }
+        }
       }
       
+      console.log('Verification code generated successfully:', verificationCode);
       return verificationCode;
     } catch (error) {
       console.error('Error creating verification code:', error);
