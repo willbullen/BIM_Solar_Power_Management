@@ -706,11 +706,13 @@ export const telegramSettings = pgTable("langchain_telegram_settings", {
   botUsername: text("bot_username").notNull(),
   webhookUrl: text("webhook_url"),
   isEnabled: boolean("is_enabled").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const insertTelegramSettingsSchema = createInsertSchema(telegramSettings).omit({
   id: true,
+  createdAt: true,
   updatedAt: true,
 });
 

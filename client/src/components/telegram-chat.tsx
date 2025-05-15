@@ -158,6 +158,15 @@ export function TelegramChat() {
     }
   });
 
+  // Fetch Telegram bot settings to get the bot username
+  const { data: botSettings } = useQuery<{botUsername: string, isEnabled: boolean}>({
+    queryKey: ['/api/telegram/bot-info'],
+    retry: false,
+    onError: (error) => {
+      console.error('Error fetching Telegram bot info:', error);
+    }
+  });
+  
   // Fetch Telegram messages
   const { data: messages, isLoading: loadingMessages, refetch: refetchMessages } = useQuery<TelegramMessage[]>({
     queryKey: ['/api/telegram/messages'],
@@ -358,24 +367,32 @@ export function TelegramChat() {
             <AlertCircle className="h-4 w-4 text-blue-400" />
             <AlertTitle className="text-blue-100">Telegram Not Connected</AlertTitle>
             <AlertDescription className="text-blue-200">
-              Connect your Telegram account to chat with the AI Agent via Telegram.
-              <Button 
-                className="mt-2 bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={handleVerify}
-                disabled={generateVerification.isPending}
-              >
-                {generateVerification.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <QrCode className="mr-2 h-4 w-4" />
-                    Connect Telegram
-                  </>
-                )}
-              </Button>
+              {botSettings?.isEnabled === false ? (
+                <>
+                  Telegram integration is currently disabled. Please contact an administrator to enable it.
+                </>
+              ) : (
+                <>
+                  Connect your Telegram account to chat with the AI Agent via Telegram.
+                  <Button 
+                    className="mt-2 bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={handleVerify}
+                    disabled={generateVerification.isPending || botSettings?.isEnabled === false}
+                  >
+                    {generateVerification.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <QrCode className="mr-2 h-4 w-4" />
+                        Connect Telegram
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
             </AlertDescription>
           </Alert>
         </div>
@@ -605,7 +622,7 @@ export function TelegramChat() {
                 </h4>
                 <ol className="list-decimal list-inside space-y-2 text-sm text-slate-300">
                   <li>Open Telegram on your phone or desktop</li>
-                  <li>Search for the bot: <span className="font-mono bg-slate-700 px-1 rounded">@evirobot</span></li>
+                  <li>Search for the bot: <span className="font-mono bg-slate-700 px-1 rounded">@{botSettings?.botUsername || 'telegrambot'}</span></li>
                   <li>Start a chat with the bot by clicking "Start" or sending "/start"</li>
                   <li>Copy and send the verification command above</li>
                   <li>Once verified, you'll see a confirmation message</li>

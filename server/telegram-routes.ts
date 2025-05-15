@@ -55,6 +55,31 @@ export function registerTelegramRoutes(app: Express) {
   telegramService.initialize().catch(error => {
     console.error('Failed to initialize Telegram service:', error);
   });
+  
+  /**
+   * Get the bot username for UI display
+   * This endpoint is public (no auth) as it's needed for the connection setup screen
+   */
+  app.get('/api/telegram/bot-info', async (req: Request, res: Response) => {
+    try {
+      const settings = await db.select().from(telegramSettings).limit(1);
+      
+      if (!settings || settings.length === 0) {
+        console.log('No Telegram bot settings found, returning default username');
+        return res.json({ botUsername: 'telegrambot' });
+      }
+      
+      console.log('Returning bot username:', settings[0].botUsername);
+      res.json({ 
+        botUsername: settings[0].botUsername,
+        isEnabled: settings[0].isEnabled
+      });
+    } catch (error) {
+      console.error('Error fetching Telegram bot info:', error);
+      // Return a default value even on error to prevent the UI from breaking
+      res.json({ botUsername: 'telegrambot', isEnabled: false });
+    }
+  });
 
   /**
    * Get Telegram settings

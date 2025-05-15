@@ -18,6 +18,27 @@ import { MessageSearch } from "@/components/message-search";
 import { AIChat } from "@/components/ai-chat";
 import { IntegratedAIChat } from "@/components/integrated-ai-chat";
 import { cn } from "@/lib/utils";
+// Define Task interface based on the documentation
+interface Task {
+  id: number;
+  title?: string;
+  description?: string | object;
+  task?: string; // Alternative name for title in the database
+  data?: string | object; // Alternative name for description in the database
+  status?: string;
+  priority?: string;
+  result?: any;
+  createdAt?: string;
+  createdBy?: number;
+  agentId?: number;
+  updatedAt?: string;
+  
+  // Additional fields from error message
+  type?: string;
+  parameters?: any;
+  scheduledFor?: string | Date;
+}
+
 import { 
   Loader2, Send, Bot, MessageSquare, ListChecks, Settings, Plus, 
   CheckCircle, Database, MessageSquarePlus, ArrowRight, BarChart,
@@ -948,7 +969,12 @@ function TasksInterface() {
   };
 
   // Get status badge color
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status?: string) => {
+    // Handle undefined or null status
+    if (!status) {
+      return 'bg-gray-200 text-gray-800';
+    }
+    
     switch (status.toLowerCase()) {
       case 'pending':
         return 'bg-yellow-200 text-yellow-800';
@@ -964,7 +990,12 @@ function TasksInterface() {
   };
 
   // Format priority
-  const getPriorityBadge = (priority: string) => {
+  const getPriorityBadge = (priority?: string) => {
+    // Handle undefined or null priority
+    if (!priority) {
+      return <Badge variant="outline">Normal</Badge>;
+    }
+    
     switch (priority.toLowerCase()) {
       case 'high':
         return <Badge variant="destructive">High</Badge>;
@@ -1052,18 +1083,24 @@ function TasksInterface() {
                 <Card key={task.id} className="overflow-hidden">
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-lg font-medium">{task.title}</h3>
+                      <h3 className="text-lg font-medium">{task.title || task.task || "Untitled Task"}</h3>
                       {getPriorityBadge(task.priority)}
                     </div>
                     
-                    <p className="text-sm text-muted-foreground mb-3">{task.description}</p>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {typeof (task.description || task.data) === 'string' 
+                        ? (task.description || task.data)
+                        : typeof (task.description || task.data) === 'object'
+                          ? JSON.stringify(task.description || task.data) 
+                          : "No description"}
+                    </p>
                     
                     <div className="flex items-center justify-between text-sm">
                       <Badge variant="outline" className={getStatusColor(task.status)}>
-                        {task.status.replace('_', ' ')}
+                        {task.status ? task.status.replace('_', ' ') : 'Unknown'}
                       </Badge>
                       <span className="text-muted-foreground">
-                        Created: {new Date(task.createdAt).toLocaleString()}
+                        Created: {task.createdAt ? new Date(task.createdAt).toLocaleString() : 'Unknown'}
                       </span>
                     </div>
                     
@@ -1075,7 +1112,9 @@ function TasksInterface() {
                           <div className="text-sm p-2 bg-muted rounded-md whitespace-pre-wrap">
                             {typeof task.result === 'string' 
                               ? task.result 
-                              : JSON.stringify(task.result, null, 2)
+                              : typeof task.result === 'object' && task.result !== null
+                                ? JSON.stringify(task.result, null, 2)
+                                : String(task.result || '')
                             }
                           </div>
                         </div>
