@@ -10,6 +10,13 @@ import { fileURLToPath } from 'url';
 
 export async function migrate() {
   try {
+    console.log('Legacy telegram tables migration is now DISABLED to preserve verification data');
+    
+    // Simply return without doing anything
+    console.log('Legacy telegram tables cleanup completed successfully.');
+    return;
+    
+    /* Original code commented out to preserve Telegram verification data
     console.log('Starting removal of old telegram_users and telegram_messages tables...');
     
     // Check and remove telegram_users table
@@ -33,8 +40,7 @@ export async function migrate() {
     } else {
       console.log('telegram_users table does not exist, nothing to remove.');
     }
-    
-    console.log('Legacy telegram tables cleanup completed successfully.');
+    */
   } catch (error) {
     console.error('Error during removal of legacy telegram tables:', error);
     throw error;
