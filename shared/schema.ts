@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, real, timestamp, jsonb, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, real, timestamp, jsonb, date, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -977,6 +977,33 @@ export const langchainPromptTemplatesRelations = relations(langchainPromptTempla
     references: [users.id],
   }),
 }));
+
+// Voice transcription schema
+export const voiceTranscriptions = pgTable("voice_transcriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  originalText: text("original_text").notNull(),
+  translatedText: text("translated_text"),
+  sourceLanguage: varchar("source_language", { length: 10 }).notNull().default("auto"),
+  targetLanguage: varchar("target_language", { length: 10 }),
+  audioFilePath: text("audio_file_path").notNull(),
+  duration: real("duration").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const voiceTranscriptionsRelations = relations(voiceTranscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [voiceTranscriptions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const insertVoiceTranscriptionSchema = createInsertSchema(voiceTranscriptions).omit({
+  id: true,
+});
+
+export type InsertVoiceTranscription = z.infer<typeof insertVoiceTranscriptionSchema>;
+export type VoiceTranscription = typeof voiceTranscriptions.$inferSelect;
 
 export const langchainAgentToolsRelations = relations(langchainAgentTools, ({ one }) => ({
   agent: one(langchainAgents, {

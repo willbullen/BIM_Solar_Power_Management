@@ -79,6 +79,32 @@ export class TelegramService {
    * Safely shut down the bot when the process is terminating
    * With added force-cleanup mechanism to ensure complete shutdown
    */
+  /**
+   * Force terminate any existing bot sessions using direct API call
+   * This helps resolve issues with 409 Conflict errors
+   */
+  private async forceTerminateExternalSessions(botToken: string): Promise<boolean> {
+    try {
+      console.log('Force terminating any external bot sessions...');
+      
+      // Create a direct fetch request to delete webhook and drop pending updates
+      const webhookUrl = `https://api.telegram.org/bot${botToken}/deleteWebhook?drop_pending_updates=true`;
+      const response = await fetch(webhookUrl);
+      const result = await response.json();
+      
+      if (result.ok) {
+        console.log('Successfully terminated external sessions via direct API call');
+        return true;
+      } else {
+        console.warn('External session termination response:', result);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error terminating external bot sessions:', error);
+      return false;
+    }
+  }
+
   private async shutdownBot(): Promise<void> {
     console.log('Shutting down Telegram bot...');
     
@@ -88,8 +114,8 @@ export class TelegramService {
         await this.bot.stopPolling();
         console.log('Telegram bot polling stopped successfully');
         
-        // Add a small delay to ensure shutdown completes
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Add a delay to ensure shutdown completes
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
         // Force clear any remaining webhooks to prevent conflicts on next start
         try {
@@ -99,8 +125,11 @@ export class TelegramService {
             this.bot._polling = false;
           }
           
-          // There's no direct removeAllListeners method, but we can 
-          // clear the internal listeners manually if needed in the future
+          // Clear any event listeners to prevent memory leaks or conflicts
+          if (typeof this.bot.removeAllListeners === 'function') {
+            this.bot.removeAllListeners();
+          }
+          
           console.log('Telegram bot instance cleanup complete');
         } catch (hookError) {
           console.error('Error clearing Telegram webhooks/polling:', hookError);
@@ -296,17 +325,21 @@ export class TelegramService {
 
       console.log(`Initializing Telegram bot @${botUsername}...`);
       
+      // First, make sure any external sessions are terminated using direct API calls
+      await this.forceTerminateExternalSessions(botToken);
+      
       // Add a longer delay before creating a new instance to ensure any existing ones are cleaned up
-      // This helps prevent the 409 Conflict error
       console.log('Waiting for any existing bot instances to fully terminate...');
       await new Promise(resolve => setTimeout(resolve, 5000));
       
       try {
-        // Use the Telegram API directly rather than through the bot instance
-        // to avoid conflicts with existing instances
-        console.log('Manually clearing webhooks with direct API call...');
+        // Clear any pending updates first to resolve conflict errors
+        console.log('Clearing pending updates...');
+        const clearUpdatesUrl = `https://api.telegram.org/bot${botToken}/getUpdates?offset=-1`;
+        await fetch(clearUpdatesUrl);
         
-        // Create a direct fetch request to delete webhook
+        // Then use the direct API to clear webhooks - this is critical to prevent 409 conflicts
+        console.log('Manually clearing webhooks with direct API call...');
         const webhookUrl = `https://api.telegram.org/bot${botToken}/deleteWebhook?drop_pending_updates=true`;
         const response = await fetch(webhookUrl);
         const result = await response.json();
@@ -315,10 +348,20 @@ export class TelegramService {
           console.log('Successfully cleared webhooks via direct API call');
         } else {
           console.warn('Webhook clearing response:', result);
+          
+          // If webhook clearing fails, it's likely due to an existing session
+          // Let's wait longer and try again
+          console.log('Webhook clearing unsuccessful, waiting and trying again...');
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          
+          // Try one more time
+          const retryResponse = await fetch(webhookUrl);
+          const retryResult = await retryResponse.json();
+          console.log('Webhook retry result:', retryResult);
         }
         
-        // Another small delay to ensure webhook deletion is fully processed
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Longer delay to ensure full processing before starting a new bot instance
+        await new Promise(resolve => setTimeout(resolve, 3000));
       } catch (webhookError) {
         // Non-critical, just log the error
         console.warn('Could not clear webhooks via direct method:', webhookError);
@@ -327,7 +370,7 @@ export class TelegramService {
       // Create a new bot instance with improved options for reliability
       this.bot = new TelegramBot(botToken, { 
         polling: {
-          interval: 3000, // Poll less frequently to reduce chances of conflicts
+          interval: 5000, // Poll even less frequently to reduce chances of conflicts
           params: {
             timeout: 10,
             limit: 10,
@@ -340,26 +383,47 @@ export class TelegramService {
         // Setup message handlers
         this.setupMessageHandlers();
         console.log('Telegram bot initialized successfully');
-        this.isInitialized = true;
+        this._initialized = true;
         
         // Handle polling errors properly to prevent crashes
         this.bot.on('polling_error', (error) => {
           console.error('Telegram polling error:', error);
           
-          // If we get a conflict error, try to recover
+          // If we get a conflict error, implement a more robust recovery strategy
           if (error.message && error.message.includes('terminated by other getUpdates request')) {
             console.log('Detected conflict with another bot instance, attempting recovery...');
             
-            // We'll attempt to restart polling after a delay
-            setTimeout(async () => {
-              try {
-                await this.shutdownBot();
-                console.log('Reinitializing Telegram bot after conflict...');
-                this._initialize().catch(e => console.error('Failed to reinitialize after conflict:', e));
-              } catch (e) {
-                console.error('Error in conflict recovery:', e);
+            // Get the token for force termination
+            db.select().from(telegramSettings).limit(1).then(settings => {
+              if (settings.length > 0 && settings[0].botToken) {
+                const { botToken } = settings[0];
+                
+                // First force terminate any external sessions
+                this.forceTerminateExternalSessions(botToken)
+                  .then(success => {
+                    console.log('Force termination result:', success ? 'success' : 'failed');
+                    
+                    // Then attempt to restart our bot after a delay regardless of force termination result
+                    setTimeout(async () => {
+                      try {
+                        // Fully shut down first
+                        await this.shutdownBot();
+                        console.log('Reinitializing Telegram bot after conflict...');
+                        
+                        // Wait a bit longer before reinitializing
+                        await new Promise(resolve => setTimeout(resolve, 5000));
+                        
+                        // Then initialize again
+                        this._initialize().catch(e => console.error('Failed to reinitialize after conflict:', e));
+                      } catch (e) {
+                        console.error('Error in conflict recovery:', e);
+                      }
+                    }, 15000); // Wait 15 seconds before trying again - longer delay for better recovery
+                  });
               }
-            }, 10000); // Wait 10 seconds before trying again
+            }).catch(err => {
+              console.error('Error getting bot token for recovery:', err);
+            });
           }
         });
       } else {

@@ -8,7 +8,8 @@ import {
   maintenanceLog, type MaintenanceLog, type InsertMaintenanceLog,
   issues, type Issue, type InsertIssue,
   issueComments, type IssueComment, type InsertIssueComment,
-  todoItems, type TodoItem, type InsertTodoItem
+  todoItems, type TodoItem, type InsertTodoItem,
+  voiceTranscriptions, type VoiceTranscription, type InsertVoiceTranscription
 } from "@shared/schema";
 import session from "express-session";
 import * as expressSession from "express-session";
@@ -29,6 +30,12 @@ export interface IStorage {
   // Settings operations
   getSettings(): Promise<Settings>;
   updateSettings(settings: Partial<InsertSettings>): Promise<Settings>;
+  
+  // Voice transcription operations
+  createVoiceTranscription(transcription: InsertVoiceTranscription): Promise<VoiceTranscription>;
+  getVoiceTranscriptions(userId: number): Promise<VoiceTranscription[]>;
+  getVoiceTranscription(id: number): Promise<VoiceTranscription | undefined>;
+  deleteVoiceTranscription(id: number, userId: number): Promise<boolean>;
   
   // Power data operations
   getPowerData(limit?: number): Promise<PowerData[]>;
@@ -919,6 +926,75 @@ export class DatabaseStorage implements IStorage {
           await this.createEquipmentEfficiencyRecord(efficiencyRecord);
         }
       }
+    }
+  }
+  
+  // Voice transcription operations
+  async createVoiceTranscription(transcription: InsertVoiceTranscription): Promise<VoiceTranscription> {
+    try {
+      const [result] = await db
+        .insert(voiceTranscriptions)
+        .values(transcription)
+        .returning();
+      
+      return result;
+    } catch (error) {
+      console.error('Error creating voice transcription:', error);
+      throw new Error('Failed to create voice transcription');
+    }
+  }
+
+  async getVoiceTranscriptions(userId: number): Promise<VoiceTranscription[]> {
+    try {
+      const transcriptions = await db
+        .select()
+        .from(voiceTranscriptions)
+        .where(eq(voiceTranscriptions.userId, userId))
+        .orderBy(desc(voiceTranscriptions.createdAt));
+      
+      return transcriptions;
+    } catch (error) {
+      console.error('Error getting voice transcriptions:', error);
+      throw new Error('Failed to get voice transcriptions');
+    }
+  }
+
+  async getVoiceTranscription(id: number): Promise<VoiceTranscription | undefined> {
+    try {
+      const [transcription] = await db
+        .select()
+        .from(voiceTranscriptions)
+        .where(eq(voiceTranscriptions.id, id));
+      
+      return transcription;
+    } catch (error) {
+      console.error('Error getting voice transcription:', error);
+      throw new Error('Failed to get voice transcription');
+    }
+  }
+
+  async deleteVoiceTranscription(id: number, userId: number): Promise<boolean> {
+    try {
+      // First, check if the transcription exists and belongs to the user
+      const [transcription] = await db
+        .select()
+        .from(voiceTranscriptions)
+        .where(eq(voiceTranscriptions.id, id))
+        .where(eq(voiceTranscriptions.userId, userId));
+      
+      if (!transcription) {
+        return false;
+      }
+      
+      // If found, delete it
+      await db
+        .delete(voiceTranscriptions)
+        .where(eq(voiceTranscriptions.id, id));
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting voice transcription:', error);
+      throw new Error('Failed to delete voice transcription');
     }
   }
 }

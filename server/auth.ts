@@ -13,6 +13,37 @@ declare global {
   }
 }
 
+// Authentication middleware
+export function authenticateUser(req: Request, res: Response, next: NextFunction) {
+  // First try standard session-based authentication
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  
+  // If not authenticated via session, check for header-based auth
+  const headerUserId = req.header('X-Auth-User-Id');
+  const headerUsername = req.header('X-Auth-Username');
+  
+  if (headerUserId && headerUsername) {
+    try {
+      // Validate the header credentials
+      const userId = parseInt(headerUserId, 10);
+      if (isNaN(userId)) {
+        return res.status(401).json({ message: 'Authentication required. Please login again.' });
+      }
+      
+      // Add the user ID to the request object for use in route handlers
+      req.user = { id: userId, username: headerUsername } as Express.User;
+      return next();
+    } catch (error) {
+      console.error('Header auth validation error:', error);
+    }
+  }
+  
+  // If we get here, neither session nor header auth was successful
+  return res.status(401).json({ message: 'Authentication required. Please login again.' });
+}
+
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "emporium-power-dashboard-secret",

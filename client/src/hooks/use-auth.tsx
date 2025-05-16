@@ -97,15 +97,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (result) {
             console.log('Session restored');
             refetch();
+          } else {
+            // If session restore fails, try to force a regular login
+            console.log('Session restore failed, attempting login with stored credentials');
+            
+            // Force refresh the auth headers to ensure they're correct
+            if (localUser && localUser.username) {
+              // Update localStorage again to ensure proper headers
+              saveUserToLocalStorage(localUser);
+              
+              // Redirect to login page if we can't restore the session
+              console.log('Redirecting to login page due to authentication issues');
+              setLocation("/login");
+            }
           }
         } catch (err) {
           console.log('Failed to restore session', err);
+          // Clear possibly corrupted user data from local storage
+          if (err.message?.includes('401') || err.message?.includes('authentication')) {
+            console.log('Authentication error detected, clearing local storage');
+            clearUserFromLocalStorage();
+            setLocation("/login");
+          }
         }
       }
     };
     
     attemptSessionSync();
-  }, [localUser, user, refetch]);
+  }, [localUser, user, refetch, setLocation]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {

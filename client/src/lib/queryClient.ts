@@ -22,13 +22,27 @@ function getAuthHeaders() {
     const userData = localStorage.getItem(USER_STORAGE_KEY);
     if (userData) {
       const user = JSON.parse(userData);
+      
+      // Make sure we have both required fields for authentication
+      if (!user.id || !user.username) {
+        console.error('Invalid user data in local storage, missing id or username');
+        // Attempt to clean up corrupted data
+        localStorage.removeItem(USER_STORAGE_KEY);
+        return {};
+      }
+      
+      console.log(`Using auth headers for user ID: ${user.id}`);
       return {
         'X-Auth-User-Id': user.id.toString(),
         'X-Auth-Username': user.username,
       };
+    } else {
+      console.log('No user data found in local storage for auth headers');
     }
   } catch (e) {
     console.error('Failed to get auth headers from local storage:', e);
+    // Attempt to clean up corrupted data
+    localStorage.removeItem(USER_STORAGE_KEY);
   }
   return {};
 }
@@ -226,7 +240,18 @@ export const getQueryFn: <T>(options: {
       }
   
       if (res.status === 401) {
-        console.log(`Auth error on ${url} - behavior: ${unauthorizedBehavior}`);
+        // Get the URL without query parameters for better logging
+        const baseUrl = url.split('?')[0];
+        console.log(`Auth error on ${baseUrl} - behavior: ${unauthorizedBehavior}`);
+        
+        // Special case for Telegram API endpoints - don't force logout on these paths
+        const isTelegramEndpoint = url.includes('/api/telegram/');
+        
+        if (isTelegramEndpoint) {
+          console.log('Telegram endpoint detected, suppressing authentication error');
+          // For Telegram endpoints, always return null rather than forcing logout
+          return null;
+        }
         
         if (unauthorizedBehavior === "returnNull") {
           console.log('Returning null for 401 response as configured');

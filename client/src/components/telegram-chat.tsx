@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ToastAction } from "@/components/ui/toast";
 import {
   Select,
   SelectContent,
@@ -154,17 +155,30 @@ export function TelegramChat() {
   // Fetch Telegram status and connection info
   const { data: telegramUser, isLoading: loadingUser, refetch: refetchUser } = useQuery<TelegramUser | null>({
     queryKey: ['/api/telegram/user'],
-    retry: false,
-    onError: (error: Error) => {
+    retry: 3,
+    retryDelay: 1000,
+    refetchOnWindowFocus: true,
+    staleTime: 30000,
+    onError: (error) => {
       console.error('Error fetching Telegram user:', error);
+      // Don't show error toast for authentication issues
+      if (!error.message?.includes('401') && !error.message?.includes('authentication')) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch Telegram connection status",
+          variant: "destructive"
+        });
+      }
     }
   });
 
   // Fetch Telegram bot settings to get the bot username
   const { data: botSettings } = useQuery<{botUsername: string, isEnabled: boolean}>({
     queryKey: ['/api/telegram/bot-info'],
-    retry: false,
-    onError: (error: Error) => {
+    retry: 3,
+    retryDelay: 1000,
+    staleTime: 60000,
+    onError: (error) => {
       console.error('Error fetching Telegram bot info:', error);
     }
   });
@@ -172,8 +186,8 @@ export function TelegramChat() {
   // Fetch Telegram messages
   const { data: messages, isLoading: loadingMessages, refetch: refetchMessages } = useQuery<TelegramMessage[]>({
     queryKey: ['/api/telegram/messages'],
-    retry: false,
-    enabled: !!telegramUser?.isVerified,
+    retry: 3,
+    enabled: !!telegramUser && telegramUser.isVerified === true,
     refetchInterval: 10000, // Poll for new messages every 10 seconds
     onSuccess: (data, prevData) => {
       // Check if we received new messages
@@ -236,7 +250,18 @@ export function TelegramChat() {
 
   // Send test message using selected Langchain Agent
   const sendTestMessage = useMutation({
-    mutationFn: (message: string) => {
+    mutationFn: async (message: string) => {
+      // Verify that the user is properly authenticated and verified
+      if (!telegramUser) {
+        console.error("Cannot send message - no Telegram user data available");
+        throw new Error("Your Telegram connection status could not be verified. Please refresh the page and try again.");
+      }
+      
+      if (!telegramUser.isVerified) {
+        console.error("Cannot send message - Telegram account not verified");
+        throw new Error("Your Telegram account is not verified. Please click 'Verify Telegram' to connect your account.");
+      }
+      
       // Always use useAgent:true to ensure proper agent selection
       // Selected agent or Main Assistant or Default
       console.log(`Current agent selection: ${selectedAgentId || 'default'}`);
@@ -254,7 +279,8 @@ export function TelegramChat() {
           data: { 
             message,
             agentId: selectedAgentId,
-            useAgent: true
+            useAgent: true,
+            forceRefresh: true // Add flag to ensure fresh data
           }
         });
       } else if (mainAssistantAgent) {
@@ -292,13 +318,51 @@ export function TelegramChat() {
         refetchMessages();
       }, 1000);
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       console.error("Send test message error:", error);
+      
+      // Check for verification-related errors
+      if (error.message?.includes("not verified") || error.message?.includes("verify")) {
+        toast({
+          variant: "destructive",
+          title: "Verification Required",
+          description: "Please verify your Telegram account before sending messages",
+          action: (
+            <ToastAction altText="Verify" onClick={() => setShowVerificationDialog(true)}>
+              Verify Now
+            </ToastAction>
+          )
+        });
+        
+        // Automatically open verification dialog for user convenience
+        setShowVerificationDialog(true);
+        return;
+      }
+      
+      // Check for connectivity issues
+      if (error.message?.includes("connection") || error.message?.includes("bot")) {
+        toast({
+          variant: "destructive",
+          title: "Telegram Connection Error",
+          description: "There was a problem connecting to Telegram. Please try refreshing your connection.",
+          action: (
+            <ToastAction altText="Refresh" onClick={refetchUser}>
+              Refresh
+            </ToastAction>
+          )
+        });
+        return;
+      }
+      
+      // Default error case
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to send test message: " + error.message
+        title: "Message Send Failed",
+        description: error.message || "Could not send message to Telegram"
       });
+      
+      // Refresh user status to ensure we have the latest verification status
+      refetchUser();
     }
   });
 
@@ -702,6 +766,46 @@ export function TelegramChat() {
                 <p className="text-sm text-slate-400 italic mt-2">
                   This verification code will expire in 15 minutes for security.
                 </p>
+                {/* Connection refresh controls */}
+                <div className="pt-2 mt-2 border-t border-slate-700">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-400">Having trouble connecting?</span>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 bg-slate-800 hover:bg-slate-700"
+                        onClick={() => {
+                          // Check connection status without generating a new code
+                          refetchUser();
+                          toast({
+                            title: "Checking connection",
+                            description: "Verifying your Telegram account status..."
+                          });
+                        }}
+                      >
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Check Status
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 bg-slate-800 hover:bg-slate-700"
+                        onClick={() => {
+                          // Generate a new verification code
+                          generateVerification.mutate();
+                          toast({
+                            title: "Generating New Code",
+                            description: "Creating a fresh verification code..."
+                          });
+                        }}
+                      >
+                        <QrCode className="h-3 w-3 mr-1" />
+                        New Code
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}

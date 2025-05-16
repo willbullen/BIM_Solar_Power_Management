@@ -20,6 +20,7 @@ import { registerNotificationRoutes } from './agent-notification-routes';
 import { registerTelegramRoutes } from './telegram-routes';
 import { registerFileRoutes } from './file-routes';
 import { registerLangChainRoutes } from './langchain-routes';
+import { registerVoiceRoutes } from './voice-routes';
 import mcpRoutes from './mcp-routes';
 import { DatabaseService } from './utils/database-service';
 import { WebSocketServer, WebSocket } from 'ws';
