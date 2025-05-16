@@ -209,7 +209,8 @@ export function registerTelegramRoutes(app: Express) {
       if (telegramUser.length === 0) {
         return res.json({ 
           connected: false,
-          status: 'Not connected'
+          status: 'Not connected',
+          botActive: telegramService.isInitialized()
         });
       }
       
@@ -236,11 +237,45 @@ export function registerTelegramRoutes(app: Express) {
         receiveReports: metadata.receiveReports !== false,
         telegramUsername: user.username,
         verificationCode: metadata.verificationCode,
-        verificationExpires: metadata.verificationExpires
+        verificationExpires: metadata.verificationExpires,
+        botActive: telegramService.isInitialized()
       });
     } catch (error) {
       console.error('Error fetching Telegram status:', error);
       res.status(500).json({ error: 'Failed to fetch Telegram status' });
+    }
+  });
+  
+  /**
+   * Restart the Telegram bot service
+   * This helps recover from conflicts and issues without restarting the entire application
+   */
+  app.post('/api/telegram/restart-bot', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      console.log('Manual restart of Telegram bot requested');
+      
+      // Force shutdown and clear any existing sessions
+      await telegramService.shutdownService();
+      
+      // Wait 5 seconds to ensure complete shutdown
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
+      // Initialize the service again
+      await telegramService.initialize();
+      
+      console.log('Telegram bot service restarted successfully');
+      res.json({ 
+        success: true, 
+        status: 'Telegram bot restarted successfully',
+        isActive: telegramService.isInitialized()
+      });
+    } catch (error) {
+      console.error('Error restarting Telegram bot:', error);
+      res.status(500).json({ 
+        error: 'Failed to restart Telegram bot', 
+        details: String(error),
+        isActive: telegramService.isInitialized()
+      });
     }
   });
   

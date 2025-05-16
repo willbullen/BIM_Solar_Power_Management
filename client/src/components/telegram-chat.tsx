@@ -43,7 +43,8 @@ import {
   Copy,
   ArrowRight,
   Zap,
-  BrainCircuit
+  BrainCircuit,
+  RefreshCw
 } from "lucide-react";
 
 // Message types
@@ -154,7 +155,7 @@ export function TelegramChat() {
   const { data: telegramUser, isLoading: loadingUser, refetch: refetchUser } = useQuery<TelegramUser | null>({
     queryKey: ['/api/telegram/user'],
     retry: false,
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error fetching Telegram user:', error);
     }
   });
@@ -163,7 +164,7 @@ export function TelegramChat() {
   const { data: botSettings } = useQuery<{botUsername: string, isEnabled: boolean}>({
     queryKey: ['/api/telegram/bot-info'],
     retry: false,
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error fetching Telegram bot info:', error);
     }
   });

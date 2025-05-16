@@ -1366,7 +1366,42 @@ export default function SettingsPage() {
                     {/* Admin-only settings */}
                     {user?.role === 'Admin' && (
                       <div className="space-y-4">
-                        <h4 className="font-medium text-lg">Bot Configuration</h4>
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-medium text-lg">Bot Configuration</h4>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="flex items-center gap-1 bg-amber-900/30 border-amber-800 text-amber-300 hover:bg-amber-800"
+                            onClick={() => {
+                              if (window.confirm("Are you sure you want to restart the Telegram bot? This will disconnect any active sessions but can fix connection issues.")) {
+                                // Send the restart request
+                                apiRequest('/api/telegram/restart-bot', {
+                                  method: 'POST'
+                                })
+                                .then(response => {
+                                  toast({
+                                    title: "Telegram Bot Restarted",
+                                    description: "The Telegram bot has been restarted successfully. This should fix any connection issues.",
+                                    variant: "default"
+                                  });
+                                  // Refresh the settings data
+                                  queryClient.invalidateQueries({ queryKey: ['/api/telegram/settings'] });
+                                  queryClient.invalidateQueries({ queryKey: ['/api/telegram/status'] });
+                                })
+                                .catch(error => {
+                                  toast({
+                                    title: "Failed to Restart Bot",
+                                    description: error.message || "There was an error restarting the Telegram bot.",
+                                    variant: "destructive"
+                                  });
+                                });
+                              }
+                            }}
+                          >
+                            <RefreshCw className="h-4 w-4 mr-1" />
+                            Restart Bot
+                          </Button>
+                        </div>
                         <p className="text-sm text-muted-foreground mb-4">
                           Configure the Telegram bot that users will interact with
                         </p>

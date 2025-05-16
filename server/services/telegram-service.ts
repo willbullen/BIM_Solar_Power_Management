@@ -30,9 +30,28 @@ import { AgentService } from '../agent-service';
 export class TelegramService {
   private bot: TelegramBot | null = null;
   private agentService!: AgentService; // Using definite assignment assertion
-  private isInitialized = false;
+  private _initialized = false;
   private initializationPromise: Promise<void> | null = null;
   private static instance: TelegramService | null = null;
+  
+  /**
+   * Check if the Telegram bot is initialized and running
+   * @returns true if the bot is initialized and running
+   */
+  public isInitialized(): boolean {
+    return this._initialized && this.bot !== null;
+  }
+  
+  /**
+   * Complete shutdown of the service
+   * Public method to allow manual restarts
+   */
+  public async shutdownService(): Promise<void> {
+    console.log('Performing complete Telegram service shutdown...');
+    await this.shutdownBot();
+    this._initialized = false;
+    console.log('Telegram service shutdown completed');
+  }
   
   /**
    * Creates a new TelegramService instance or returns the existing one
@@ -58,20 +77,44 @@ export class TelegramService {
   
   /**
    * Safely shut down the bot when the process is terminating
+   * With added force-cleanup mechanism to ensure complete shutdown
    */
   private async shutdownBot(): Promise<void> {
     console.log('Shutting down Telegram bot...');
     
     if (this.bot) {
       try {
+        // First attempt normal shutdown
         await this.bot.stopPolling();
         console.log('Telegram bot polling stopped successfully');
+        
+        // Add a small delay to ensure shutdown completes
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Force clear any remaining webhooks to prevent conflicts on next start
+        try {
+          // @ts-ignore - Access private property for cleanup
+          if (this.bot._polling) {
+            // @ts-ignore
+            this.bot._polling = false;
+          }
+          
+          // There's no direct removeAllListeners method, but we can 
+          // clear the internal listeners manually if needed in the future
+          console.log('Telegram bot instance cleanup complete');
+        } catch (hookError) {
+          console.error('Error clearing Telegram webhooks/polling:', hookError);
+        }
       } catch (error) {
         console.error('Error stopping Telegram bot polling:', error);
+      } finally {
+        // Always reset these regardless of errors above
+        this.bot = null;
+        this.isInitialized = false;
+        console.log('Telegram bot reference cleared');
       }
-      
-      this.bot = null;
-      this.isInitialized = false;
+    } else {
+      console.log('No active Telegram bot to shut down');
     }
   }
   
@@ -211,7 +254,7 @@ export class TelegramService {
    * Initialize the Telegram bot with settings from the database
    */
   async initialize(): Promise<void> {
-    if (this.isInitialized) {
+    if (this._initialized) {
       console.log('Telegram service already initialized');
       return;
     }
@@ -253,8 +296,33 @@ export class TelegramService {
 
       console.log(`Initializing Telegram bot @${botUsername}...`);
       
-      // Add a delay before creating a new instance to ensure any existing ones are cleaned up
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Add a longer delay before creating a new instance to ensure any existing ones are cleaned up
+      // This helps prevent the 409 Conflict error
+      console.log('Waiting for any existing bot instances to fully terminate...');
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
+      try {
+        // Use the Telegram API directly rather than through the bot instance
+        // to avoid conflicts with existing instances
+        console.log('Manually clearing webhooks with direct API call...');
+        
+        // Create a direct fetch request to delete webhook
+        const webhookUrl = `https://api.telegram.org/bot${botToken}/deleteWebhook?drop_pending_updates=true`;
+        const response = await fetch(webhookUrl);
+        const result = await response.json();
+        
+        if (result.ok) {
+          console.log('Successfully cleared webhooks via direct API call');
+        } else {
+          console.warn('Webhook clearing response:', result);
+        }
+        
+        // Another small delay to ensure webhook deletion is fully processed
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (webhookError) {
+        // Non-critical, just log the error
+        console.warn('Could not clear webhooks via direct method:', webhookError);
+      }
       
       // Create a new bot instance with improved options for reliability
       this.bot = new TelegramBot(botToken, { 
@@ -273,6 +341,27 @@ export class TelegramService {
         this.setupMessageHandlers();
         console.log('Telegram bot initialized successfully');
         this.isInitialized = true;
+        
+        // Handle polling errors properly to prevent crashes
+        this.bot.on('polling_error', (error) => {
+          console.error('Telegram polling error:', error);
+          
+          // If we get a conflict error, try to recover
+          if (error.message && error.message.includes('terminated by other getUpdates request')) {
+            console.log('Detected conflict with another bot instance, attempting recovery...');
+            
+            // We'll attempt to restart polling after a delay
+            setTimeout(async () => {
+              try {
+                await this.shutdownBot();
+                console.log('Reinitializing Telegram bot after conflict...');
+                this._initialize().catch(e => console.error('Failed to reinitialize after conflict:', e));
+              } catch (e) {
+                console.error('Error in conflict recovery:', e);
+              }
+            }, 10000); // Wait 10 seconds before trying again
+          }
+        });
       } else {
         throw new Error('Failed to create Telegram bot instance');
       }
