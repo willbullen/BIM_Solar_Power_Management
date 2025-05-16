@@ -21,48 +21,53 @@ import {
 import { eq, and, desc, isNull, inArray } from 'drizzle-orm/expressions';
 import { AgentService } from '../agent-service';
 
+/**
+ * Telegram Service Singleton
+ * 
+ * Manages the Telegram bot and provides an interface for interacting with the Telegram API.
+ * Implemented as a singleton to prevent multiple bot instances.
+ */
 export class TelegramService {
   private bot: TelegramBot | null = null;
-  private agentService: AgentService = new AgentService();
+  private agentService: AgentService;
   private isInitialized = false;
   private initializationPromise: Promise<void> | null = null;
   private static instance: TelegramService | null = null;
-  private shutdownInProgress = false;
-
+  
+  /**
+   * Creates a new TelegramService instance or returns the existing one
+   */
   constructor() {
-    // Ensure there's only one instance
+    // Singleton pattern
     if (TelegramService.instance) {
-      console.log('Returning existing TelegramService instance');
       return TelegramService.instance;
     }
     
-    console.log('Creating new TelegramService instance');
+    this.agentService = new AgentService();
     TelegramService.instance = this;
     
-    // Handle process shutdown to clean up bot
-    process.on('SIGTERM', this.shutdown.bind(this));
-    process.on('SIGINT', this.shutdown.bind(this));
+    // Register shutdown handlers
+    process.once('SIGINT', () => this.shutdownBot());
+    process.once('SIGTERM', () => this.shutdownBot());
   }
   
-  private async shutdown() {
-    if (this.shutdownInProgress) return;
-    
-    this.shutdownInProgress = true;
-    console.log('TelegramService: Shutting down Telegram bot...');
+  /**
+   * Safely shut down the bot when the process is terminating
+   */
+  private async shutdownBot(): Promise<void> {
+    console.log('Shutting down Telegram bot...');
     
     if (this.bot) {
       try {
         await this.bot.stopPolling();
-        console.log('TelegramService: Bot polling stopped successfully');
+        console.log('Telegram bot polling stopped successfully');
       } catch (error) {
-        console.error('TelegramService: Error stopping bot polling:', error);
+        console.error('Error stopping Telegram bot polling:', error);
       }
+      
       this.bot = null;
+      this.isInitialized = false;
     }
-    
-    this.isInitialized = false;
-    this.initializationPromise = null;
-    console.log('TelegramService: Shutdown complete');
   }
   
   /**
@@ -212,21 +217,18 @@ export class TelegramService {
     }
 
     this.initializationPromise = this._initialize();
-    return this.initializationPromise;
+    
+    try {
+      await this.initializationPromise;
+    } finally {
+      this.initializationPromise = null;
+    }
   }
 
   private async _initialize(): Promise<void> {
     try {
-      // Ensure we clean up any existing bot instance first
-      if (this.bot) {
-        console.log('Cleaning up existing Telegram bot instance before initialization');
-        try {
-          this.bot.stopPolling();
-          this.bot = null;
-        } catch (cleanupError) {
-          console.error('Error stopping existing bot polling:', cleanupError);
-        }
-      }
+      // Ensure any existing bot instance is properly shut down
+      await this.shutdownBot();
 
       // Get settings from database
       const settings = await db.select().from(telegramSettings).limit(1);
@@ -239,41 +241,41 @@ export class TelegramService {
       const { botToken, botUsername } = settings[0];
       
       // Skip initialization if using placeholder token
-      if (botToken === 'PLACEHOLDER_TOKEN') {
+      if (!botToken || botToken === 'PLACEHOLDER_TOKEN') {
         console.log('Telegram bot using placeholder token, skipping initialization');
         return;
       }
 
       console.log(`Initializing Telegram bot @${botUsername}...`);
       
-      // Add a small delay before creating new bot instance to ensure cleanup is complete
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Add a delay before creating a new instance to ensure any existing ones are cleaned up
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Create bot instance with options for better stability
+      // Create a new bot instance with improved options for reliability
       this.bot = new TelegramBot(botToken, { 
         polling: {
-          interval: 1000, // 1 second between polls
+          interval: 3000, // Poll less frequently to reduce chances of conflicts
           params: {
-            timeout: 10 // Shorter timeout for faster recovery from errors
+            timeout: 10,
+            limit: 10,
+            allowed_updates: ["message", "callback_query"] // Only get these update types
           }
         }
       });
       
-      // Setup message handlers if bot is initialized
       if (this.bot) {
+        // Setup message handlers
         this.setupMessageHandlers();
         console.log('Telegram bot initialized successfully');
         this.isInitialized = true;
       } else {
-        console.error('Failed to initialize Telegram bot');
+        throw new Error('Failed to create Telegram bot instance');
       }
     } catch (error) {
-      console.error('Error initializing Telegram bot:', error);
-      this.initializationPromise = null;
       this.isInitialized = false;
+      this.bot = null;
+      console.error('Error initializing Telegram bot:', error);
       throw error;
-    } finally {
-      this.initializationPromise = null;
     }
   }
 
