@@ -102,7 +102,40 @@ export function Header({ onToggleSidebar }: HeaderProps) {
               <DropdownMenuSeparator />
               <DropdownMenuItem 
                 className="text-destructive focus:text-destructive"
-                onClick={() => logoutMutation.mutate()}
+                onClick={() => {
+                  const handleLogout = async () => {
+                    try {
+                      // Direct fetch to avoid apiRequest issues
+                      const response = await fetch(`${window.location.origin}/api/logout`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        }
+                      });
+                      
+                      if (response.ok) {
+                        // Clear user from local storage
+                        localStorage.removeItem('emporium_user');
+                        
+                        // Redirect to login page
+                        window.location.href = '/auth';
+                      } else {
+                        console.error('Logout failed with status:', response.status);
+                        // Force logout anyway
+                        localStorage.removeItem('emporium_user');
+                        window.location.href = '/auth';
+                      }
+                    } catch (error) {
+                      console.error('Error during logout:', error);
+                      // Force logout anyway
+                      localStorage.removeItem('emporium_user');
+                      window.location.href = '/auth';
+                    }
+                  };
+                  
+                  handleLogout();
+                }}
               >
                 Sign out
               </DropdownMenuItem>
