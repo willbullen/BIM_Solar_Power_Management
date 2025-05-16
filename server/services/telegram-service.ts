@@ -29,7 +29,7 @@ import { AgentService } from '../agent-service';
  */
 export class TelegramService {
   private bot: TelegramBot | null = null;
-  private agentService: AgentService;
+  private agentService!: AgentService; // Using definite assignment assertion
   private isInitialized = false;
   private initializationPromise: Promise<void> | null = null;
   private static instance: TelegramService | null = null;
@@ -43,12 +43,17 @@ export class TelegramService {
       return TelegramService.instance;
     }
     
+    // Initialize the AgentService
     this.agentService = new AgentService();
+    
+    // Set the instance
     TelegramService.instance = this;
     
     // Register shutdown handlers
     process.once('SIGINT', () => this.shutdownBot());
     process.once('SIGTERM', () => this.shutdownBot());
+    
+    console.log('TelegramService initialized with AgentService');
   }
   
   /**
@@ -608,40 +613,67 @@ Try asking questions about power usage, environmental data, or request reports.`
         // Add extensive try/catch to properly handle function call-related errors
         let aiResponse;
         try {
-          // Only generate response if there's a userId
+          // Verify that both user ID and agentService are available
           if (!user[0].userId) {
-            throw new Error('Cannot generate response for Telegram user without associated system user ID');
+            console.error('Cannot generate response for Telegram user without associated system user ID');
+            await this.bot?.sendMessage(chatId, 
+              "Your Telegram account is verified but not properly linked to a system user. " +
+              "Please contact your administrator for assistance."
+            );
+            return;
           }
+          
+          // Double check that the agentService is initialized
+          if (!this.agentService) {
+            console.error('AgentService not initialized in TelegramService');
+            this.agentService = new AgentService(); // Try to recover by creating a new instance
+          }
+          
+          // Log which agent we're using for debugging
+          console.log(`Using agent ID ${agentId || 'default'} for Telegram message processing`);
           
           aiResponse = await this.agentService.generateResponse(
             conversationId,
-            user[0].userId!, // Non-null assertion as we checked above
+            user[0].userId, 
             'user',     // Default user role
             1000,       // Default max tokens
             agentId     // Pass the agent ID to use for processing
           );
+          
+          console.log('AI response generation completed successfully');
         } catch (error) {
           // Cast the unknown error to an object with message property
-          const generateError = error as { message?: string };
-          console.error('Error during AI response generation:', generateError);
+          const generateError = error as { message?: string, stack?: string };
+          console.error('Error during AI response generation:', generateError.message);
+          console.error('Error stack:', generateError.stack);
           
-          // Check for the specific function name parameter error
-          if (generateError?.message && generateError.message.includes('Missing parameter \'name\'')) {
-            console.error('Function name parameter error detected in Telegram message processing');
-            
-            // Log additional debugging information
-            console.log('Function call error context:', {
-              conversationId,
-              userId: user[0].userId,
-              telegramUserId: user[0].id
-            });
-            
-            // Inform the user with a more specific error message
-            await this.bot?.sendMessage(chatId, 
-              "I encountered an issue while trying to execute a function. " +
-              "This is likely a temporary problem. Please try again with a different request or later."
-            );
-            return;
+          // Add detailed debugging
+          console.log('Error context:', {
+            conversationId,
+            userId: user[0].userId,
+            telegramUserId: user[0].id,
+            hasAgentService: !!this.agentService,
+            agentId
+          });
+          
+          // Check for specific errors and handle them gracefully
+          if (generateError?.message) {
+            if (generateError.message.includes('Missing parameter \'name\'')) {
+              console.error('Function name parameter error detected in Telegram message processing');
+              await this.bot?.sendMessage(chatId, 
+                "I encountered an issue while trying to execute a function. " +
+                "This is likely a temporary problem. Please try again with a different request or later."
+              );
+              return;
+            } else if (generateError.message.includes('Cannot read properties of undefined') || 
+                       generateError.message.includes('is not a function')) {
+              console.error('Object property access error in agent processing');
+              await this.bot?.sendMessage(chatId, 
+                "I'm having trouble accessing some of my capabilities at the moment. " +
+                "Please try a simpler request or try again later."
+              );
+              return;
+            }
           }
           
           // Re-throw for general error handling
