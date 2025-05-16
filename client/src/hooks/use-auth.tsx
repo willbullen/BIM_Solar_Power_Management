@@ -85,10 +85,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         try {
           // Attempt a special login with just the ID to restore the session
-          // Fix parameter order: apiRequest(url, method, data)
-          const result = await apiRequest('/api/session/restore', 'POST', { 
-            userId: localUser.id,
-            username: localUser.username
+          // Use the options object format
+          const result = await apiRequest('/api/session/restore', {
+            method: 'POST',
+            data: { 
+              userId: localUser.id,
+              username: localUser.username
+            }
           });
           
           if (result) {
@@ -108,8 +111,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (credentials: LoginData) => {
       try {
         console.log('Login attempt for user:', credentials.username);
-        // Ensure correct parameter order - apiRequest(url, method, data)
-        const response = await apiRequest("/api/login", "POST", credentials);
+        // Use the options object format for apiRequest
+        const response = await apiRequest("/api/login", {
+          method: "POST",
+          data: credentials
+        });
         console.log('Login response:', response);
         return response;
       } catch (error) {
@@ -182,8 +188,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      // Ensure correct parameter order - apiRequest(url, method, data)
-      return apiRequest("/api/logout", "POST");
+      // Use the options object format for apiRequest
+      return apiRequest("/api/logout", {
+        method: "POST"
+      });
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
