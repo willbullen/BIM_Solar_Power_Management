@@ -365,22 +365,73 @@ export function TelegramChat() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Connection Status */}
-      {!isTelegramConnected && (
-        <div className="pb-4">
-          <Alert className="bg-blue-900/30 border-blue-800 text-blue-100">
+      {/* Connection Status with Refresh Button */}
+      <div className="pb-4">
+        <Alert className={isTelegramConnected ? 
+          "bg-green-900/30 border-green-800 text-green-100" : 
+          "bg-blue-900/30 border-blue-800 text-blue-100"}>
+          {isTelegramConnected ? (
+            <CheckCircle className="h-4 w-4 text-green-400" />
+          ) : (
             <AlertCircle className="h-4 w-4 text-blue-400" />
-            <AlertTitle className="text-blue-100">Telegram Not Connected</AlertTitle>
-            <AlertDescription className="text-blue-200">
-              {botSettings?.isEnabled === false ? (
-                <>
-                  Telegram integration is currently disabled. Please contact an administrator to enable it.
-                </>
-              ) : (
-                <>
-                  Connect your Telegram account to chat with the AI Agent via Telegram.
+          )}
+          <AlertTitle className={isTelegramConnected ? "text-green-100" : "text-blue-100"}>
+            {isTelegramConnected ? "Telegram Connected" : "Telegram Not Connected"}
+          </AlertTitle>
+          <AlertDescription className={isTelegramConnected ? "text-green-200" : "text-blue-200"}>
+            {botSettings?.isEnabled === false ? (
+              <>
+                Telegram integration is currently disabled. Please contact an administrator to enable it.
+              </>
+            ) : isTelegramConnected ? (
+              <div className="flex flex-col space-y-2">
+                <div>
+                  Connected as <strong>{telegramUser?.telegramUsername || telegramUser?.telegramFirstName || 'User'}</strong>.
+                  {telegramUser?.lastAccessed && (
+                    <span className="ml-2 text-xs opacity-80">
+                      Last activity: {new Date(telegramUser.lastAccessed).toLocaleString()}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center space-x-2">
                   <Button 
-                    className="mt-2 bg-blue-600 hover:bg-blue-700 text-white"
+                    variant="outline" 
+                    size="sm"
+                    className="bg-green-900/30 text-green-200 border-green-800 hover:bg-green-800"
+                    onClick={() => {
+                      refetchUser();
+                      refetchMessages();
+                      toast({
+                        title: "Refreshed Connection",
+                        description: "Telegram connection status updated"
+                      });
+                    }}
+                  >
+                    <RefreshCw className="mr-2 h-3 w-3" />
+                    Refresh Status
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="bg-green-900/30 text-green-200 border-green-800 hover:bg-green-800"
+                    onClick={() => {
+                      // Let the user send a test message to check if it works
+                      if (testMessage.trim().length === 0) {
+                        setTestMessage("Hello from dashboard!");
+                      }
+                    }}
+                  >
+                    <Send className="mr-2 h-3 w-3" />
+                    Quick Test
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                Connect your Telegram account to chat with the AI Agent via Telegram.
+                <div className="flex items-center space-x-2 mt-2">
+                  <Button 
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={handleVerify}
                     disabled={generateVerification.isPending || botSettings?.isEnabled === false}
                   >
@@ -396,12 +447,27 @@ export function TelegramChat() {
                       </>
                     )}
                   </Button>
-                </>
-              )}
-            </AlertDescription>
-          </Alert>
-        </div>
-      )}
+                  <Button 
+                    variant="outline" 
+                    className="bg-blue-900/30 text-blue-200 border-blue-800 hover:bg-blue-800"
+                    onClick={() => {
+                      // Refresh connection status
+                      refetchUser();
+                      toast({
+                        title: "Refreshed Connection",
+                        description: "Checking Telegram connection status..."
+                      });
+                    }}
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Check Status
+                  </Button>
+                </div>
+              </>
+            )}
+          </AlertDescription>
+        </Alert>
+      </div>
 
       {/* Message History */}
       <Card className="flex-grow overflow-hidden bg-slate-900 border-slate-800 shadow-md">
