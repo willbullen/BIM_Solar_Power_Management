@@ -23,12 +23,46 @@ import { AgentService } from '../agent-service';
 
 export class TelegramService {
   private bot: TelegramBot | null = null;
-  private agentService: AgentService;
+  private agentService: AgentService = new AgentService();
   private isInitialized = false;
   private initializationPromise: Promise<void> | null = null;
+  private static instance: TelegramService | null = null;
+  private shutdownInProgress = false;
 
   constructor() {
-    this.agentService = new AgentService();
+    // Ensure there's only one instance
+    if (TelegramService.instance) {
+      console.log('Returning existing TelegramService instance');
+      return TelegramService.instance;
+    }
+    
+    console.log('Creating new TelegramService instance');
+    TelegramService.instance = this;
+    
+    // Handle process shutdown to clean up bot
+    process.on('SIGTERM', this.shutdown.bind(this));
+    process.on('SIGINT', this.shutdown.bind(this));
+  }
+  
+  private async shutdown() {
+    if (this.shutdownInProgress) return;
+    
+    this.shutdownInProgress = true;
+    console.log('TelegramService: Shutting down Telegram bot...');
+    
+    if (this.bot) {
+      try {
+        await this.bot.stopPolling();
+        console.log('TelegramService: Bot polling stopped successfully');
+      } catch (error) {
+        console.error('TelegramService: Error stopping bot polling:', error);
+      }
+      this.bot = null;
+    }
+    
+    this.isInitialized = false;
+    this.initializationPromise = null;
+    console.log('TelegramService: Shutdown complete');
   }
   
   /**
@@ -183,6 +217,17 @@ export class TelegramService {
 
   private async _initialize(): Promise<void> {
     try {
+      // Ensure we clean up any existing bot instance first
+      if (this.bot) {
+        console.log('Cleaning up existing Telegram bot instance before initialization');
+        try {
+          this.bot.stopPolling();
+          this.bot = null;
+        } catch (cleanupError) {
+          console.error('Error stopping existing bot polling:', cleanupError);
+        }
+      }
+
       // Get settings from database
       const settings = await db.select().from(telegramSettings).limit(1);
       
@@ -201,17 +246,34 @@ export class TelegramService {
 
       console.log(`Initializing Telegram bot @${botUsername}...`);
       
-      // Create bot instance
-      this.bot = new TelegramBot(botToken, { polling: true });
+      // Add a small delay before creating new bot instance to ensure cleanup is complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Setup message handlers
-      this.setupMessageHandlers();
+      // Create bot instance with options for better stability
+      this.bot = new TelegramBot(botToken, { 
+        polling: {
+          interval: 1000, // 1 second between polls
+          params: {
+            timeout: 10 // Shorter timeout for faster recovery from errors
+          }
+        }
+      });
       
-      console.log('Telegram bot initialized successfully');
-      this.isInitialized = true;
+      // Setup message handlers if bot is initialized
+      if (this.bot) {
+        this.setupMessageHandlers();
+        console.log('Telegram bot initialized successfully');
+        this.isInitialized = true;
+      } else {
+        console.error('Failed to initialize Telegram bot');
+      }
     } catch (error) {
       console.error('Error initializing Telegram bot:', error);
+      this.initializationPromise = null;
+      this.isInitialized = false;
       throw error;
+    } finally {
+      this.initializationPromise = null;
     }
   }
 
@@ -931,6 +993,23 @@ Try asking questions about power usage, environmental data, or request reports.`
     isEnabled?: boolean
   }): Promise<void> {
     try {
+      // Ensure any existing bot is properly stopped
+      if (this.bot) {
+        console.log('Stopping existing Telegram bot before settings update');
+        try {
+          this.bot.stopPolling();
+          this.bot = null;
+          // Short delay to ensure cleanup is complete
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (cleanupError) {
+          console.error('Error stopping existing bot:', cleanupError);
+        }
+      }
+      
+      // Reset initialization state
+      this.isInitialized = false;
+      this.initializationPromise = null;
+      
       // Get current settings
       const currentSettings = await db.select().from(telegramSettings).limit(1);
       
@@ -949,21 +1028,15 @@ Try asking questions about power usage, environmental data, or request reports.`
         })
         .where(eq(telegramSettings.id, currentSettings[0].id));
       
-      // Reinitialize bot if token or status changed
-      if (settings.botToken || settings.isEnabled !== undefined) {
-        // Stop current bot if exists
-        if (this.bot) {
-          this.bot.stopPolling();
-          this.bot = null;
-        }
-        
-        this.isInitialized = false;
-        this.initializationPromise = null;
-        
-        // Reinitialize if enabled
-        if (settings.isEnabled !== false) {
-          await this.initialize();
-        }
+      console.log('Telegram settings updated successfully');
+      
+      // Reinitialize bot with updated settings if enabled
+      if ((settings.isEnabled === undefined && currentSettings[0].isEnabled) || 
+          settings.isEnabled === true) {
+        console.log('Reinitializing Telegram bot with updated settings');
+        // Short delay before reinitializing
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await this.initialize();
       }
     } catch (error) {
       console.error('Error updating Telegram settings:', error);
