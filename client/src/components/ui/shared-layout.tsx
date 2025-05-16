@@ -18,7 +18,8 @@ import {
   X,
   Zap,
   Sun,
-  CloudSun
+  CloudSun,
+  Headphones
 } from 'lucide-react';
 import { usePowerData } from '@/hooks/use-power-data';
 import { useRefreshRate, REFRESH_RATES } from '@/hooks/use-refresh-rate';
@@ -60,6 +61,7 @@ export function SharedLayout({ children, user }: LayoutProps) {
     { name: 'Equipment', href: '/equipment', icon: Package2 },
     { name: 'Operational Planning', href: '/planning', icon: Calendar },
     { name: 'AI Agent', href: '/agent', icon: MessageSquare },
+    { name: 'Voice Transcription', href: '/voice', icon: Headphones },
     { name: 'Feedback & Issues', href: '/feedback', icon: MessageSquare },
     { name: 'Settings', href: '/settings', icon: Settings }
   ];

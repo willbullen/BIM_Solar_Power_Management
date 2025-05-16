@@ -1515,6 +1515,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register File handling routes
   registerFileRoutes(app);
   
+  // Register Voice message transcription routes
+  registerVoiceRoutes(app);
+  
   // Register MCP routes for Model Context Protocol
   app.use('/api/mcp', mcpRoutes);
 

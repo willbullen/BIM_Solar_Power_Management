@@ -18,6 +18,7 @@ import FeedbackPage from "@/pages/feedback-page";
 import AgentPage from "@/pages/agent-page";
 import { LangChainPage } from "@/pages/LangChainPage";
 import AgentToolsDebugPage from "@/pages/agent-tools-debug";
+import { VoicePage } from "@/pages/voice-page";
 import NotFound from "@/pages/not-found";
 import { WebSocketDebugger } from "@/components/debug/websocket-debugger";
 
@@ -39,6 +40,7 @@ function App() {
                 <ProtectedRoute path="/agent" component={AgentPage} />
                 <ProtectedRoute path="/langchain" component={LangChainPage} />
                 <ProtectedRoute path="/agent-tools-debug" component={AgentToolsDebugPage} />
+                <ProtectedRoute path="/voice" component={VoicePage} />
                 <AdminRoute path="/settings" component={SettingsPage} />
                 <Route path="/auth" component={AuthPage} />
                 <Route component={NotFound} />

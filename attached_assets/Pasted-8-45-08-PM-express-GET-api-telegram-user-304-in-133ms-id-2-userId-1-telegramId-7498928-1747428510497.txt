@@ -1,0 +1,336 @@
+8:45:08 PM [express] GET /api/telegram/user 304 in 133ms :: {"id":2,"userId":1,"telegramId":"7498928…
+8:45:09 PM [express] GET /api/telegram/user 304 in 136ms :: {"id":2,"userId":1,"telegramId":"7498928…
+8:45:10 PM [express] GET /api/telegram/user 304 in 107ms :: {"id":2,"userId":1,"telegramId":"7498928…
+8:45:10 PM [express] GET /api/telegram/user 304 in 130ms :: {"id":2,"userId":1,"telegramId":"7498928…
+8:45:11 PM [express] GET /api/telegram/user 304 in 116ms :: {"id":2,"userId":1,"telegramId":"7498928…
+8:45:11 PM [express] GET /api/telegram/user 304 in 125ms :: {"id":2,"userId":1,"telegramId":"7498928…
+8:45:11 PM [express] GET /api/telegram/user 304 in 116ms :: {"id":2,"userId":1,"telegramId":"7498928…
+8:45:11 PM [express] GET /api/telegram/user 304 in 104ms :: {"id":2,"userId":1,"telegramId":"7498928…
+8:45:12 PM [express] GET /api/telegram/user 304 in 123ms :: {"id":2,"userId":1,"telegramId":"7498928…
+8:45:12 PM [express] GET /api/telegram/user 304 in 112ms :: {"id":2,"userId":1,"telegramId":"7498928…
+8:45:12 PM [express] GET /api/telegram/user 304 in 147ms :: {"id":2,"userId":1,"telegramId":"7498928…
+8:45:12 PM [express] GET /api/telegram/user 304 in 118ms :: {"id":2,"userId":1,"telegramId":"7498928…
+8:45:13 PM [express] GET /api/telegram/user 304 in 130ms :: {"id":2,"userId":1,"telegramId":"7498928…
+8:45:13 PM [express] GET /api/telegram/user 304 in 130ms :: {"id":2,"userId":1,"telegramId":"7498928…
+8:45:13 PM [express] GET /api/telegram/user 304 in 110ms :: {"id":2,"userId":1,"telegramId":"7498928…
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:480:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:480:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:480:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:480:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+Telegram polling error: TelegramError: ETELEGRAM: 409 Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+    at /home/runner/workspace/node_modules/node-telegram-bot-api/src/telegram.js:316:15
+    at tryCatcher (/home/runner/workspace/node_modules/bluebird/js/release/util.js:16:23)
+    at Promise._settlePromiseFromHandler (/home/runner/workspace/node_modules/bluebird/js/release/promise.js:547:31)
+    at Promise._settlePromise (/home/runner/workspace/node_modules/bluebird/js/release/promise.js:604:18)
+    at Promise._settlePromise0 (/home/runner/workspace/node_modules/bluebird/js/release/promise.js:649:10)
+    at Promise._settlePromises (/home/runner/workspace/node_modules/bluebird/js/release/promise.js:729:18)
+    at _drainQueueStep (/home/runner/workspace/node_modules/bluebird/js/release/async.js:93:12)
+    at _drainQueue (/home/runner/workspace/node_modules/bluebird/js/release/async.js:86:9)
+    at Async._drainQueues (/home/runner/workspace/node_modules/bluebird/js/release/async.js:102:5)
+    at Async.drainQueues [as _onImmediate] (/home/runner/workspace/node_modules/bluebird/js/release/async.js:15:14)
+    at process.processImmediate (node:internal/timers:483:21) {
+  code: 'ETELEGRAM',
+  response: <ref *1> IncomingMessage {
+    _events: {
+      close: [Array],
+      error: [Function (anonymous)],
+      data: [Function (anonymous)],
+      end: [Array],
+      readable: undefined
+    },
+    _readableState: ReadableState {
+      highWaterMark: 16384,
+      buffer: [],
+      bufferIndex: 0,
+      length: 0,
+      pipes: [],
+      awaitDrainWriters: null,
+      [Symbol(kState)]: 194779004
+    },
+    _maxListeners: undefined,
+    socket: null,
+    httpVersionMajor: 1,
+    httpVersionMinor: 1,
+    httpVersion: '1.1',
+    complete: true,
+    rawHeaders: [
+      'Server',
+      'nginx/1.18.0',
+      'Date',
+      'Fri, 16 May 2025 20:45:28 GMT',
+      'Content-Type',
+      'application/json',
+      'Content-Length',
+      '143',
+      'Connection',
+      'keep-alive',
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains; preload',
+      'Access-Control-Allow-Origin',
+      '*',
+      'Access-Control-Expose-Headers',
+      'Content-Length,Content-Type,Date,Server,Connection'
+    ],
+    rawTrailers: [],
+    joinDuplicateHeaders: undefined,
+    aborted: false,
+    upgrade: false,
+    url: '',
+    method: null,
+    statusCode: 409,
+    statusMessage: 'Conflict',
+    client: TLSSocket {
+      _tlsOptions: [Object],
+      _secureEstablished: true,
+      _securePending: false,
+      _newSessionPending: false,
+      _controlReleased: true,
+      secureConnecting: false,
+      _SNICallback: null,
+      servername: 'api.telegram.org',
+      alpnProtocol: false,
+      authorized: true,
+      authorizationError: null,
+      encrypted: true,
+      _events: [Object: null prototype],
+      _eventsCount: 9,
+      connecting: false,
+      _hadError: false,
+      _parent: null,
+      _host: 'api.telegram.org',
+      _closeAfterHandlingError: false,
+      _readableState: [ReadableState],
+      _writableState: [WritableState],
+      allowHalfOpen: false,
+      _maxListeners: undefined,
+      _sockname: null,
+      _pendingData: null,
+      _pendingEncoding: '',
+      server: undefined,
+      _server: null,
+      ssl: [TLSWrap],
+      _requestCert: true,
+      _rejectUnauthorized: true,
+      parser: null,
+      _httpMessage: null,
+      timeout: 0,
+      [Symbol(alpncallback)]: null,
+      [Symbol(res)]: [TLSWrap],
+      [Symbol(verified)]: true,
+      [Symbol(pendingSession)]: null,
+      [Symbol(async_id_symbol)]: -1,
+      [Symbol(kHandle)]: [TLSWrap],
+      [Symbol(lastWriteQueueSize)]: 0,
+      [Symbol(timeout)]: null,
+      [Symbol(kBuffer)]: null,
+      [Symbol(kBufferCb)]: null,
+      [Symbol(kBufferGen)]: null,
+      [Symbol(shapeMode)]: true,
+      [Symbol(kCapture)]: false,
+      [Symbol(kSetNoDelay)]: false,
+      [Symbol(kSetKeepAlive)]: true,
+      [Symbol(kSetKeepAliveInitialDelay)]: 1,
+      [Symbol(kBytesRead)]: 0,
+      [Symbol(kBytesWritten)]: 0,
+      [Symbol(connect-options)]: [Object]
+    },
+    _consuming: false,
+    _dumped: false,
+    req: ClientRequest {
+      _events: [Object: null prototype],
+      _eventsCount: 5,
+      _maxListeners: undefined,
+      outputData: [],
+      outputSize: 0,
+      writable: true,
+      destroyed: true,
+      _last: false,
+      chunkedEncoding: false,
+      shouldKeepAlive: true,
+      maxRequestsOnConnectionReached: false,
+      _defaultKeepAlive: true,
+      useChunkedEncodingByDefault: true,
+      sendDate: false,
+      _removedConnection: false,
+      _removedContLen: false,
+      _removedTE: false,
+      strictContentLength: false,
+      _contentLength: 105,
+      _hasBody: true,
+      _trailer: '',
+      finished: true,
+      _headerSent: true,
+      _closed: true,
+      socket: [TLSSocket],
+      _header: 'POST /bot7310754198:AAEJc71Ml0ykdzrPslSqRGOyTvtNRpM7CFA/getUpdates HTTP/1.1\r\n' +
+        'host: api.telegram.org\r\n' +
+        'content-type: application/x-www-form-urlencoded\r\n' +
+        'content-length: 105\r\n' +
+        'Connection: keep-alive\r\n' +
+        '\r\n',
+      _keepAliveTimeout: 0,
+      _onPendingData: [Function: nop],
+      agent: [Agent],
+      socketPath: undefined,
+      method: 'POST',
+      maxHeaderSize: undefined,
+      insecureHTTPParser: undefined,
+      joinDuplicateHeaders: undefined,
+      path: '/bot7310754198:AAEJc71Ml0ykdzrPslSqRGOyTvtNRpM7CFA/getUpdates',
+      _ended: true,
+      res: [Circular *1],
+      aborted: false,
+      timeoutCb: null,
+      upgradeOrConnect: false,
+      parser: null,
+      maxHeadersCount: null,
+      reusedSocket: true,
+      host: 'api.telegram.org',
+      protocol: 'https:',
+      [Symbol(shapeMode)]: false,
+      [Symbol(kCapture)]: false,
+      [Symbol(kBytesWritten)]: 0,
+      [Symbol(kNeedDrain)]: false,
+      [Symbol(corked)]: 0,
+      [Symbol(kOutHeaders)]: [Object: null prototype],
+      [Symbol(errored)]: null,
+      [Symbol(kHighWaterMark)]: 16384,
+      [Symbol(kRejectNonStandardBodyWrites)]: false,
+      [Symbol(kUniqueHeaders)]: null
+    },
+    _eventsCount: 4,
+    request: Request {
+      _events: [Object: null prototype],
+      _eventsCount: 5,
+      _maxListeners: undefined,
+      method: 'POST',
+      simple: false,
+      resolveWithFullResponse: true,
+      forever: true,
+      readable: true,
+      writable: true,
+      explicitMethod: true,
+      _qs: [Querystring],
+      _auth: [Auth],
+      _multipart: [Multipart],
+      _redirect: [Redirect],
+      _tunnel: [Tunnel],
+      _rp_resolve: [Function (anonymous)],
+      _rp_reject: [Function (anonymous)],
+      _rp_promise: [Promise [Object]],
+      _rp_callbackOrig: undefined,
+      callback: [Function (anonymous)],
+      _rp_options: [Object],
+      headers: [Object],
+      setHeader: [Function (anonymous)],
+      hasHeader: [Function (anonymous)],
+      getHeader: [Function (anonymous)],
+      removeHeader: [Function (anonymous)],
+      localAddress: undefined,
+      pool: [Object],
+      dests: [],
+      __isRequestRequest: true,
+      _callback: [Function: RP$callback],
+      uri: [Url],
+      proxy: null,
+      tunnel: true,
+      setHost: true,
+      originalCookieHeader: undefined,
+      _disableCookies: true,
+      _jar: undefined,
+      port: 443,
+      host: 'api.telegram.org',
+      body: 'timeout=10&limit=10&allowed_updates%5B0%5D=message&allowed_updates%5B1%5D=callback_query&offset=228225009',
+      path: '/bot7310754198:AAEJc71Ml0ykdzrPslSqRGOyTvtNRpM7CFA/getUpdates',
+      httpModule: [Object],
+      agentClass: [Function: Agent],
+      agentOptions: [Object],
+      agent: [Agent],
+      _started: true,
+      href: 'https://api.telegram.org/bot7310754198:AAEJc71Ml0ykdzrPslSqRGOyTvtNRpM7CFA/getUpdates',
+      req: [ClientRequest],
+      ntick: true,
+      response: [Circular *1],
+      originalHost: 'api.telegram.org',
+      originalHostHeaderName: 'host',
+      responseContent: [Circular *1],
+      _destdata: true,
+      _ended: true,
+      _callbackCalled: true,
+      [Symbol(shapeMode)]: false,
+      [Symbol(kCapture)]: false
+    },
+    toJSON: [Function: responseToJSON],
+    caseless: Caseless { dict: [Object] },
+    body: {
+      ok: false,
+      error_code: 409,
+      description: 'Conflict: terminated by other getUpdates request; make sure that only one bot instance is running'
+    },
+    [Symbol(shapeMode)]: true,
+    [Symbol(kCapture)]: false,
+    [Symbol(kHeaders)]: {
+      server: 'nginx/1.18.0',
+      date: 'Fri, 16 May 2025 20:45:28 GMT',
+      'content-type': 'application/json',
+      'content-length': '143',
+      connection: 'keep-alive',
+      'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+      'access-control-allow-origin': '*',
+      'access-control-expose-headers': 'Content-Length,Content-Type,Date,Server,Connection'
+    },
+    [Symbol(kHeadersCount)]: 16,
+    [Symbol(kTrailers)]: null,
+    [Symbol(kTrailersCount)]: 0
+  }
+}
+Detected conflict with another bot instance, attempting recovery...
+Force terminating any external bot sessions...
+Successfully terminated external sessions via direct API call
+Force termination result: success
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:480:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:480:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+Shutting down Telegram bot...
+Telegram bot polling stopped successfully
+Telegram bot instance cleanup complete
+Telegram bot reference cleared
+Reinitializing Telegram bot after conflict...
+Shutting down Telegram bot...
+No active Telegram bot to shut down
+Initializing Telegram bot @envirobot...
+Force terminating any external bot sessions...
+Successfully terminated external sessions via direct API call
+Waiting for any existing bot instances to fully terminate...

@@ -38,7 +38,7 @@ export class TelegramService {
    * Check if the Telegram bot is initialized and running
    * @returns true if the bot is initialized and running
    */
-  public isInitialized(): boolean {
+  public get isInitialized(): boolean {
     return this._initialized && this.bot !== null;
   }
   
@@ -87,7 +87,23 @@ export class TelegramService {
     try {
       console.log('Force terminating any external bot sessions...');
       
-      // Create a direct fetch request to delete webhook and drop pending updates
+      // First, try a more direct approach to terminate sessions - using getUpdates with a specific offset
+      try {
+        // First clear webhooks to make sure we don't have any active webhooks
+        const clearWebhookUrl = `https://api.telegram.org/bot${botToken}/deleteWebhook?drop_pending_updates=true`;
+        await fetch(clearWebhookUrl);
+        
+        // Then use getUpdates with a very high offset to "catch up" and terminate other sessions
+        const resetUrl = `https://api.telegram.org/bot${botToken}/getUpdates?offset=-1&limit=1`;
+        await fetch(resetUrl);
+        
+        // Wait a moment to ensure the above takes effect
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (directError) {
+        console.error('Direct termination method failed, continuing with alternate approach:', directError);
+      }
+      
+      // Create a direct fetch request to delete webhook and drop pending updates (backup approach)
       const webhookUrl = `https://api.telegram.org/bot${botToken}/deleteWebhook?drop_pending_updates=true`;
       const response = await fetch(webhookUrl);
       const result = await response.json();
@@ -126,8 +142,19 @@ export class TelegramService {
           }
           
           // Clear any event listeners to prevent memory leaks or conflicts
-          if (typeof this.bot.removeAllListeners === 'function') {
-            this.bot.removeAllListeners();
+          // Manually remove known event listeners
+          try {
+            // @ts-ignore - TelegramBot extends EventEmitter but TypeScript doesn't recognize it
+            if (typeof this.bot.eventNames === 'function') {
+              // @ts-ignore
+              const events = this.bot.eventNames();
+              for (const event of events) {
+                // @ts-ignore
+                this.bot.removeAllListeners(event);
+              }
+            }
+          } catch (e) {
+            console.log('Could not remove event listeners, continuing anyway');
           }
           
           console.log('Telegram bot instance cleanup complete');
@@ -139,7 +166,7 @@ export class TelegramService {
       } finally {
         // Always reset these regardless of errors above
         this.bot = null;
-        this.isInitialized = false;
+        this._initialized = false; // Update internal flag directly instead of using getter
         console.log('Telegram bot reference cleared');
       }
     } else {
@@ -391,7 +418,7 @@ export class TelegramService {
           
           // If we get a conflict error, implement a more robust recovery strategy
           if (error.message && error.message.includes('terminated by other getUpdates request')) {
-            console.log('Detected conflict with another bot instance, attempting recovery...');
+            console.log('Detected conflict with another bot instance, attempting enhanced recovery...');
             
             // Get the token for force termination
             db.select().from(telegramSettings).limit(1).then(settings => {
@@ -413,6 +440,9 @@ export class TelegramService {
                         // Wait a bit longer before reinitializing
                         await new Promise(resolve => setTimeout(resolve, 5000));
                         
+                        // Another force termination attempt just before reinitialization
+                        await this.forceTerminateExternalSessions(botToken);
+                        
                         // Then initialize again
                         this._initialize().catch(e => console.error('Failed to reinitialize after conflict:', e));
                       } catch (e) {
@@ -430,7 +460,7 @@ export class TelegramService {
         throw new Error('Failed to create Telegram bot instance');
       }
     } catch (error) {
-      this.isInitialized = false;
+      this._initialized = false;
       this.bot = null;
       console.error('Error initializing Telegram bot:', error);
       throw error;
@@ -1210,7 +1240,7 @@ Try asking questions about power usage, environmental data, or request reports.`
       }
       
       // Reset initialization state
-      this.isInitialized = false;
+      this._initialized = false;
       this.initializationPromise = null;
       
       // Get current settings
