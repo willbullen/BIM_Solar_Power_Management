@@ -369,17 +369,33 @@ To get started, you need to verify your account. Please ask your system administ
     const firstName = msg.from?.first_name || '';
     const lastName = msg.from?.last_name || '';
     
+    console.log(`Processing verification for code: ${verificationCode}`);
+    
     try {
       // Find users with verification code in their metadata
       const users = await db.select()
         .from(telegramUsers)
         .limit(100);  // We'll need to search through metadata manually
       
+      console.log(`Found ${users.length} total Telegram users to check`);
+      
+      // Log users' verification codes for debugging
+      users.forEach((user, index) => {
+        const metadata = user.metadata as TelegramUserMetadata || {};
+        console.log(`User ${index+1} (ID: ${user.id}): Verification code: ${metadata.verificationCode}, Is verified: ${metadata.isVerified}`);
+      });
+      
       // Find the user with matching verification code
       const pendingVerification = users.filter(user => {
         const metadata = user.metadata as TelegramUserMetadata || {};
-        return metadata.verificationCode === verificationCode && 
+        const matches = metadata.verificationCode === verificationCode && 
                metadata.isVerified !== true;
+        
+        if (metadata.verificationCode) {
+          console.log(`Checking user ${user.id}: Code ${metadata.verificationCode} against ${verificationCode} - Match: ${matches}`);
+        }
+        
+        return matches;
       });
       
       if (pendingVerification.length > 0) {
