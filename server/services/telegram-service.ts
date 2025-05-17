@@ -1099,15 +1099,14 @@ Try asking questions about power usage, environmental data, or request reports.`
    */
   async getStatistics(): Promise<any> {
     try {
-      // For verified users, we need to count users with isVerified: true in metadata
+      // For verified users, use the direct isVerified column
       // First get all users
       const allUsers = await db.select().from(telegramUsers);
       
-      // Then count only those who have isVerified: true in their metadata
-      const verifiedUsersCount = allUsers.filter(user => {
-        const metadata = user.metadata as TelegramUserMetadata || {};
-        return metadata.isVerified === true;
-      }).length;
+      // Count users with isVerified = true
+      const verifiedUsersCount = allUsers.filter(user => 
+        user.isVerified === true
+      ).length;
       
       const totalMessages = await db.select({ count: sql`count(*)` })
         .from(telegramMessages);
