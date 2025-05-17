@@ -334,6 +334,10 @@ export class TelegramService {
       // Ensure any existing bot instance is properly shut down
       await this.shutdownBot();
 
+      // Get token from environment variable first, then fallback to database
+      let botToken = process.env.TELEGRAM_BOT_TOKEN;
+      let botUsername = '';
+
       // Get settings from database
       const settings = await db.select().from(telegramSettings).limit(1);
       
@@ -342,10 +346,18 @@ export class TelegramService {
         return;
       }
 
-      const { botToken, botUsername } = settings[0];
+      // If no environment variable, use the database token
+      if (!botToken) {
+        console.log('No environment token found, using token from database');
+        botToken = settings[0].botToken;
+      } else {
+        console.log('Using Telegram bot token from environment variable');
+      }
+      
+      botUsername = settings[0].botUsername;
       
       // Skip initialization if using placeholder token
-      if (!botToken || botToken === 'PLACEHOLDER_TOKEN') {
+      if (!botToken || botToken === 'PLACEHOLDER_TOKEN' || botToken === '$TELEGRAM_BOT_TOKEN') {
         console.log('Telegram bot using placeholder token, skipping initialization');
         return;
       }
