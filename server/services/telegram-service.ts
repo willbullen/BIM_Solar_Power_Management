@@ -581,12 +581,13 @@ To get started, you need to verify your account. Please ask your system administ
     try {
       // Use direct SQL to find user with matching verification code
       // This avoids the schema issues with the metadata column
-      const pendingVerificationResult = await db.execute(sql`
+      const pendingVerificationQuery = `
         SELECT * FROM langchain_telegram_users
-        WHERE verification_code = ${verificationCode}
+        WHERE verification_code = $1
         AND is_verified = FALSE
         LIMIT 1
-      `);
+      `;
+      const pendingVerificationResult = await pool.query(pendingVerificationQuery, [verificationCode]);
       
       console.log(`Found ${pendingVerificationResult.rows.length} users with matching verification code`);
       
