@@ -1595,11 +1595,15 @@ export default function SettingsPage() {
                                   variant="destructive"
                                   onClick={onDisconnectTelegram}
                                   disabled={disconnectTelegramMutation.isPending}
+                                  size="lg"
+                                  className="w-full text-lg"
                                 >
-                                  {disconnectTelegramMutation.isPending && (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  {disconnectTelegramMutation.isPending ? (
+                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                  ) : (
+                                    <span className="mr-2">🔌</span>
                                   )}
-                                  Disconnect Telegram
+                                  Disconnect Telegram to Re-Test Verification
                                 </Button>
                               </div>
                               
