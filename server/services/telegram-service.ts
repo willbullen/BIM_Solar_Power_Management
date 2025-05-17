@@ -937,55 +937,37 @@ Try asking questions about power usage, environmental data, or request reports.`
       console.log(`Existing user check result: ${existingUser.length > 0 ? 'User found' : 'No user found'}`);
       
       if (existingUser.length > 0) {
-        // Get current metadata
-        const currentMetadata = existingUser[0].metadata as TelegramUserMetadata || {};
-        console.log('Current metadata:', currentMetadata);
+        console.log('Updating existing user with new verification code');
         
-        // Update metadata with verification info
-        const updatedMetadata: TelegramUserMetadata = {
-          ...currentMetadata,
-          verificationCode: verificationCode,
-          verificationExpires: expirationDate.toISOString(),
-          isVerified: false
-        };
-        
-        console.log('Updating existing user with new metadata');
-        
-        // Update existing user
-        await db.update(telegramUsers)
-          .set({
-            metadata: updatedMetadata,
-            updatedAt: new Date()
-          })
-          .where(eq(telegramUsers.id, existingUser[0].id));
+        // Update existing user with SQL to avoid schema mismatches
+        await db.execute(sql`
+          UPDATE langchain_telegram_users
+          SET verification_code = ${verificationCode},
+              verification_expires = ${expirationDate},
+              is_verified = FALSE,
+              updated_at = NOW()
+          WHERE id = ${existingUser[0].id}
+        `);
       } else {
         console.log('Creating new Telegram user entry with pending verification');
-        
-        // Create initial metadata
-        const metadata: TelegramUserMetadata = {
-          verificationCode: verificationCode,
-          verificationExpires: expirationDate.toISOString(),
-          isVerified: false,
-          notificationsEnabled: true,
-          receiveReports: true,
-          receiveAlerts: true
-        };
         
         // Create new user record with pending verification
         console.log('Inserting new telegram user record with pending verification');
         try {
-          await db.insert(telegramUsers)
-            .values({
-              userId: userId,
-              telegramId: 'pending_verification',
-              firstName: 'pending_verification', // Required field, will be updated after verification
-              lastName: null,
-              username: null,
-              languageCode: null,
-              metadata: metadata,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            });
+          // Use specific column values that match the actual table schema
+          await db.execute(sql`
+            INSERT INTO langchain_telegram_users (
+              user_id, telegram_id, first_name, 
+              notifications_enabled, receive_reports, receive_alerts, 
+              verification_code, verification_expires, is_verified,
+              created_at, updated_at
+            ) VALUES (
+              ${userId}, 'pending_verification', 'pending_verification',
+              TRUE, TRUE, TRUE,
+              ${verificationCode}, ${expirationDate}, FALSE,
+              NOW(), NOW()
+            )
+          `);
           console.log('Successfully created new user record');
         } catch (error) {
           const insertError = error as { message?: string };

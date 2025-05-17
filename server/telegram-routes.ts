@@ -202,43 +202,54 @@ export function registerTelegramRoutes(app: Express) {
     try {
       const userId = req.session.userId!;
       
-      const telegramUser = await db.select().from(telegramUsers)
-        .where(eq(telegramUsers.userId, userId))
-        .limit(1);
+      // Use a more specific selection to get only the fields we need
+      const telegramUser = await db.select({
+        id: telegramUsers.id,
+        userId: telegramUsers.userId,
+        telegramId: telegramUsers.telegramId,
+        username: telegramUsers.username,
+        firstName: telegramUsers.firstName,
+        lastName: telegramUsers.lastName,
+        isVerified: telegramUsers.isVerified,
+        verificationCode: telegramUsers.verificationCode,
+        verificationExpires: telegramUsers.verificationExpires,
+        lastAccessed: telegramUsers.lastAccessed,
+        notificationsEnabled: telegramUsers.notificationsEnabled,
+        receiveAlerts: telegramUsers.receiveAlerts,
+        receiveReports: telegramUsers.receiveReports
+      })
+      .from(telegramUsers)
+      .where(eq(telegramUsers.userId, userId))
+      .limit(1);
       
       if (telegramUser.length === 0) {
         return res.json({ 
           connected: false,
           status: 'Not connected',
-          botActive: telegramService.isInitialized()
+          botActive: telegramService.isInitialized() ? true : false
         });
       }
       
       const user = telegramUser[0];
-      
-      // In the new schema, we consider a user connected if they have a record
-      // and we'll store verification status in metadata
-      // Cast the metadata to TelegramUserMetadata type for better type checking
-      const metadata = user.metadata as TelegramUserMetadata || {};
-      const isVerified = metadata.isVerified === true;
-      const notificationsEnabled = metadata.notificationsEnabled !== false;
+      const isVerified = user.isVerified === true;
+      const notificationsEnabled = user.notificationsEnabled !== false;
       
       let status = isVerified ? 'Connected and verified' : 'Connected';
-      if (metadata.verificationCode) {
+      if (user.verificationCode) {
         status = 'Pending verification';
       }
       
       res.json({
         connected: isVerified,
         status,
-        lastAccessed: metadata.lastAccessed,
+        lastAccessed: user.lastAccessed,
         notificationsEnabled: notificationsEnabled,
-        receiveAlerts: metadata.receiveAlerts !== false,
-        receiveReports: metadata.receiveReports !== false,
+        receiveAlerts: user.receiveAlerts !== false,
+        receiveReports: user.receiveReports !== false,
         telegramUsername: user.username,
-        verificationCode: metadata.verificationCode,
-        verificationExpires: metadata.verificationExpires,
-        botActive: telegramService.isInitialized()
+        verificationCode: user.verificationCode,
+        verificationExpires: user.verificationExpires,
+        botActive: telegramService.isInitialized() ? true : false
       });
     } catch (error) {
       console.error('Error fetching Telegram status:', error);
