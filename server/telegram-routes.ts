@@ -298,7 +298,7 @@ export function registerTelegramRoutes(app: Express) {
       // Use direct SQL to avoid schema mismatch issues
       const userResult = await db.execute(sql`
         SELECT id, user_id, telegram_id, username, first_name, last_name,
-               notifications_enabled, receive_reports, receive_alerts,
+               is_verified, notifications_enabled, receive_reports, receive_alerts,
                created_at, updated_at
         FROM langchain_telegram_users
         WHERE user_id = ${userId}
