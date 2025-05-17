@@ -568,81 +568,59 @@ To get started, you need to verify your account. Please ask your system administ
     const username = msg.from?.username || '';
     const firstName = msg.from?.first_name || '';
     const lastName = msg.from?.last_name || '';
+    const languageCode = msg.from?.language_code || 'en';
     
     console.log(`Processing verification for code: ${verificationCode}`);
     
     try {
-      // Find users with verification code in their metadata
-      const users = await db.select()
-        .from(telegramUsers)
-        .limit(100);  // We'll need to search through metadata manually
+      // Use direct SQL to find user with matching verification code
+      // This avoids the schema issues with the metadata column
+      const pendingVerificationResult = await db.execute(sql`
+        SELECT * FROM langchain_telegram_users
+        WHERE verification_code = ${verificationCode}
+        AND is_verified = FALSE
+        LIMIT 1
+      `);
       
-      console.log(`Found ${users.length} total Telegram users to check`);
+      console.log(`Found ${pendingVerificationResult.rows.length} users with matching verification code`);
       
-      // Log users' verification codes for debugging
-      users.forEach((user, index) => {
-        const metadata = user.metadata as TelegramUserMetadata || {};
-        console.log(`User ${index+1} (ID: ${user.id}): Verification code: ${metadata.verificationCode}, Is verified: ${metadata.isVerified}`);
-      });
-      
-      // Find the user with matching verification code
-      const pendingVerification = users.filter(user => {
-        const metadata = user.metadata as TelegramUserMetadata || {};
-        const matches = metadata.verificationCode === verificationCode && 
-               metadata.isVerified !== true;
+      if (pendingVerificationResult.rows.length > 0) {
+        const user = pendingVerificationResult.rows[0];
+        console.log(`Verifying user with ID ${user.id} and code ${verificationCode}`);
         
-        if (metadata.verificationCode) {
-          console.log(`Checking user ${user.id}: Code ${metadata.verificationCode} against ${verificationCode} - Match: ${matches}`);
-        }
-        
-        return matches;
-      });
-      
-      if (pendingVerification.length > 0) {
-        const user = pendingVerification[0];
-        const currentMetadata = user.metadata as TelegramUserMetadata || {};
-        
-        // Create updated metadata with verification status
-        const updatedMetadata: TelegramUserMetadata = {
-          ...currentMetadata,
-          isVerified: true,
-          verificationCode: null, // Clear verification code
-          chatId: chatId.toString(),
-          lastAccessed: new Date().toISOString(),
-          notificationsEnabled: true,
-          receiveAlerts: true,
-          receiveReports: true
-        };
-        
-        // Update user record with verification and Telegram details
-        await db.update(telegramUsers)
-          .set({
-            username,
-            firstName,
-            lastName,
-            telegramId,
-            metadata: updatedMetadata,
-            updatedAt: new Date()
-          })
-          .where(eq(telegramUsers.id, user.id));
+        // Update user record directly with SQL to avoid schema issues
+        await db.execute(sql`
+          UPDATE langchain_telegram_users
+          SET is_verified = TRUE,
+              verification_code = NULL,
+              chat_id = ${chatId.toString()},
+              telegram_id = ${telegramId},
+              telegram_username = ${username},
+              telegram_first_name = ${firstName},
+              telegram_last_name = ${lastName},
+              language_code = ${languageCode},
+              notifications_enabled = TRUE,
+              receive_alerts = TRUE,
+              receive_reports = TRUE,
+              last_accessed = NOW(),
+              updated_at = NOW()
+          WHERE id = ${user.id}
+        `);
         
         await this.bot?.sendMessage(chatId, `Your account has been successfully verified! You can now interact with the AI Agent.
 
 Try asking questions about power usage, environmental data, or request reports.`);
       } else {
-        // Check if user is already in the system but using a new code
-        const existingUser = await db.select()
-          .from(telegramUsers)
-          .where(eq(telegramUsers.telegramId, telegramId))
-          .limit(1);
+        // Check if user is already verified in the system using this Telegram ID
+        const existingUserResult = await db.execute(sql`
+          SELECT * FROM langchain_telegram_users
+          WHERE telegram_id = ${telegramId}
+          AND is_verified = TRUE
+          LIMIT 1
+        `);
         
-        if (existingUser.length > 0) {
-          const metadata = existingUser[0].metadata as TelegramUserMetadata || {};
-          if (metadata.isVerified) {
-            await this.bot?.sendMessage(chatId, `Your account is already verified. You can continue using the AI Agent.`);
-          } else {
-            await this.bot?.sendMessage(chatId, `Invalid or expired verification code. Please contact your system administrator for a valid code.`);
-          }
+        if (existingUserResult.rows.length > 0) {
+          await this.bot?.sendMessage(chatId, `Your account is already verified. You can continue using the AI Agent.`);
         } else {
           await this.bot?.sendMessage(chatId, `Invalid or expired verification code. Please contact your system administrator for a valid code.`);
         }
@@ -928,20 +906,26 @@ Try asking questions about power usage, environmental data, or request reports.`
       
       console.log(`Generated verification code: ${verificationCode}, expires: ${expirationDate.toISOString()}`);
       
-      // Check if user already has a Telegram account - using direct SQL query
-      const userCheckResult = await db.execute(sql`
-        SELECT id, user_id FROM langchain_telegram_users
-        WHERE user_id = ${userId}
-        LIMIT 1
-      `);
-      
-      const userExists = userCheckResult.rows.length > 0;
-      console.log(`Existing user check result: ${userExists ? 'User found' : 'No user found'}`);
-      
-      if (userExists) {
-        console.log('Updating existing user with new verification code');
-        
-        // Update existing user with SQL
+      // First, try to directly create a new record for the user
+      try {
+        console.log('Attempting to create a new Telegram user entry with verification code');
+        await db.execute(sql`
+          INSERT INTO langchain_telegram_users (
+            user_id, telegram_id, first_name, 
+            verification_code, verification_expires, is_verified,
+            notifications_enabled, receive_alerts, receive_reports,
+            created_at, updated_at
+          ) VALUES (
+            ${userId}, 'pending_verification', 'Pending Verification',
+            ${verificationCode}, ${expirationDate}, FALSE,
+            TRUE, TRUE, TRUE,
+            NOW(), NOW()
+          )
+        `);
+        console.log('Successfully created new user record with verification code');
+      } catch (error) {
+        // If insert fails (likely due to duplicate key), update the existing record
+        console.log('Could not create new record, attempting to update existing record');
         await db.execute(sql`
           UPDATE langchain_telegram_users
           SET verification_code = ${verificationCode},
@@ -950,47 +934,7 @@ Try asking questions about power usage, environmental data, or request reports.`
               updated_at = NOW()
           WHERE user_id = ${userId}
         `);
-      } else {
-        console.log('Creating new Telegram user entry with pending verification');
-        
-        // Create new user record with pending verification
-        console.log('Inserting new telegram user record with pending verification');
-        try {
-          // Only include essential columns
-          await db.execute(sql`
-            INSERT INTO langchain_telegram_users (
-              user_id, telegram_id, first_name, 
-              verification_code, verification_expires, is_verified,
-              created_at, updated_at
-            ) VALUES (
-              ${userId}, 'pending_verification', 'pending_verification',
-              ${verificationCode}, ${expirationDate}, FALSE,
-              NOW(), NOW()
-            )
-          `);
-          console.log('Successfully created new user record');
-        } catch (error) {
-          const insertError = error as { message?: string };
-          console.error('Failed to insert telegram user:', insertError);
-          // If it fails due to duplicate key, we'll try to update instead
-          if (insertError.message?.includes('duplicate key') || 
-              insertError.message?.includes('unique constraint')) {
-            console.log('Trying to update existing record due to constraint violation');
-            
-            // Update directly without checking again
-            await db.execute(sql`
-              UPDATE langchain_telegram_users
-              SET verification_code = ${verificationCode},
-                  verification_expires = ${expirationDate},
-                  is_verified = FALSE,
-                  updated_at = NOW()
-              WHERE user_id = ${userId}
-            `);
-            console.log('Successfully updated existing record after constraint error');
-          } else {
-            throw error; // Re-throw if it's not a constraint error
-          }
-        }
+        console.log('Successfully updated existing user record with new verification code');
       }
       
       console.log('Verification code generated successfully:', verificationCode);

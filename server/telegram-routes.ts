@@ -372,12 +372,21 @@ export function registerTelegramRoutes(app: Express) {
         receive_reports: false
       };
       
-      await db.update(telegramUsers)
-        .set({
-          metadata: updatedMetadata,
-          updatedAt: new Date()
-        })
-        .where(eq(telegramUsers.id, telegramUser[0].id));
+      // Update the preferences directly using SQL
+      await db.execute(sql`
+        UPDATE langchain_telegram_users
+        SET notifications_enabled = ${validatedData.notificationsEnabled !== undefined 
+            ? validatedData.notificationsEnabled 
+            : currentPrefs.notifications_enabled},
+            receive_alerts = ${validatedData.receiveAlerts !== undefined 
+            ? validatedData.receiveAlerts 
+            : currentPrefs.receive_alerts},
+            receive_reports = ${validatedData.receiveReports !== undefined 
+            ? validatedData.receiveReports
+            : currentPrefs.receive_reports},
+            updated_at = NOW()
+        WHERE id = ${telegramUser[0].id}
+      `);
       
       res.json({ success: true });
     } catch (error) {
