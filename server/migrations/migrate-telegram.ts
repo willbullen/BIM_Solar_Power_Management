@@ -32,19 +32,19 @@ async function createTelegramTables() {
   try {
     console.log('Creating Telegram tables...');
     
-    // Check if telegram_settings table exists
+    // Check if langchain_telegram_settings table exists
     const tableExists = await db.execute(sql`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
         WHERE table_schema = 'public' 
-        AND table_name = 'telegram_settings'
+        AND table_name = 'langchain_telegram_settings'
       );
     `);
     
     if (!tableExists.rows[0].exists) {
-      // Create telegram_settings table
+      // Create langchain_telegram_settings table
       await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS telegram_settings (
+        CREATE TABLE IF NOT EXISTS langchain_telegram_settings (
           id SERIAL PRIMARY KEY,
           bot_token TEXT NOT NULL,
           bot_username TEXT NOT NULL,
