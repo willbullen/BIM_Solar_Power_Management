@@ -286,9 +286,20 @@ export function registerTelegramRoutes(app: Express) {
     try {
       const userId = req.session.userId!;
       
-      const telegramUser = await db.select().from(telegramUsers)
-        .where(eq(telegramUsers.userId, userId))
-        .limit(1);
+      // Use a more specific selection to avoid querying columns that might not exist
+      const telegramUser = await db.select({
+        id: telegramUsers.id,
+        userId: telegramUsers.userId,
+        telegramId: telegramUsers.telegramId,
+        username: telegramUsers.username,
+        firstName: telegramUsers.firstName,
+        metadata: telegramUsers.metadata,
+        createdAt: telegramUsers.createdAt,
+        updatedAt: telegramUsers.updatedAt
+      })
+      .from(telegramUsers)
+      .where(eq(telegramUsers.userId, userId))
+      .limit(1);
       
       if (telegramUser.length === 0) {
         return res.json(null);
