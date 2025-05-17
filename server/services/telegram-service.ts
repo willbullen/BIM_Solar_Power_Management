@@ -596,35 +596,46 @@ To get started, you need to verify your account. Please ask your system administ
         console.log(`Verifying user with ID ${user.id} and code ${verificationCode}`);
         
         // Update user record directly with SQL to avoid schema issues
-        await db.execute(sql`
+        const updateVerificationQuery = `
           UPDATE langchain_telegram_users
           SET is_verified = TRUE,
               verification_code = NULL,
-              chat_id = ${chatId.toString()},
-              telegram_id = ${telegramId},
-              telegram_username = ${username},
-              telegram_first_name = ${firstName},
-              telegram_last_name = ${lastName},
-              language_code = ${languageCode},
+              chat_id = $1,
+              telegram_id = $2, 
+              telegram_username = $3,
+              telegram_first_name = $4,
+              telegram_last_name = $5,
+              language_code = $6,
               notifications_enabled = TRUE,
               receive_alerts = TRUE,
               receive_reports = TRUE,
               last_accessed = NOW(),
               updated_at = NOW()
-          WHERE id = ${user.id}
-        `);
+          WHERE id = $7
+        `;
+        
+        await pool.query(updateVerificationQuery, [
+          chatId.toString(),
+          telegramId,
+          username,
+          firstName,
+          lastName,
+          languageCode,
+          user.id
+        ]);
         
         await this.bot?.sendMessage(chatId, `Your account has been successfully verified! You can now interact with the AI Agent.
 
 Try asking questions about power usage, environmental data, or request reports.`);
       } else {
         // Check if user is already verified in the system using this Telegram ID
-        const existingUserResult = await db.execute(sql`
+        const existingUserQuery = `
           SELECT * FROM langchain_telegram_users
-          WHERE telegram_id = ${telegramId}
+          WHERE telegram_id = $1
           AND is_verified = TRUE
           LIMIT 1
-        `);
+        `;
+        const existingUserResult = await pool.query(existingUserQuery, [telegramId]);
         
         if (existingUserResult.rows.length > 0) {
           await this.bot?.sendMessage(chatId, `Your account is already verified. You can continue using the AI Agent.`);
