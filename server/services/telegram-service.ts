@@ -192,9 +192,8 @@ export class TelegramService {
         return false;
       }
       
-      // Access verification status from metadata
-      const metadata = user[0].metadata as TelegramUserMetadata || {};
-      const isVerified = metadata.isVerified === true;
+      // Access verification status from direct column
+      const isVerified = user[0].isVerified === true;
       
       if (!isVerified) {
         console.log('User does not have a verified Telegram account');

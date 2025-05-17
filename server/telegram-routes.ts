@@ -9,9 +9,7 @@ import * as schema from '../shared/schema';
 import { 
   telegramSettings, 
   telegramUsers, 
-  telegramMessages, 
-  TelegramUserMetadata,
-  telegramUserMetadataSchema 
+  telegramMessages 
 } from '../shared/schema';
 import { eq, and, desc } from 'drizzle-orm/expressions';
 import { sql } from 'drizzle-orm';
