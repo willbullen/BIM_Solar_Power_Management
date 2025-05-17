@@ -19,7 +19,7 @@ export const db = drizzle({ client: pool, schema });
  * to avoid issues with schema mismatch and metadata column errors
  */
 export const rawDb = {
-  async execute(query) {
+  async execute(query: any) {
     return pool.query(query);
   }
 };

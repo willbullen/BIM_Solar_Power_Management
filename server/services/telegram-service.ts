@@ -6,7 +6,7 @@
 import TelegramBot from 'node-telegram-bot-api';
 import type { Message, SendMessageOptions } from 'node-telegram-bot-api';
 import { randomUUID } from 'crypto';
-import { db } from '../db';
+import { db, pool } from '../db';
 import { sql } from 'drizzle-orm';
 import * as schema from '../../shared/schema';
 import { 
@@ -948,7 +948,9 @@ Try asking questions about power usage, environmental data, or request reports.`
       return verificationCode;
     } catch (error) {
       console.error('Error creating verification code:', error);
-      throw error;
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      // Convert error to a cleaner format for the client
+      throw new Error(`Failed to generate verification code: ${error.message || 'Unknown database error'}`);
     }
   }
 
