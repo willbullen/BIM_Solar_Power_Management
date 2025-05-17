@@ -928,25 +928,27 @@ Try asking questions about power usage, environmental data, or request reports.`
       
       console.log(`Generated verification code: ${verificationCode}, expires: ${expirationDate.toISOString()}`);
       
-      // Check if user already has a Telegram account
-      const existingUser = await db.select()
-        .from(telegramUsers)
-        .where(eq(telegramUsers.userId, userId))
-        .limit(1);
+      // Check if user already has a Telegram account - using direct SQL query
+      const userCheckResult = await db.execute(sql`
+        SELECT id, user_id FROM langchain_telegram_users
+        WHERE user_id = ${userId}
+        LIMIT 1
+      `);
       
-      console.log(`Existing user check result: ${existingUser.length > 0 ? 'User found' : 'No user found'}`);
+      const userExists = userCheckResult.rows.length > 0;
+      console.log(`Existing user check result: ${userExists ? 'User found' : 'No user found'}`);
       
-      if (existingUser.length > 0) {
+      if (userExists) {
         console.log('Updating existing user with new verification code');
         
-        // Update existing user with SQL to avoid schema mismatches
+        // Update existing user with SQL
         await db.execute(sql`
           UPDATE langchain_telegram_users
           SET verification_code = ${verificationCode},
               verification_expires = ${expirationDate},
               is_verified = FALSE,
               updated_at = NOW()
-          WHERE id = ${existingUser[0].id}
+          WHERE user_id = ${userId}
         `);
       } else {
         console.log('Creating new Telegram user entry with pending verification');
@@ -954,7 +956,7 @@ Try asking questions about power usage, environmental data, or request reports.`
         // Create new user record with pending verification
         console.log('Inserting new telegram user record with pending verification');
         try {
-          // Let's simplify this and only include essential columns to avoid schema issues
+          // Only include essential columns
           await db.execute(sql`
             INSERT INTO langchain_telegram_users (
               user_id, telegram_id, first_name, 
@@ -975,27 +977,16 @@ Try asking questions about power usage, environmental data, or request reports.`
               insertError.message?.includes('unique constraint')) {
             console.log('Trying to update existing record due to constraint violation');
             
-            // Try to find the record by userId
-            const existingRecord = await db.select()
-              .from(telegramUsers)
-              .where(eq(telegramUsers.userId, userId))
-              .limit(1);
-              
-            if (existingRecord.length > 0) {
-              console.log('Found existing record to update');
-              // Use SQL to update the record to avoid schema issues
-              await db.execute(sql`
-                UPDATE langchain_telegram_users
-                SET verification_code = ${verificationCode},
-                    verification_expires = ${expirationDate},
-                    is_verified = FALSE,
-                    updated_at = NOW()
-                WHERE user_id = ${userId}
-              `);
-              console.log('Successfully updated existing record');
-            } else {
-              throw error; // Re-throw if we can't handle it
-            }
+            // Update directly without checking again
+            await db.execute(sql`
+              UPDATE langchain_telegram_users
+              SET verification_code = ${verificationCode},
+                  verification_expires = ${expirationDate},
+                  is_verified = FALSE,
+                  updated_at = NOW()
+              WHERE user_id = ${userId}
+            `);
+            console.log('Successfully updated existing record after constraint error');
           } else {
             throw error; // Re-throw if it's not a constraint error
           }
