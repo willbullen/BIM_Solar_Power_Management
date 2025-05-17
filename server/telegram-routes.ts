@@ -275,14 +275,14 @@ export function registerTelegramRoutes(app: Express) {
       res.json({ 
         success: true, 
         status: 'Telegram bot restarted successfully',
-        isActive: telegramService.isInitialized
+        isActive: telegramService.isActive
       });
     } catch (error) {
       console.error('Error restarting Telegram bot:', error);
       res.status(500).json({ 
         error: 'Failed to restart Telegram bot', 
         details: String(error),
-        isActive: telegramService.isInitialized
+        isActive: telegramService.isActive
       });
     }
   });
