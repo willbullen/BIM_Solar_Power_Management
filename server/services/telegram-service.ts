@@ -40,6 +40,10 @@ export class TelegramService {
     return this._initialized && this.bot !== null;
   }
   
+  public get isActive(): boolean {
+    return this._initialized && this.bot !== null;
+  }
+  
   /**
    * Complete shutdown of the service
    * Public method to allow manual restarts
@@ -910,12 +914,12 @@ Try asking questions about power usage, environmental data, or request reports.`
         console.log('No existing Telegram user entry, creating a new one with verification code');
         await db.execute(sql`
           INSERT INTO langchain_telegram_users (
-            user_id, telegram_id, first_name, 
+            user_id, telegram_id, first_name, chat_id,
             verification_code, verification_expires, is_verified,
             notifications_enabled, receive_alerts, receive_reports,
             created_at, updated_at
           ) VALUES (
-            ${userId}, 'pending_verification', 'Pending Verification',
+            ${userId}, 'pending_verification', 'Pending Verification', '0',
             ${verificationCode}, ${expirationDate}, FALSE,
             TRUE, TRUE, TRUE,
             NOW(), NOW()

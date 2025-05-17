@@ -224,7 +224,7 @@ export function registerTelegramRoutes(app: Express) {
         return res.json({ 
           connected: false,
           status: 'Not connected',
-          botActive: telegramService.isInitialized
+          botActive: telegramService.isActive
         });
       }
       
@@ -246,7 +246,7 @@ export function registerTelegramRoutes(app: Express) {
         telegramUsername: user.username,
         verificationCode: user.verification_code,
         verificationExpires: user.verification_expires,
-        botActive: telegramService.isInitialized
+        botActive: telegramService.isActive
       });
     } catch (error) {
       console.error('Error fetching Telegram status:', error);
