@@ -178,9 +178,10 @@ export function registerTelegramRoutes(app: Express) {
       
       // Use direct SQL to get the bot username from the langchain_telegram_settings table
       // This avoids any schema mismatch issues with metadata column
-      const settingsResult = await db.execute(sql`
+      const settingsQuery = `
         SELECT bot_username FROM langchain_telegram_settings LIMIT 1
-      `);
+      `;
+      const settingsResult = await pool.query(settingsQuery);
       const botUsername = settingsResult.rows.length > 0 ? settingsResult.rows[0].bot_username : 'envirobot';
       
       const response = { 

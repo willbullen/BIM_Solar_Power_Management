@@ -919,12 +919,12 @@ Try asking questions about power usage, environmental data, or request reports.`
             user_id, telegram_id, first_name, chat_id,
             verification_code, verification_expires, is_verified,
             notifications_enabled, receive_alerts, receive_reports,
-            created_at, updated_at
+            created_at, updated_at, username
           ) VALUES (
             $1, 'pending_verification', 'Pending Verification', '0',
             $2, $3, FALSE,
             TRUE, TRUE, TRUE,
-            NOW(), NOW()
+            NOW(), NOW(), 'pending'
           )
         `;
         await pool.query(insertQuery, [userId, verificationCode, expirationDate]);
