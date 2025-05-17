@@ -55,9 +55,9 @@ async function createTelegramTables() {
         );
       `);
       
-      // Create telegram_users table
+      // Create langchain_telegram_users table
       await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS telegram_users (
+        CREATE TABLE IF NOT EXISTS langchain_telegram_users (
           id SERIAL PRIMARY KEY,
           user_id INTEGER NOT NULL REFERENCES users(id),
           telegram_id TEXT NOT NULL UNIQUE,
@@ -77,11 +77,11 @@ async function createTelegramTables() {
         );
       `);
       
-      // Create telegram_messages table
+      // Create langchain_telegram_messages table
       await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS telegram_messages (
+        CREATE TABLE IF NOT EXISTS langchain_telegram_messages (
           id SERIAL PRIMARY KEY,
-          telegram_user_id INTEGER NOT NULL REFERENCES telegram_users(id),
+          telegram_user_id INTEGER NOT NULL REFERENCES langchain_telegram_users(id),
           direction TEXT NOT NULL,
           message_text TEXT NOT NULL,
           message_id TEXT,
@@ -91,9 +91,9 @@ async function createTelegramTables() {
         );
       `);
       
-      console.log('Telegram tables created successfully.');
+      console.log('Langchain Telegram tables created successfully.');
     } else {
-      console.log('Telegram tables already exist. Skipping creation.');
+      console.log('Langchain Telegram tables already exist. Skipping creation.');
     }
   } catch (error) {
     console.error('Error creating Telegram tables:', error);
