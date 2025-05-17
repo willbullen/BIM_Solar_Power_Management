@@ -297,19 +297,29 @@ export function registerTelegramRoutes(app: Express) {
       const userId = req.session.userId!;
       
       // Use a more specific selection to avoid querying columns that might not exist
-      const telegramUser = await db.select({
-        id: telegramUsers.id,
-        userId: telegramUsers.userId,
-        telegramId: telegramUsers.telegramId,
-        username: telegramUsers.username,
-        firstName: telegramUsers.firstName,
-        metadata: telegramUsers.metadata,
-        createdAt: telegramUsers.createdAt,
-        updatedAt: telegramUsers.updatedAt
-      })
-      .from(telegramUsers)
-      .where(eq(telegramUsers.userId, userId))
-      .limit(1);
+      // Use direct SQL to avoid schema mismatch issues
+      const userResult = await db.execute(sql`
+        SELECT id, user_id, telegram_id, username, first_name, last_name,
+               notifications_enabled, receive_reports, receive_alerts,
+               created_at, updated_at
+        FROM langchain_telegram_users
+        WHERE user_id = ${userId}
+        LIMIT 1
+      `);
+
+      const telegramUser = userResult.rows.length > 0 ? [{
+        id: userResult.rows[0].id,
+        userId: userResult.rows[0].user_id,
+        telegramId: userResult.rows[0].telegram_id,
+        username: userResult.rows[0].username,
+        firstName: userResult.rows[0].first_name,
+        lastName: userResult.rows[0].last_name,
+        notificationsEnabled: userResult.rows[0].notifications_enabled || false,
+        receiveReports: userResult.rows[0].receive_reports || false,
+        receiveAlerts: userResult.rows[0].receive_alerts || false,
+        createdAt: userResult.rows[0].created_at,
+        updatedAt: userResult.rows[0].updated_at
+      }] : [];
       
       if (telegramUser.length === 0) {
         return res.json(null);
@@ -345,23 +355,21 @@ export function registerTelegramRoutes(app: Express) {
         return res.status(404).json({ error: 'Telegram connection not found' });
       }
       
-      // We need to update the metadata field which is a JSON object
+      // Update the preference fields directly using raw SQL to avoid schema issues
       const currentUser = telegramUser[0];
-      // Cast to TelegramUserMetadata for proper typing
-      const currentMetadata = currentUser.metadata as TelegramUserMetadata || {};
       
-      // Update the metadata with the new preferences
-      const updatedMetadata: TelegramUserMetadata = {
-        ...currentMetadata,
-        notificationsEnabled: validatedData.notificationsEnabled !== undefined 
-          ? validatedData.notificationsEnabled 
-          : currentMetadata.notificationsEnabled,
-        receiveAlerts: validatedData.receiveAlerts !== undefined 
-          ? validatedData.receiveAlerts 
-          : currentMetadata.receiveAlerts,
-        receiveReports: validatedData.receiveReports !== undefined 
-          ? validatedData.receiveReports
-          : currentMetadata.receiveReports
+      // Extract current values from database (avoiding metadata column)
+      const userPreferences = await db.execute(sql`
+        SELECT notifications_enabled, receive_alerts, receive_reports
+        FROM langchain_telegram_users
+        WHERE user_id = ${userId}
+        LIMIT 1
+      `);
+      
+      const currentPrefs = userPreferences.rows[0] || {
+        notifications_enabled: false,
+        receive_alerts: false,
+        receive_reports: false
       };
       
       await db.update(telegramUsers)
