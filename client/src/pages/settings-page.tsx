@@ -551,7 +551,7 @@ export default function SettingsPage() {
   };
   
   const onDisconnectTelegram = () => {
-    if (window.confirm("Are you sure you want to disconnect from Telegram? You will no longer receive notifications.")) {
+    if (window.confirm("Are you sure you want to disconnect from Telegram? This will allow you to test the verification process again.")) {
       disconnectTelegramMutation.mutate();
     }
   };

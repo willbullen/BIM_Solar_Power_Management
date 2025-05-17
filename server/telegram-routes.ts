@@ -291,6 +291,41 @@ export function registerTelegramRoutes(app: Express) {
   });
   
   /**
+   * Disconnect user's Telegram integration
+   * Allows users to disconnect and reconnect for testing
+   */
+  app.post('/api/telegram/disconnect', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId!;
+      console.log(`Disconnecting Telegram for user ID: ${userId}`);
+      
+      // Update user's telegram record to mark as unverified with a direct SQL query
+      const disconnectQuery = `
+        UPDATE langchain_telegram_users
+        SET is_verified = FALSE,
+            verification_code = NULL,
+            verification_expires = NULL,
+            updated_at = NOW()
+        WHERE user_id = $1
+      `;
+      
+      await pool.query(disconnectQuery, [userId]);
+      
+      console.log(`Successfully disconnected Telegram for user ID: ${userId}`);
+      res.json({ 
+        success: true, 
+        message: 'Telegram disconnected successfully'
+      });
+    } catch (error) {
+      console.error('Error disconnecting Telegram:', error);
+      res.status(500).json({ 
+        error: 'Failed to disconnect Telegram', 
+        details: String(error)
+      });
+    }
+  });
+  
+  /**
    * Get current user's Telegram information
    */
   app.get('/api/telegram/user', requireAuth, async (req: Request, res: Response) => {
