@@ -494,10 +494,13 @@ export function IntegratedAIChat() {
   // Handle creating a new conversation
   const handleCreateConversation = (e: FormEvent) => {
     e.preventDefault();
-    if (!newConversationTitle.trim()) return;
+    
+    // Ensure we have a title - use a default if empty
+    const title = newConversationTitle.trim() || "New Conversation";
+    console.log("Creating conversation with validated title:", title);
     
     createConversation.mutate({ 
-      title: newConversationTitle,
+      title: title,
       agentId: selectedAgentId || undefined
     });
   };

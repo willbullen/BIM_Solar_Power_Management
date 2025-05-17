@@ -18,7 +18,7 @@ const agentService = new AgentService();
 
 // Validation schemas
 const conversationSchema = z.object({
-  title: z.string().min(1).max(100),
+  title: z.string().min(1).max(100).default("New Conversation"),
   agentId: z.number().optional(),
 });
 
