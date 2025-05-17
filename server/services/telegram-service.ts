@@ -653,23 +653,19 @@ Try asking questions about power usage, environmental data, or request reports.`
         return;
       }
       
-      // Check if user is verified via metadata
-      const metadata = user[0].metadata as TelegramUserMetadata || {};
-      if (!metadata.isVerified) {
+      // Check if user is verified using direct column
+      if (!user[0].isVerified) {
         await this.bot?.sendMessage(chatId, `You need to verify your account before using the AI Agent. Please use /verify YOUR_CODE to complete verification.`);
         return;
       }
       
-      // Update metadata with current timestamp
-      const updatedMetadata: TelegramUserMetadata = {
-        ...metadata,
-        lastAccessed: new Date().toISOString()
-      };
-      
-      // Update last accessed time
-      await db.update(telegramUsers)
-        .set({ metadata: updatedMetadata })
-        .where(eq(telegramUsers.id, user[0].id));
+      // Update last accessed time directly
+      await db.execute(sql`
+        UPDATE langchain_telegram_users
+        SET last_accessed = NOW(),
+            updated_at = NOW()
+        WHERE id = ${user[0].id}
+      `);
       
       // Store the incoming message
       const storedMessage = await db.insert(telegramMessages)

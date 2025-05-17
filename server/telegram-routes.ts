@@ -226,7 +226,7 @@ export function registerTelegramRoutes(app: Express) {
         return res.json({ 
           connected: false,
           status: 'Not connected',
-          botActive: telegramService.isInitialized()
+          botActive: telegramService.isInitialized
         });
       }
       
@@ -248,7 +248,7 @@ export function registerTelegramRoutes(app: Express) {
         telegramUsername: user.username,
         verificationCode: user.verification_code,
         verificationExpires: user.verification_expires,
-        botActive: telegramService.isInitialized()
+        botActive: telegramService.isInitialized
       });
     } catch (error) {
       console.error('Error fetching Telegram status:', error);
@@ -277,14 +277,14 @@ export function registerTelegramRoutes(app: Express) {
       res.json({ 
         success: true, 
         status: 'Telegram bot restarted successfully',
-        isActive: telegramService.isInitialized()
+        isActive: telegramService.isInitialized
       });
     } catch (error) {
       console.error('Error restarting Telegram bot:', error);
       res.status(500).json({ 
         error: 'Failed to restart Telegram bot', 
         details: String(error),
-        isActive: telegramService.isInitialized()
+        isActive: telegramService.isInitialized
       });
     }
   });
