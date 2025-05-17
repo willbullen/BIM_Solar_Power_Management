@@ -898,9 +898,16 @@ Try asking questions about power usage, environmental data, or request reports.`
       
       console.log(`Generated verification code: ${verificationCode}, expires: ${expirationDate.toISOString()}`);
       
-      // First, try to directly create a new record for the user
-      try {
-        console.log('Attempting to create a new Telegram user entry with verification code');
+      // Check if user already has a Telegram entry
+      const existingUser = await db.execute(sql`
+        SELECT id FROM langchain_telegram_users 
+        WHERE user_id = ${userId}
+        LIMIT 1
+      `);
+      
+      if (existingUser.rows.length === 0) {
+        // No existing record, create a new one
+        console.log('No existing Telegram user entry, creating a new one with verification code');
         await db.execute(sql`
           INSERT INTO langchain_telegram_users (
             user_id, telegram_id, first_name, 
@@ -915,9 +922,9 @@ Try asking questions about power usage, environmental data, or request reports.`
           )
         `);
         console.log('Successfully created new user record with verification code');
-      } catch (error) {
-        // If insert fails (likely due to duplicate key), update the existing record
-        console.log('Could not create new record, attempting to update existing record');
+      } else {
+        // Update existing record
+        console.log('Updating existing Telegram user record with new verification code');
         await db.execute(sql`
           UPDATE langchain_telegram_users
           SET verification_code = ${verificationCode},
