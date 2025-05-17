@@ -393,11 +393,12 @@ export function IntegratedAIChat() {
   // Create a new conversation
   const createConversation = useMutation({
     mutationFn: async ({ title, agentId }: { title: string, agentId?: string }) => {
+      console.log("Creating conversation with title:", title);
       return apiRequest('/api/agent/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          title, 
+          title: title || "New Conversation", // Ensure title is never undefined
           agentId: (agentId && agentId !== "default") ? parseInt(agentId) : undefined 
         }),
       });
