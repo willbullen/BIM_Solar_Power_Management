@@ -231,6 +231,7 @@ export function registerTelegramRoutes(app: Express) {
       }
       
       const user = result.rows[0];
+      // Safely handle boolean columns with explicit check for the database column names
       const isVerified = user.is_verified === true;
       const notificationsEnabled = user.notifications_enabled !== false;
       

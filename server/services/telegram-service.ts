@@ -654,7 +654,8 @@ Try asking questions about power usage, environmental data, or request reports.`
       }
       
       // Check if user is verified using direct column
-      if (!user[0].is_verified) {
+      // Using raw property access for database column names (snake_case)
+      if (user[0].is_verified !== true) {
         await this.bot?.sendMessage(chatId, `You need to verify your account before using the AI Agent. Please use /verify YOUR_CODE to complete verification.`);
         return;
       }
@@ -948,9 +949,10 @@ Try asking questions about power usage, environmental data, or request reports.`
       return verificationCode;
     } catch (error) {
       console.error('Error creating verification code:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
+      console.error('Error details:', String(error));
       // Convert error to a cleaner format for the client
-      throw new Error(`Failed to generate verification code: ${error.message || 'Unknown database error'}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to generate verification code: ${errorMessage}`);
     }
   }
 
@@ -1028,8 +1030,16 @@ Try asking questions about power usage, environmental data, or request reports.`
         return false;
       }
       
-      // Check direct columns for verification and reports preferences
-      if (!telegramUser[0].isVerified || telegramUser[0].receiveReports === false) {
+      // Using raw database column names (snake_case)
+      // We need a direct query to access the database fields correctly
+      const userDetails = await pool.query(`
+        SELECT is_verified, receive_reports 
+        FROM langchain_telegram_users 
+        WHERE user_id = $1 
+        LIMIT 1
+      `, [userId]);
+      
+      if (userDetails.rows.length === 0 || !userDetails.rows[0].is_verified || userDetails.rows[0].receive_reports === false) {
         console.log(`Telegram user for userId ${userId} is not verified or has reports disabled`);
         return false;
       }
