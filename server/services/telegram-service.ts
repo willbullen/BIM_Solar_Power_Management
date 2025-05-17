@@ -579,14 +579,18 @@ To get started, you need to verify your account. Please ask your system administ
     console.log(`Processing verification for code: ${verificationCode}`);
     
     try {
-      // Use direct SQL to find user with matching verification code
-      // This avoids the schema issues with the metadata column
+      // Enhanced logging for debugging
+      console.log(`Verification attempt from Telegram user ID: ${telegramId}, username: ${username}`);
+      console.log(`Chat ID: ${chatId}, first name: ${firstName}, last name: ${lastName}`);
+      
+      // Use direct SQL to find user with matching verification code with additional logging
       const pendingVerificationQuery = `
         SELECT * FROM langchain_telegram_users
         WHERE verification_code = $1
         AND is_verified = FALSE
         LIMIT 1
       `;
+      console.log(`Executing verification query with code: ${verificationCode}`);
       const pendingVerificationResult = await pool.query(pendingVerificationQuery, [verificationCode]);
       
       console.log(`Found ${pendingVerificationResult.rows.length} users with matching verification code`);
@@ -594,8 +598,9 @@ To get started, you need to verify your account. Please ask your system administ
       if (pendingVerificationResult.rows.length > 0) {
         const user = pendingVerificationResult.rows[0];
         console.log(`Verifying user with ID ${user.id} and code ${verificationCode}`);
+        console.log(`User details from DB: user_id=${user.user_id}, telegram_id=${user.telegram_id}`);
         
-        // Update user record directly with SQL to avoid schema issues
+        // Update specific fields in the table using snake_case column names
         const updateVerificationQuery = `
           UPDATE langchain_telegram_users
           SET is_verified = TRUE,
@@ -610,10 +615,14 @@ To get started, you need to verify your account. Please ask your system administ
               receive_alerts = TRUE,
               receive_reports = TRUE,
               last_accessed = NOW(),
-              updated_at = NOW()
-          WHERE id = $7
+              updated_at = NOW(),
+              username = $7,
+              first_name = $8,
+              last_name = $9
+          WHERE id = $10
         `;
         
+        // Update both the telegram_* fields and the regular fields to ensure consistency
         await pool.query(updateVerificationQuery, [
           chatId.toString(),
           telegramId,
@@ -621,8 +630,13 @@ To get started, you need to verify your account. Please ask your system administ
           firstName,
           lastName,
           languageCode,
+          username,        // Also update username field
+          firstName,       // Also update first_name field
+          lastName,        // Also update last_name field
           user.id
         ]);
+        
+        console.log(`Successfully updated user record with verification data`);
         
         await this.bot?.sendMessage(chatId, `Your account has been successfully verified! You can now interact with the AI Agent.
 
@@ -632,19 +646,58 @@ Try asking questions about power usage, environmental data, or request reports.`
         const existingUserQuery = `
           SELECT * FROM langchain_telegram_users
           WHERE telegram_id = $1
-          AND is_verified = TRUE
           LIMIT 1
         `;
+        console.log(`Checking if Telegram user ID ${telegramId} is already verified`);
         const existingUserResult = await pool.query(existingUserQuery, [telegramId]);
         
         if (existingUserResult.rows.length > 0) {
-          await this.bot?.sendMessage(chatId, `Your account is already verified. You can continue using the AI Agent.`);
+          const existingUser = existingUserResult.rows[0];
+          console.log(`Found existing user: ${JSON.stringify(existingUser)}`);
+          
+          if (existingUser.is_verified) {
+            await this.bot?.sendMessage(chatId, `Your account is already verified. You can continue using the AI Agent.`);
+          } else {
+            // User exists but is not verified - update verification info
+            console.log(`User exists but is not verified, updating with new Telegram info`);
+            const updateExistingQuery = `
+              UPDATE langchain_telegram_users
+              SET chat_id = $1,
+                  telegram_username = $2,
+                  telegram_first_name = $3,
+                  telegram_last_name = $4,
+                  language_code = $5,
+                  username = $6,
+                  first_name = $7,
+                  last_name = $8,
+                  is_verified = TRUE,
+                  verification_code = NULL,
+                  updated_at = NOW(),
+                  last_accessed = NOW()
+              WHERE id = $9
+            `;
+            
+            await pool.query(updateExistingQuery, [
+              chatId.toString(),
+              username,
+              firstName,
+              lastName,
+              languageCode,
+              username,
+              firstName,
+              lastName,
+              existingUser.id
+            ]);
+            
+            await this.bot?.sendMessage(chatId, `Your account has been verified! You can now interact with the AI Agent.`);
+          }
         } else {
           await this.bot?.sendMessage(chatId, `Invalid or expired verification code. Please contact your system administrator for a valid code.`);
         }
       }
     } catch (error) {
       console.error('Error handling verification:', error);
+      console.error('Error details:', String(error));
       await this.bot?.sendMessage(chatId, 'Sorry, there was an error processing your verification. Please try again later.');
     }
   }
