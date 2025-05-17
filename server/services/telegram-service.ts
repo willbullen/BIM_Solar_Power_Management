@@ -532,8 +532,14 @@ export class TelegramService {
       
       if (existingUser.length > 0) {
         // User exists, send welcome back message
-        // Check the isVerified direct column
-        const isVerified = existingUser[0].isVerified === true;
+        // Use direct SQL query to get the is_verified value from database
+        const verifiedQuery = `
+          SELECT is_verified FROM langchain_telegram_users 
+          WHERE telegram_id = $1
+          LIMIT 1
+        `;
+        const verifiedResult = await pool.query(verifiedQuery, [telegramId]);
+        const isVerified = verifiedResult.rows.length > 0 && verifiedResult.rows[0].is_verified === true;
         
         const welcomeMessage = `Welcome back to the Emporium Power Monitoring AI Agent!
         
@@ -653,9 +659,15 @@ Try asking questions about power usage, environmental data, or request reports.`
         return;
       }
       
-      // Check if user is verified using direct column
-      // Using raw property access for database column names (snake_case)
-      if (user[0].is_verified !== true) {
+      // Check if user is verified using direct SQL query
+      const verifiedCheckQuery = `
+        SELECT is_verified FROM langchain_telegram_users
+        WHERE id = $1
+        LIMIT 1
+      `;
+      const verifiedResult = await pool.query(verifiedCheckQuery, [user[0].id]);
+      
+      if (!verifiedResult.rows.length || verifiedResult.rows[0].is_verified !== true) {
         await this.bot?.sendMessage(chatId, `You need to verify your account before using the AI Agent. Please use /verify YOUR_CODE to complete verification.`);
         return;
       }
@@ -681,9 +693,20 @@ Try asking questions about power usage, environmental data, or request reports.`
       
       // Find or create a conversation for this user
       let conversationId: number;
+      
+      // Use direct SQL to get the user_id field
+      const userQuery = `
+        SELECT user_id FROM langchain_telegram_users
+        WHERE id = $1
+        LIMIT 1
+      `;
+      const userResult = await pool.query(userQuery, [user[0].id]);
+      const userId = userResult.rows.length > 0 ? userResult.rows[0].user_id : null;
+      
+      // Find active conversation for this user
       const activeConversation = await db.select()
         .from(agentConversations)
-        .where(user[0].userId ? eq(agentConversations.userId, user[0].userId) : sql`false`)
+        .where(userId ? eq(agentConversations.userId, userId) : sql`false`)
         .orderBy(desc(agentConversations.createdAt))
         .limit(1);
       
