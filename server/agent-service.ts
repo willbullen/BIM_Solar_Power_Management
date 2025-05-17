@@ -56,55 +56,70 @@ export class AgentService {
    * Cleans up duplicate system messages and ensures only one exists
    */
   private async addSystemMessage(conversationId: number): Promise<void> {
-    // Check if system messages already exist for this conversation
-    const existingSystemMessages = await db.query.agentMessages.findMany({
-      where: (fields, { and, eq }) => and(
-        eq(fields.conversationId, conversationId),
-        eq(fields.role, "system")
-      )
-    });
-    
-    // Get the system prompt from settings
-    const systemPromptSetting = await db.query.agentSettings.findFirst({
-      where: (fields, { eq }) => eq(fields.name, "agent_system_prompt")
-    });
-
-    const systemPrompt = systemPromptSetting?.value || 
-      "You are an advanced AI Energy Advisor for Emporium Power Monitoring. Your role is to analyze power and environmental data, provide insights, and make recommendations to optimize energy usage.";
-
-    // If multiple system messages exist, delete all but one
-    if (existingSystemMessages.length > 1) {
-      console.log(`Found ${existingSystemMessages.length} system messages for conversation ${conversationId}. Cleaning up duplicates...`);
-      
-      // Keep the first one, delete the rest
-      const [firstMessage, ...duplicates] = existingSystemMessages;
-      
-      // Delete all duplicate system messages
-      for (const msg of duplicates) {
-        await db.delete(schema.agentMessages).where(eq(schema.agentMessages.id, msg.id));
-      }
-      
-      // Update the content of the first message to ensure it has the latest system prompt
-      await db.update(schema.agentMessages)
-        .set({ content: systemPrompt })
-        .where(eq(schema.agentMessages.id, firstMessage.id));
-      
-      console.log(`Cleaned up ${duplicates.length} duplicate system messages.`);
-    }
-    // If exactly one system message exists, just update its content
-    else if (existingSystemMessages.length === 1) {
-      await db.update(schema.agentMessages)
-        .set({ content: systemPrompt })
-        .where(eq(schema.agentMessages.id, existingSystemMessages[0].id));
-    }
-    // If no system message exists, create one
-    else {
-      await db.insert(schema.agentMessages).values({
-        conversationId,
-        role: "system",
-        content: systemPrompt,
-        metadata: {}
+    try {
+      console.log(`Adding system message for conversation ${conversationId}`);
+      // Check if system messages already exist for this conversation
+      const existingSystemMessages = await db.query.agentMessages.findMany({
+        where: (fields, { and, eq }) => and(
+          eq(fields.conversationId, conversationId),
+          eq(fields.role, "system")
+        )
       });
+      
+      // Get the system prompt from settings
+      const systemPromptSetting = await db.query.agentSettings.findFirst({
+        where: (fields, { eq }) => eq(fields.name, "agent_system_prompt")
+      });
+
+      const systemPrompt = systemPromptSetting?.value || 
+        "You are an advanced AI Energy Advisor for Emporium Power Monitoring. Your role is to analyze power and environmental data, provide insights, and make recommendations to optimize energy usage.";
+
+      // If multiple system messages exist, delete all but one
+      if (existingSystemMessages.length > 1) {
+        console.log(`Found ${existingSystemMessages.length} system messages for conversation ${conversationId}. Cleaning up duplicates...`);
+        
+        // Keep the first one, delete the rest
+        const [firstMessage, ...duplicates] = existingSystemMessages;
+        
+        // Delete all duplicate system messages
+        for (const msg of duplicates) {
+          await db.delete(schema.agentMessages).where(eq(schema.agentMessages.id, msg.id));
+        }
+        
+        // Update the content of the first message to ensure it has the latest system prompt
+        await db.update(schema.agentMessages)
+          .set({ content: systemPrompt })
+          .where(eq(schema.agentMessages.id, firstMessage.id));
+        
+        console.log(`Cleaned up ${duplicates.length} duplicate system messages.`);
+      }
+      // If exactly one system message exists, just update its content
+      else if (existingSystemMessages.length === 1) {
+        await db.update(schema.agentMessages)
+          .set({ content: systemPrompt })
+          .where(eq(schema.agentMessages.id, existingSystemMessages[0].id));
+      }
+      // If no system message exists, create one using raw SQL to avoid schema issues
+      else {
+        console.log(`No system message found, creating new one for conversation ${conversationId}`);
+        // Use raw SQL to avoid schema issues with the timestamp column
+        await db.execute(sql`
+          INSERT INTO langchain_agent_messages 
+          (conversation_id, role, content, metadata, created_at, updated_at)
+          VALUES (
+            ${conversationId}, 
+            'system', 
+            ${systemPrompt}, 
+            '{}', 
+            NOW(), 
+            NOW()
+          )
+        `);
+        console.log(`Successfully created system message for conversation ${conversationId}`);
+      }
+    } catch (error) {
+      console.error(`Error adding system message to conversation ${conversationId}:`, error);
+      throw error;
     }
   }
 
