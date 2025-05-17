@@ -654,7 +654,7 @@ Try asking questions about power usage, environmental data, or request reports.`
       }
       
       // Check if user is verified using direct column
-      if (!user[0].isVerified) {
+      if (!user[0].is_verified) {
         await this.bot?.sendMessage(chatId, `You need to verify your account before using the AI Agent. Please use /verify YOUR_CODE to complete verification.`);
         return;
       }
