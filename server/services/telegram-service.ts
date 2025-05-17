@@ -14,9 +14,7 @@ import {
   telegramMessages, 
   telegramSettings, 
   agentConversations, 
-  agentMessages,
-  TelegramUserMetadata,
-  telegramUserMetadataSchema
+  agentMessages
 } from '../../shared/schema';
 import { eq, and, desc, isNull, inArray } from 'drizzle-orm/expressions';
 import { AgentService } from '../agent-service';
