@@ -200,56 +200,52 @@ export function registerTelegramRoutes(app: Express) {
    */
   app.get('/api/telegram/status', requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.session.userId!;
+      // Get user ID from session or headers
+      const userId = req.session?.userId || 
+        (req.headers['x-auth-user-id'] ? parseInt(req.headers['x-auth-user-id'] as string) : undefined);
       
-      // Use a more specific selection to get only the fields we need
-      const telegramUser = await db.select({
-        id: telegramUsers.id,
-        userId: telegramUsers.userId,
-        telegramId: telegramUsers.telegramId,
-        username: telegramUsers.username,
-        firstName: telegramUsers.firstName,
-        lastName: telegramUsers.lastName,
-        isVerified: telegramUsers.isVerified,
-        verificationCode: telegramUsers.verificationCode,
-        verificationExpires: telegramUsers.verificationExpires,
-        lastAccessed: telegramUsers.lastAccessed,
-        notificationsEnabled: telegramUsers.notificationsEnabled,
-        receiveAlerts: telegramUsers.receiveAlerts,
-        receiveReports: telegramUsers.receiveReports
-      })
-      .from(telegramUsers)
-      .where(eq(telegramUsers.userId, userId))
-      .limit(1);
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
       
-      if (telegramUser.length === 0) {
+      // Use raw SQL to avoid schema inconsistencies
+      const result = await db.execute(sql`
+        SELECT 
+          id, user_id, telegram_id, username, first_name, last_name,
+          is_verified, verification_code, verification_expires,
+          notifications_enabled, receive_alerts, receive_reports
+        FROM langchain_telegram_users
+        WHERE user_id = ${userId}
+        LIMIT 1
+      `);
+      
+      if (result.rows.length === 0) {
         return res.json({ 
           connected: false,
           status: 'Not connected',
-          botActive: telegramService.isInitialized() ? true : false
+          botActive: telegramService.isInitialized()
         });
       }
       
-      const user = telegramUser[0];
-      const isVerified = user.isVerified === true;
-      const notificationsEnabled = user.notificationsEnabled !== false;
+      const user = result.rows[0];
+      const isVerified = user.is_verified === true;
+      const notificationsEnabled = user.notifications_enabled !== false;
       
       let status = isVerified ? 'Connected and verified' : 'Connected';
-      if (user.verificationCode) {
+      if (user.verification_code) {
         status = 'Pending verification';
       }
       
       res.json({
         connected: isVerified,
         status,
-        lastAccessed: user.lastAccessed,
-        notificationsEnabled: notificationsEnabled,
-        receiveAlerts: user.receiveAlerts !== false,
-        receiveReports: user.receiveReports !== false,
+        notificationsEnabled,
+        receiveAlerts: user.receive_alerts !== false,
+        receiveReports: user.receive_reports !== false,
         telegramUsername: user.username,
-        verificationCode: user.verificationCode,
-        verificationExpires: user.verificationExpires,
-        botActive: telegramService.isInitialized() ? true : false
+        verificationCode: user.verification_code,
+        verificationExpires: user.verification_expires,
+        botActive: telegramService.isInitialized()
       });
     } catch (error) {
       console.error('Error fetching Telegram status:', error);
