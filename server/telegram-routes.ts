@@ -4,7 +4,7 @@
 
 import { Express, Request, Response } from 'express';
 import { telegramService } from './services/telegram-service';
-import { db } from './db';
+import { db, pool } from './db';
 import * as schema from '../shared/schema';
 import { 
   telegramSettings, 
@@ -176,7 +176,8 @@ export function registerTelegramRoutes(app: Express) {
       const verificationCode = await telegramService.createVerificationCode(userId);
       console.log('Generated verification code:', verificationCode);
       
-      // Use raw SQL to get the bot username from the langchain_telegram_settings table
+      // Use direct SQL to get the bot username from the langchain_telegram_settings table
+      // This avoids any schema mismatch issues with metadata column
       const settingsResult = await db.execute(sql`
         SELECT bot_username FROM langchain_telegram_settings LIMIT 1
       `);
