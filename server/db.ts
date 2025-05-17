@@ -13,3 +13,13 @@ if (!process.env.DATABASE_URL) {
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle({ client: pool, schema });
+
+/**
+ * Create a custom DB interface that doesn't use the Drizzle ORM schema 
+ * to avoid issues with schema mismatch and metadata column errors
+ */
+export const rawDb = {
+  async execute(query) {
+    return pool.query(query);
+  }
+};

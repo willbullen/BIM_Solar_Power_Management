@@ -902,41 +902,45 @@ Try asking questions about power usage, environmental data, or request reports.`
       
       console.log(`Generated verification code: ${verificationCode}, expires: ${expirationDate.toISOString()}`);
       
-      // Check if user already has a Telegram entry
-      const existingUser = await db.execute(sql`
+      // Check if user already has a Telegram entry using direct SQL query
+      // This avoids any schema mismatch issues with the metadata column
+      const existingUserQuery = `
         SELECT id FROM langchain_telegram_users 
-        WHERE user_id = ${userId}
+        WHERE user_id = $1
         LIMIT 1
-      `);
+      `;
+      const existingUser = await pool.query(existingUserQuery, [userId]);
       
       if (existingUser.rows.length === 0) {
         // No existing record, create a new one
         console.log('No existing Telegram user entry, creating a new one with verification code');
-        await db.execute(sql`
+        const insertQuery = `
           INSERT INTO langchain_telegram_users (
             user_id, telegram_id, first_name, chat_id,
             verification_code, verification_expires, is_verified,
             notifications_enabled, receive_alerts, receive_reports,
             created_at, updated_at
           ) VALUES (
-            ${userId}, 'pending_verification', 'Pending Verification', '0',
-            ${verificationCode}, ${expirationDate}, FALSE,
+            $1, 'pending_verification', 'Pending Verification', '0',
+            $2, $3, FALSE,
             TRUE, TRUE, TRUE,
             NOW(), NOW()
           )
-        `);
+        `;
+        await pool.query(insertQuery, [userId, verificationCode, expirationDate]);
         console.log('Successfully created new user record with verification code');
       } else {
         // Update existing record
         console.log('Updating existing Telegram user record with new verification code');
-        await db.execute(sql`
+        const updateQuery = `
           UPDATE langchain_telegram_users
-          SET verification_code = ${verificationCode},
-              verification_expires = ${expirationDate},
+          SET verification_code = $1,
+              verification_expires = $2,
               is_verified = FALSE,
               updated_at = NOW()
-          WHERE user_id = ${userId}
-        `);
+          WHERE user_id = $3
+        `;
+        await pool.query(updateQuery, [verificationCode, expirationDate, userId]);
         console.log('Successfully updated existing user record with new verification code');
       }
       
