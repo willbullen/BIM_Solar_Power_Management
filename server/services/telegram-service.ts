@@ -529,9 +529,8 @@ export class TelegramService {
       
       if (existingUser.length > 0) {
         // User exists, send welcome back message
-        // Cast to TelegramUserMetadata for proper typing
-        const metadata = existingUser[0].metadata as TelegramUserMetadata || {};
-        const isVerified = metadata.isVerified === true;
+        // Check the isVerified direct column
+        const isVerified = existingUser[0].isVerified === true;
         
         const welcomeMessage = `Welcome back to the Emporium Power Monitoring AI Agent!
         
@@ -960,15 +959,13 @@ Try asking questions about power usage, environmental data, or request reports.`
         return false;
       }
       
-      // Check metadata for verification and notification preferences
-      const metadata = telegramUser[0].metadata as TelegramUserMetadata || {};
-      
-      if (!metadata.isVerified || metadata.notificationsEnabled === false) {
+      // Check direct columns for verification and notification preferences
+      if (!telegramUser[0].isVerified || telegramUser[0].notificationsEnabled === false) {
         console.log(`Telegram user for userId ${userId} is not verified or has notifications disabled`);
         return false;
       }
       
-      if (!metadata.chatId) {
+      if (!telegramUser[0].chatId) {
         console.log(`No chat ID found for Telegram user (userId ${userId})`);
         return false;
       }
@@ -976,7 +973,7 @@ Try asking questions about power usage, environmental data, or request reports.`
       const fullMessage = title ? `${title}\n\n${message}` : message;
       
       // Send message to user
-      await this.bot.sendMessage(metadata.chatId, fullMessage);
+      await this.bot.sendMessage(telegramUser[0].chatId, fullMessage);
       
       // Store outbound message
       await db.insert(telegramMessages)
@@ -1015,15 +1012,13 @@ Try asking questions about power usage, environmental data, or request reports.`
         return false;
       }
       
-      // Check metadata for verification and reports preferences
-      const metadata = telegramUser[0].metadata as TelegramUserMetadata || {};
-      
-      if (!metadata.isVerified || metadata.receiveReports === false) {
+      // Check direct columns for verification and reports preferences
+      if (!telegramUser[0].isVerified || telegramUser[0].receiveReports === false) {
         console.log(`Telegram user for userId ${userId} is not verified or has reports disabled`);
         return false;
       }
       
-      if (!metadata.chatId) {
+      if (!telegramUser[0].chatId) {
         console.log(`No chat ID found for Telegram user (userId ${userId})`);
         return false;
       }
@@ -1032,7 +1027,7 @@ Try asking questions about power usage, environmental data, or request reports.`
       const reportMessage = `📊 ${reportTitle}\n\n${reportContent}`;
       
       // Send message to user
-      await this.bot.sendMessage(metadata.chatId, reportMessage);
+      await this.bot.sendMessage(telegramUser[0].chatId, reportMessage);
       
       // Store outbound message
       await db.insert(telegramMessages)
@@ -1069,15 +1064,13 @@ Try asking questions about power usage, environmental data, or request reports.`
       // Send message to each verified user
       for (const user of allUsers) {
         try {
-          // Check metadata for verification
-          const metadata = user.metadata as TelegramUserMetadata || {};
-          
-          if (!metadata.isVerified || !metadata.chatId) {
+          // Check direct columns for verification
+          if (!user.isVerified || !user.chatId) {
             // Skip users who are not verified or don't have a chat ID
             continue;
           }
           
-          await this.bot.sendMessage(metadata.chatId, message);
+          await this.bot.sendMessage(user.chatId, message);
           
           // Store outbound message
           await db.insert(telegramMessages)
