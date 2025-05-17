@@ -954,16 +954,14 @@ Try asking questions about power usage, environmental data, or request reports.`
         // Create new user record with pending verification
         console.log('Inserting new telegram user record with pending verification');
         try {
-          // Use specific column values that match the actual table schema
+          // Let's simplify this and only include essential columns to avoid schema issues
           await db.execute(sql`
             INSERT INTO langchain_telegram_users (
               user_id, telegram_id, first_name, 
-              notifications_enabled, receive_reports, receive_alerts, 
               verification_code, verification_expires, is_verified,
               created_at, updated_at
             ) VALUES (
               ${userId}, 'pending_verification', 'pending_verification',
-              TRUE, TRUE, TRUE,
               ${verificationCode}, ${expirationDate}, FALSE,
               NOW(), NOW()
             )
@@ -985,12 +983,15 @@ Try asking questions about power usage, environmental data, or request reports.`
               
             if (existingRecord.length > 0) {
               console.log('Found existing record to update');
-              await db.update(telegramUsers)
-                .set({
-                  metadata: metadata,
-                  updatedAt: new Date()
-                })
-                .where(eq(telegramUsers.userId, userId));
+              // Use SQL to update the record to avoid schema issues
+              await db.execute(sql`
+                UPDATE langchain_telegram_users
+                SET verification_code = ${verificationCode},
+                    verification_expires = ${expirationDate},
+                    is_verified = FALSE,
+                    updated_at = NOW()
+                WHERE user_id = ${userId}
+              `);
               console.log('Successfully updated existing record');
             } else {
               throw error; // Re-throw if we can't handle it

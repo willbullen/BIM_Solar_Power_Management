@@ -178,8 +178,11 @@ export function registerTelegramRoutes(app: Express) {
       const verificationCode = await telegramService.createVerificationCode(userId);
       console.log('Generated verification code:', verificationCode);
       
-      const settings = await db.select().from(telegramSettings).limit(1);
-      const botUsername = settings.length > 0 ? settings[0].botUsername : 'envirobot';
+      // Use raw SQL to get the bot username from the langchain_telegram_settings table
+      const settingsResult = await db.execute(sql`
+        SELECT bot_username FROM langchain_telegram_settings LIMIT 1
+      `);
+      const botUsername = settingsResult.rows.length > 0 ? settingsResult.rows[0].bot_username : 'envirobot';
       
       const response = { 
         verificationCode,
