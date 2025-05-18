@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { eq, and, or, gte, isNull, desc, sql } from 'drizzle-orm';
 import { db } from './db';
 import * as schema from '../shared/schema-task-scheduler';
+import { langchainTools } from '../shared/schema';
 import { authenticateUser as requireAuth } from './auth';
 import { z } from 'zod';
 import { AgentService } from './agent-service';

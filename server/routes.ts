@@ -18,10 +18,10 @@ import { AIService } from './ai-service';
 import { registerAgentRoutes } from './agent-routes';
 import { registerNotificationRoutes } from './agent-notification-routes';
 import { registerTelegramRoutes } from './telegram-routes';
+import { registerTaskSchedulingRoutes } from './task-scheduling-routes';
 import { registerFileRoutes } from './file-routes';
 import { registerLangChainRoutes } from './langchain-routes';
 import { registerVoiceRoutes } from './voice-routes';
-import { registerTaskSchedulingRoutes } from './task-scheduling-routes';
 import mcpRoutes from './mcp-routes';
 import { DatabaseService } from './utils/database-service';
 import { WebSocketServer, WebSocket } from 'ws';
@@ -1507,6 +1507,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register agent notification routes for API-based notifications
   registerNotificationRoutes(app);
+  
+  // Register task scheduling routes for LangChain agents
+  registerTaskSchedulingRoutes(app);
   
   // Register database query and analysis functions for AI agent
   try {
