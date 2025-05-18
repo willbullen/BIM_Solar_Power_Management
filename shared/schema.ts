@@ -376,7 +376,9 @@ export const agentMessages = pgTable("langchain_agent_messages", {
   conversationId: integer("conversation_id").notNull(), // Foreign key to agent_conversations
   role: text("role").notNull(), // 'user', 'assistant', 'system'
   content: text("content").notNull(),
-  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(), // Using created_at instead of timestamp
+  updatedAt: timestamp("updated_at").defaultNow(), // Added updated_at field
+  tokens: integer("tokens"), // Token count for the message
   functionCall: jsonb("function_call"), // Optional function call details
   functionResponse: jsonb("function_response"), // Optional function response
   metadata: jsonb("metadata"), // Additional message metadata
@@ -391,7 +393,9 @@ export const agentMessagesRelations = relations(agentMessages, ({ one }) => ({
 
 export const insertAgentMessageSchema = createInsertSchema(agentMessages).omit({
   id: true,
-  timestamp: true,
+  createdAt: true,
+  updatedAt: true,
+  tokens: true,
 });
 
 export type InsertAgentMessage = z.infer<typeof insertAgentMessageSchema>;

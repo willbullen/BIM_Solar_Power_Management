@@ -1,0 +1,104 @@
+10:00:08 AM [express] GET /api/agent/notifications/unread/count 304 in 400ms :: {"count":0}
+Error adding user message to conversation 3: error: column "updated_at" of relation "langchain_agent_messages" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async AgentService.addUserMessage (/home/runner/workspace/server/agent-service.ts:139:22)
+    at async TelegramService.handleIncomingMessage (/home/runner/workspace/server/services/telegram-service.ts:802:27)
+    at async TelegramBot.<anonymous> (/home/runner/workspace/server/services/telegram-service.ts:515:7) {
+  length: 148,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '111',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1066',
+  routine: 'checkInsertTargets'
+}
+Trying fallback insertion method for message...
+Error handling incoming message: error: column "timestamp" of relation "langchain_agent_messages" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async AgentService.addUserMessage (/home/runner/workspace/server/agent-service.ts:157:25)
+    at async TelegramService.handleIncomingMessage (/home/runner/workspace/server/services/telegram-service.ts:802:27)
+    at async TelegramBot.<anonymous> (/home/runner/workspace/server/services/telegram-service.ts:515:7) {
+  length: 146,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '85',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1066',
+  routine: 'checkInsertTargets'
+}
+Error fetching data from Solcast: AbortError: The operation was aborted.
+    at abort (file:///home/runner/workspace/node_modules/node-fetch/src/index.js:70:18)
+    at EventTarget.abortAndFinalize (file:///home/runner/workspace/node_modules/node-fetch/src/index.js:89:4)
+    at [nodejs.internal.kHybridDispatch] (node:internal/event_target:820:20)
+    at EventTarget.dispatchEvent (node:internal/event_target:755:26)
+    at abortSignal (node:internal/abort_controller:370:10)
+    at AbortController.abort (node:internal/abort_controller:392:5)
+    at Timeout._onTimeout (/home/runner/workspace/server/solcast-service.ts:121:53)
+    at listOnTimeout (node:internal/timers:581:17)
+    at process.processTimers (node:internal/timers:519:7) {
+  type: 'aborted'
+}
+Error fetching forecast data, using fallback: AbortError: The operation was aborted.
+    at abort (file:///home/runner/workspace/node_modules/node-fetch/src/index.js:70:18)
+    at EventTarget.abortAndFinalize (file:///home/runner/workspace/node_modules/node-fetch/src/index.js:89:4)
+    at [nodejs.internal.kHybridDispatch] (node:internal/event_target:820:20)
+    at EventTarget.dispatchEvent (node:internal/event_target:755:26)
+    at abortSignal (node:internal/abort_controller:370:10)
+    at AbortController.abort (node:internal/abort_controller:392:5)
+    at Timeout._onTimeout (/home/runner/workspace/server/solcast-service.ts:121:53)
+    at listOnTimeout (node:internal/timers:581:17)
+    at process.processTimers (node:internal/timers:519:7) {
+  type: 'aborted'
+}
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:480:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:480:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:480:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:480:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+Solcast API payment required - subscription may need renewal for forecast data
