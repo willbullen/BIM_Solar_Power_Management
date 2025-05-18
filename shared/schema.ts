@@ -379,8 +379,9 @@ export const agentMessages = pgTable("langchain_agent_messages", {
   createdAt: timestamp("created_at").notNull().defaultNow(), // Using created_at instead of timestamp
   updatedAt: timestamp("updated_at").defaultNow(), // Added updated_at field
   tokens: integer("tokens"), // Token count for the message
-  functionCall: jsonb("function_call"), // Optional function call details
+  functionCall: jsonb("function_call"), // Optional function call details 
   functionResponse: jsonb("function_response"), // Optional function response
+  // We're using the same JSON fields for both "function_call" and "tool_call" to support both naming formats
   metadata: jsonb("metadata"), // Additional message metadata
 });
 
