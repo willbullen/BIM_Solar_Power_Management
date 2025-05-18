@@ -18,6 +18,10 @@ import {
 } from '../../shared/schema';
 import { eq, and, desc, isNull, inArray } from 'drizzle-orm/expressions';
 import { AgentService } from '../agent-service';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import OpenAI from 'openai';
 
 /**
  * Telegram Service Singleton
@@ -509,6 +513,12 @@ export class TelegramService {
     this.bot.on('message', async (msg) => {
       // Skip commands, they're handled separately
       if (msg.text && msg.text.startsWith('/')) {
+        return;
+      }
+      
+      // Check if this is a voice message
+      if (msg.voice) {
+        await this.handleVoiceMessage(msg);
         return;
       }
       

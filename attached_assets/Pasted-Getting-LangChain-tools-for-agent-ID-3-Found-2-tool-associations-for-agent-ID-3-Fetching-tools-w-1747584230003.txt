@@ -1,0 +1,34 @@
+Getting LangChain tools for agent ID: 3
+Found 2 tool associations for agent ID: 3
+Fetching tools with IDs: 1, 2
+Found 2 enabled tools for agent ID: 3
+Total available functions after adding LangChain tools: 2
+Available functions for user 1 with role user: ReadFromDB, CompileReport
+Using Langchain agent for response: Main Assistant Agent (ID: 3)
+🧠 OpenAI Call - Using model: gpt-4o, Functions: 2
+🧠 Available tools: ReadFromDB, CompileReport
+🧠 Starting OpenAI API call with 10 messages
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:480:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:480:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+🧠 OpenAI API call successful - Response ID: chatcmpl-BYalZB5EsyvqY1ZC1R66H1PzhIdcA
+🧠 Response - Tokens used: 354
+Executing function "ReadFromDB" with args: {"input":"QUERY: SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';"}
+Executing with UnifiedFunctionRegistry: ReadFromDB
+[Unified Function Registry] Executing function: ReadFromDB
+[Unified Function Registry] Redirecting to ReadFromDB LangChain tool with params: {
+  input: "QUERY: SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';"
+}
+[Unified Function Registry] Executing database query: QUERY: SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
+AI response generation completed successfully
+Received AI response for Telegram: "..."
