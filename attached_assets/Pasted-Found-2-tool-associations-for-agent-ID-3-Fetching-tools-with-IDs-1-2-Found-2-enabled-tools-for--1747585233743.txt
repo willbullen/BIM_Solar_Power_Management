@@ -1,0 +1,45 @@
+Found 2 tool associations for agent ID: 3
+Fetching tools with IDs: 1, 2
+Found 2 enabled tools for agent ID: 3
+Total available functions after adding LangChain tools: 2
+Available functions for user 1 with role user: ReadFromDB, CompileReport
+Using Langchain agent for response: Main Assistant Agent (ID: 3)
+🧠 OpenAI Call - Using model: gpt-4o, Functions: 2
+🧠 Available tools: ReadFromDB, CompileReport
+🧠 Starting OpenAI API call with 15 messages
+🧠 OpenAI API call successful - Response ID: chatcmpl-BYb1wQ5x0AlQsus76x81hpJWY3GlO
+🧠 Response - Tokens used: 804
+Executing function "ReadFromDB" with args: {"input":"QUERY: select * from environmental_data ORDER BY timestamp DESC LIMIT 1; PARAMS: []"}
+Executing with UnifiedFunctionRegistry: ReadFromDB
+[Unified Function Registry] Executing function: ReadFromDB
+[Unified Function Registry] Redirecting to ReadFromDB LangChain tool with params: {
+  input: 'QUERY: select * from environmental_data ORDER BY timestamp DESC LIMIT 1; PARAMS: []'
+}
+[Unified Function Registry] Executing database query: QUERY: select * from environmental_data ORDER BY timestamp DESC LIMIT 1; PARAMS: []
+Error executing database query: error: syntax error at or near "PARAMS"
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Function.executeFunction (/home/runner/workspace/server/utils/unified-function-registry.ts:165:28)
+    at async AgentService.generateResponse (/home/runner/workspace/server/agent-service.ts:542:34)
+    at async TelegramService.handleIncomingMessage (/home/runner/workspace/server/services/telegram-service.ts:893:24)
+    at async TelegramBot.<anonymous> (/home/runner/workspace/server/services/telegram-service.ts:515:7) {
+  length: 95,
+  severity: 'ERROR',
+  code: '42601',
+  detail: undefined,
+  hint: undefined,
+  position: '67',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'scan.l',
+  line: '1244',
+  routine: 'scanner_yyerror'
+}
+AI response generation completed successfully
+Received AI response for Telegram: "..."

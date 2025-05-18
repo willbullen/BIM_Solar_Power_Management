@@ -1,0 +1,31 @@
+Please create a new page that uses already created LangChain agent, a suite of tools, and Telegram-bot communication.
+Goal: Create a new React page and corresponding backend endpoints that let users:
+1.	Schedule LangChain agent tasks via an interactive calendar UI (drag-and-drop, date/time pickers).
+2.	View, edit, and cancel scheduled tasks, showing status (pending, running, completed, failed).
+3.	Add new tools from any LangChain toolkit (ExampleToolkit.get_tools()) through a searchable dropdown.
+4.	Trigger tasks manually or automatically based on dependencies, using LangChain’s Plan-and-Execute task graph.
+5.	Send notifications and receive updates via Telegram chat, leveraging existing webhooks and stream-based message handling.
+Requirements:
+•	Use LangChain JS methods (@tool decorators, StructuredTool.from_function, toolkit get_tools()) to register tools dynamically.
+•	Implement task scheduling on the backend (e.g., using langchain-agents’ Task Fetching Unit for parallel execution).
+•	Store tasks persistently (e.g., MongoDB, PostgreSQL) and sync state with the UI in real time (WebSockets or polling).
+•	Provide unit tests or code comments illustrating how to extend with new toolkits.
+•	Ensure the page is styled consistently (use CSS modules or Tailwind) and optimized for mobile.
+Suggested Extra Functionality:
+1.	Drag-and-Drop Calendar Interface (e.g., react-big-calendar).
+2.	Task Prioritization & Dependency Graph via LangChain Plan-and-Execute DAG.
+3.	Real-Time Updates with Socket.IO or similar WebSockets.
+4.	Authentication & Role-Based Access to secure scheduling features.
+5.	Plug-and-Play Tool Registration: dynamic JSON schema upload + Toolkit.get_tools().
+6.	Telegram Threaded Conversations using inline keyboards or message threads.
+Implementation Considerations:
+•	LangChain JS Setup: decorate or wrap functions, dynamically load toolkits.
+•	Scheduling Backend: use node-cron for simple tasks or the Task Fetching Unit for dependency-aware flows.
+•	React + Replit: scaffold components in Replit IDE, commit via GitHub integration, deploy with replit deploy.
+•	Telegram Webhooks: reuse existing Express route, stream updates to LangChain agent.
+•	Persistence: choose MongoDB Atlas or PostgreSQL (Supabase) for task storage and run history.
+Assistant Workflow Instructions:
+1.	Persistence: Keep going until the job is completely solved before ending your turn. Never stop mid-solution; if more is needed, continue elaborating.
+2.	Use Tools, Don’t Guess: If you’re unsure about any code, file, or data, open it and inspect it—do not hallucinate or make unsupported assumptions.
+3.	Plan, Then Reflect: Before each tool invocation, outline your intended steps. After each tool call, review the result and explain how it affects your next move.
+Begin any task by stating your plan, execute methodically, and conclude by reflecting on what you learned and any next steps.

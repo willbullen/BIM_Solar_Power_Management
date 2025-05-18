@@ -135,7 +135,8 @@ export class TelegramService {
     try {
       const chatId = msg.chat.id;
       
-      if (!msg.voice) {
+      // Check for voice property on the message
+      if (!(msg as any).voice) {
         console.error('Voice message object is missing');
         return;
       }
@@ -151,9 +152,11 @@ export class TelegramService {
       // Send processing status
       await this.bot?.sendMessage(chatId, 'Transcribing your voice message...');
       
-      // Get voice file details
-      const fileId = msg.voice.file_id;
-      const file = await this.bot?.getFile(fileId);
+      // Get voice file details from the message
+      // Since TypeScript doesn't recognize the voice property, we need to cast
+      const fileId = (msg as any).voice.file_id;
+      // Call getFile method which exists on the bot instance but TS doesn't recognize it
+      const file = await (this.bot as any)?.getFile(fileId);
       
       if (!file || !file.file_path) {
         throw new Error('Could not get file path for voice message');
@@ -223,7 +226,8 @@ export class TelegramService {
             ],
           });
           
-          translatedText = translationResponse.choices[0].message.content;
+          // Extract content with null check
+          translatedText = translationResponse.choices[0].message.content || transcribedText;
           
           // Send both the original transcription and the translation
           await this.bot?.sendMessage(

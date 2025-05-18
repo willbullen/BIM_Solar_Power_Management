@@ -1,0 +1,48 @@
+Successfully added user message to conversation 3 using raw SQL
+Finding Main Assistant Agent for Telegram message processing
+Fetching all agents to find Main Assistant Agent
+Found 3 agents in database
+Agent names: [
+  'BillyBot Agent (ID: 2)',
+  'Main Assistant Agent (ID: 3)',
+  'Test Agent (ID: 1)'
+]
+Using agent "Main Assistant Agent" (ID: 3) for Telegram message processing
+Generating AI response for Telegram - Conversation: 3, User: 1, Agent: 3
+Using agent ID 3 for Telegram message processing
+Preparing 21 messages for OpenAI API call
+Prepared message - Role: user, Content length: 5, Has name: false
+Prepared message - Role: user, Content length: 5, Has name: false
+Prepared message - Role: user, Content length: 5, Has name: false
+Prepared message - Role: assistant, Content length: 34, Has name: false
+Prepared message - Role: user, Content length: 22, Has name: false
+Prepared message - Role: assistant, Content length: 455, Has name: false
+Prepared message - Role: user, Content length: 48, Has name: false
+Prepared message - Role: assistant, Content length: 0, Has name: false
+Function message missing name parameter, adding default name
+Prepared message - Role: function, Content length: 60, Has name: true
+Prepared message - Role: user, Content length: 48, Has name: false
+Prepared message - Role: assistant, Content length: 0, Has name: false
+Function message missing name parameter, adding default name
+Prepared message - Role: function, Content length: 1068, Has name: true
+Prepared message - Role: user, Content length: 48, Has name: false
+Prepared message - Role: assistant, Content length: 740, Has name: false
+Prepared message - Role: user, Content length: 35, Has name: false
+Prepared message - Role: assistant, Content length: 0, Has name: false
+Function message missing name parameter, adding default name
+Prepared message - Role: function, Content length: 53, Has name: true
+Prepared message - Role: user, Content length: 35, Has name: false
+Prepared message - Role: assistant, Content length: 0, Has name: false
+Function message missing name parameter, adding default name
+Prepared message - Role: function, Content length: 363, Has name: true
+Prepared message - Role: user, Content length: 35, Has name: false
+Getting LangChain tools for agent ID: 3
+Found 2 tool associations for agent ID: 3
+Fetching tools with IDs: 1, 2
+Found 2 enabled tools for agent ID: 3
+Total available functions after adding LangChain tools: 2
+Available functions for user 1 with role user: ReadFromDB, CompileReport
+Using Langchain agent for response: Main Assistant Agent (ID: 3)
+🧠 OpenAI Call - Using model: gpt-4o, Functions: 2
+🧠 Available tools: ReadFromDB, CompileReport
+🧠 Starting OpenAI API call with 21 messages

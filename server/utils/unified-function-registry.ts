@@ -157,9 +157,22 @@ export class UnifiedFunctionRegistry {
           // Very basic and not secure - just for demo
           if (params.input.startsWith('QUERY:')) {
             // Extract the query string
-            const queryString = params.input
-              .replace('QUERY:', '')
-              .trim();
+            // Extract the query part by handling PARAMS if present
+            let queryString = params.input.trim();
+            
+            // If the query contains PARAMS:, extract just the SQL part
+            if (queryString.includes('PARAMS:')) {
+              queryString = queryString
+                .split('PARAMS:')[0]  // Get only the part before PARAMS:
+                .replace('QUERY:', '') // Remove the QUERY: prefix
+                .trim();
+            } else {
+              queryString = queryString
+                .replace('QUERY:', '') // Remove the QUERY: prefix
+                .trim();
+            }
+            
+            console.log('Executing SQL query:', queryString);
             
             // Execute the query
             const result = await db.execute(sql.raw(queryString));
