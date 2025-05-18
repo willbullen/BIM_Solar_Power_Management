@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { eq, and, or, gte, isNull, desc, sql } from 'drizzle-orm';
 import { db } from './db';
 import * as schema from '../shared/schema';
-import { requireAuth } from './middleware/auth';
+import { authenticateUser as requireAuth } from './auth';
 import { z } from 'zod';
 import { AgentService } from './agent-service';
 
@@ -56,7 +56,7 @@ async function formatTaskWithTools(task: schema.AgentTask) {
   // Convert to expected format
   return {
     ...task,
-    tools: taskTools
+    tools: taskTools as any[]
   };
 }
 

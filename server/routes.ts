@@ -34,6 +34,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Set up authentication routes (/api/register, /api/login, /api/logout, /api/user)
   setupAuth(app);
+  
+  // Register all route modules
+  registerAgentRoutes(app);
+  registerNotificationRoutes(app);
+  registerTelegramRoutes(app);
+  registerFileRoutes(app);
+  registerLangChainRoutes(app);
+  registerVoiceRoutes(app);
+  registerTaskSchedulingRoutes(app);
 
   // Create HTTP server
   const httpServer = createServer(app);
