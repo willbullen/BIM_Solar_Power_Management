@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { ChatOpenAI } from "@langchain/openai";
-import { db } from "./db";
+import { db, pool } from "./db";
 import * as schema from "@shared/schema";
 import { AIService } from "./ai-service";
 import { DbUtils } from "./utils/db-utils";
@@ -127,16 +127,44 @@ export class AgentService {
    * Add a user message to a conversation
    */
   async addUserMessage(conversationId: number, content: string): Promise<schema.AgentMessage> {
-    const [message] = await db.insert(schema.agentMessages)
-      .values({
-        conversationId,
-        role: "user",
-        content,
-        metadata: {}
-      })
-      .returning();
-    
-    return message;
+    try {
+      // Use a safer approach with raw SQL as fallback for Telegram integration
+      // This avoids the timestamp column error in langchain_agent_messages
+      const query = `
+        INSERT INTO langchain_agent_messages 
+        (conversation_id, role, content, metadata, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, NOW(), NOW())
+        RETURNING *
+      `;
+      const result = await pool.query(query, [
+        conversationId, 
+        "user", 
+        content, 
+        JSON.stringify({})
+      ]);
+      
+      if (result.rows && result.rows.length > 0) {
+        console.log(`Successfully added user message to conversation ${conversationId} using raw SQL`);
+        return result.rows[0];
+      } else {
+        throw new Error("Failed to insert message (no rows returned)");
+      }
+    } catch (error) {
+      console.error(`Error adding user message to conversation ${conversationId}:`, error);
+      
+      // Fallback using Drizzle ORM
+      console.log("Trying fallback insertion method for message...");
+      const [message] = await db.insert(schema.agentMessages)
+        .values({
+          conversationId,
+          role: "user",
+          content,
+          metadata: {}
+        })
+        .returning();
+      
+      return message;
+    }
   }
   
   /**
