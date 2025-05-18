@@ -180,30 +180,48 @@ export function setupAuth(app: Express) {
 
   // User logout endpoint
   app.post("/api/logout", (req, res, next) => {
+    const sessionId = req.sessionID;
+    console.log(`Processing logout request for session: ${sessionId}`);
+    
     // Clear userId and userRole from session
     if (req.session) {
+      console.log(`Clearing session data for userId: ${req.session.userId}`);
       req.session.userId = undefined;
       req.session.userRole = undefined;
-    }
-    
-    req.logout((err) => {
-      if (err) return next(err);
       
-      // Force the session to be saved right away
-      if (req.session) {
-        req.session.save((err) => {
-          if (err) {
-            console.error('Error saving session on logout:', err);
-            return next(err);
+      // Clear the entire session to be thorough
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Error destroying session on logout:', err);
+        } else {
+          console.log('Session destroyed successfully');
+        }
+        
+        // Always continue with the logout process even if session destruction fails
+        req.logout((logoutErr) => {
+          if (logoutErr) {
+            console.error('Error during logout:', logoutErr);
+            return next(logoutErr);
           }
           
           console.log('User logged out successfully');
-          res.sendStatus(200);
+          
+          // Clear any cookies
+          res.clearCookie('connect.sid');
+          res.clearCookie('session');
+          
+          // Send success response
+          res.status(200).json({ success: true, message: 'Logged out successfully' });
         });
-      } else {
-        res.sendStatus(200);
-      }
-    });
+      });
+    } else {
+      // If no session exists, just proceed with logout
+      req.logout((err) => {
+        if (err) return next(err);
+        console.log('User logged out without active session');
+        res.status(200).json({ success: true, message: 'Logged out successfully' });
+      });
+    }
   });
 
   // Session restore endpoint (special backdoor for client-side state recovery)

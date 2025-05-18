@@ -127,6 +127,179 @@ export class TelegramService {
     }
   }
 
+  /**
+   * Handle voice messages with OpenAI Whisper API transcription
+   * @param msg Telegram voice message
+   */
+  private async handleVoiceMessage(msg: Message): Promise<void> {
+    try {
+      const chatId = msg.chat.id;
+      
+      if (!msg.voice) {
+        console.error('Voice message object is missing');
+        return;
+      }
+      
+      // Check if the user is verified
+      const user = await this.getUserForMessage(msg);
+      if (!user) {
+        console.log('User not found or not verified for voice message');
+        await this.bot?.sendMessage(chatId, 'You need to verify your account first. Use /verify with the code from the webapp.');
+        return;
+      }
+      
+      // Send processing status
+      await this.bot?.sendMessage(chatId, 'Transcribing your voice message...');
+      
+      // Get voice file details
+      const fileId = msg.voice.file_id;
+      const file = await this.bot?.getFile(fileId);
+      
+      if (!file || !file.file_path) {
+        throw new Error('Could not get file path for voice message');
+      }
+      
+      // Get file download URL (this is a Telegram API specific URL)
+      const botToken = process.env.TELEGRAM_BOT_TOKEN;
+      const fileUrl = `https://api.telegram.org/file/bot${botToken}/${file.file_path}`;
+      
+      // Download the voice file
+      const response = await fetch(fileUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to download voice file: ${response.status} ${response.statusText}`);
+      }
+      
+      // Get audio file as binary data
+      const audioBuffer = await response.arrayBuffer();
+      
+      // Create a temporary file path
+      const tempFilePath = path.join(os.tmpdir(), `voice_${Date.now()}.ogg`);
+      
+      // Write the file to disk
+      await fs.promises.writeFile(tempFilePath, Buffer.from(audioBuffer));
+      
+      // Call OpenAI Whisper API for transcription
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+      
+      // Create a readable stream from the file
+      const audioReadStream = fs.createReadStream(tempFilePath);
+      
+      // Transcribe using Whisper API
+      const transcriptionResponse = await openai.audio.transcriptions.create({
+        file: audioReadStream,
+        model: "whisper-1",
+      });
+      
+      // Get the transcribed text
+      const transcribedText = transcriptionResponse.text;
+      
+      // Clean up the temporary file
+      try {
+        await fs.promises.unlink(tempFilePath);
+      } catch (cleanupError) {
+        console.warn('Error cleaning up temporary file:', cleanupError);
+      }
+      
+      // If language is not English, also translate the message
+      let translatedText = transcribedText;
+      const languageCode = msg.from?.language_code || 'en';
+      
+      if (languageCode !== 'en') {
+        try {
+          // Use OpenAI to translate
+          const translationResponse = await openai.chat.completions.create({
+            model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+            messages: [
+              {
+                role: "system",
+                content: `You are a translation assistant. Translate the following text from the detected language to English.`
+              },
+              {
+                role: "user",
+                content: transcribedText
+              }
+            ],
+          });
+          
+          translatedText = translationResponse.choices[0].message.content;
+          
+          // Send both the original transcription and the translation
+          await this.bot?.sendMessage(
+            chatId, 
+            `📝 *Transcription*: ${transcribedText}\n\n🌐 *English Translation*: ${translatedText}`,
+            { parse_mode: 'Markdown' }
+          );
+        } catch (translationError) {
+          console.error('Error translating message:', translationError);
+          await this.bot?.sendMessage(chatId, `📝 *Transcription*: ${transcribedText}`, { parse_mode: 'Markdown' });
+        }
+      } else {
+        // Just send the transcription if it's already in English
+        await this.bot?.sendMessage(chatId, `📝 *Transcription*: ${transcribedText}`, { parse_mode: 'Markdown' });
+      }
+      
+      // Create a fake message object with the transcribed text to continue normal processing
+      const fakeTextMessage = {
+        ...msg,
+        text: translatedText,
+        voice: undefined
+      };
+      
+      // Process the transcribed message as a regular text message
+      await this.handleIncomingMessage(fakeTextMessage);
+      
+    } catch (error) {
+      console.error('Error handling voice message:', error);
+      const chatId = msg.chat.id;
+      await this.bot?.sendMessage(
+        chatId, 
+        'Sorry, I had trouble processing your voice message. Please try again or send a text message instead.'
+      );
+    }
+  }
+
+  /**
+   * Get user record for a Telegram message
+   * @param msg Telegram message
+   * @returns User record or null if not found/verified
+   */
+  private async getUserForMessage(msg: Message): Promise<schema.TelegramUser | null> {
+    if (!msg.from) {
+      console.error('Message sender information is missing');
+      return null;
+    }
+    
+    const telegramId = msg.from.id;
+    const chatId = msg.chat.id;
+    
+    // Check if user exists and is verified
+    const users = await db.select()
+      .from(telegramUsers)
+      .where(eq(telegramUsers.telegramId, telegramId.toString()));
+    
+    if (users.length === 0) {
+      // User not found, send instructions
+      await this.bot?.sendMessage(
+        chatId, 
+        'To use this bot, you need to link your account. Please go to the webapp and generate a verification code.'
+      );
+      return null;
+    }
+    
+    // Check verification status
+    if (!users[0].isVerified) {
+      await this.bot?.sendMessage(
+        chatId, 
+        'Your account is not verified. Please go to the webapp, generate a verification code, and use /verify YOUR_CODE'
+      );
+      return null;
+    }
+    
+    return users[0];
+  }
+
   private async shutdownBot(): Promise<void> {
     console.log('Shutting down Telegram bot...');
     
