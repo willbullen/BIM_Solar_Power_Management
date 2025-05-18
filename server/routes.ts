@@ -1508,8 +1508,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register agent notification routes for API-based notifications
   registerNotificationRoutes(app);
   
-  // Register task scheduling routes for LangChain agents
-  registerTaskSchedulingRoutes(app);
+  // Task scheduling routes are already registered above
+  // registerTaskSchedulingRoutes(app); // Removed duplicate registration
   
   // Register database query and analysis functions for AI agent
   try {

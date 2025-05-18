@@ -74,8 +74,9 @@ import { AlertTriangle, Calendar as CalendarIcon, CheckCircle2, Clock, Play, X, 
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 // Configure the calendar localizer
+import { enUS } from 'date-fns/locale/en-US';
 const locales = {
-  'en-US': require('date-fns/locale/en-US'),
+  'en-US': enUS,
 };
 
 const localizer = dateFnsLocalizer({
