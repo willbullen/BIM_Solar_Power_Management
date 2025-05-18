@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { eq, and, or, gte, isNull, desc, sql } from 'drizzle-orm';
 import { db } from './db';
-import * as schema from '../shared/schema';
+import * as schema from '../shared/schema-task-scheduler';
 import { authenticateUser as requireAuth } from './auth';
 import { z } from 'zod';
 import { AgentService } from './agent-service';
@@ -19,7 +19,7 @@ const createTaskSchema = z.object({
   dependsOn: z.number().int().positive().optional(),
   notifyOnComplete: z.boolean().default(true),
   notifyOnFail: z.boolean().default(true),
-  telegramNotify: z.boolean().default(false),
+  telegramNotify: z.boolean().default(true),
   tools: z.array(z.object({
     toolId: z.number().int().positive(),
     priority: z.number().int().default(0),
@@ -46,7 +46,7 @@ const updateTaskSchema = z.object({
 });
 
 // Format tasks with their associated tools
-async function formatTaskWithTools(task: schema.AgentTask) {
+async function formatTaskWithTools(task: any) {
   // Fetch associated tools for this task
   const taskTools = await db
     .select()
@@ -56,7 +56,7 @@ async function formatTaskWithTools(task: schema.AgentTask) {
   // Convert to expected format
   return {
     ...task,
-    tools: taskTools as any[]
+    tools: taskTools || []
   };
 }
 
@@ -69,40 +69,38 @@ export function registerTaskSchedulingRoutes(app: Router) {
       const { status, from, to, agentId } = req.query;
       
       // Build query conditions
-      let conditions: any[] = [];
+      let conditions = [];
       
       // Filter by user unless admin
       if (userRole !== 'Admin') {
-        conditions.push(eq(schema.agentTasks.userId, userId));
+        conditions.push(sql`user_id = ${userId}`);
       }
       
       // Filter by status if provided
       if (status) {
-        conditions.push(eq(schema.agentTasks.status, status as string));
+        conditions.push(sql`status = ${status as string}`);
       }
       
       // Filter by date range if provided
       if (from) {
-        conditions.push(gte(schema.agentTasks.scheduledFor, new Date(from as string)));
+        conditions.push(sql`scheduled_for >= ${new Date(from as string)}`);
       }
       
       // Filter by agent if provided
       if (agentId) {
-        conditions.push(eq(schema.agentTasks.agentId, parseInt(agentId as string)));
+        conditions.push(sql`agent_id = ${parseInt(agentId as string)}`);
       }
       
-      // Only get tasks that have scheduledFor
-      conditions.push(or(
-        sql`${schema.agentTasks.scheduledFor} IS NOT NULL`, 
-        gte(schema.agentTasks.scheduledFor, new Date())
-      ));
-      
       // Execute query with filters
-      const tasks = await db
+      let query = db
         .select()
-        .from(schema.agentTasks)
-        .where(and(...conditions))
-        .orderBy(desc(schema.agentTasks.scheduledFor));
+        .from(schema.agentTasks);
+        
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+        
+      const tasks = await query.orderBy(desc(schema.agentTasks.scheduledFor));
       
       // Fetch tools for each task
       const tasksWithTools = await Promise.all(
@@ -123,19 +121,19 @@ export function registerTaskSchedulingRoutes(app: Router) {
       const validatedData = createTaskSchema.parse(req.body);
       
       // Prepare task data
-      const taskData: Omit<schema.InsertAgentTask, 'id' | 'createdAt' | 'updatedAt' | 'completedAt'> = {
+      const taskData = {
         task: validatedData.task,
         agentId: validatedData.agentId,
         userId: userId,
         status: 'pending',
-        scheduledFor: validatedData.scheduledFor ? new Date(validatedData.scheduledFor) : undefined,
-        recurrence: validatedData.recurrence,
+        scheduledFor: validatedData.scheduledFor ? new Date(validatedData.scheduledFor) : null,
+        recurrence: validatedData.recurrence || null,
         priority: validatedData.priority,
-        dependsOn: validatedData.dependsOn,
+        dependsOn: validatedData.dependsOn || null,
         notifyOnComplete: validatedData.notifyOnComplete,
         notifyOnFail: validatedData.notifyOnFail,
         telegramNotify: validatedData.telegramNotify,
-        data: {}, // Additional data can be stored here
+        data: {},
         result: null
       };
       
@@ -181,11 +179,11 @@ export function registerTaskSchedulingRoutes(app: Router) {
       const userRole = req.session!.userRole || '';
       
       // Build query conditions
-      let conditions = [eq(schema.agentTasks.id, taskId)];
+      let conditions = [sql`id = ${taskId}`];
       
       // Only filter by user if not an admin
       if (userRole !== 'Admin') {
-        conditions.push(eq(schema.agentTasks.userId, userId));
+        conditions.push(sql`user_id = ${userId}`);
       }
       
       // Execute query
@@ -217,11 +215,11 @@ export function registerTaskSchedulingRoutes(app: Router) {
       const validatedData = updateTaskSchema.parse(req.body);
       
       // Build query conditions
-      let conditions = [eq(schema.agentTasks.id, taskId)];
+      let conditions = [sql`id = ${taskId}`];
       
       // Only filter by user if not an admin
       if (userRole !== 'Admin') {
-        conditions.push(eq(schema.agentTasks.userId, userId));
+        conditions.push(sql`user_id = ${userId}`);
       }
       
       // Check if task exists and user has permission
@@ -235,7 +233,7 @@ export function registerTaskSchedulingRoutes(app: Router) {
       }
       
       // Prepare update data
-      const updateData: Partial<schema.AgentTask> = {};
+      const updateData: any = {};
       
       if (validatedData.task !== undefined) updateData.task = validatedData.task;
       if (validatedData.agentId !== undefined) updateData.agentId = validatedData.agentId;
@@ -308,11 +306,11 @@ export function registerTaskSchedulingRoutes(app: Router) {
       const userRole = req.session!.userRole || '';
       
       // Build query conditions
-      let conditions = [eq(schema.agentTasks.id, taskId)];
+      let conditions = [sql`id = ${taskId}`];
       
       // Only filter by user if not an admin
       if (userRole !== 'Admin') {
-        conditions.push(eq(schema.agentTasks.userId, userId));
+        conditions.push(sql`user_id = ${userId}`);
       }
       
       // Check if task exists and user has permission
@@ -350,11 +348,11 @@ export function registerTaskSchedulingRoutes(app: Router) {
       const userRole = req.session!.userRole || '';
       
       // Build query conditions
-      let conditions = [eq(schema.agentTasks.id, taskId)];
+      let conditions = [sql`id = ${taskId}`];
       
       // Only filter by user if not an admin
       if (userRole !== 'Admin') {
-        conditions.push(eq(schema.agentTasks.userId, userId));
+        conditions.push(sql`user_id = ${userId}`);
       }
       
       // Check if task exists and user has permission
@@ -377,23 +375,27 @@ export function registerTaskSchedulingRoutes(app: Router) {
       // Get full tool details
       const toolIds = taskTools.map(tt => tt.toolId);
       
-      let tools = [];
-      if (toolIds.length > 0) {
-        const fullTools = await db
-          .select()
-          .from(schema.langchainTools)
-          .where(sql`${schema.langchainTools.id} IN (${toolIds.join(',')})`);
-        
-        // Merge full tool details with task-specific settings
-        tools = taskTools.map(tt => {
-          const fullTool = fullTools.find(t => t.id === tt.toolId);
-          return {
-            ...fullTool,
-            priority: tt.priority,
-            parameters: tt.parameters
-          };
-        });
+      // Return tools with task-specific settings
+      if (toolIds.length === 0) {
+        return res.json([]);
       }
+      
+      // Execute raw query to get tools by IDs
+      const toolsResult = await db.execute(
+        sql`SELECT * FROM langchain_tools WHERE id IN (${sql.join(toolIds, sql`, `)})`
+      );
+      
+      const fullTools = toolsResult.rows;
+      
+      // Merge full tool details with task-specific settings
+      const tools = taskTools.map(tt => {
+        const fullTool = fullTools.find((t: any) => t.id === tt.toolId);
+        return {
+          ...fullTool,
+          priority: tt.priority,
+          parameters: tt.parameters
+        };
+      });
       
       res.json(tools);
     } catch (error) {
@@ -410,11 +412,11 @@ export function registerTaskSchedulingRoutes(app: Router) {
       const userRole = req.session!.userRole || '';
       
       // Build query conditions
-      let conditions = [eq(schema.agentTasks.id, taskId)];
+      let conditions = [sql`id = ${taskId}`];
       
       // Only filter by user if not an admin
       if (userRole !== 'Admin') {
-        conditions.push(eq(schema.agentTasks.userId, userId));
+        conditions.push(sql`user_id = ${userId}`);
       }
       
       // Check if task exists and user has permission
@@ -442,51 +444,143 @@ export function registerTaskSchedulingRoutes(app: Router) {
       // For now, we'll just simulate execution
       setTimeout(async () => {
         try {
-          // Simulate execution time
-          const executionTime = Math.floor(Math.random() * 5000) + 1000;
-          await new Promise(resolve => setTimeout(resolve, executionTime));
+          const taskTools = await db
+            .select()
+            .from(schema.agentTaskTools)
+            .where(eq(schema.agentTaskTools.taskId, taskId));
+            
+          // Execute LangChain agent with tools
+          let result = { success: true, message: "Task completed successfully", data: {} };
+          let status = 'completed';
           
-          // Simulate success or failure (90% success rate)
-          const success = Math.random() > 0.1;
+          try {
+            // Here we would call the actual agent execution
+            // For now just simulate it
+            const tools = await Promise.all(taskTools.map(async (tt) => {
+              const [tool] = await db
+                .select()
+                .from(schema.langchainTools)
+                .where(eq(schema.langchainTools.id, tt.toolId));
+              return {
+                ...tool,
+                parameters: tt.parameters
+              };
+            }));
+            
+            // Simulate agent execution
+            result.data = {
+              agentId: existingTask.agentId,
+              tools: tools.map(t => t.name),
+              executionTime: Math.floor(Math.random() * 5000) + 1000,
+              executedAt: new Date().toISOString()
+            };
+            
+            // 10% chance of failure for simulation
+            if (Math.random() < 0.1) {
+              result.success = false;
+              result.message = "Task execution failed";
+              status = 'failed';
+            }
+            
+          } catch (agentError) {
+            console.error('Agent execution error:', agentError);
+            result = {
+              success: false,
+              message: `Agent execution failed: ${agentError.message || 'Unknown error'}`,
+              data: { error: agentError.toString() }
+            };
+            status = 'failed';
+          }
           
-          // Update task status
+          // Update task with result
           await db
             .update(schema.agentTasks)
             .set({
-              status: success ? 'completed' : 'failed',
-              result: success 
-                ? { success: true, message: 'Task executed successfully', executionTime }
-                : { success: false, message: 'Task execution failed', error: 'Simulated failure', executionTime },
+              status,
+              result,
               updatedAt: new Date(),
-              completedAt: success ? new Date() : null
+              completedAt: status === 'completed' ? new Date() : null
             })
             .where(eq(schema.agentTasks.id, taskId));
             
-          console.log(`Task ${taskId} execution ${success ? 'completed' : 'failed'}`);
-          
-          // If task was successful and has recurrence, schedule next run
-          if (success && existingTask.recurrence) {
-            // Logic to calculate next run based on recurrence pattern
-            // would go here in a real implementation
+          // Handle recurrence if task is completed successfully
+          if (status === 'completed' && existingTask.recurrence) {
+            const newScheduledDate = calculateNextOccurrence(
+              existingTask.scheduledFor || new Date(),
+              existingTask.recurrence
+            );
+            
+            if (newScheduledDate) {
+              // Create a new recurring task
+              const recurringTaskData = {
+                ...existingTask,
+                id: undefined, // Let DB assign a new ID
+                status: 'pending',
+                scheduledFor: newScheduledDate,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                completedAt: null,
+                result: null
+              };
+              
+              // Insert the new recurring task
+              const [newTask] = await db
+                .insert(schema.agentTasks)
+                .values(recurringTaskData)
+                .returning();
+                
+              // Copy over the tools
+              if (taskTools.length > 0) {
+                const newToolInserts = taskTools.map(tool => ({
+                  ...tool,
+                  id: undefined, // Let DB assign a new ID
+                  taskId: newTask.id,
+                  createdAt: new Date()
+                }));
+                
+                await db
+                  .insert(schema.agentTaskTools)
+                  .values(newToolInserts);
+              }
+            }
           }
-        } catch (error) {
-          console.error(`Error executing task ${taskId}:`, error);
           
-          // Update task as failed
+          // Send notifications if configured
+          if ((status === 'completed' && existingTask.notifyOnComplete) || 
+              (status === 'failed' && existingTask.notifyOnFail)) {
+            // Here we would handle notifications - not implemented yet
+            console.log(`Sending notification for task ${taskId} completion status: ${status}`);
+            
+            // If Telegram notifications are enabled
+            if (existingTask.telegramNotify) {
+              // Here we would send Telegram notification - not implemented yet
+              console.log(`Sending Telegram notification for task ${taskId}`);
+            }
+          }
+          
+        } catch (error) {
+          console.error('Error during task execution:', error);
+          
+          // Update task status to failed
           await db
             .update(schema.agentTasks)
             .set({
               status: 'failed',
-              result: { success: false, message: 'Task execution failed with error', error: String(error) },
+              result: {
+                success: false,
+                message: `Task execution failed: ${error.message || 'Unknown error'}`,
+                data: { error: error.toString() }
+              },
               updatedAt: new Date()
             })
             .where(eq(schema.agentTasks.id, taskId));
         }
-      }, 100);
+      }, 500); // Small delay to allow response to return first
       
+      // Return the updated task
       res.json({ 
-        message: 'Task execution started', 
-        task: updatedTask 
+        message: 'Task execution initiated', 
+        task: await formatTaskWithTools(updatedTask) 
       });
     } catch (error) {
       console.error('Error executing task:', error);
@@ -494,10 +588,10 @@ export function registerTaskSchedulingRoutes(app: Router) {
     }
   });
   
-  // Get all available tools for task assignment
+  // Get all available tools for tasks
   app.get('/api/tasks/tools', requireAuth, async (req: Request, res: Response) => {
     try {
-      // Get all enabled tools
+      // Fetch all tools that can be used with tasks
       const tools = await db
         .select()
         .from(schema.langchainTools)
@@ -506,8 +600,32 @@ export function registerTaskSchedulingRoutes(app: Router) {
       
       res.json(tools);
     } catch (error) {
-      console.error('Error fetching available tools:', error);
+      console.error('Error fetching task tools:', error);
       res.status(500).json({ message: 'Failed to fetch available tools' });
     }
   });
+}
+
+// Helper function to calculate next occurrence based on recurrence pattern
+function calculateNextOccurrence(currentDate: Date, recurrence: string): Date | null {
+  const nextDate = new Date(currentDate);
+  
+  switch (recurrence) {
+    case 'daily':
+      nextDate.setDate(nextDate.getDate() + 1);
+      break;
+    case 'weekly':
+      nextDate.setDate(nextDate.getDate() + 7);
+      break;
+    case 'monthly':
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      break;
+    case 'yearly':
+      nextDate.setFullYear(nextDate.getFullYear() + 1);
+      break;
+    default:
+      return null; // Unknown recurrence pattern
+  }
+  
+  return nextDate;
 }
