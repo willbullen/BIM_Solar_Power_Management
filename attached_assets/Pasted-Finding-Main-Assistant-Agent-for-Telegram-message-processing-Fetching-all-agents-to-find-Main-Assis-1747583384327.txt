@@ -1,0 +1,51 @@
+Finding Main Assistant Agent for Telegram message processing
+Fetching all agents to find Main Assistant Agent
+Found 3 agents in database
+Agent names: [
+  'BillyBot Agent (ID: 2)',
+  'Main Assistant Agent (ID: 3)',
+  'Test Agent (ID: 1)'
+]
+Using agent "Main Assistant Agent" (ID: 3) for Telegram message processing
+Generating AI response for Telegram - Conversation: 3, User: 1, Agent: 3
+Using agent ID 3 for Telegram message processing
+Error during AI response generation: syntax error at or near "asc"
+Error stack: error: syntax error at or near "asc"
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async AgentService.generateResponse (/home/runner/workspace/server/agent-service.ts:279:22)
+    at async TelegramService.handleIncomingMessage (/home/runner/workspace/server/services/telegram-service.ts:893:24)
+    at async TelegramBot.<anonymous> (/home/runner/workspace/server/services/telegram-service.ts:515:7)
+Error context: {
+  conversationId: 3,
+  userId: 1,
+  telegramUserId: 1,
+  hasAgentService: true,
+  agentId: 3
+}
+Error generating AI response: error: syntax error at or near "asc"
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async AgentService.generateResponse (/home/runner/workspace/server/agent-service.ts:279:22)
+    at async TelegramService.handleIncomingMessage (/home/runner/workspace/server/services/telegram-service.ts:893:24)
+    at async TelegramBot.<anonymous> (/home/runner/workspace/server/services/telegram-service.ts:515:7) {
+  length: 93,
+  severity: 'ERROR',
+  code: '42601',
+  detail: undefined,
+  hint: undefined,
+  position: '242',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'scan.l',
+  line: '1244',
+  routine: 'scanner_yyerror'
+}

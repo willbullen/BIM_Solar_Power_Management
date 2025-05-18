@@ -278,7 +278,7 @@ export class AgentService {
     // Get the conversation history
     const messages = await db.query.agentMessages.findMany({
       where: (fields, { eq }) => eq(fields.conversationId, conversationId),
-      orderBy: (fields, { asc }) => [asc(fields.timestamp)],
+      orderBy: (fields, { asc }) => [asc(fields.createdAt)],
     });
 
     // Get conversation context (e.g., current data being analyzed)
