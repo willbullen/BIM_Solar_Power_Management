@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { eq, and, or, gte, isNull, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import { db } from './db';
 import * as schema from '../shared/schema-task-scheduler';
 import { langchainTools } from '../shared/schema';
@@ -70,16 +70,16 @@ export function registerTaskSchedulingRoutes(app: Router) {
       const { status, from, to, agentId } = req.query;
       
       // Build query conditions
-      let conditions = [];
+      let conditions: any[] = [];
       
       // Filter by user unless admin
       if (userRole !== 'Admin') {
-        conditions.push(sql`user_id = ${userId}`);
+        conditions.push(eq(schema.agentTasks.userId, userId));
       }
       
       // Filter by status if provided
       if (status) {
-        conditions.push(sql`status = ${status as string}`);
+        conditions.push(eq(schema.agentTasks.status, status as string));
       }
       
       // Filter by date range if provided
@@ -89,13 +89,11 @@ export function registerTaskSchedulingRoutes(app: Router) {
       
       // Filter by agent if provided
       if (agentId) {
-        conditions.push(sql`agent_id = ${parseInt(agentId as string)}`);
+        conditions.push(eq(schema.agentTasks.agentId, parseInt(agentId as string)));
       }
       
       // Execute query with filters
-      let query = db
-        .select()
-        .from(schema.agentTasks);
+      let query = db.select().from(schema.agentTasks);
         
       if (conditions.length > 0) {
         query = query.where(and(...conditions));
@@ -126,7 +124,7 @@ export function registerTaskSchedulingRoutes(app: Router) {
         task: validatedData.task,
         agentId: validatedData.agentId,
         userId: userId,
-        status: 'pending',
+        status: 'pending' as const,
         scheduledFor: validatedData.scheduledFor ? new Date(validatedData.scheduledFor) : null,
         recurrence: validatedData.recurrence || null,
         priority: validatedData.priority,
@@ -180,11 +178,11 @@ export function registerTaskSchedulingRoutes(app: Router) {
       const userRole = req.session!.userRole || '';
       
       // Build query conditions
-      let conditions = [sql`id = ${taskId}`];
+      let conditions: any[] = [eq(schema.agentTasks.id, taskId)];
       
       // Only filter by user if not an admin
       if (userRole !== 'Admin') {
-        conditions.push(sql`user_id = ${userId}`);
+        conditions.push(eq(schema.agentTasks.userId, userId));
       }
       
       // Execute query
@@ -216,11 +214,11 @@ export function registerTaskSchedulingRoutes(app: Router) {
       const validatedData = updateTaskSchema.parse(req.body);
       
       // Build query conditions
-      let conditions = [sql`id = ${taskId}`];
+      let conditions: any[] = [eq(schema.agentTasks.id, taskId)];
       
       // Only filter by user if not an admin
       if (userRole !== 'Admin') {
-        conditions.push(sql`user_id = ${userId}`);
+        conditions.push(eq(schema.agentTasks.userId, userId));
       }
       
       // Check if task exists and user has permission
@@ -307,11 +305,11 @@ export function registerTaskSchedulingRoutes(app: Router) {
       const userRole = req.session!.userRole || '';
       
       // Build query conditions
-      let conditions = [sql`id = ${taskId}`];
+      let conditions: any[] = [eq(schema.agentTasks.id, taskId)];
       
       // Only filter by user if not an admin
       if (userRole !== 'Admin') {
-        conditions.push(sql`user_id = ${userId}`);
+        conditions.push(eq(schema.agentTasks.userId, userId));
       }
       
       // Check if task exists and user has permission
@@ -349,11 +347,11 @@ export function registerTaskSchedulingRoutes(app: Router) {
       const userRole = req.session!.userRole || '';
       
       // Build query conditions
-      let conditions = [sql`id = ${taskId}`];
+      let conditions: any[] = [eq(schema.agentTasks.id, taskId)];
       
       // Only filter by user if not an admin
       if (userRole !== 'Admin') {
-        conditions.push(sql`user_id = ${userId}`);
+        conditions.push(eq(schema.agentTasks.userId, userId));
       }
       
       // Check if task exists and user has permission
@@ -373,24 +371,23 @@ export function registerTaskSchedulingRoutes(app: Router) {
         .where(eq(schema.agentTaskTools.taskId, taskId))
         .orderBy(schema.agentTaskTools.priority);
       
-      // Get full tool details
-      const toolIds = taskTools.map(tt => tt.toolId);
-      
-      // Return tools with task-specific settings
-      if (toolIds.length === 0) {
+      // If no tools, return empty array
+      if (taskTools.length === 0) {
         return res.json([]);
       }
       
-      // Execute raw query to get tools by IDs
-      const toolsResult = await db.execute(
-        sql`SELECT * FROM langchain_tools WHERE id IN (${sql.join(toolIds, sql`, `)})`
-      );
+      // Get full tool details
+      const toolIds = taskTools.map(tt => tt.toolId);
       
-      const fullTools = toolsResult.rows;
+      // Fetch tools by IDs
+      const tools = await db
+        .select()
+        .from(langchainTools)
+        .where(sql`id IN (${toolIds.join(',')})`)
       
       // Merge full tool details with task-specific settings
-      const tools = taskTools.map(tt => {
-        const fullTool = fullTools.find((t: any) => t.id === tt.toolId);
+      const mergedTools = taskTools.map(tt => {
+        const fullTool = tools.find(t => t.id === tt.toolId);
         return {
           ...fullTool,
           priority: tt.priority,
@@ -398,7 +395,7 @@ export function registerTaskSchedulingRoutes(app: Router) {
         };
       });
       
-      res.json(tools);
+      res.json(mergedTools);
     } catch (error) {
       console.error('Error fetching task tools:', error);
       res.status(500).json({ message: 'Failed to fetch task tools' });
@@ -413,11 +410,11 @@ export function registerTaskSchedulingRoutes(app: Router) {
       const userRole = req.session!.userRole || '';
       
       // Build query conditions
-      let conditions = [sql`id = ${taskId}`];
+      let conditions: any[] = [eq(schema.agentTasks.id, taskId)];
       
       // Only filter by user if not an admin
       if (userRole !== 'Admin') {
-        conditions.push(sql`user_id = ${userId}`);
+        conditions.push(eq(schema.agentTasks.userId, userId));
       }
       
       // Check if task exists and user has permission
@@ -434,7 +431,7 @@ export function registerTaskSchedulingRoutes(app: Router) {
       const [updatedTask] = await db
         .update(schema.agentTasks)
         .set({ 
-          status: 'in-progress', 
+          status: 'in-progress' as const, 
           updatedAt: new Date() 
         })
         .where(eq(schema.agentTasks.id, taskId))
@@ -452,7 +449,7 @@ export function registerTaskSchedulingRoutes(app: Router) {
             
           // Execute LangChain agent with tools
           let result = { success: true, message: "Task completed successfully", data: {} };
-          let status = 'completed';
+          let status = 'completed' as const;
           
           try {
             // Here we would call the actual agent execution
@@ -460,8 +457,8 @@ export function registerTaskSchedulingRoutes(app: Router) {
             const tools = await Promise.all(taskTools.map(async (tt) => {
               const [tool] = await db
                 .select()
-                .from(schema.langchainTools)
-                .where(eq(schema.langchainTools.id, tt.toolId));
+                .from(langchainTools)
+                .where(eq(langchainTools.id, tt.toolId));
               return {
                 ...tool,
                 parameters: tt.parameters
@@ -480,17 +477,17 @@ export function registerTaskSchedulingRoutes(app: Router) {
             if (Math.random() < 0.1) {
               result.success = false;
               result.message = "Task execution failed";
-              status = 'failed';
+              status = 'failed' as const;
             }
             
-          } catch (agentError) {
+          } catch (agentError: any) {
             console.error('Agent execution error:', agentError);
             result = {
               success: false,
               message: `Agent execution failed: ${agentError.message || 'Unknown error'}`,
               data: { error: agentError.toString() }
             };
-            status = 'failed';
+            status = 'failed' as const;
           }
           
           // Update task with result
@@ -514,14 +511,22 @@ export function registerTaskSchedulingRoutes(app: Router) {
             if (newScheduledDate) {
               // Create a new recurring task
               const recurringTaskData = {
-                ...existingTask,
-                id: undefined, // Let DB assign a new ID
-                status: 'pending',
+                task: existingTask.task,
+                agentId: existingTask.agentId,
+                userId: existingTask.userId,
+                status: 'pending' as const,
                 scheduledFor: newScheduledDate,
+                recurrence: existingTask.recurrence,
+                priority: existingTask.priority,
+                dependsOn: existingTask.dependsOn,
+                notifyOnComplete: existingTask.notifyOnComplete,
+                notifyOnFail: existingTask.notifyOnFail,
+                telegramNotify: existingTask.telegramNotify,
+                data: existingTask.data,
+                result: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                completedAt: null,
-                result: null
+                completedAt: null
               };
               
               // Insert the new recurring task
@@ -533,9 +538,10 @@ export function registerTaskSchedulingRoutes(app: Router) {
               // Copy over the tools
               if (taskTools.length > 0) {
                 const newToolInserts = taskTools.map(tool => ({
-                  ...tool,
-                  id: undefined, // Let DB assign a new ID
                   taskId: newTask.id,
+                  toolId: tool.toolId,
+                  priority: tool.priority,
+                  parameters: tool.parameters,
                   createdAt: new Date()
                 }));
                 
@@ -559,14 +565,14 @@ export function registerTaskSchedulingRoutes(app: Router) {
             }
           }
           
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error during task execution:', error);
           
           // Update task status to failed
           await db
             .update(schema.agentTasks)
             .set({
-              status: 'failed',
+              status: 'failed' as const,
               result: {
                 success: false,
                 message: `Task execution failed: ${error.message || 'Unknown error'}`,
@@ -595,9 +601,9 @@ export function registerTaskSchedulingRoutes(app: Router) {
       // Fetch all tools that can be used with tasks
       const tools = await db
         .select()
-        .from(schema.langchainTools)
-        .where(eq(schema.langchainTools.enabled, true))
-        .orderBy(schema.langchainTools.name);
+        .from(langchainTools)
+        .where(eq(langchainTools.enabled, true))
+        .orderBy(langchainTools.name);
       
       res.json(tools);
     } catch (error) {
