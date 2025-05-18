@@ -413,9 +413,17 @@ export const agentTasks = pgTable("langchain_agent_tasks", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   task: text("task").notNull(), // Main task description/title
   status: text("status").notNull().default("pending"), // 'pending', 'in-progress', 'completed', 'failed'
+  scheduledFor: timestamp("scheduled_for"), // When the task is scheduled to run
+  recurrence: text("recurrence"), // Recurrence pattern (e.g., 'daily', 'weekly', 'monthly', or cron expression)
+  priority: text("priority").default("medium"), // 'low', 'medium', 'high'
+  dependsOn: integer("depends_on"), // ID of another task this depends on
+  completedAt: timestamp("completed_at"), // When the task was completed
+  notifyOnComplete: boolean("notify_on_complete").default(true), // Send notification when complete
+  notifyOnFail: boolean("notify_on_fail").default(true), // Send notification on failure
+  telegramNotify: boolean("telegram_notify").default(false), // Whether to notify via Telegram
 });
 
-export const agentTasksRelations = relations(agentTasks, ({ one }) => ({
+export const agentTasksRelations = relations(agentTasks, ({ one, many }) => ({
   user: one(users, {
     fields: [agentTasks.userId],
     references: [users.id],
@@ -423,13 +431,48 @@ export const agentTasksRelations = relations(agentTasks, ({ one }) => ({
   agent: one(langchainAgents, {
     fields: [agentTasks.agentId],
     references: [langchainAgents.id],
+  }),
+  dependentTask: one(agentTasks, {
+    fields: [agentTasks.dependsOn],
+    references: [agentTasks.id],
+  }),
+  taskTools: many(agentTaskTools)
+}));
+
+// Agent Task Tools table for assigning specific tools to tasks
+export const agentTaskTools = pgTable("langchain_agent_task_tools", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").notNull().references(() => agentTasks.id),
+  toolId: integer("tool_id").notNull().references(() => langchainTools.id),
+  priority: integer("priority").default(0), // Order of tool preference
+  parameters: jsonb("parameters"), // Default parameters for the tool
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const agentTaskToolsRelations = relations(agentTaskTools, ({ one }) => ({
+  task: one(agentTasks, {
+    fields: [agentTaskTools.taskId],
+    references: [agentTasks.id],
+  }),
+  tool: one(langchainTools, {
+    fields: [agentTaskTools.toolId],
+    references: [langchainTools.id],
   })
 }));
+
+export const insertAgentTaskToolSchema = createInsertSchema(agentTaskTools).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAgentTaskTool = z.infer<typeof insertAgentTaskToolSchema>;
+export type AgentTaskTool = typeof agentTaskTools.$inferSelect;
 
 export const insertAgentTaskSchema = createInsertSchema(agentTasks).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  completedAt: true,
 });
 
 export type InsertAgentTask = z.infer<typeof insertAgentTaskSchema>;
