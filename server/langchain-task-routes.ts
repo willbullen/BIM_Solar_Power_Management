@@ -4,6 +4,7 @@ import * as schema from '../shared/schema';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { AgentService } from './agent-service';
 import { authenticateUser } from './auth';
+import { TelegramService } from './telegram-service';
 
 /**
  * Register task-related routes for LangChain agents
@@ -30,7 +31,7 @@ export function registerLangChainTaskRoutes(app: Express) {
   });
 
   // Get a specific task
-  app.get('/api/langchain/tasks/:id', requireAuth, async (req: Request, res: Response) => {
+  app.get('/api/langchain/tasks/:id', authenticateUser, async (req: Request, res: Response) => {
     try {
       const taskId = parseInt(req.params.id);
       const userId = req.session.userId;
