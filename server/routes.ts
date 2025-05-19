@@ -18,7 +18,6 @@ import { AIService } from './ai-service';
 import { registerAgentRoutes } from './agent-routes';
 import { registerNotificationRoutes } from './agent-notification-routes';
 import { registerTelegramRoutes } from './telegram-routes';
-import { registerTaskSchedulingRoutes } from './task-scheduling-routes';
 import { registerFileRoutes } from './file-routes';
 import { registerLangChainRoutes } from './langchain-routes';
 import { registerVoiceRoutes } from './voice-routes';
@@ -34,15 +33,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Set up authentication routes (/api/register, /api/login, /api/logout, /api/user)
   setupAuth(app);
-  
-  // Register all route modules
-  registerAgentRoutes(app);
-  registerNotificationRoutes(app);
-  registerTelegramRoutes(app);
-  registerFileRoutes(app);
-  registerLangChainRoutes(app);
-  registerVoiceRoutes(app);
-  registerTaskSchedulingRoutes(app);
 
   // Create HTTP server
   const httpServer = createServer(app);
@@ -1507,9 +1497,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register agent notification routes for API-based notifications
   registerNotificationRoutes(app);
-  
-  // Task scheduling routes are already registered above
-  // registerTaskSchedulingRoutes(app); // Removed duplicate registration
   
   // Register database query and analysis functions for AI agent
   try {

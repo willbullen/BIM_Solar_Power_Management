@@ -14,9 +14,7 @@ import {
   MessageCircle,
   Cloud,
   BatteryCharging,
-  Activity,
-  Bot,
-  Calendar
+  Activity
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
@@ -138,20 +136,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               >
                 <MessageCircle className="mr-3 h-4 w-4" />
                 Feedback & Issues
-              </Link>
-              
-              <Link
-                href="/task-scheduler"
-                className={cn(
-                  "group flex items-center rounded-md px-3 py-2 text-sm font-medium",
-                  "hover:bg-accent/50 hover:text-accent-foreground",
-                  location === "/task-scheduler" 
-                    ? "bg-accent/70 text-accent-foreground" 
-                    : "transparent"
-                )}
-              >
-                <Calendar className="mr-3 h-4 w-4" />
-                Task Scheduler
               </Link>
               
               {user?.role === "Admin" && (

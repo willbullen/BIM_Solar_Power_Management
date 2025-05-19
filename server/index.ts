@@ -8,7 +8,6 @@ import { migrate as removeAgentFunctionsTable } from "./migrations/remove-agent-
 import { migrateLangchainNaming } from "./migrations/migrate-langchain-naming";
 import { removeTelegramSettings } from "./migrations/remove-telegram-settings";
 import { migrate as removeTelegramLegacyTables } from "./migrations/remove-telegram-legacy-tables";
-import { migrateTaskScheduling } from "./migrations/migrate-task-scheduling";
 import cors from 'cors';
 
 const app = express();
@@ -76,15 +75,6 @@ app.use((req, res, next) => {
     } catch (langChainError) {
       console.error('Error during LangChain database migration:', langChainError);
       // Continue with server startup even if LangChain migration fails
-    }
-    
-    // Run Task Scheduling migration
-    try {
-      await migrateTaskScheduling();
-      console.log('Task scheduling migration completed successfully');
-    } catch (taskSchedulingError) {
-      console.error('Error during task scheduling migration:', taskSchedulingError);
-      // Continue with server startup even if migration fails
     }
     
     // Run the agent function migration - completely move all functions to langchain_tools
