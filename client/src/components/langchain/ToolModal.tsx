@@ -44,6 +44,7 @@ export function ToolModal({ isOpen, onClose, tool }: ToolModalProps) {
       implementation: tool?.implementation || "",
       enabled: tool?.enabled ?? true,
       isBuiltIn: tool?.isBuiltIn ?? false,
+      metadata: tool?.metadata || {},
     },
   });
 

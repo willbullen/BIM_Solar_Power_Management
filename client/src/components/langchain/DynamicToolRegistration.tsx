@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface DynamicToolRegistrationProps {
   onToolRegistered?: (tool: any) => void;
@@ -86,9 +87,18 @@ export function DynamicToolRegistration({ onToolRegistered }: DynamicToolRegistr
     return () => clearTimeout(searchTimer);
   }, [searchQuery, toast]);
 
+  // State for agent selection
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("");
+  
+  // Fetch available agents
+  const { data: agents = [] } = useQuery({
+    queryKey: ['/api/langchain/agents'],
+    enabled: true,
+  });
+  
   // Handler for registering a tool
   const handleRegisterTool = (tool: any) => {
-    registerToolMutation.mutate({
+    const toolData = {
       name: tool.name,
       description: tool.description,
       toolType: tool.type || 'langchain',
@@ -98,13 +108,17 @@ export function DynamicToolRegistration({ onToolRegistered }: DynamicToolRegistr
       implementation: tool.implementation || tool.name,
       enabled: true,
       isBuiltIn: false,
+      agentId: selectedAgentId || undefined,
       metadata: {
         source: 'langchain_toolkit',
         originalName: tool.name,
         category: tool.category || 'Other',
         type: tool.type || 'custom'
       }
-    });
+    };
+    
+    console.log('Registering tool with data:', toolData);
+    registerToolMutation.mutate(toolData);
   };
 
   return (
@@ -125,6 +139,30 @@ export function DynamicToolRegistration({ onToolRegistered }: DynamicToolRegistr
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+          </div>
+          
+          {/* Agent Selection */}
+          <div className="mb-3">
+            <label className="text-sm font-medium mb-1 block">Assign to Agent</label>
+            <Select 
+              onValueChange={setSelectedAgentId} 
+              defaultValue=""
+            >
+              <SelectTrigger className="bg-background/50">
+                <SelectValue placeholder="Select an agent (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">None (Register tool only)</SelectItem>
+                {agents.map((agent: any) => (
+                  <SelectItem key={agent.id} value={agent.id.toString()}>
+                    {agent.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Tools will be automatically assigned to the selected agent
+            </p>
           </div>
 
           {isLoading ? (
