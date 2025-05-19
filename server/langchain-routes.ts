@@ -14,6 +14,7 @@ import {
 import { ChatOpenAI } from '@langchain/openai';
 import { ReadFromDBTool } from './langchain/tools/readFromDB';
 import { CompileReportTool } from './langchain/tools/compileReport';
+import { discoverAvailableTools, registerTool } from './utils/langchain-tool-discovery';
 
 // Middleware to require authentication
 async function requireAuth(req: Request, res: Response, next: any) {
@@ -574,6 +575,50 @@ export function registerLangChainRoutes(app: Express) {
     } catch (error) {
       console.error('Error updating tool schemas:', error);
       res.status(500).json({ error: 'Failed to update tool schemas' });
+    }
+  });
+  
+  // Search for available LangChain tools
+  app.get('/api/langchain/tools/search', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const query = req.query.query as string || '';
+      console.log(`Searching for LangChain tools with query: ${query}`);
+      
+      // Use the tool discovery service to find available tools
+      const tools = await discoverAvailableTools(query);
+      
+      res.json({ 
+        success: true,
+        tools: tools 
+      });
+    } catch (error) {
+      console.error('Error searching for LangChain tools:', error);
+      res.status(500).json({ error: 'Failed to search for LangChain tools' });
+    }
+  });
+  
+  // Register a new LangChain tool
+  app.post('/api/langchain/tools/register', requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session?.userId || req.headers['x-auth-user-id'];
+      
+      // Add createdBy if user is authenticated
+      const toolData = {
+        ...req.body,
+        createdBy: userId ? Number(userId) : undefined
+      };
+      
+      // Register the tool
+      const result = await registerTool(toolData);
+      
+      if (result.error) {
+        return res.status(400).json({ error: result.error, tool: result.tool });
+      }
+      
+      res.status(201).json(result.tool);
+    } catch (error) {
+      console.error('Error registering LangChain tool:', error);
+      res.status(500).json({ error: 'Failed to register LangChain tool' });
     }
   });
   // Get all tools for a specific agent
