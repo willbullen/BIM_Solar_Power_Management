@@ -145,9 +145,22 @@ export function isToolDuplicate(toolName: string, existingTools: any[]): boolean
 
 /**
  * Discovers available tools that can be registered
+ * Optionally filters by query string
  */
-export function discoverAvailableTools(): ToolInfo[] {
-  return PREDEFINED_TOOLS;
+export function discoverAvailableTools(query?: string): ToolInfo[] {
+  if (!query) {
+    return PREDEFINED_TOOLS;
+  }
+  
+  const queryLower = query.toLowerCase();
+  return PREDEFINED_TOOLS.filter(tool => {
+    return (
+      tool.name.toLowerCase().includes(queryLower) ||
+      tool.description.toLowerCase().includes(queryLower) ||
+      tool.category.toLowerCase().includes(queryLower) ||
+      tool.type.toLowerCase().includes(queryLower)
+    );
+  });
 }
 
 /**
