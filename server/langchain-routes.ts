@@ -587,9 +587,18 @@ export function registerLangChainRoutes(app: Express) {
       // Use the tool discovery service to find available tools
       const tools = await discoverAvailableTools(query);
       
+      // Check for already registered tools to avoid duplicates
+      const registeredTools = await db.select().from(schema.langchainTools);
+      const registeredToolNames = registeredTools.map(tool => tool.name.toLowerCase());
+      
+      // Filter out already registered tools
+      const availableTools = tools.filter(tool => 
+        !registeredToolNames.includes(tool.name.toLowerCase())
+      );
+      
       res.json({ 
         success: true,
-        tools: tools 
+        tools: availableTools 
       });
     } catch (error) {
       console.error('Error searching for LangChain tools:', error);
