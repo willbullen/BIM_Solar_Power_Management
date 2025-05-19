@@ -617,11 +617,51 @@ export function registerLangChainRoutes(app: Express) {
         createdBy: userId ? Number(userId) : undefined
       };
       
+      // Log received tool data for debugging
+      console.log('Registering new tool:', JSON.stringify(toolData, null, 2));
+      
       // Register the tool
       const result = await registerTool(toolData);
       
       if (result.error) {
         return res.status(400).json({ error: result.error, tool: result.tool });
+      }
+      
+      // If an agentId was provided, also assign the tool to that agent
+      if (toolData.agentId) {
+        try {
+          const agentId = parseInt(toolData.agentId.toString());
+          
+          // Check if this tool is already assigned to the agent
+          const existingAssignment = await db
+            .select()
+            .from(schema.langchainAgentTools)
+            .where(
+              and(
+                eq(schema.langchainAgentTools.agentId, agentId),
+                eq(schema.langchainAgentTools.toolId, result.tool.id)
+              )
+            );
+          
+          if (existingAssignment.length === 0) {
+            // Insert into agent_tools table for the specified agent
+            await db.insert(schema.langchainAgentTools).values({
+              agentId: agentId,
+              toolId: result.tool.id,
+              priority: toolData.priority || 0,
+              enabled: true,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            });
+            
+            console.log(`Tool ${result.tool.name} assigned to agent ${agentId}`);
+          } else {
+            console.log(`Tool ${result.tool.name} already assigned to agent ${agentId}`);
+          }
+        } catch (assignError) {
+          console.error('Error assigning tool to agent:', assignError);
+          // We don't fail the entire request if just the assignment fails
+        }
       }
       
       res.status(201).json(result.tool);

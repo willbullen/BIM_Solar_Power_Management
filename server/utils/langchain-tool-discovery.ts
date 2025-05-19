@@ -296,18 +296,25 @@ export const registerTool = async (toolData: any) => {
       };
     }
     
+    // Prepare metadata with category information
+    const metadata = {
+      ...toolData.metadata || {},
+      category: toolData.category || 'Other',
+      type: toolData.type || 'custom'
+    };
+    
     // Insert the new tool
     const [newTool] = await db
       .insert(schema.langchainTools)
       .values({
         name: toolData.name,
         description: toolData.description,
-        toolType: toolData.toolType || 'custom',
+        toolType: toolData.type || toolData.toolType || 'custom',
         parameters: toolData.parameters || {},
         implementation: toolData.implementation || `${toolData.name}Tool`,
         enabled: toolData.enabled !== undefined ? toolData.enabled : true,
         isBuiltIn: toolData.isBuiltIn || false,
-        metadata: toolData.metadata || {},
+        metadata: metadata,
         createdAt: new Date(),
         updatedAt: new Date(),
         createdBy: toolData.createdBy
