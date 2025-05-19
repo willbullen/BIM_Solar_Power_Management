@@ -51,37 +51,35 @@ export function DynamicToolRegistration({ onToolRegistered }: DynamicToolRegistr
 
   // Effect to search for available tools
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setAvailableTools([]);
-      return;
-    }
+    // If search is empty, load all available tools instead
+    const loadTools = async (endpoint: string) => {
+      setIsLoading(true);
+      try {
+        const response = await apiRequest(endpoint, {
+          method: 'GET',
+        });
+        
+        setAvailableTools(response.tools || []);
+      } catch (error) {
+        console.error("Error fetching tools:", error);
+        toast({
+          title: "Failed to load tools",
+          description: "There was an error loading available tools.",
+          variant: "destructive",
+        });
+        setAvailableTools([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
     const searchTimer = setTimeout(() => {
-      setIsLoading(true);
+      // If search query is provided, use search endpoint, otherwise use discover endpoint
+      const endpoint = searchQuery.trim() 
+        ? `/api/langchain/tools/search?query=${encodeURIComponent(searchQuery)}`
+        : '/api/langchain/tools/discover';
       
-      // In a real implementation, this would call the backend to search for tools
-      // For now, we'll simulate with some example tools
-      const mockToolSearch = async () => {
-        try {
-          const response = await apiRequest(`/api/langchain/tools/search?query=${encodeURIComponent(searchQuery)}`, {
-            method: 'GET',
-          });
-          
-          setAvailableTools(response.tools || []);
-        } catch (error) {
-          console.error("Error searching for tools:", error);
-          toast({
-            title: "Search failed",
-            description: "Failed to search for available tools.",
-            variant: "destructive",
-          });
-          setAvailableTools([]);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      
-      mockToolSearch();
+      loadTools(endpoint);
     }, 500);
 
     return () => clearTimeout(searchTimer);
