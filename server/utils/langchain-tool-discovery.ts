@@ -19,6 +19,11 @@ export const TOOL_CATEGORIES = {
   SYSTEM: "System Tools",
   API: "API Tools",
   UTILITY: "Utility Tools",
+  DATABASE: "Database Tools",
+  COMMUNICATION: "Communication Tools",
+  FORECASTING: "Forecasting Tools",
+  DOCUMENT: "Document Tools",
+  VISION: "Vision & Image Tools",
   OTHER: "Other Tools",
 };
 
@@ -50,7 +55,7 @@ const PREDEFINED_TOOLS: ToolInfo[] = [
     name: 'ReadFromDB',
     description: 'Reads data from the database based on a structured query.',
     type: 'custom',
-    category: TOOL_CATEGORIES.DATA,
+    category: TOOL_CATEGORIES.DATABASE,
     parameters: {
       query: { type: 'string', description: 'The SQL query to execute' }
     }
@@ -132,6 +137,96 @@ const PREDEFINED_TOOLS: ToolInfo[] = [
     parameters: {
       location: { type: 'object', description: 'Latitude and longitude coordinates' },
       period: { type: 'string', description: 'Forecast period' }
+    }
+  },
+  {
+    name: 'WikipediaQueryRun',
+    description: 'Searches Wikipedia and returns article summaries.',
+    type: 'langchain',
+    category: TOOL_CATEGORIES.SEARCH,
+    parameters: {
+      query: { type: 'string', description: 'The search query for Wikipedia' }
+    }
+  },
+  {
+    name: 'TelegramNotifier',
+    description: 'Sends notifications to users via Telegram.',
+    type: 'custom',
+    category: TOOL_CATEGORIES.COMMUNICATION,
+    parameters: {
+      userId: { type: 'string', description: 'ID of the user to notify' },
+      message: { type: 'string', description: 'Message to send' },
+      priority: { type: 'string', description: 'Priority level of the notification' }
+    }
+  },
+  {
+    name: 'DatetimeQueryRun',
+    description: 'Performs operations related to dates and times.',
+    type: 'langchain',
+    category: TOOL_CATEGORIES.UTILITY,
+    parameters: {
+      query: { type: 'string', description: 'Date/time operation to perform' }
+    }
+  },
+  {
+    name: 'PowerForecastAnalyzer',
+    description: 'Analyzes historical power data to generate forecasts.',
+    type: 'custom',
+    category: TOOL_CATEGORIES.FORECASTING,
+    parameters: {
+      timeRange: { type: 'string', description: 'Time range for forecast' },
+      modelType: { type: 'string', description: 'Type of forecasting model to use' }
+    }
+  },
+  {
+    name: 'AIAnswerEvaluator',
+    description: 'Evaluates AI-generated answers for accuracy and completeness.',
+    type: 'custom',
+    category: TOOL_CATEGORIES.NLP,
+    parameters: {
+      answer: { type: 'string', description: 'The answer to evaluate' },
+      criteria: { type: 'object', description: 'Evaluation criteria' }
+    }
+  },
+  {
+    name: 'PDFTextExtractor',
+    description: 'Extracts text and data from PDF documents.',
+    type: 'custom',
+    category: TOOL_CATEGORIES.DOCUMENT,
+    parameters: {
+      pdfUrl: { type: 'string', description: 'URL of the PDF to process' },
+      pages: { type: 'string', description: 'Page range to extract (e.g., "1-5")' }
+    }
+  },
+  {
+    name: 'SolarPanelOptimizer',
+    description: 'Optimizes solar panel orientation and configuration for maximum output.',
+    type: 'custom',
+    category: TOOL_CATEGORIES.FORECASTING,
+    parameters: {
+      location: { type: 'object', description: 'Location coordinates' },
+      panelSpecs: { type: 'object', description: 'Solar panel specifications' }
+    }
+  },
+  {
+    name: 'WeatherDataAnalyzer',
+    description: 'Analyzes weather data to identify patterns and correlations with power production.',
+    type: 'custom',
+    category: TOOL_CATEGORIES.DATA,
+    parameters: {
+      dataPoints: { type: 'array', description: 'Weather data points to analyze' },
+      analysisType: { type: 'string', description: 'Type of analysis to perform' }
+    }
+  },
+  {
+    name: 'EmailNotifier',
+    description: 'Sends email notifications to users about system events and alerts.',
+    type: 'custom',
+    category: TOOL_CATEGORIES.COMMUNICATION,
+    parameters: {
+      recipient: { type: 'string', description: 'Email address of the recipient' },
+      subject: { type: 'string', description: 'Email subject' },
+      body: { type: 'string', description: 'Email body content' }
     }
   }
 ];

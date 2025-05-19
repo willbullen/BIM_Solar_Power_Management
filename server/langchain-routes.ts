@@ -650,10 +650,10 @@ export function registerLangChainRoutes(app: Express) {
       console.log('Registering new tool:', JSON.stringify(toolData, null, 2));
       
       // Register the tool
-      const result = await registerTool(toolData);
+      const result = await registerTool(db, toolData);
       
-      if (result.error) {
-        return res.status(400).json({ error: result.error, tool: result.tool });
+      if (!result) {
+        return res.status(400).json({ error: 'Failed to register tool' });
       }
       
       // If an agentId was provided, also assign the tool to that agent
@@ -693,7 +693,7 @@ export function registerLangChainRoutes(app: Express) {
         }
       }
       
-      res.status(201).json(result.tool);
+      res.status(201).json(result);
     } catch (error) {
       console.error('Error registering LangChain tool:', error);
       res.status(500).json({ error: 'Failed to register LangChain tool' });
