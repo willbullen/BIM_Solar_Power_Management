@@ -89,10 +89,13 @@ export function DynamicToolRegistration({ onToolRegistered }: DynamicToolRegistr
   const [selectedAgentId, setSelectedAgentId] = useState<string>("");
   
   // Fetch available agents
-  const { data: agents = [] } = useQuery({
+  const { data: agentsData } = useQuery({
     queryKey: ['/api/langchain/agents'],
     enabled: true,
   });
+  
+  // Ensure agents is always an array
+  const agents = Array.isArray(agentsData) ? agentsData : [];
   
   // Handler for registering a tool
   const handleRegisterTool = (tool: any) => {
@@ -106,7 +109,8 @@ export function DynamicToolRegistration({ onToolRegistered }: DynamicToolRegistr
       implementation: tool.implementation || tool.name,
       enabled: true,
       isBuiltIn: false,
-      agentId: selectedAgentId || undefined,
+      // Only include agentId if it's not "none" and actually has a value
+      ...(selectedAgentId && selectedAgentId !== "none" ? { agentId: selectedAgentId } : {}),
       metadata: {
         source: 'langchain_toolkit',
         originalName: tool.name,
@@ -144,14 +148,14 @@ export function DynamicToolRegistration({ onToolRegistered }: DynamicToolRegistr
             <label className="text-sm font-medium mb-1 block">Assign to Agent</label>
             <Select 
               onValueChange={setSelectedAgentId} 
-              defaultValue=""
+              defaultValue="none"
             >
               <SelectTrigger className="bg-background/50">
                 <SelectValue placeholder="Select an agent (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None (Register tool only)</SelectItem>
-                {agents.map((agent: any) => (
+                <SelectItem value="none">None (Register tool only)</SelectItem>
+                {Array.isArray(agents) && agents.map((agent: any) => (
                   <SelectItem key={agent.id} value={agent.id.toString()}>
                     {agent.name}
                   </SelectItem>
