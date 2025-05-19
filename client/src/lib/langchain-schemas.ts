@@ -25,6 +25,7 @@ export const toolSchema = z.object({
   implementation: z.string().optional(),
   enabled: z.boolean().default(true),
   isBuiltIn: z.boolean().default(false),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 export type ToolFormValues = z.infer<typeof toolSchema>;

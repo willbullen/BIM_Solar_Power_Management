@@ -92,13 +92,17 @@ export function DynamicToolRegistration({ onToolRegistered }: DynamicToolRegistr
       name: tool.name,
       description: tool.description,
       toolType: tool.type || 'langchain',
+      type: tool.type || 'custom',
+      category: tool.category || 'Other',
       parameters: tool.parameters || {},
       implementation: tool.implementation || tool.name,
       enabled: true,
       isBuiltIn: false,
       metadata: {
         source: 'langchain_toolkit',
-        originalName: tool.name
+        originalName: tool.name,
+        category: tool.category || 'Other',
+        type: tool.type || 'custom'
       }
     });
   };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { toolSchema, type ToolFormValues } from "@/lib/langchain-schemas";
 
@@ -24,6 +24,14 @@ export function ToolModal({ isOpen, onClose, tool }: ToolModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditing = !!tool;
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("");
+  const [categoryType, setCategoryType] = useState<string>("Other");
+  
+  // Fetch available agents
+  const { data: agents = [] } = useQuery({
+    queryKey: ['/api/langchain/agents'],
+    enabled: isOpen,
+  });
   
   // Create form
   const form = useForm<ToolFormValues>({
@@ -73,7 +81,19 @@ export function ToolModal({ isOpen, onClose, tool }: ToolModalProps) {
 
   // Form submission
   const onSubmit = (data: ToolFormValues) => {
-    mutation.mutate(data);
+    // Add agent assignment and category information if provided
+    const submissionData = {
+      ...data,
+      category: categoryType,
+      agentId: selectedAgentId || undefined,
+      metadata: {
+        ...data.metadata || {},
+        category: categoryType
+      }
+    };
+    
+    console.log('Submitting tool data:', submissionData);
+    mutation.mutate(submissionData);
   };
 
   return (
@@ -227,6 +247,62 @@ export function ToolModal({ isOpen, onClose, tool }: ToolModalProps) {
                 )}
               />
             </div>
+            
+            {/* Category Selection */}
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <Select 
+                onValueChange={setCategoryType} 
+                defaultValue={categoryType}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Data Processing">Data Processing</SelectItem>
+                  <SelectItem value="Information Retrieval">Information Retrieval</SelectItem>
+                  <SelectItem value="System Integration">System Integration</SelectItem>
+                  <SelectItem value="Data Services">Data Services</SelectItem>
+                  <SelectItem value="Language Processing">Language Processing</SelectItem>
+                  <SelectItem value="Content Generation">Content Generation</SelectItem>
+                  <SelectItem value="Environmental Data">Environmental Data</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Group similar tools together in meaningful categories
+              </FormDescription>
+            </FormItem>
+            
+            {/* Agent Assignment */}
+            {!isEditing && (
+              <FormItem>
+                <FormLabel>Assign to Agent</FormLabel>
+                <Select 
+                  onValueChange={setSelectedAgentId} 
+                  defaultValue=""
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an agent (optional)" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="">None (Register tool only)</SelectItem>
+                    {agents.map((agent: any) => (
+                      <SelectItem key={agent.id} value={agent.id.toString()}>
+                        {agent.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Automatically assign this tool to an agent upon registration
+                </FormDescription>
+              </FormItem>
+            )}
 
             <DialogFooter>
               <Button variant="outline" type="button" onClick={onClose}>
