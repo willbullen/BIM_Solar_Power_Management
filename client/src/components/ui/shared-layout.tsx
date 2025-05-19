@@ -61,6 +61,7 @@ export function SharedLayout({ children, user }: LayoutProps) {
     { name: 'Equipment', href: '/equipment', icon: Package2 },
     { name: 'Operational Planning', href: '/planning', icon: Calendar },
     { name: 'AI Agent', href: '/agent', icon: MessageSquare },
+    { name: 'Task Scheduler', href: '/tasks', icon: Calendar },
     { name: 'Voice Transcription', href: '/voice', icon: Headphones },
     { name: 'Feedback & Issues', href: '/feedback', icon: MessageSquare },
     { name: 'Settings', href: '/settings', icon: Settings }
