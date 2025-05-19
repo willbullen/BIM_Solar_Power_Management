@@ -26,6 +26,7 @@ import { ToolModal } from "@/components/langchain/ToolModal";
 import { PromptModal } from "@/components/langchain/PromptModal";
 import { ViewSchemaButton, ConfigureButton } from "@/components/langchain/ToolButtons";
 import { AgentTester } from "@/components/langchain/AgentTester";
+import { DynamicToolRegistration } from "@/components/langchain/DynamicToolRegistration";
 
 // Define schema for settings form
 const settingsSchema = z.object({
@@ -2071,6 +2072,20 @@ export default function SettingsPage() {
                         </Button>
                       </div>
                     </div>
+                    
+                    {/* Dynamic Tool Registration */}
+                    <DynamicToolRegistration 
+                      onToolRegistered={(tool) => {
+                        toast({
+                          title: "Tool registered successfully",
+                          description: `The tool "${tool.name}" has been registered and is now available.`,
+                          variant: "default"
+                        });
+                        
+                        // Refresh data
+                        queryClient.invalidateQueries({ queryKey: ['/api/langchain/tools'] });
+                      }}
+                    />
                     
                     {/* Tools List */}
                     <div className="grid gap-5">
