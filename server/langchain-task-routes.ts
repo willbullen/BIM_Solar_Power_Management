@@ -58,7 +58,7 @@ export function registerLangChainTaskRoutes(app: Express) {
   });
 
   // Create a new task
-  app.post('/api/langchain/tasks', requireAuth, async (req: Request, res: Response) => {
+  app.post('/api/langchain/tasks', authenticateUser, async (req: Request, res: Response) => {
     try {
       const { title, description, agentId, startTime, endTime, priority, tools } = req.body;
       const userId = req.session.userId;
@@ -108,7 +108,7 @@ export function registerLangChainTaskRoutes(app: Express) {
   });
 
   // Update a task
-  app.put('/api/langchain/tasks/:id', requireAuth, async (req: Request, res: Response) => {
+  app.put('/api/langchain/tasks/:id', authenticateUser, async (req: Request, res: Response) => {
     try {
       const taskId = parseInt(req.params.id);
       const userId = req.session.userId;
@@ -157,7 +157,7 @@ export function registerLangChainTaskRoutes(app: Express) {
   });
 
   // Delete a task
-  app.delete('/api/langchain/tasks/:id', requireAuth, async (req: Request, res: Response) => {
+  app.delete('/api/langchain/tasks/:id', authenticateUser, async (req: Request, res: Response) => {
     try {
       const taskId = parseInt(req.params.id);
       const userId = req.session.userId;
@@ -190,7 +190,7 @@ export function registerLangChainTaskRoutes(app: Express) {
   });
 
   // Execute a task immediately
-  app.post('/api/langchain/tasks/:id/execute', requireAuth, async (req: Request, res: Response) => {
+  app.post('/api/langchain/tasks/:id/execute', authenticateUser, async (req: Request, res: Response) => {
     try {
       const taskId = parseInt(req.params.id);
       const userId = req.session.userId;
@@ -257,7 +257,7 @@ export function registerLangChainTaskRoutes(app: Express) {
   });
 
   // Stop a running task
-  app.post('/api/langchain/tasks/:id/stop', requireAuth, async (req: Request, res: Response) => {
+  app.post('/api/langchain/tasks/:id/stop', authenticateUser, async (req: Request, res: Response) => {
     try {
       const taskId = parseInt(req.params.id);
       const userId = req.session.userId;
@@ -305,7 +305,7 @@ export function registerLangChainTaskRoutes(app: Express) {
   });
 
   // Get all available LangChain agents
-  app.get('/api/langchain/agents', requireAuth, async (req: Request, res: Response) => {
+  app.get('/api/langchain/agents', authenticateUser, async (req: Request, res: Response) => {
     try {
       const agents = await db
         .select()
@@ -320,7 +320,7 @@ export function registerLangChainTaskRoutes(app: Express) {
   });
 
   // Get all available LangChain tools
-  app.get('/api/langchain/tools', requireAuth, async (req: Request, res: Response) => {
+  app.get('/api/langchain/tools', authenticateUser, async (req: Request, res: Response) => {
     try {
       const tools = await db
         .select()
