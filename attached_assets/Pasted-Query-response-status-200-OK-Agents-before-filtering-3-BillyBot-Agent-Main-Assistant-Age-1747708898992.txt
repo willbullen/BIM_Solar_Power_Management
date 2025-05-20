@@ -1,0 +1,68 @@
+Query response status: 200 OK
+Agents before filtering: 
+(3) ["BillyBot Agent", "Main Assistant Agent", "Test Agent"]
+Agent BillyBot Agent included: true
+Agent Main Assistant Agent included: false
+Agent Test Agent included: true
+Query response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Agents before filtering: 
+(3) ["BillyBot Agent", "Main Assistant Agent", "Test Agent"]
+Agent BillyBot Agent included: true
+Agent Main Assistant Agent included: false
+Agent Test Agent included: true
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/langchain/tools/discover
+Using auth headers for user ID: 1
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+API response status: 500 Internal Server Error
+Error response (500): {"error":"Failed to discover LangChain tools"}
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+API request error: 
+Error {}
+message: "{"error":"Failed to discover LangChain tools"}"
+stack: "Error: {"error":"Failed to discover LangChain tools"}↵ at apiRequest (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/src/lib/queryClient.ts:96:13)↵ at async loadTools (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/src/components/langchain/DynamicToolRegistration.tsx:65:26)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Error fetching tools: 
+Error {}
+message: "{"error":"Failed to discover LangChain tools"}"
+stack: "Error: {"error":"Failed to discover LangChain tools"}↵ at apiRequest (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/src/lib/queryClient.ts:96:13)↵ at async loadTools (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/src/components/langchain/DynamicToolRegistration.tsx:65:26)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Found user in local storage
+Agents before filtering: 
+(3) ["BillyBot Agent", "Main Assistant Agent", "Test Agent"]
+Agent BillyBot Agent included: true
+Agent Main Assistant Agent included: false
+Agent Test Agent included: true
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Found user in local storage
+Agents before filtering: 
+(3) ["BillyBot Agent", "Main Assistant Agent", "Test Agent"]
+Agent BillyBot Agent included: true
+Agent Main Assistant Agent included: false
+Agent Test Agent included: true
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications
+Using auth headers for user ID: 1
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+Making API request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/agent/notifications/unread/count
+Using auth headers for user ID: 1
+Request has auth headers: X-Auth-User-Id, X-Auth-Username
+API response status: 200 OK
+Current refresh state - Rate: 10000ms, Should fetch: true, Has timer: false

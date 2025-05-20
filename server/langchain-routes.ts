@@ -584,22 +584,33 @@ export function registerLangChainRoutes(app: Express) {
       const query = req.query.query as string || '';
       console.log(`Searching for LangChain tools with query: ${query}`);
       
-      // Use the tool discovery service to find available tools
-      const tools = discoverAvailableTools(query);
-      
-      // Check for already registered tools to avoid duplicates
-      const registeredTools = await db.select().from(schema.langchainTools);
-      const registeredToolNames = registeredTools.map(tool => tool.name.toLowerCase());
-      
-      // Filter out already registered tools
-      const availableTools = tools.filter(tool => 
-        !registeredToolNames.includes(tool.name.toLowerCase())
-      );
-      
-      res.json({ 
-        success: true,
-        tools: availableTools 
-      });
+      try {
+        // Use the tool discovery service to find available tools
+        const tools = discoverAvailableTools(query);
+        console.log(`Found ${tools.length} total tools matching query`);
+        
+        // Check for already registered tools to avoid duplicates
+        const registeredTools = await db.select().from(schema.langchainTools);
+        const registeredToolNames = registeredTools.map(tool => tool.name.toLowerCase());
+        
+        // Filter out already registered tools
+        const availableTools = tools.filter(tool => 
+          !registeredToolNames.includes(tool.name.toLowerCase())
+        );
+        console.log(`Found ${availableTools.length} unregistered tools matching query`);
+        
+        res.json({ 
+          success: true,
+          tools: availableTools 
+        });
+      } catch (searchError) {
+        console.error('Error in tool search function:', searchError);
+        // Return empty results rather than failing with an error
+        res.json({
+          success: true,
+          tools: []
+        });
+      }
     } catch (error) {
       console.error('Error searching for LangChain tools:', error);
       res.status(500).json({ error: 'Failed to search for LangChain tools' });
@@ -615,20 +626,29 @@ export function registerLangChainRoutes(app: Express) {
       const existingTools = await db.select().from(schema.langchainTools);
       console.log(`Found ${existingTools.length} existing tools in database`);
       
-      // Get available tools from the discovery utility
-      const availableTools = discoverAvailableTools();
-      console.log(`Found ${availableTools.length} available tools from discovery utility`);
-      
-      // Filter out tools that are already registered
-      const filteredTools = availableTools.filter(tool => 
-        !isToolDuplicate(tool.name, existingTools)
-      );
-      console.log(`Returning ${filteredTools.length} new tools that can be registered`);
-      
-      res.json({
-        success: true,
-        tools: filteredTools
-      });
+      // Get available tools from the discovery utility with safer error handling
+      try {
+        const availableTools = discoverAvailableTools();
+        console.log(`Found ${availableTools.length} available tools from discovery utility`);
+        
+        // Filter out tools that are already registered
+        const filteredTools = availableTools.filter(tool => 
+          !isToolDuplicate(tool.name, existingTools)
+        );
+        console.log(`Returning ${filteredTools.length} new tools that can be registered`);
+        
+        res.json({
+          success: true,
+          tools: filteredTools
+        });
+      } catch (discoveryError) {
+        console.error('Error in tool discovery function:', discoveryError);
+        // Return an empty array rather than failing completely
+        res.json({
+          success: true,
+          tools: []
+        });
+      }
     } catch (error) {
       console.error('Error discovering LangChain tools:', error);
       res.status(500).json({ error: 'Failed to discover LangChain tools' });
