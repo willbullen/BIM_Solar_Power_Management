@@ -244,7 +244,7 @@ export function ToolModal({ isOpen, onClose, tool }: ToolModalProps) {
                 
                 {/* Parameter Editor - functional implementation */}
                 <div className="space-y-4">
-                  {form.watch('parameters') && Object.entries(form.watch('parameters') || {}).map(([paramName, paramConfig]: [string, any], index) => (
+                  {Object.entries(form.watch('parameters') || {}).map(([paramName, paramConfig]: [string, any], index) => (
                     <div key={`param-${index}`} className="grid grid-cols-4 gap-4 items-center border-b pb-3">
                       <div>
                         <Input 

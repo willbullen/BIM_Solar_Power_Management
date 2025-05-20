@@ -84,13 +84,15 @@ export function ToolTester({ tool }: ToolTesterProps) {
         };
       }, {});
 
-      const response = await apiRequest({
-        path: `api/langchain/tools/${tool.id}/test`,
-        method: "POST",
-        body: {
-          parameters: convertedParams,
-        },
-      });
+      const response = await apiRequest(
+        `api/langchain/tools/${tool.id}/test`, 
+        {
+          method: "POST",
+          data: {
+            parameters: convertedParams,
+          }
+        }
+      );
 
       if (response) {
         setTestResults(typeof response.result === 'object' 
