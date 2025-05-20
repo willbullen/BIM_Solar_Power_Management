@@ -32,10 +32,9 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Add health check endpoint for Replit deployment
-app.get('/', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'Server is running' });
-});
+// Import and setup dedicated health check endpoints
+import { setupHealthCheck } from './health-check';
+setupHealthCheck(app);
 
 app.use((req, res, next) => {
   const start = Date.now();
