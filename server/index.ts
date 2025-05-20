@@ -29,6 +29,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// Add a health check endpoint at root path for deployment
+app.get('/', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Server is running' });
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

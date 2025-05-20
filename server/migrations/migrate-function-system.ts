@@ -16,9 +16,8 @@ export async function migrateAgentFunctions() {
   try {
     console.log('Starting complete migration of agent_functions to langchain_tools...');
     
-    // Get all agent functions
-    const agentFunctions = await db.select().from(schema.agentFunctions);
-    console.log(`Found ${agentFunctions.length} agent functions to migrate`);
+    // Skip getting agent functions as they no longer exist in schema
+    console.log('Agent functions table has been removed, skipping migration');
     
     // Get all existing tools for reference
     const existingTools = await db.select().from(schema.langchainTools);
