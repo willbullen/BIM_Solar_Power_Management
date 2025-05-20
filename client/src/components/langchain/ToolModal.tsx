@@ -235,48 +235,118 @@ export function ToolModal({ isOpen, onClose, tool }: ToolModalProps) {
               </p>
               
               <div className="space-y-4 p-4 border rounded-md bg-card/50">
-                <div className="grid grid-cols-3 gap-4 text-sm font-medium text-muted-foreground">
+                <div className="grid grid-cols-4 gap-4 text-sm font-medium text-muted-foreground">
                   <div>Parameter Name</div>
                   <div>Type</div>
                   <div>Required</div>
+                  <div>Description</div>
                 </div>
                 
-                {/* Parameter Editor - simplified version */}
-                <div className="space-y-2">
-                  {/* This is a simplified version. For a real implementation, you'd use form arrays or a custom component */}
-                  <div className="grid grid-cols-3 gap-4 items-center">
-                    <Input placeholder="query" />
-                    <Select defaultValue="string">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="string">String</SelectItem>
-                        <SelectItem value="number">Number</SelectItem>
-                        <SelectItem value="boolean">Boolean</SelectItem>
-                        <SelectItem value="object">Object</SelectItem>
-                        <SelectItem value="array">Array</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <div className="flex items-center">
-                      <Switch id="param-required" />
-                      <label htmlFor="param-required" className="ml-2 text-sm">Required</label>
+                {/* Parameter Editor - functional implementation */}
+                <div className="space-y-4">
+                  {form.watch('parameters') && Object.entries(form.watch('parameters') || {}).map(([paramName, paramConfig]: [string, any], index) => (
+                    <div key={`param-${index}`} className="grid grid-cols-4 gap-4 items-center border-b pb-3">
+                      <div>
+                        <Input 
+                          value={paramName} 
+                          onChange={(e) => {
+                            const newParams = {...form.watch('parameters')};
+                            const paramValue = newParams[paramName];
+                            delete newParams[paramName];
+                            newParams[e.target.value] = paramValue;
+                            form.setValue('parameters', newParams);
+                          }}
+                          placeholder="e.g. query" 
+                        />
+                      </div>
+                      <Select 
+                        defaultValue={paramConfig?.type || "string"}
+                        onValueChange={(value) => {
+                          const newParams = {...form.watch('parameters')};
+                          newParams[paramName] = {
+                            ...newParams[paramName],
+                            type: value
+                          };
+                          form.setValue('parameters', newParams);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="string">String</SelectItem>
+                          <SelectItem value="number">Number</SelectItem>
+                          <SelectItem value="boolean">Boolean</SelectItem>
+                          <SelectItem value="object">Object</SelectItem>
+                          <SelectItem value="array">Array</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="flex items-center">
+                        <Switch 
+                          checked={paramConfig?.required || false}
+                          onCheckedChange={(checked) => {
+                            const newParams = {...form.watch('parameters')};
+                            newParams[paramName] = {
+                              ...newParams[paramName],
+                              required: checked
+                            };
+                            form.setValue('parameters', newParams);
+                          }}
+                          id={`param-required-${index}`} 
+                        />
+                        <label htmlFor={`param-required-${index}`} className="ml-2 text-sm">Required</label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={paramConfig?.description || ""}
+                          onChange={(e) => {
+                            const newParams = {...form.watch('parameters')};
+                            newParams[paramName] = {
+                              ...newParams[paramName],
+                              description: e.target.value
+                            };
+                            form.setValue('parameters', newParams);
+                          }}
+                          placeholder="Parameter description"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const newParams = {...form.watch('parameters')};
+                            delete newParams[paramName];
+                            form.setValue('parameters', newParams);
+                          }}
+                          className="flex-shrink-0 text-destructive hover:text-destructive/90"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                   
                   <Button 
                     type="button" 
                     variant="outline" 
                     size="sm" 
                     className="w-full mt-2"
+                    onClick={() => {
+                      // Create a unique parameter name
+                      const newParamName = `param${Object.keys(form.watch('parameters') || {}).length + 1}`;
+                      const currentParams = form.watch('parameters') || {};
+                      form.setValue('parameters', {
+                        ...currentParams,
+                        [newParamName]: {
+                          type: 'string',
+                          description: '',
+                          required: false
+                        }
+                      });
+                    }}
                   >
                     + Add Parameter
                   </Button>
                 </div>
-                
-                <p className="text-xs text-muted-foreground italic">
-                  Note: Parameter configuration is in development. Currently showing UI mockup.
-                </p>
               </div>
             </div>
             
