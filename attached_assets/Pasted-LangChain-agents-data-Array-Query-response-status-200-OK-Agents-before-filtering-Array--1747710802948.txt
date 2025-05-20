@@ -1,0 +1,78 @@
+LangChain agents data: 
+Array []
+Query response status: 200 OK
+Agents before filtering: 
+Array []
+Current active tab: general
+LangChain agents data: 
+Array []
+Query response status: 200 OK
+Agents before filtering: 
+Array []
+Current active tab: general
+LangChain agents data: 
+Array []
+Query response status: 200 OK
+LANGCHAIN AGENTS RESPONSE HEADERS: 
+Object {access-control-allow-credentials: "true", access-control-allow-headers: "Content-Type, Authorization, X-Requested-With", access-control-allow-methods: "GET,PUT,POST,PATCH,DELETE,OPTIONS", access-control-allow-origin: "*", content-length: "5982", …}
+Agents before filtering: 
+Array []
+Current active tab: general
+LangChain agents data: 
+Array []
+LANGCHAIN AGENTS RAW RESPONSE: [{"id":2,"name":"BillyBot Agent","description":"Primary agent for user interactions using GPT-4o and custom tools","modelName":"gpt-4o","temperature":0.7,"maxTokens":4000,"streaming":true,"systemPrompt":"You are an advanced AI assistant with direct access to the database through tools. When users ask about data or database operations, ALWAYS use the ReadFromDB tool to execute SQL queries. For listing tables, use the ReadFromDB tool with the input \"list tables\" or \"show tables\". You can also get table schemas and execute SELECT queries. Similarly, use the CompileReport tool when users request reports. Never claim you cannot access the database - you have full access through these tools.","maxIterations":5,"verbose":false,"enabled":true,"createdAt":"2025-05-12T21:01:42.763Z","updatedAt":"2025-05-13T11:32:12.557Z","createdBy":null,"metadata":{},"tools":[{"id":1,"name":"ReadFromDB","description":"Execute SQL queries to the database with protection against SQL injection. Can list database tables, get table schemas, and execute SELECT queries.","toolType":"database","parameters":{"type":"object","required":["input"],"properties":{"input":{"type":"string","description":"SQL query to execute. Format: 'QUERY: select * from table WHERE column = ?; PARAMS: [\"value\"]'"}}},"implementation":"ReadFromDBTool","enabled":true,"createdAt":"2025-05-12T02:39:52.297Z","updatedAt":"2025-05-19T12:28:19.107Z","createdBy":null,"isBuiltIn":true,"metadata":{},"priority":0},{"id":2,"name":"CompileReport","description":"Generate Markdown and PDF reports from structured data","toolType":"report","parameters":{"type":"object","required":["input"],"properties":{"input":{"type":"string","description":"Report details in the format: 'TITLE: <report-title>; CONTENT: <markdown-content>; FORMAT: [markdown|pdf]'"}}},"implementation":"CompileReportTool","enabled":true,"createdAt":"2025-05-12T02:39:52.347Z","updatedAt":"2025-05-19T12:28:19.132Z","createdBy":null,"isBuiltIn":true,"metadata":{},"priority":1}]},{"id":3,"name":"Main Assistant Agent","description":"Primary agent for user interactions using GPT-4o and custom tools","modelName":"gpt-4o","temperature":0.7,"maxTokens":4000,"streaming":true,"systemPrompt":"You are an advanced AI assistant with direct access to the database through tools. When users ask about data or database operations, ALWAYS use the ReadFromDB tool to execute SQL queries. For listing tables, use the ReadFromDB tool with the input \"list tables\" or \"show tables\". You can also get table schemas and execute SELECT queries. Similarly, use the CompileReport tool when users request reports. Never claim you cannot access the database - you have full access through these tools.","maxIterations":5,"verbose":false,"enabled":true,"createdAt":"2025-05-13T11:20:26.596Z","updatedAt":"2025-05-13T11:20:26.596Z","createdBy":null,"metadata":{},"tools":[{"id":1,"name":"ReadFromDB","description":"Execute SQL queries to the database with protection against SQL injection. Can list database tables, get table schemas, and execute SELECT queries.","toolType":"database","parameters":{"type":"object","required":["input"],"properties":{"input":{"type":"string","description":"SQL query to execute. Format: 'QUERY: select * from table WHERE column = ?; PARAMS:…
+LANGCHAIN AGENTS JSON RESPONSE: 
+(3) [{…}, {…}, {…}]
+AGENT 1: BillyBot Agent, enabled=true, type=boolean
+AGENT 2: Main Assistant Agent, enabled=true, type=boolean
+AGENT 3: Test Agent, enabled=true, type=boolean
+Query request error: 
+SyntaxError {}
+message: "Unexpected token '<', "<!DOCTYPE "... is not valid JSON"
+stack: "SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Agents before filtering: 
+Array []
+Current active tab: general
+LangChain agents data: 
+Array []
+Agents before filtering: 
+(3) ["BillyBot Agent", "Main Assistant Agent", "Test Agent"]
+Agent BillyBot Agent included: true
+Agent Main Assistant Agent included: false
+Agent Test Agent included: true
+Current active tab: general
+LangChain agents data: 
+(3) [{…}, {…}, {…}]
+API response status: 200 OK
+Query response status: 200 OK
+API response status: 200 OK
+Latest data fetched successfully
+Refresh interval or connection status changed, updating polling
+REST API polling already active, not starting additional polling
+Agents before filtering: 
+(3) ["BillyBot Agent", "Main Assistant Agent", "Test Agent"]
+Agent BillyBot Agent included: true
+Agent Main Assistant Agent included: false
+Agent Test Agent included: true
+Current active tab: langchain
+LangChain agents data: 
+(3) [{…}, {…}, {…}]
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/langchain/tools
+Using auth headers for user ID: 1
+Query has auth headers: X-Auth-User-Id, X-Auth-Username
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/langchain/prompts
+Using auth headers for user ID: 1
+Query has auth headers: X-Auth-User-Id, X-Auth-Username
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/langchain/status
+Using auth headers for user ID: 1
+Query has auth headers: X-Auth-User-Id, X-Auth-Username
+Making query request: GET https://0c6fe3fa-222f-48d4-8e4b-6ae65487088c-00-3lfoxkpxs8ody.picard.replit.dev/api/langchain/health
+Using auth headers for user ID: 1

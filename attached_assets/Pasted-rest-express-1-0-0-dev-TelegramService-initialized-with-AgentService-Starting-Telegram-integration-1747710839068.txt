@@ -1,0 +1,315 @@
+rest-express@1.0.0 dev
+TelegramService initialized with AgentService
+Starting Telegram integration database migration...
+Creating Telegram tables...
+Langchain Telegram tables already exist. Skipping creation.
+Telegram settings already exist. Skipping creation of defaults.
+Telegram integration database migration completed successfully.
+Telegram database migration completed successfully
+Starting LangChain integration database migration...
+Creating LangChain tables...
+langchain_agents table already exists
+langchain_tools table already exists
+langchain_agent_tools table already exists
+langchain_prompt_templates table already exists
+langchain_runs table already exists
+langchain_tool_executions table already exists
+LangChain tables created successfully
+LangChain agent and tools initialized successfully
+LangChain integration database migration completed successfully
+LangChain database migration completed successfully
+Starting complete migration of agent_functions to langchain_tools...
+Starting complete migration of agent_functions to langchain_tools...
+Error migrating agent functions: TypeError: Cannot read properties of undefined (reading 'Symbol(drizzle:Columns)')
+    at getTableColumns (/home/runner/workspace/node_modules/src/utils.ts:188:9)
+    at PgSelectBuilder.from (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:135:13)
+    at migrateAgentFunctions (/home/runner/workspace/server/migrations/migrate-function-system.ts:20:46)
+    at <anonymous> (/home/runner/workspace/server/index.ts:83:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Complete migration of agent_functions to langchain_tools finished successfully
+Starting removal of agent_functions table...
+Starting agent_functions removal migration...
+Starting removal of deprecated agent_functions table...
+agent_functions table does not exist, nothing to remove.
+agent_functions removal migration completed successfully.
+agent_functions table removed successfully
+Starting removal of old telegram_settings table...
+Starting removal of old telegram_settings table...
+telegram_settings table found. Removing it...
+telegram_settings table removed successfully
+Old telegram_settings table cleanup completed successfully.
+telegram_settings table removal completed
+Starting removal of legacy telegram tables...
+Legacy telegram tables migration is now DISABLED to preserve verification data
+Legacy telegram tables cleanup completed successfully.
+Legacy telegram tables removal completed
+Setting up unified function system...
+Found 24 LangChain tools to register in unified system
+Unified function system setup completed successfully
+Unified function system setup completed successfully
+Initializing database tables and seed data...
+Initializing database...
+Database initialization complete
+Database initialization completed successfully
+[WebSocket] Server initialized and waiting for connections at unknown address with path /ws
+Registering AI Agent database functions...
+Registering function: queryTable
+Updated existing function: queryTable
+Registering function: aggregateData
+Updated existing function: aggregateData
+Registering function: timeSeriesAggregate
+Updated existing function: timeSeriesAggregate
+Registering function: analyzeCorrelation
+Updated existing function: analyzeCorrelation
+Registering function: getEquipmentList
+Updated existing function: getEquipmentList
+Registering function: getLatestPowerData
+Updated existing function: getLatestPowerData
+Registering function: executeSqlQuery
+Updated existing function: executeSqlQuery
+Database query and analysis functions registered successfully
+SQL execution functions registered successfully
+AI Agent database functions registered successfully
+Shutting down Telegram bot...
+No active Telegram bot to shut down
+Using Telegram bot token from environment variable
+Initializing Telegram bot @envirobot...
+Force terminating any external bot sessions...
+Environment variables:
+PORT: 5000 (Using standard port for Replit compatibility)
+NODE_ENV: development
+REPL_ID: 0c6fe3fa-222f-48d4-8e4b-6ae65487088c
+REPL_OWNER: williambullen2
+REPLIT_DB_URL: set
+[WebSocket] HTTP Server is listening on 0.0.0.0:5000
+3:12:32 AM [express] serving on port 5000
+Successfully terminated external sessions via direct API call
+Waiting for any existing bot instances to fully terminate...
+New connection established
+New connection established
+3:12:38 AM [express] GET /api/langchain/status 200 in 1237ms :: {"openaiConnected":true,"langchainCo…
+Clearing pending updates...
+Manually clearing webhooks with direct API call...
+Successfully cleared webhooks via direct API call
+3:12:40 AM [express] GET /api/langchain/health 200 in 2765ms :: {"status":"healthy","details":{"time…
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:481:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:481:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+Telegram bot initialized successfully
+New connection established
+New connection established
+New connection established
+New connection established
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+New connection established
+New connection established
+New connection established
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:481:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:481:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+New connection established
+Starting LangChain agents fetch with tools...
+3:12:55 AM [express] GET /api/settings/solcast 200 in 77ms
+Found 3 agents in database
+Agent names: [
+  'BillyBot Agent (ID: 2)',
+  'Main Assistant Agent (ID: 3)',
+  'Test Agent (ID: 1)'
+]
+Processing agent: BillyBot Agent (ID: 2)
+Processing agent: Main Assistant Agent (ID: 3)
+Processing agent: Test Agent (ID: 1)
+3:12:55 AM [express] GET /api/settings 304 in 89ms :: {"id":1,"dataSource":"live","scenarioProfile":…
+3:12:55 AM [express] GET /api/telegram/settings 200 in 86ms :: {"id":1,"botUsername":"envirobot","we…
+3:12:55 AM [express] GET /api/telegram/status 200 in 92ms :: {"connected":true,"status":"Connected a…
+Found 2 tool associations for agent: Test Agent
+Found 2 tool associations for agent: Main Assistant Agent
+Found 2 tool associations for agent: BillyBot Agent
+Found tool ReadFromDB (ID: 1) for agent Main Assistant Agent
+Found tool ReadFromDB (ID: 1) for agent Test Agent
+Found tool CompileReport (ID: 2) for agent Test Agent
+Processed agent Test Agent with 2 valid tools
+Found tool CompileReport (ID: 2) for agent Main Assistant Agent
+Processed agent Main Assistant Agent with 2 valid tools
+Found tool CompileReport (ID: 2) for agent BillyBot Agent
+Found tool ReadFromDB (ID: 1) for agent BillyBot Agent
+Processed agent BillyBot Agent with 2 valid tools
+Returning 3 agents with their tools
+3:12:55 AM [express] GET /api/langchain/agents 200 in 155ms :: [{"id":2,"name":"BillyBot Agent","des…
+New connection established
+Auth check - Session: exists
+Auth check - UserId: 1
+Auth check - IsAuthenticated: yes (session)
+New connection established
+Auth check - Session: exists
+Auth check - UserId: 1
+Auth check - IsAuthenticated: yes (session)
+New connection established
+3:12:56 AM [express] GET /api/agent/notifications 200 in 108ms :: []
+3:12:56 AM [express] GET /api/agent/notifications/unread/count 200 in 113ms :: {"count":0}
+3:12:56 AM [express] GET /api/environmental-data 200 in 183ms :: [{"id":47445,"timestamp":"2025-05-2…
+3:12:56 AM [express] GET /api/power-data 200 in 208ms :: [{"id":358107,"timestamp":"2025-05-20T03:12…
+3:12:56 AM [express] GET /api/power-data/latest 200 in 147ms :: {"id":358107,"timestamp":"2025-05-20…
+3:12:56 AM [express] GET /api/environmental-data/latest 200 in 130ms :: {"id":47445,"timestamp":"202…
+3:12:56 AM [express] GET /api/settings 304 in 90ms :: {"id":1,"dataSource":"live","scenarioProfile":…
+New connection established
+New connection established
+Error fetching prompt templates: error: column "template" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async <anonymous> (/home/runner/workspace/server/langchain-routes.ts:1290:23) {
+  length: 108,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '37',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+3:12:59 AM [express] GET /api/langchain/tools 200 in 126ms :: [{"id":13,"name":"executeSqlQuery","de…
+3:12:59 AM [express] GET /api/langchain/prompts 200 in 124ms :: []
+3:12:59 AM [express] GET /api/langchain/status 200 in 575ms :: {"openaiConnected":true,"langchainCon…
+3:12:59 AM [express] GET /api/langchain/health 200 in 615ms :: {"status":"healthy","details":{"times…
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:481:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:481:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:481:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:481:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+New connection established
+3:13:15 AM [express] GET /api/langchain/health 200 in 754ms :: {"status":"healthy","details":{"times…
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:481:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:481:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+New connection established
+3:13:30 AM [express] GET /api/langchain/status 200 in 879ms :: {"openaiConnected":true,"langchainCon…
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:481:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:481:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+3:13:31 AM [express] GET /api/langchain/health 200 in 1365ms :: {"status":"healthy","details":{"time…
+Solcast API payment required - subscription may need renewal for forecast data
+Error fetching data from Solcast: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:481:34)
+Error fetching forecast data, using fallback: Error: Payment required for Solcast API forecast data
+    at SolcastService.fetchSolcastData (/home/runner/workspace/server/solcast-service.ts:137:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SolcastService.getForecastData (/home/runner/workspace/server/solcast-service.ts:166:14)
+    at async Timeout._onTimeout (/home/runner/workspace/server/routes.ts:481:34)
+Using fallback environmental data due to Solcast API issues
+Created environmental data from Solcast API
+New connection established
+3:13:51 AM [express] GET /api/langchain/health 200 in 4744ms :: {"status":"healthy","details":{"time…
