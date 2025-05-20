@@ -99,51 +99,14 @@ export function DynamicToolRegistration({ onToolRegistered }: DynamicToolRegistr
   
   // Handler for registering a tool
   const handleRegisterTool = (tool: any) => {
-    // Basic validation
-    if (!tool.name) {
-      toast({
-        title: "Invalid tool",
-        description: "Tool name is required",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!tool.description) {
-      toast({
-        title: "Invalid tool",
-        description: "Tool description is required",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Normalize parameters to ensure they have the required structure
-    const normalizedParams = tool.parameters ? Object.entries(tool.parameters).reduce((acc, [key, value]) => {
-      // If parameter isn't properly structured, normalize it
-      if (typeof value !== 'object' || value === null || !('type' in value)) {
-        return {
-          ...acc,
-          [key]: {
-            type: typeof value === 'object' && value !== null ? 'object' : 'string',
-            description: `Parameter: ${key}`,
-            required: false,
-          }
-        };
-      }
-      return { ...acc, [key]: value };
-    }, {}) : {};
-    
-    // Prepare tool data with improved structure
     const toolData = {
       name: tool.name,
       description: tool.description,
       toolType: tool.type || 'langchain',
       type: tool.type || 'custom',
       category: tool.category || 'Other',
-      parameters: normalizedParams,
+      parameters: tool.parameters || {},
       implementation: tool.implementation || tool.name,
-      example: tool.example || `${tool.name}(${Object.keys(normalizedParams).join(', ')})`,
       enabled: true,
       isBuiltIn: false,
       // Only include agentId if it's not "none" and actually has a value
@@ -220,32 +183,12 @@ export function DynamicToolRegistration({ onToolRegistered }: DynamicToolRegistr
                       <div className="flex items-center gap-2">
                         <h4 className="font-medium">{tool.name}</h4>
                         <Badge variant="outline" className="bg-indigo-950/50 text-indigo-300 border-indigo-800">
-                          {tool.category || tool.type || "LangChain"}
+                          {tool.type || "LangChain"}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">
                         {tool.description || "No description available"}
                       </p>
-                      {/* Example usage if available */}
-                      {tool.example && (
-                        <div className="mt-2 p-2 bg-black/30 rounded text-xs font-mono text-gray-300 border border-gray-800">
-                          <p className="text-xs text-indigo-300 mb-1">Example:</p>
-                          <code>{tool.example}</code>
-                        </div>
-                      )}
-                      {/* Tool parameters if available */}
-                      {tool.parameters && Object.keys(tool.parameters).length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-xs text-indigo-300">Parameters:</p>
-                          <div className="grid grid-cols-2 gap-1 mt-1">
-                            {Object.entries(tool.parameters).map(([key, param]: [string, any]) => (
-                              <Badge key={key} variant="secondary" className="justify-start text-xs">
-                                {key}{param.required && <span className="text-red-400">*</span>}: {param.type}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
                     <Button
                       size="sm"

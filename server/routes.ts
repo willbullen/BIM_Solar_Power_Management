@@ -21,7 +21,6 @@ import { registerTelegramRoutes } from './telegram-routes';
 import { registerFileRoutes } from './file-routes';
 import { registerLangChainRoutes } from './langchain-routes';
 import { registerLangChainTaskRoutes } from './langchain-task-routes';
-import { registerToolTestingRoutes } from './langchain-tool-testing-routes';
 import { registerVoiceRoutes } from './voice-routes';
 import mcpRoutes from './mcp-routes';
 import { DatabaseService } from './utils/database-service';
@@ -1496,9 +1495,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register LangChain powered AI Agent routes with custom tools
   registerLangChainRoutes(app);
-  
-  // Register Tool Testing Routes for LangChain tools
-  registerToolTestingRoutes(app);
   
   // Register agent notification routes for API-based notifications
   registerNotificationRoutes(app);

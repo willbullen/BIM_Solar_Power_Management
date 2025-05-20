@@ -29,16 +29,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Add a health check endpoint at root path for deployment
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'Server is running' });
-});
-
-// Redirect root to the dashboard for regular users
-app.get('/', (req, res) => {
-  res.redirect('/dashboard');
-});
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -77,7 +67,7 @@ app.use((req, res, next) => {
     // Run Telegram database migration
     await migrateTelegram();
     console.log('Telegram database migration completed successfully');
-
+    
     // Run LangChain database migration 
     try {
       await migrateLangChain();
@@ -86,13 +76,13 @@ app.use((req, res, next) => {
       console.error('Error during LangChain database migration:', langChainError);
       // Continue with server startup even if LangChain migration fails
     }
-
+    
     // Run the agent function migration - completely move all functions to langchain_tools
     try {
       console.log('Starting complete migration of agent_functions to langchain_tools...');
       await migrateAgentFunctions();
       console.log('Complete migration of agent_functions to langchain_tools finished successfully');
-
+      
       // After successful migration, remove the agent_functions table (force removal even if functions exist)
       try {
         console.log('Starting removal of agent_functions table...');
@@ -103,7 +93,7 @@ app.use((req, res, next) => {
         console.error('Error during agent_functions table removal:', removalError);
         // Continue with server startup even if table removal fails
       }
-
+      
       // Remove old telegram_settings table which is now redundant
       try {
         console.log('Starting removal of old telegram_settings table...');
@@ -113,7 +103,7 @@ app.use((req, res, next) => {
         console.error('Error during telegram_settings removal:', telegramSettingsError);
         // Continue with server startup even if table removal fails
       }
-
+      
       // Remove legacy telegram_users and telegram_messages tables
       try {
         console.log('Starting removal of legacy telegram tables...');
@@ -139,7 +129,7 @@ app.use((req, res, next) => {
       console.error('Error during complete function migration:', migrationError);
       // Continue with server startup even if migration fails
     }
-
+    
     // Set up the unified function system (which now only uses langchain_tools)
     try {
       await setupUnifiedFunctionSystem();
@@ -152,7 +142,7 @@ app.use((req, res, next) => {
     console.error('Error during Telegram database migration:', error);
     // Continue with server startup even if migration fails
   }
-
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -174,7 +164,7 @@ app.use((req, res, next) => {
 
   // Use port 5000 for Replit compatibility
   const port = 5000;
-
+  
   // Log the environment for debugging
   console.log('Environment variables:');
   console.log(`PORT: ${port} (Using standard port for Replit compatibility)`);
@@ -182,7 +172,7 @@ app.use((req, res, next) => {
   console.log(`REPL_ID: ${process.env.REPL_ID || 'not set'}`);
   console.log(`REPL_OWNER: ${process.env.REPL_OWNER || 'not set'}`);
   console.log(`REPLIT_DB_URL: ${process.env.REPLIT_DB_URL ? 'set' : 'not set'}`);
-
+  
   // Log open connections to debug connectivity issues
   server.on('connection', (socket) => {
     console.log('New connection established');
@@ -190,7 +180,7 @@ app.use((req, res, next) => {
       console.log('Socket error:', error);
     });
   });
-
+  
   // Try to start server on the primary port, fall back to alternate if primary is in use
   const startServer = (primaryPort: number, fallbackPort: number) => {
     server.listen({
@@ -202,7 +192,7 @@ app.use((req, res, next) => {
     }).on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE') {
         console.error(`Port ${primaryPort} is already in use, trying alternate port ${fallbackPort}`);
-
+        
         // Attempt to use fallback port instead
         server.listen({
           port: fallbackPort,
@@ -218,22 +208,7 @@ app.use((req, res, next) => {
       }
     });
   };
-
-  // Get port from environment variable or use defaults
-  const PORT = process.env.PORT || 80;
-  const FALLBACK_PORT = process.env.FALLBACK_PORT || 5000;
   
-  // Convert ports to numbers to fix TypeScript errors
-  const primaryPort = typeof PORT === 'string' ? parseInt(PORT, 10) : PORT;
-  const fallbackPort = typeof FALLBACK_PORT === 'string' ? parseInt(FALLBACK_PORT, 10) : FALLBACK_PORT;
-  
-  // Start server with appropriate ports for deployment
-  startServer(primaryPort, fallbackPort);
-  
-  console.log(`Environment variables:
-PORT: ${PORT} (Using ${PORT === 80 ? 'standard HTTP port' : 'custom port'} for deployment)
-NODE_ENV: ${process.env.NODE_ENV}
-REPL_ID: ${process.env.REPL_ID}
-REPL_OWNER: ${process.env.REPL_OWNER}
-REPLIT_DB_URL: ${process.env.REPLIT_DB_URL ? 'set' : 'not set'}`);
+  // Start server with primary port 5000 and fallback port 5001
+  startServer(5000, 5001);
 })();

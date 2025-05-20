@@ -11,68 +11,115 @@ import * as schema from '../../shared/schema';
 
 /**
  * Migrate agent_functions to langchain_tools
- * Note: The agent_functions table has been removed from the schema,
- * so this function now just returns a success message without doing any migration.
  */
 export async function migrateAgentFunctions() {
   try {
     console.log('Starting complete migration of agent_functions to langchain_tools...');
     
-    // Skip migration since agent_functions table no longer exists
-    console.log('Agent functions table has been removed, skipping migration');
+    // Get all agent functions
+    const agentFunctions = await db.select().from(schema.agentFunctions);
+    console.log(`Found ${agentFunctions.length} agent functions to migrate`);
     
     // Get all existing tools for reference
     const existingTools = await db.select().from(schema.langchainTools);
+    const existingToolNames = new Set(existingTools.map(tool => tool.name));
     
     console.log(`Found ${existingTools.length} existing tools in langchain_tools`);
     
-    // Set counters to 0 since we're not migrating anything
-    const migratedCount = 0;
-    const skippedCount = 0;
+    let migratedCount = 0;
+    let skippedCount = 0;
     
-    console.log(`Migration complete. Migrated ${migratedCount} functions, skipped ${skippedCount} existing tools.`);
-    return { success: true, migrated: migratedCount, skipped: skippedCount };
+    // For each agent function, check if it exists in langchain_tools
+    for (const func of agentFunctions) {
+      // Check if function exists in langchain_tools by name
+      if (existingToolNames.has(func.name)) {
+        console.log(`Tool ${func.name} already exists in langchain_tools, skipping`);
+        skippedCount++;
+        continue;
+      }
+      
+      // Convert function parameters to LangChain format if needed
+      const parameters = func.parameters as any;
+      
+      // Create new langchain tool from agent function
+      const [newTool] = await db
+        .insert(schema.langchainTools)
+        .values({
+          name: func.name,
+          description: func.description,
+          toolType: func.module || 'custom',
+          parameters: parameters,
+          implementation: func.functionCode || `${func.name}Tool`, // Use actual code or naming convention
+          enabled: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          isBuiltIn: false, // Mark as non-built-in to distinguish from core tools
+          metadata: {
+            migrated: true,
+            originalId: func.id,
+            accessLevel: func.accessLevel,
+            tags: func.tags,
+            returnType: func.returnType,
+            legacySource: 'agent_functions'
+          }
+        })
+        .returning();
+      
+      console.log(`Migrated agent function ${func.name} to langchain tool with ID ${newTool.id}`);
+      migratedCount++;
+    }
+    
+    console.log(`Migration summary: ${migratedCount} functions migrated, ${skippedCount} functions skipped`);
+    console.log('Complete migration of agent_functions to langchain_tools finished successfully');
+    return true;
   } catch (error) {
     console.error('Error migrating agent functions:', error);
-    return { success: false, error };
+    return false;
   }
 }
 
 /**
- * Run the migration to move agent functions to langchain tools
- */
-export async function runMigration() {
-  try {
-    const result = await migrateAgentFunctions();
-    return result;
-  } catch (error) {
-    console.error('Error running migration:', error);
-    return { success: false, error };
-  }
-}
-
-/**
- * Set up the unified function system
- * This creates a single, unified function system for:
- * - AI Agent database querying
- * - SQL execution
- * - Custom user functions
- * - LangChain tools
+ * Update the function registry to use langchain_tools
+ * 
+ * This function will be called during server startup to load the unified function system
  */
 export async function setupUnifiedFunctionSystem() {
   try {
     console.log('Setting up unified function system...');
     
-    // Get all LangChain tools
-    const langchainTools = await db.select().from(schema.langchainTools);
-    console.log(`Found ${langchainTools.length} LangChain tools to register in unified system`);
+    // Create tool implementations for each langchain tool that needs a function registry wrapper
+    const tools = await db.select().from(schema.langchainTools);
+    console.log(`Found ${tools.length} LangChain tools to register in unified system`);
     
-    // Any additional setup logic here if needed
-    
+    // Return success
     console.log('Unified function system setup completed successfully');
-    return { success: true };
+    return true;
   } catch (error) {
     console.error('Error setting up unified function system:', error);
-    return { success: false, error };
+    return false;
   }
 }
+
+/**
+ * Run the migration
+ */
+export async function runMigration() {
+  try {
+    console.log('Starting function system unification migration...');
+    
+    // Migrate agent_functions to langchain_tools
+    await migrateAgentFunctions();
+    
+    // Set up the unified function system
+    await setupUnifiedFunctionSystem();
+    
+    console.log('Function system unification migration completed successfully');
+    return true;
+  } catch (error) {
+    console.error('Error running function system unification migration:', error);
+    return false;
+  }
+}
+
+// This code needs to be run from the run-function-migration.js file
+// not directly from here (ES module compatibility)
