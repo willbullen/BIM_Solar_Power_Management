@@ -30,8 +30,13 @@ app.use((req, res, next) => {
 });
 
 // Add a health check endpoint at root path for deployment
-app.get('/', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Server is running' });
+});
+
+// Redirect root to the dashboard for regular users
+app.get('/', (req, res) => {
+  res.redirect('/dashboard');
 });
 
 app.use(express.json());

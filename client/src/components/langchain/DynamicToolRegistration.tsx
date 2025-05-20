@@ -121,11 +121,11 @@ export function DynamicToolRegistration({ onToolRegistered }: DynamicToolRegistr
     // Normalize parameters to ensure they have the required structure
     const normalizedParams = tool.parameters ? Object.entries(tool.parameters).reduce((acc, [key, value]) => {
       // If parameter isn't properly structured, normalize it
-      if (typeof value !== 'object' || !value.type) {
+      if (typeof value !== 'object' || value === null || !('type' in value)) {
         return {
           ...acc,
           [key]: {
-            type: typeof value === 'object' ? 'object' : 'string',
+            type: typeof value === 'object' && value !== null ? 'object' : 'string',
             description: `Parameter: ${key}`,
             required: false,
           }
