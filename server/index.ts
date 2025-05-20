@@ -232,5 +232,17 @@ app.use((req, res, next) => {
     console.log('main done, development mode');
   } else {
     console.log('main done, production mode - keeping server alive');
+    
+    // Keep the main application process running indefinitely
+    setInterval(() => {
+      console.log('Main application server still alive: ' + new Date().toISOString());
+    }, 60000);
+    
+    // Handle graceful shutdown
+    process.on('SIGINT', () => {
+      console.log('Main application server shutting down');
+      server.close();
+      process.exit(0);
+    });
   }
 })();
