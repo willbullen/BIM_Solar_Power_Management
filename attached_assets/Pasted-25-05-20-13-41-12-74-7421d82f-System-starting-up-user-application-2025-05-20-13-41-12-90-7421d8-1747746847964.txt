@@ -1,0 +1,180 @@
+25-05-20 13:41:12.74
+7421d82f
+System
+starting up user application
+2025-05-20 13:41:12.90
+7421d82f
+System
+forwarding local port 5000 to external port 80 (mapped as 1104)
+2025-05-20 13:41:15.00
+7421d82f
+User
+> rest-express@1.0.0 start
+2025-05-20 13:41:15.00
+7421d82f
+User
+> NODE_ENV=production node dist/index.js & node dist/dedicated-health-check.js
+2025-05-20 13:41:15.45
+7421d82f
+User
+Dedicated health check server running on port 5000
+2025-05-20 13:42:15.46
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:42:15.466Z
+2025-05-20 13:43:16.96
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:43:16.965Z
+2025-05-20 13:43:58.48
+7421d82f
+User
+TelegramService initialized with AgentService
+2025-05-20 13:43:58.48
+7421d82f
+User
+Starting Telegram integration database migration...
+2025-05-20 13:43:58.48
+7421d82f
+User
+Creating Telegram tables...
+2025-05-20 13:43:58.48
+7421d82f
+User
+Legacy telegram tables migration is now DISABLED to preserve verification data
+2025-05-20 13:43:58.48
+7421d82f
+User
+Legacy telegram tables cleanup completed successfully.
+2025-05-20 13:43:58.49
+7421d82f
+User
+Starting Telegram integration database migration...
+2025-05-20 13:43:58.49
+7421d82f
+User
+Creating Telegram tables...
+2025-05-20 13:43:58.96
+7421d82f
+User
+Legacy telegram tables removal completed successfully.
+2025-05-20 13:44:16.99
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:44:16.996Z
+2025-05-20 13:45:17.02
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:45:17.025Z
+2025-05-20 13:46:17.05
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:46:17.055Z
+2025-05-20 13:47:17.08
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:47:17.085Z
+2025-05-20 13:48:17.11
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:48:17.115Z
+2025-05-20 13:49:17.14
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:49:17.146Z
+2025-05-20 13:50:17.17
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:50:17.177Z
+2025-05-20 13:51:17.17
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:51:17.179Z
+2025-05-20 13:52:17.21
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:52:17.210Z
+2025-05-20 13:53:17.23
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:53:17.239Z
+2025-05-20 13:54:17.26
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:54:17.269Z
+2025-05-20 13:55:17.29
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:55:17.299Z
+2025-05-20 13:56:17.33
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:56:17.330Z
+2025-05-20 13:57:17.33
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:57:17.336Z
+2025-05-20 13:58:17.36
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:58:17.367Z
+2025-05-20 13:59:17.36
+7421d82f
+User
+Health check server still alive: 2025-05-20T12:59:17.369Z
+2025-05-20 14:00:17.40
+7421d82f
+User
+Health check server still alive: 2025-05-20T13:00:17.399Z
+2025-05-20 14:01:17.42
+7421d82f
+User
+Health check server still alive: 2025-05-20T13:01:17.428Z
+2025-05-20 14:02:17.44
+7421d82f
+User
+Health check server still alive: 2025-05-20T13:02:17.443Z
+2025-05-20 14:03:17.48
+7421d82f
+User
+Health check server still alive: 2025-05-20T13:03:17.483Z
+2025-05-20 14:04:17.51
+7421d82f
+User
+Health check server still alive: 2025-05-20T13:04:17.513Z
+2025-05-20 14:05:17.54
+7421d82f
+User
+Health check server still alive: 2025-05-20T13:05:17.543Z
+2025-05-20 14:06:17.57
+7421d82f
+User
+Health check server still alive: 2025-05-20T13:06:17.573Z
+2025-05-20 14:07:17.60
+7421d82f
+User
+Health check server still alive: 2025-05-20T13:07:17.603Z
+2025-05-20 14:08:17.63
+7421d82f
+User
+Health check server still alive: 2025-05-20T13:08:17.633Z
+2025-05-20 14:09:17.66
+7421d82f
+User
+Health check server still alive: 2025-05-20T13:09:17.663Z
+2025-05-20 14:10:17.66
+7421d82f
+User
+Health check server still alive: 2025-05-20T13:10:17.666Z
+2025-05-20 14:11:17.69
+7421d82f
+User
+Health check server still alive: 2025-05-20T13:11:17.696Z
+2025-05-20 14:12:17.71
+7421d82f
+User
+Health check server still alive: 2025-05-20T13:12:17.713Z
+2025-05-20 14:13:17.74
+7421d82f
+User
+Health check server still alive: 2025-05-20T13:13:17.742Z
