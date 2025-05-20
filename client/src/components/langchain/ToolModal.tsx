@@ -202,6 +202,81 @@ export function ToolModal({ isOpen, onClose, tool }: ToolModalProps) {
               )}
             />
             
+            <FormField
+              control={form.control}
+              name="example"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Example Usage</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Tool.search('query')" 
+                      className="min-h-[80px] font-mono text-sm" 
+                      {...field} 
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Example of how to use this tool (shown in UI to help users understand its usage)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Parameters Section */}
+            <div>
+              <h3 className="text-lg font-medium mb-2">Tool Parameters</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Define the parameters this tool accepts. Parameters will be validated when the tool is used.
+              </p>
+              
+              <div className="space-y-4 p-4 border rounded-md bg-card/50">
+                <div className="grid grid-cols-3 gap-4 text-sm font-medium text-muted-foreground">
+                  <div>Parameter Name</div>
+                  <div>Type</div>
+                  <div>Required</div>
+                </div>
+                
+                {/* Parameter Editor - simplified version */}
+                <div className="space-y-2">
+                  {/* This is a simplified version. For a real implementation, you'd use form arrays or a custom component */}
+                  <div className="grid grid-cols-3 gap-4 items-center">
+                    <Input placeholder="query" />
+                    <Select defaultValue="string">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="string">String</SelectItem>
+                        <SelectItem value="number">Number</SelectItem>
+                        <SelectItem value="boolean">Boolean</SelectItem>
+                        <SelectItem value="object">Object</SelectItem>
+                        <SelectItem value="array">Array</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex items-center">
+                      <Switch id="param-required" />
+                      <label htmlFor="param-required" className="ml-2 text-sm">Required</label>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full mt-2"
+                  >
+                    + Add Parameter
+                  </Button>
+                </div>
+                
+                <p className="text-xs text-muted-foreground italic">
+                  Note: Parameter configuration is in development. Currently showing UI mockup.
+                </p>
+              </div>
+            </div>
+            
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}

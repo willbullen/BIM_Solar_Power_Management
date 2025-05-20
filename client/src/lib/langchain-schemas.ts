@@ -16,13 +16,26 @@ export const agentSchema = z.object({
 
 export type AgentFormValues = z.infer<typeof agentSchema>;
 
+// Parameter schema for tool parameters validation
+export const parameterSchema = z.record(
+  z.string(),
+  z.object({
+    type: z.string(),
+    description: z.string().optional(),
+    required: z.boolean().optional().default(false),
+    default: z.any().optional(),
+  })
+);
+
 // Form validation schema for Tool creation/editing
 export const toolSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
+  name: z.string().min(1, "Name is required").max(50, "Name must be less than 50 characters"),
+  description: z.string().min(1, "Description is required").max(500, "Description must be less than 500 characters"),
   toolType: z.string().min(1, "Tool type is required"),
-  parameters: z.any().optional(),
+  parameters: parameterSchema.optional(),
   implementation: z.string().optional(),
+  example: z.string().optional(),
+  category: z.string().optional(),
   enabled: z.boolean().default(true),
   isBuiltIn: z.boolean().default(false),
   metadata: z.record(z.string(), z.any()).optional(),
