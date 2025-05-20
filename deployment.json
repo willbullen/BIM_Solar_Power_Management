@@ -1,0 +1,4 @@
+{
+  "healthCheckPath": "/",
+  "healthCheckPort": 5000
+}

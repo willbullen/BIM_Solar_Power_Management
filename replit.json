@@ -1,0 +1,8 @@
+{
+  "run": "npm run start",
+  "configure": {
+    "healthCheck": true,
+    "healthCheckPath": "/",
+    "healthCheckPort": 5000
+  }
+}
