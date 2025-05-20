@@ -214,6 +214,17 @@ app.use((req, res, next) => {
     });
   };
 
-  // Start server with primary port 5000 and fallback port 5001
-  startServer(5000, 5001);
+  // Get port from environment variable or use defaults
+  const PORT = process.env.PORT || 80;
+  const FALLBACK_PORT = process.env.FALLBACK_PORT || 5000;
+  
+  // Start server with appropriate ports for deployment
+  startServer(PORT, FALLBACK_PORT);
+  
+  console.log(`Environment variables:
+PORT: ${PORT} (Using ${PORT === 80 ? 'standard HTTP port' : 'custom port'} for deployment)
+NODE_ENV: ${process.env.NODE_ENV}
+REPL_ID: ${process.env.REPL_ID}
+REPL_OWNER: ${process.env.REPL_OWNER}
+REPLIT_DB_URL: ${process.env.REPLIT_DB_URL ? 'set' : 'not set'}`);
 })();
