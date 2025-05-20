@@ -8,14 +8,31 @@ import { Express, Request, Response } from 'express';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
 import * as schema from '@shared/schema';
-import { validateAuth } from './auth';
+// Import authentication middleware
+// Define middleware for authentication
+function requireAuth(req: Request, res: Response, next: any) {
+  // Check for authenticated user in session
+  if (req.session?.userId) {
+    return next();
+  }
+
+  // Check for API authentication via headers
+  const userId = req.headers['x-auth-user-id'];
+  const username = req.headers['x-auth-username'];
+  
+  if (userId && username) {
+    return next();
+  }
+  
+  return res.status(401).json({ error: 'Authentication required' });
+}
 
 /**
  * Register tool testing routes
  */
 export function registerToolTestingRoutes(app: Express) {
   // Test a LangChain tool
-  app.post('/api/langchain/tools/:id/test', validateAuth, async (req: Request, res: Response) => {
+  app.post('/api/langchain/tools/:id/test', requireAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const { parameters } = req.body;
@@ -49,27 +66,23 @@ export function registerToolTestingRoutes(app: Express) {
         
         // Log execution for audit purposes (if possible)
         try {
-          // Only attempt to log if the table might exist - don't throw if not
-          const { rows: tableExists } = await db.execute(`
-            SELECT EXISTS (
-              SELECT FROM information_schema.tables 
-              WHERE table_schema = 'public' 
-              AND table_name = 'langchain_tool_executions'
-            );
-          `);
+          // Only log execution if the user requests it or logging is enabled by default
+          const userId = req.session?.userId || (req.headers['x-auth-user-id'] ? Number(req.headers['x-auth-user-id']) : null);
           
-          if (tableExists[0]?.exists) {
-            // Use raw SQL to avoid schema errors if the table structure isn't in the Drizzle schema
-            await db.execute(`
-              INSERT INTO langchain_tool_executions 
-              (tool_id, user_id, parameters, result, executed_at)
-              VALUES ($1, $2, $3, $4, NOW())
-            `, [
-              parseInt(id),
-              req.session?.userId || req.headers['x-auth-user-id'] ? Number(req.headers['x-auth-user-id']) : null,
-              JSON.stringify(parameters),
-              JSON.stringify(typeof result === 'object' ? result : { value: result })
-            ]);
+          // Check if langchainToolExecutions table exists in schema
+          if (schema.langchainToolExecutions) {
+            try {
+              await db.insert(schema.langchainToolExecutions).values({
+                toolId: parseInt(id),
+                userId: userId,
+                parameters: JSON.stringify(parameters),
+                result: JSON.stringify(typeof result === 'object' ? result : { value: result }),
+                executedAt: new Date()
+              });
+            } catch (error) {
+              console.error("Error inserting tool execution log:", error);
+              // Continue even if insert fails
+            }
           }
         } catch (logError) {
           console.error("Error logging tool execution:", logError);

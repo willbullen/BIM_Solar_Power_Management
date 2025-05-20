@@ -21,6 +21,7 @@ import { registerTelegramRoutes } from './telegram-routes';
 import { registerFileRoutes } from './file-routes';
 import { registerLangChainRoutes } from './langchain-routes';
 import { registerLangChainTaskRoutes } from './langchain-task-routes';
+import { registerToolTestingRoutes } from './langchain-tool-testing-routes';
 import { registerVoiceRoutes } from './voice-routes';
 import mcpRoutes from './mcp-routes';
 import { DatabaseService } from './utils/database-service';
