@@ -1,0 +1,5 @@
+{
+  "healthCheck": true,
+  "healthCheckPath": "/",
+  "healthCheckPort": 5000
+}

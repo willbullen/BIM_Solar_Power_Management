@@ -32,9 +32,22 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Import and setup dedicated health check endpoints
-import { setupHealthCheck } from './health-check';
-setupHealthCheck(app);
+// Health check endpoint for Replit deployment
+// This must be the first route defined to ensure it's not overridden
+app.get('/', (req, res, next) => {
+  // Check if this is a health check request from deployment
+  const isHealthCheck = req.headers['user-agent']?.includes('Replit') || 
+                         req.headers['x-replit-health-check'] || 
+                         process.env.NODE_ENV === 'production';
+  
+  if (isHealthCheck) {
+    // Respond immediately for health checks
+    return res.status(200).type('text/plain').send('OK');
+  }
+
+  // For regular requests, continue to the next middleware
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
