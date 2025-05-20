@@ -28,10 +28,13 @@ export function ToolModal({ isOpen, onClose, tool }: ToolModalProps) {
   const [categoryType, setCategoryType] = useState<string>("Other");
   
   // Fetch available agents
-  const { data: agents = [] } = useQuery({
+  const { data: agentsData } = useQuery({
     queryKey: ['/api/langchain/agents'],
     enabled: isOpen,
   });
+  
+  // Ensure agents is always a properly typed array
+  const agents: Array<{id: number|string, name: string}> = Array.isArray(agentsData) ? agentsData : [];
   
   // Create form
   const form = useForm<ToolFormValues>({
@@ -367,7 +370,7 @@ export function ToolModal({ isOpen, onClose, tool }: ToolModalProps) {
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="">None (Register tool only)</SelectItem>
-                    {agents.map((agent: any) => (
+                    {Array.isArray(agents) && agents.map((agent: any) => (
                       <SelectItem key={agent.id} value={agent.id.toString()}>
                         {agent.name}
                       </SelectItem>

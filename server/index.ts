@@ -223,8 +223,12 @@ app.use((req, res, next) => {
   const PORT = process.env.PORT || 80;
   const FALLBACK_PORT = process.env.FALLBACK_PORT || 5000;
   
+  // Convert ports to numbers to fix TypeScript errors
+  const primaryPort = typeof PORT === 'string' ? parseInt(PORT, 10) : PORT;
+  const fallbackPort = typeof FALLBACK_PORT === 'string' ? parseInt(FALLBACK_PORT, 10) : FALLBACK_PORT;
+  
   // Start server with appropriate ports for deployment
-  startServer(PORT, FALLBACK_PORT);
+  startServer(primaryPort, fallbackPort);
   
   console.log(`Environment variables:
 PORT: ${PORT} (Using ${PORT === 80 ? 'standard HTTP port' : 'custom port'} for deployment)
