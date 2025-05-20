@@ -1,4 +1,6 @@
+
 {
-  "healthCheckPath": "/",
-  "healthCheckPort": 5000
+  "healthCheckPath": "/health",
+  "healthCheckPort": 5000,
+  "mainAppPort": 3000
 }
