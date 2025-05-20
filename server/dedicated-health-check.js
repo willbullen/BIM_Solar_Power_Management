@@ -4,8 +4,8 @@
  * This runs as a separate process to ensure health checks always respond
  */
 
-const express = require('express');
-const http = require('http');
+import express from 'express';
+import http from 'http';
 
 // Create a dedicated Express app just for health checks
 const app = express();
