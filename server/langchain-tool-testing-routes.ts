@@ -8,8 +8,10 @@ import { Express, Request, Response } from 'express';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
 import * as schema from '@shared/schema';
-// Import authentication middleware
-// Define middleware for authentication
+
+/**
+ * Middleware for API authentication
+ */
 function requireAuth(req: Request, res: Response, next: any) {
   // Check for authenticated user in session
   if (req.session?.userId) {
@@ -31,7 +33,7 @@ function requireAuth(req: Request, res: Response, next: any) {
  * Register tool testing routes
  */
 export function registerToolTestingRoutes(app: Express) {
-  // Test a LangChain tool
+  // Test endpoint for LangChain tools
   app.post('/api/langchain/tools/:id/test', requireAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -64,26 +66,42 @@ export function registerToolTestingRoutes(app: Express) {
         // Execute the function with the provided parameters
         const result = await executor(parameters);
         
-        // Log execution for audit purposes (if possible)
+        // Log execution in a simplified way - avoid complex schema interactions
         try {
-          // Only log execution if the user requests it or logging is enabled by default
-          const userId = req.session?.userId || (req.headers['x-auth-user-id'] ? Number(req.headers['x-auth-user-id']) : null);
-          
-          // Check if langchainToolExecutions table exists in schema
-          if (schema.langchainToolExecutions) {
-            try {
-              await db.insert(schema.langchainToolExecutions).values({
-                toolId: parseInt(id),
-                userId: userId,
-                parameters: JSON.stringify(parameters),
-                result: JSON.stringify(typeof result === 'object' ? result : { value: result }),
-                executedAt: new Date()
-              });
-            } catch (error) {
-              console.error("Error inserting tool execution log:", error);
-              // Continue even if insert fails
+          // Get the user ID from session or headers
+          const userId = req.session?.userId || 
+            (req.headers['x-auth-user-id'] ? Number(req.headers['x-auth-user-id']) : null);
+            
+          // Use SQL directly for logging to avoid schema issues
+          await db.execute(`
+            INSERT INTO tool_test_logs (
+              tool_id, tool_name, user_id, parameters, result, executed_at
+            ) VALUES (
+              $1, $2, $3, $4, $5, NOW()
+            ) ON CONFLICT DO NOTHING
+          `, [
+            parseInt(id),
+            tool.name,
+            userId,
+            JSON.stringify(parameters),
+            JSON.stringify(typeof result === 'object' ? result : { value: result })
+          ]).catch(err => {
+            // Create the table if it doesn't exist
+            if (err.message.includes('relation "tool_test_logs" does not exist')) {
+              return db.execute(`
+                CREATE TABLE IF NOT EXISTS tool_test_logs (
+                  id SERIAL PRIMARY KEY,
+                  tool_id INTEGER NOT NULL,
+                  tool_name TEXT NOT NULL,
+                  user_id INTEGER,
+                  parameters JSONB,
+                  result JSONB,
+                  executed_at TIMESTAMP DEFAULT NOW()
+                )
+              `);
             }
-          }
+            throw err;
+          });
         } catch (logError) {
           console.error("Error logging tool execution:", logError);
           // Continue even if logging fails
