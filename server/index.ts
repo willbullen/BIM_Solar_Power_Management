@@ -33,19 +33,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Health check endpoint for Replit deployment
-// This must be the first route defined to ensure it's not overridden
+// Always respond to root path immediately to pass health checks
 app.get('/', (req, res, next) => {
-  // Check if this is a health check request from deployment
-  const isHealthCheck = req.headers['user-agent']?.includes('Replit') || 
-                         req.headers['x-replit-health-check'] || 
-                         process.env.NODE_ENV === 'production';
-  
-  if (isHealthCheck) {
-    // Respond immediately for health checks
+  // For deployment health checks, respond immediately
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Received health check request at root path');
     return res.status(200).type('text/plain').send('OK');
   }
-
-  // For regular requests, continue to the next middleware
+  
+  // For regular requests in development, continue to the next middleware
   next();
 });
 
@@ -179,8 +175,11 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Use port 5000 for Replit compatibility
-  const port = 5000;
+  // Use environment port or fallback to 5000 for Replit compatibility
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
+  
+  // Log the port configuration for debugging
+  console.log(`Using port ${port} for server and health checks`);
   
   // Log the environment for debugging
   console.log('Environment variables:');

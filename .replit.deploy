@@ -1,0 +1,6 @@
+{
+  "run": "npm run start",
+  "healthCheck": true,
+  "healthCheckPort": 5000,
+  "healthCheckPath": "/"
+}

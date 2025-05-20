@@ -1,0 +1,212 @@
+2025-05-20 10:54:13.88
+b38bdc81
+User
+Telegram integration database migration completed successfully.
+2025-05-20 10:54:13.88
+b38bdc81
+User
+Telegram integration migration completed successfully.
+2025-05-20 10:54:13.90
+b38bdc81
+User
+npm notice
+2025-05-20 10:54:13.90
+b38bdc81
+User
+npm notice New major version of npm available! 10.8.2 -> 11.4.0
+2025-05-20 10:54:13.90
+b38bdc81
+User
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.4.0
+2025-05-20 10:54:13.90
+b38bdc81
+User
+npm notice To update run: npm install -g npm@11.4.0
+2025-05-20 10:54:13.90
+b38bdc81
+User
+npm notice
+2025-05-20 10:54:13.91
+b38bdc81
+System
+command finished successfully with exit code 0
+2025-05-20 10:54:13.91
+b38bdc81
+System
+main done, exiting
+2025-05-20 10:54:40.51
+b38bdc81
+System
+starting up user application
+2025-05-20 10:54:40.79
+b38bdc81
+System
+forwarding local port 5000 to external port 80 (mapped as 1104)
+2025-05-20 10:54:41.51
+b38bdc81
+User
+> rest-express@1.0.0 start
+2025-05-20 10:54:41.51
+b38bdc81
+User
+> NODE_ENV=production node dist/index.js
+2025-05-20 10:54:43.51
+b38bdc81
+User
+Starting Telegram integration database migration...
+2025-05-20 10:54:43.51
+b38bdc81
+User
+Creating Telegram tables...
+2025-05-20 10:54:43.52
+b38bdc81
+User
+Starting Telegram integration database migration...
+2025-05-20 10:54:43.52
+b38bdc81
+User
+Creating Telegram tables...
+2025-05-20 10:54:43.68
+b38bdc81
+User
+Telegram tables already exist. Skipping creation.
+2025-05-20 10:54:43.71
+b38bdc81
+User
+Telegram settings already exist. Skipping creation of defaults.
+2025-05-20 10:54:43.71
+b38bdc81
+User
+Telegram integration database migration completed successfully.
+2025-05-20 10:54:43.71
+b38bdc81
+User
+Telegram integration migration completed successfully.
+2025-05-20 10:54:43.73
+b38bdc81
+User
+npm notice
+2025-05-20 10:54:43.73
+b38bdc81
+User
+npm notice New major version of npm available! 10.8.2 -> 11.4.0
+2025-05-20 10:54:43.73
+b38bdc81
+User
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.4.0
+2025-05-20 10:54:43.73
+b38bdc81
+User
+npm notice To update run: npm install -g npm@11.4.0
+2025-05-20 10:54:43.73
+b38bdc81
+User
+npm notice
+2025-05-20 10:54:43.74
+b38bdc81
+System
+command finished successfully with exit code 0
+2025-05-20 10:54:43.74
+b38bdc81
+System
+main done, exiting
+2025-05-20 10:55:07.86
+b38bdc81
+System
+starting up user application
+2025-05-20 10:55:08.01
+b38bdc81
+System
+forwarding local port 5000 to external port 80 (mapped as 1104)
+2025-05-20 10:55:09.08
+b38bdc81
+User
+> rest-express@1.0.0 start
+2025-05-20 10:55:09.08
+b38bdc81
+User
+> NODE_ENV=production node dist/index.js
+2025-05-20 10:55:10.89
+b38bdc81
+User
+Starting Telegram integration database migration...
+2025-05-20 10:55:10.89
+b38bdc81
+User
+Creating Telegram tables...
+2025-05-20 10:55:10.89
+b38bdc81
+User
+Starting Telegram integration database migration...
+2025-05-20 10:55:10.89
+b38bdc81
+User
+Creating Telegram tables...
+2025-05-20 10:55:11.03
+b38bdc81
+User
+Telegram tables already exist. Skipping creation.
+2025-05-20 10:55:11.05
+b38bdc81
+User
+Telegram tables already exist. Skipping creation.
+2025-05-20 10:55:11.05
+b38bdc81
+User
+Telegram settings already exist. Skipping creation of defaults.
+2025-05-20 10:55:11.05
+b38bdc81
+User
+Telegram integration database migration completed successfully.
+2025-05-20 10:55:11.05
+b38bdc81
+User
+Telegram database migration completed successfully
+2025-05-20 10:55:11.05
+b38bdc81
+User
+Starting LangChain integration database migration...
+2025-05-20 10:55:11.05
+b38bdc81
+User
+Creating LangChain tables...
+2025-05-20 10:55:11.07
+b38bdc81
+User
+Telegram settings already exist. Skipping creation of defaults.
+2025-05-20 10:55:11.07
+b38bdc81
+User
+Telegram integration database migration completed successfully.
+2025-05-20 10:55:11.07
+b38bdc81
+User
+Telegram integration migration completed successfully.
+2025-05-20 10:55:11.09
+b38bdc81
+User
+npm notice
+2025-05-20 10:55:11.09
+b38bdc81
+User
+npm notice New major version of npm available! 10.8.2 -> 11.4.0
+2025-05-20 10:55:11.09
+b38bdc81
+User
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.4.0
+2025-05-20 10:55:11.09
+b38bdc81
+User
+npm notice To update run: npm install -g npm@11.4.0
+2025-05-20 10:55:11.09
+b38bdc81
+User
+npm notice
+2025-05-20 10:55:11.10
+b38bdc81
+System
+command finished successfully with exit code 0
+2025-05-20 10:55:11.10
+b38bdc81
+System
+main done, exiting
