@@ -14,7 +14,7 @@ import {
 import { ChatOpenAI } from '@langchain/openai';
 import { ReadFromDBTool } from './langchain/tools/readFromDB';
 import { CompileReportTool } from './langchain/tools/compileReport';
-import { discoverAvailableTools, registerTool } from './utils/langchain-tool-discovery';
+import { discoverAvailableTools, registerTool, isToolDuplicate } from './utils/langchain-tool-discovery';
 
 // Middleware to require authentication
 async function requireAuth(req: Request, res: Response, next: any) {
