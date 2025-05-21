@@ -197,6 +197,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ws.on('message', (message) => {
       try {
         updateActivity(); // Update activity timestamp on each message
+
+  // Add explicit health check endpoint for Autoscale deployment
+  app.get('/health', (req, res) => {
+    res.status(200).json({
+      status: 'ok',
+      uptime: process.uptime(),
+      timestamp: Date.now()
+    });
+  });
+
         
         const parsedMessage = JSON.parse(message.toString());
         console.log('Received message:', parsedMessage);

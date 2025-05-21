@@ -27,7 +27,7 @@ app.get('/health', (req, res) => {
     status: 'ok',
     uptime: process.uptime(),
     timestamp: Date.now(),
-    mainApp: 'Port 3000',
+    mainApp: 'Port 80',
     healthCheck: 'Port 5000'
   });
 });

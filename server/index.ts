@@ -175,19 +175,17 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Use environment port or fallback to 80 for Autoscale deployments
-  const port = process.env.PORT ? parseInt(process.env.PORT) : 80;
+  // For Autoscale deployments, we must use port 80
+  const port = 80;
 
   // Log the port configuration for debugging
-  console.log(`Using port ${port} for main application (health check on port 5000)`);
+  console.log(`Starting server for Autoscale deployment on port ${port} (health check on port 5000)`);
 
   // Log the environment for debugging
   console.log('Environment variables:');
-  console.log(`PORT: ${port} (Using standard port for Replit compatibility)`);
   console.log(`NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
   console.log(`REPL_ID: ${process.env.REPL_ID || 'not set'}`);
   console.log(`REPL_OWNER: ${process.env.REPL_OWNER || 'not set'}`);
-  console.log(`REPLIT_DB_URL: ${process.env.REPLIT_DB_URL ? 'set' : 'not set'}`);
 
   // Log open connections to debug connectivity issues
   server.on('connection', (socket) => {
@@ -197,36 +195,16 @@ app.use((req, res, next) => {
     });
   });
 
-  // Try to start server on the primary port, fall back to alternate if primary is in use
-  const startServer = (primaryPort: number, fallbackPort: number) => {
-    server.listen({
-      port: primaryPort,
-      host: "0.0.0.0",
-      reusePort: true,
-    }, () => {
-      log(`serving on port ${primaryPort}`);
-    }).on('error', (err: NodeJS.ErrnoException) => {
-      if (err.code === 'EADDRINUSE') {
-        console.error(`Port ${primaryPort} is already in use, trying alternate port ${fallbackPort}`);
-
-        // Attempt to use fallback port instead
-        server.listen({
-          port: fallbackPort,
-          host: "0.0.0.0",
-          reusePort: true,
-        }, () => {
-          log(`serving on alternate port ${fallbackPort}`);
-        }).on('error', (fallbackErr: NodeJS.ErrnoException) => {
-          console.error(`Failed to bind to alternate port ${fallbackPort}: ${fallbackErr.message}`);
-        });
-      } else {
-        console.error(`Failed to start server: ${err.message}`);
-      }
-    });
-  };
-
-  // Start server with port 80 (Autoscale requirement) and fallback to 3000
-  startServer(port, 3000);
+  // Start server with port 80 - no fallbacks for Autoscale deployment
+  server.listen({
+    port: port,
+    host: "0.0.0.0"
+  }, () => {
+    log(`serving on port ${port}`);
+  }).on('error', (err: NodeJS.ErrnoException) => {
+    console.error(`Failed to start server: ${err.message}`);
+    process.exit(1); // Exit on error to trigger a restart
+  });
   // In production, the process should not exit
   if (process.env.NODE_ENV !== 'production') {
     console.log('main done, development mode');
