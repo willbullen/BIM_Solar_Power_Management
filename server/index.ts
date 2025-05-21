@@ -175,8 +175,8 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Use environment port or fallback to 3000 for main application
-  const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+  // Use environment port or fallback to 80 for Autoscale deployments
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 80;
 
   // Log the port configuration for debugging
   console.log(`Using port ${port} for main application (health check on port 5000)`);
@@ -225,8 +225,8 @@ app.use((req, res, next) => {
     });
   };
 
-  // Start server with primary port 3000 and fallback port 3001
-  startServer(3000, 3001);
+  // Start server with port 80 (Autoscale requirement) and fallback to 3000
+  startServer(port, 3000);
   // In production, the process should not exit
   if (process.env.NODE_ENV !== 'production') {
     console.log('main done, development mode');

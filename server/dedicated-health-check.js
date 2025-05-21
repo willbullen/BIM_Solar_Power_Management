@@ -12,8 +12,8 @@ const app = express();
 
 // Simple health check endpoint
 app.get('/', (req, res) => {
-  // Forward to main app by redirecting
-  res.redirect('/app');
+  // Return a simple 200 OK response for health checks
+  res.status(200).send('Health check OK');
 });
 
 // Simple redirect to main application (now on same domain)
