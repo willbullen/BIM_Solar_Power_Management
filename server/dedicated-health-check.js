@@ -16,32 +16,9 @@ app.get('/', (req, res) => {
   res.redirect('/app');
 });
 
-// Route to expose main app - serves a proper HTML explanation page
+// Simple redirect to main application (now on same domain)
 app.get('/app', (req, res) => {
-  res.status(200).send(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Energy Dashboard</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          body { font-family: system-ui, sans-serif; margin: 0; padding: 40px; background: #f5f5f5; }
-          .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-          h1 { color: #333; }
-          .btn { display: inline-block; background: #0078D7; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>Energy Dashboard</h1>
-          <p>The main application is running on port 3000. The health check is active on port 5000.</p>
-          <p>To access the dashboard, please use port 3000 in your URL.</p>
-          <a href="https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co:3000" class="btn">Go to Dashboard</a>
-        </div>
-      </body>
-    </html>
-  `);
+  res.redirect('/');
 });
 
 // Detailed health check

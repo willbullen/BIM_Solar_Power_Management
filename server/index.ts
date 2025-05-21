@@ -175,11 +175,11 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Use environment port or fallback to 5000 for Replit compatibility
-  const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
+  // Use environment port or fallback to 3000 for main application
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
   // Log the port configuration for debugging
-  console.log(`Using port ${port} for server and health checks`);
+  console.log(`Using port ${port} for main application (health check on port 5000)`);
 
   // Log the environment for debugging
   console.log('Environment variables:');
