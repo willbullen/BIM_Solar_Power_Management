@@ -225,8 +225,8 @@ app.use((req, res, next) => {
     });
   };
 
-  // Start server with primary port 5000 and fallback port 5001
-  startServer(5000, 5001);
+  // Start server with primary port 3000 and fallback port 3001
+  startServer(3000, 3001);
   // In production, the process should not exit
   if (process.env.NODE_ENV !== 'production') {
     console.log('main done, development mode');
