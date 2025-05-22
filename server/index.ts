@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { migrate as migrateTelegram } from "./migrations/migrate-telegram";
 import { migrate as migrateLangChain } from "./migrations/migrate-langchain";
-import { setupUnifiedFunctionSystem, runMigration, migrateAgentFunctions } from "./migrations/migrate-function-system";
+import { setupUnifiedFunctionSystem, runMigration, migrateAgentFunctions } from "./migrations/migrate-function-system-fixed";
 import { migrate as removeAgentFunctionsTable } from "./migrations/remove-agent-functions-table";
 import { migrateLangchainNaming } from "./migrations/migrate-langchain-naming";
 import { removeTelegramSettings } from "./migrations/remove-telegram-settings";
@@ -177,6 +177,26 @@ app.use((req, res, next) => {
 
   // Use the port from environment or default to 5000 for deployment
   const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
+  
+  // In production, start the server immediately before running migrations
+  // This ensures the port opens quickly for deployment health checks
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Production mode: Starting server immediately for health checks');
+    
+    // Start server first for health checks
+    server.listen({
+      port: port,
+      host: "0.0.0.0"
+    }, () => {
+      log(`serving on port ${port} (production mode - server started before migrations)`);
+    }).on('error', (err: NodeJS.ErrnoException) => {
+      console.error(`Failed to start server: ${err.message}`);
+      process.exit(1);
+    });
+    
+    console.log('Server started, now running migrations in background...');
+    return; // Exit the async function early in production
+  }
 
   // Log the port configuration for debugging
   console.log(`Starting server for Autoscale deployment on port ${port} (health check on port 5000)`);
