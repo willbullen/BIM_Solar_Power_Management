@@ -78,9 +78,13 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
   
+  // Use port 80 for production deployment to match .replit configuration
+  const port = process.env.NODE_ENV === 'production' ? 80 : 5000;
+  
   // In production, start server immediately, then run migrations in background
   if (process.env.NODE_ENV === 'production') {
     console.log('Production mode: Starting server immediately for deployment health checks');
+    console.log(`Starting server on port ${port} for production deployment`);
     
     // Start server first to pass deployment health checks
     server.listen({
@@ -188,27 +192,10 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Use port 80 for production deployment to match .replit configuration
-  const port = process.env.NODE_ENV === 'production' ? 80 : 5000;
-
   // Log the port configuration for debugging
-  console.log(`Starting server for Autoscale deployment on port ${port} (health check on port 5000)`);
+  console.log(`Starting server for development mode on port ${port}`);
 
-  // Log the environment for debugging
-  console.log('Environment variables:');
-  console.log(`NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
-  console.log(`REPL_ID: ${process.env.REPL_ID || 'not set'}`);
-  console.log(`REPL_OWNER: ${process.env.REPL_OWNER || 'not set'}`);
-
-  // Log open connections to debug connectivity issues
-  server.on('connection', (socket) => {
-    console.log('New connection established');
-    socket.on('error', (error) => {
-      console.log('Socket error:', error);
-    });
-  });
-
-  // Start server with port 80 - no fallbacks for Autoscale deployment
+  // Start server for development
   server.listen({
     port: port,
     host: "0.0.0.0"
@@ -216,24 +203,8 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
   }).on('error', (err: NodeJS.ErrnoException) => {
     console.error(`Failed to start server: ${err.message}`);
-    process.exit(1); // Exit on error to trigger a restart
+    process.exit(1);
   });
-  // In production, the process should not exit
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('main done, development mode');
-  } else {
-    console.log('main done, production mode - keeping server alive');
-    
-    // Keep the main application process running indefinitely
-    setInterval(() => {
-      console.log('Main application server still alive: ' + new Date().toISOString());
-    }, 60000);
-    
-    // Handle graceful shutdown
-    process.on('SIGINT', () => {
-      console.log('Main application server shutting down');
-      server.close();
-      process.exit(0);
-    });
-  }
+  
+  console.log('main done, development mode');
 })();

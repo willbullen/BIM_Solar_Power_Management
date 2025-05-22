@@ -1,0 +1,59 @@
+2025-05-22T12:19:42Z info: Deployment: c42bf40f-d8fe-4abd-9ccd-66ecbc081501
+2025-05-22T12:19:42Z info: Build: 0eabfa43-0efe-4ac7-9075-cafae0f1dd8b
+2025-05-22T12:19:42Z info: Connecting to builder
+2025-05-22T12:19:42Z info: Deployment: c42bf40f-d8fe-4abd-9ccd-66ecbc081501
+2025-05-22T12:19:42Z info: Build: 0eabfa43-0efe-4ac7-9075-cafae0f1dd8b
+2025-05-22T12:19:42Z info: Connecting to builder
+2025-05-22T12:19:48Z info: Builder connected
+2025-05-22T12:19:49Z info: Installing packages
+2025-05-22T12:19:49Z info: Starting Build
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && esbuild server/dedicated-health-check.js --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+
+vite v5.4.14 building for production...
+
+transforming...
+
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+✓ 5098 modules transformed.
+
+rendering chunks...
+
+computing gzip size...
+
+../dist/public/index.html                                             1.78 kB │ gzip:   0.73 kB
+
+✓ built in 20.96s
+
+
+  dist/dedicated-health-check.js  840b 
+
+⚡ Done in 3ms
+
+npm notice
+npm notice New major version of npm available! 10.8.2 -> 11.4.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.4.1
+npm notice To update run: npm install -g npm@11.4.1
+npm notice
+
+2025-05-22T12:20:17Z info: Pushing pid1 binary layer...
+2025-05-22T12:20:18Z info: Created pid1 binary layer
+2025-05-22T12:20:18Z info: Pushing Repl layer...
+2025-05-22T12:20:18Z info: Retrieved cached nix layer
+2025-05-22T12:20:18Z info: Created hosting layer
+2025-05-22T12:21:16Z info: Created Repl layer
+2025-05-22T12:21:16Z info: Pushed image manifest
+2025-05-22T12:21:16Z info: Pushed soci index manifest
+2025-05-22T12:21:21Z info: Creating Autoscale service
+starting up user application
+Dedicated health check server running on port 5000
+Legacy telegram tables cleanup completed successfully.
+Legacy telegram tables removal completed successfully.
+a port configuration was specified but the required port was never opened
+Health check server still alive: 2025-05-22T12:24:45.674Z
+2025-05-22T12:25:24Z error: The deployment failed because the application failed to open a port in time. This can happen because the application takes to long to open a server, or doesn't open one at all on the expected port. Note that this doesn't mean that the application is crashing, only that it's not opening a port in time. The application must serve traffic on the first port specified as 'localPort' in the port configuration specified in the .replit file. Make sure that the application opens a port quickly and that there are no operations taking too long on startup. Check the logs for more information.
