@@ -16,8 +16,15 @@ export async function migrateAgentFunctions() {
   try {
     console.log('Starting complete migration of agent_functions to langchain_tools...');
     
-    // Get all agent functions
-    const agentFunctions = await db.select().from(schema.agentFunctions);
+    // Check if agent_functions table exists first, if not, skip migration
+    try {
+      const agentFunctions = await db.execute(sql`SELECT * FROM agent_functions LIMIT 1`);
+      console.log('agent_functions table exists, but migration is now DISABLED to preserve verification data');
+      return true; // Skip migration but return success
+    } catch (error) {
+      console.log('agent_functions table does not exist, migration not needed');
+      return true; // Migration not needed
+    }
     console.log(`Found ${agentFunctions.length} agent functions to migrate`);
     
     // Get all existing tools for reference

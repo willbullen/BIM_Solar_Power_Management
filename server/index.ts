@@ -175,8 +175,8 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // For Autoscale deployments, we must use port 80
-  const port = 80;
+  // Use the port from environment or default to 5000 for deployment
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
 
   // Log the port configuration for debugging
   console.log(`Starting server for Autoscale deployment on port ${port} (health check on port 5000)`);
