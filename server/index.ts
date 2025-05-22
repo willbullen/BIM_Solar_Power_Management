@@ -76,6 +76,41 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  const server = await registerRoutes(app);
+  
+  // In production, start server immediately, then run migrations in background
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Production mode: Starting server immediately for deployment health checks');
+    
+    // Start server first to pass deployment health checks
+    server.listen({
+      port: port,
+      host: "0.0.0.0"
+    }, () => {
+      log(`serving on port ${port} (production mode - server started quickly)`);
+    }).on('error', (err: NodeJS.ErrnoException) => {
+      console.error(`Failed to start server: ${err.message}`);
+      process.exit(1);
+    });
+    
+    // Run migrations in background after server is running
+    setImmediate(async () => {
+      try {
+        console.log('Running migrations in background...');
+        await migrateTelegram();
+        await migrateLangChain();
+        await migrateAgentFunctions();
+        await setupUnifiedFunctionSystem();
+        console.log('Background migrations completed');
+      } catch (error) {
+        console.error('Background migration error:', error);
+      }
+    });
+    
+    return; // Exit early in production
+  }
+  
+  // Development mode: run migrations first
   try {
     // Run Telegram database migration
     await migrateTelegram();
@@ -87,76 +122,54 @@ app.use((req, res, next) => {
       console.log('LangChain database migration completed successfully');
     } catch (langChainError) {
       console.error('Error during LangChain database migration:', langChainError);
-      // Continue with server startup even if LangChain migration fails
     }
 
-    // Run the agent function migration - completely move all functions to langchain_tools
+    // Run the agent function migration
     try {
       console.log('Starting complete migration of agent_functions to langchain_tools...');
       await migrateAgentFunctions();
       console.log('Complete migration of agent_functions to langchain_tools finished successfully');
 
-      // After successful migration, remove the agent_functions table (force removal even if functions exist)
+      // After successful migration, remove the agent_functions table
       try {
         console.log('Starting removal of agent_functions table...');
-        // Use removeAgentFunctionsTable directly with force=true parameter
         await removeAgentFunctionsTable(true); 
         console.log('agent_functions table removed successfully');
       } catch (removalError) {
         console.error('Error during agent_functions table removal:', removalError);
-        // Continue with server startup even if table removal fails
       }
 
-      // Remove old telegram_settings table which is now redundant
+      // Remove old telegram_settings table
       try {
         console.log('Starting removal of old telegram_settings table...');
         await removeTelegramSettings();
         console.log('telegram_settings table removal completed');
       } catch (telegramSettingsError) {
         console.error('Error during telegram_settings removal:', telegramSettingsError);
-        // Continue with server startup even if table removal fails
       }
 
-      // Remove legacy telegram_users and telegram_messages tables
+      // Remove legacy telegram tables
       try {
         console.log('Starting removal of legacy telegram tables...');
         await removeTelegramLegacyTables();
         console.log('Legacy telegram tables removal completed');
       } catch (telegramLegacyError) {
         console.error('Error during legacy telegram tables removal:', telegramLegacyError);
-        // Continue with server startup even if table removal fails
       }
-
-      // Run the migration to rename agent tables to use langchain prefix
-      /*
-      try {
-        console.log('Starting migration to rename agent tables to langchain prefix...');
-        await migrateLangchainNaming(true);
-        console.log('Table renaming migration completed successfully');
-      } catch (renamingError) {
-        console.error('Error during table renaming migration:', renamingError);
-        // Continue with server startup even if renaming fails
-      }
-      */
     } catch (migrationError) {
       console.error('Error during complete function migration:', migrationError);
-      // Continue with server startup even if migration fails
     }
 
-    // Set up the unified function system (which now only uses langchain_tools)
+    // Set up the unified function system
     try {
       await setupUnifiedFunctionSystem();
       console.log('Unified function system setup completed successfully');
     } catch (functionError) {
       console.error('Error setting up unified function system:', functionError);
-      // Continue with server startup even if function system setup fails
     }
   } catch (error) {
-    console.error('Error during Telegram database migration:', error);
-    // Continue with server startup even if migration fails
+    console.error('Error during database migration:', error);
   }
-
-  const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -175,28 +188,8 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Use the port from environment or default to 5000 for deployment
-  const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
-  
-  // In production, start the server immediately before running migrations
-  // This ensures the port opens quickly for deployment health checks
-  if (process.env.NODE_ENV === 'production') {
-    console.log('Production mode: Starting server immediately for health checks');
-    
-    // Start server first for health checks
-    server.listen({
-      port: port,
-      host: "0.0.0.0"
-    }, () => {
-      log(`serving on port ${port} (production mode - server started before migrations)`);
-    }).on('error', (err: NodeJS.ErrnoException) => {
-      console.error(`Failed to start server: ${err.message}`);
-      process.exit(1);
-    });
-    
-    console.log('Server started, now running migrations in background...');
-    return; // Exit the async function early in production
-  }
+  // Use port 80 for production deployment to match .replit configuration
+  const port = process.env.NODE_ENV === 'production' ? 80 : 5000;
 
   // Log the port configuration for debugging
   console.log(`Starting server for Autoscale deployment on port ${port} (health check on port 5000)`);
