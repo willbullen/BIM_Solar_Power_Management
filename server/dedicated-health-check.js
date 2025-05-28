@@ -32,10 +32,11 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Start the server on port 5000 for health checks
+// Use port 8080 for health checks to avoid conflict with main app (port 80)
+const healthPort = process.env.HEALTH_PORT || 8080;
 const server = http.createServer(app);
-server.listen(5000, '0.0.0.0', () => {
-  console.log('Dedicated health check server running on port 5000');
+server.listen(healthPort, '0.0.0.0', () => {
+  console.log(`Dedicated health check server running on port ${healthPort}`);
 });
 
 // Keep the process running indefinitely

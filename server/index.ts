@@ -34,14 +34,25 @@ app.use(express.urlencoded({ extended: false }));
 
 // Health check endpoint for Replit deployment
 // Always respond to root path immediately to pass health checks
+app.get('/health', (req, res) => {
+  console.log('Health check request received');
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: Date.now(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// For production deployment, provide immediate health check response at root
 app.get('/', (req, res, next) => {
   // For deployment health checks, respond immediately
-  if (process.env.NODE_ENV === 'production') {
-    console.log('Received health check request at root path');
+  if (process.env.NODE_ENV === 'production' && req.headers['user-agent']?.includes('replit')) {
+    console.log('Received deployment health check request at root path');
     return res.status(200).type('text/plain').send('OK');
   }
 
-  // For regular requests in development, continue to the next middleware
+  // For regular requests, continue to the next middleware
   next();
 });
 
@@ -81,33 +92,48 @@ app.use((req, res, next) => {
   // Use port 80 for production deployment to match .replit configuration
   const port = process.env.NODE_ENV === 'production' ? 80 : 5000;
   
-  // In production, start server immediately, then run migrations in background
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Target port: ${port}`);
+  
+  // In production, start server immediately for deployment health checks
   if (process.env.NODE_ENV === 'production') {
     console.log('Production mode: Starting server immediately for deployment health checks');
     console.log(`Starting server on port ${port} for production deployment`);
     
     // Start server first to pass deployment health checks
-    server.listen({
+    const productionServer = server.listen({
       port: port,
       host: "0.0.0.0"
     }, () => {
-      log(`serving on port ${port} (production mode - server started quickly)`);
+      console.log(`✅ Production server started successfully on port ${port}`);
+      log(`serving on port ${port} (production mode - ready for deployment)`);
     }).on('error', (err: NodeJS.ErrnoException) => {
-      console.error(`Failed to start server: ${err.message}`);
+      console.error(`❌ Failed to start production server: ${err.message}`);
+      console.error(`Port ${port} may already be in use or unavailable`);
       process.exit(1);
+    });
+    
+    // Ensure proper error handling for production
+    process.on('uncaughtException', (err) => {
+      console.error('Uncaught Exception:', err);
+      productionServer.close(() => process.exit(1));
+    });
+    
+    process.on('unhandledRejection', (reason, promise) => {
+      console.error('Unhandled Rejection at:', promise, 'reason:', reason);
     });
     
     // Run migrations in background after server is running
     setImmediate(async () => {
       try {
-        console.log('Running migrations in background...');
+        console.log('Running essential migrations in background...');
         await migrateTelegram();
         await migrateLangChain();
         await migrateAgentFunctions();
         await setupUnifiedFunctionSystem();
-        console.log('Background migrations completed');
+        console.log('✅ Background migrations completed successfully');
       } catch (error) {
-        console.error('Background migration error:', error);
+        console.error('❌ Background migration error:', error);
       }
     });
     
